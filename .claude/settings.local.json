@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "Bash(py *)",
+      "Bash(where python *)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"education academic SaaS dark professional Nigerian university AI research tool\" --design-system --persist -p \"FYPro\" -f markdown)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"dark academia premium professional dashboard dark mode\" --domain style -n 5)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"elegant modern serif mono precision technical dark UI\" --domain typography -n 5)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"multi-step wizard onboarding flow progress stepper\" --domain ux -n 4)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"dark premium SaaS dashboard navy deep\" --domain color -n 4)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"animation loading states skeleton\" --domain ux -n 3)"
+    ]
+  }
+}
