@@ -116,6 +116,7 @@ const NAV_LINKS = [
   { label: "How it Works", href: "#how-it-works" },
   { label: "Features", href: "#features" },
   { label: "For Students", href: "#why-fypro" },
+  { label: "Pricing", href: "#pricing" },
 ];
 
 function Navbar({ onGetStarted }) {
@@ -946,6 +947,810 @@ function FeatureStrip() {
   );
 }
 
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+const TESTIMONIALS = [
+  {
+    quote:
+      "I was completely lost after my supervisor rejected my first topic twice. FYPro helped me reframe it in 20 minutes. My chapter outline got approved on the first submission.",
+    name: "Chidinma Eze",
+    department: "Mass Communication",
+    university: "UNILAG",
+    initials: "CE",
+    accent: "#0066FF",
+  },
+  {
+    quote:
+      "The defense simulator is no joke. Prof. Akinwale grilled me on my sampling method for 10 straight minutes. I failed the first session — but walked into my real defense completely confident.",
+    name: "Tunde Adeyemi",
+    department: "Business Administration",
+    university: "OAU",
+    initials: "TA",
+    accent: "#16A34A",
+  },
+  {
+    quote:
+      "My methodology was completely wrong for a quantitative study. FYPro caught it before I submitted. My supervisor said Chapter 3 was the best she had seen from a final year student.",
+    name: "Fatima Bello",
+    department: "Nursing Science",
+    university: "ABU Zaria",
+    initials: "FB",
+    accent: "#F59E0B",
+  },
+];
+
+function TestimonialsSection() {
+  const titleRef = useRef(null);
+  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
+
+  return (
+    <section
+      style={{
+        background: "#0D1B2A",
+        padding: "100px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.45 }}
+            style={{
+              display: "inline-block",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.65rem",
+              fontWeight: 500,
+              letterSpacing: "0.14em",
+              color: "#F59E0B",
+              background: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.2)",
+              borderRadius: 999,
+              padding: "5px 14px",
+              marginBottom: 18,
+            }}
+          >
+            STUDENT VOICES
+          </motion.span>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.55, delay: 0.1 }}
+            style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              color: "#ffffff",
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Students who stopped guessing<br />and started defending.
+          </motion.h2>
+        </div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate={titleInView ? "visible" : "hidden"}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+          }}
+        >
+          {TESTIMONIALS.map(({ quote, name, department, university, initials, accent }) => (
+            <motion.div
+              key={name}
+              variants={cardReveal}
+              style={{
+                background: "rgba(15, 34, 53, 0.8)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                borderLeft: `3px solid ${accent}`,
+                borderRadius: 16,
+                padding: "32px 28px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+                position: "relative",
+                overflow: "hidden",
+              }}
+              whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }}
+            >
+              {/* Decorative quote mark */}
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 20,
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: 80,
+                  lineHeight: 1,
+                  color: `${accent}0a`,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+              >
+                "
+              </span>
+
+              <p
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "0.9rem",
+                  lineHeight: 1.7,
+                  color: "rgba(255,255,255,0.72)",
+                  margin: 0,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                "{quote}"
+              </p>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: `${accent}20`,
+                    border: `1.5px solid ${accent}40`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    color: accent,
+                    flexShrink: 0,
+                  }}
+                >
+                  {initials}
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "#ffffff",
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {name}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "0.75rem",
+                      color: "rgba(255,255,255,0.38)",
+                      marginTop: 2,
+                    }}
+                  >
+                    {department} · {university}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Defense Simulator Preview ────────────────────────────────────────────────
+
+const EXAMINERS = [
+  {
+    code: "EXAM-01",
+    name: "Prof. Akinwale",
+    title: "The Methodologist",
+    personality: "Cold. Precise. Will dismantle every assumption in your research design.",
+    accent: "#DC2626",
+    sampleQ: "Why did you choose a sample size of 120? Justify your choice of SPSS over AMOS for this SEM.",
+  },
+  {
+    code: "EXAM-02",
+    name: "Dr. Okafor",
+    title: "The Literaturist",
+    personality: "Sharp. Expects you to have read everything. Will probe your theoretical gaps.",
+    accent: "#F59E0B",
+    sampleQ: "Which theorist grounds your conceptual framework? How current is your literature review?",
+  },
+  {
+    code: "EXAM-03",
+    name: "Dr. Bello",
+    title: "The Chair",
+    personality: "Measured. Tests overall coherence. Ensures your conclusions match your data.",
+    accent: "#0066FF",
+    sampleQ: "Do your findings directly answer your research questions? What are the policy implications?",
+  },
+];
+
+function DefensePreviewSection({ onGetStarted }) {
+  const titleRef = useRef(null);
+  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
+
+  return (
+    <section
+      style={{
+        background: "#060E18",
+        padding: "100px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.45 }}
+            style={{
+              display: "inline-block",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.65rem",
+              fontWeight: 500,
+              letterSpacing: "0.14em",
+              color: "#DC2626",
+              background: "rgba(220, 38, 38, 0.1)",
+              border: "1px solid rgba(220, 38, 38, 0.2)",
+              borderRadius: 999,
+              padding: "5px 14px",
+              marginBottom: 18,
+            }}
+          >
+            STEP 06 · DEFENSE SIMULATOR
+          </motion.span>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.55, delay: 0.1 }}
+            style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              color: "#ffffff",
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+              marginBottom: 16,
+            }}
+          >
+            Three examiners. No mercy.<br />Practice until you're ready.
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "1rem",
+              color: "rgba(255,255,255,0.5)",
+              maxWidth: 520,
+              margin: "0 auto",
+              lineHeight: 1.65,
+            }}
+          >
+            Each AI examiner has a distinct persona, grilling style, and area of focus.
+            You don't pass until you can handle all three.
+          </motion.p>
+        </div>
+
+        {/* Examiner cards */}
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate={titleInView ? "visible" : "hidden"}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+            marginBottom: 48,
+          }}
+        >
+          {EXAMINERS.map(({ code, name, title, personality, accent, sampleQ }) => (
+            <motion.div
+              key={code}
+              variants={cardReveal}
+              style={{
+                background: "rgba(6, 14, 24, 0.9)",
+                border: `1px solid ${accent}25`,
+                borderTop: `3px solid ${accent}`,
+                borderRadius: 16,
+                padding: "28px",
+                position: "relative",
+                overflow: "hidden",
+              }}
+              whileHover={{ y: -3, boxShadow: `0 12px 32px rgba(0,0,0,0.45), 0 0 24px ${accent}15` }}
+            >
+              {/* Watermark code */}
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  bottom: -10,
+                  right: -4,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 72,
+                  fontWeight: 700,
+                  color: `${accent}07`,
+                  lineHeight: 1,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+              >
+                {code}
+              </span>
+
+              {/* Code badge */}
+              <span
+                style={{
+                  display: "inline-block",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.6rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.1em",
+                  color: accent,
+                  background: `${accent}15`,
+                  border: `1px solid ${accent}30`,
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  marginBottom: 16,
+                }}
+              >
+                {code}
+              </span>
+
+              <h3
+                style={{
+                  fontFamily: "'DM Serif Display', serif",
+                  fontSize: "1.3rem",
+                  fontWeight: 400,
+                  color: "#ffffff",
+                  marginBottom: 4,
+                  lineHeight: 1.2,
+                }}
+              >
+                {name}
+              </h3>
+
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.7rem",
+                  fontWeight: 500,
+                  color: accent,
+                  letterSpacing: "0.06em",
+                  marginBottom: 14,
+                }}
+              >
+                {title}
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "0.8rem",
+                  lineHeight: 1.6,
+                  color: "rgba(255,255,255,0.5)",
+                  margin: "0 0 20px",
+                }}
+              >
+                {personality}
+              </p>
+
+              {/* Sample question */}
+              <div
+                style={{
+                  background: `${accent}0c`,
+                  border: `1px solid ${accent}20`,
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "0.58rem",
+                    fontWeight: 500,
+                    letterSpacing: "0.1em",
+                    color: "rgba(255,255,255,0.3)",
+                    marginBottom: 6,
+                  }}
+                >
+                  SAMPLE QUESTION
+                </div>
+                <p
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: "0.8rem",
+                    lineHeight: 1.55,
+                    color: "rgba(255,255,255,0.65)",
+                    margin: 0,
+                    fontStyle: "italic",
+                  }}
+                >
+                  "{sampleQ}"
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Enter defense CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={titleInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: 0.45 }}
+          style={{ textAlign: "center" }}
+        >
+          <motion.button
+            onClick={onGetStarted}
+            whileHover={{ scale: 1.03, boxShadow: "0 0 32px rgba(220, 38, 38, 0.4)" }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              color: "#ffffff",
+              background: "transparent",
+              border: "1.5px solid rgba(220, 38, 38, 0.6)",
+              borderRadius: 12,
+              padding: "13px 32px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "border-color 0.2s ease",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <circle cx="7" cy="7" r="5.5" stroke="#DC2626" strokeWidth="1.5" />
+              <circle cx="7" cy="7" r="2" fill="#DC2626" />
+            </svg>
+            Enter the Defense Room
+          </motion.button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Pricing Table ────────────────────────────────────────────────────────────
+
+const PLANS = [
+  {
+    name: "Free",
+    price: "₦0",
+    period: "forever",
+    desc: "Get your project started. Core AI guidance, no commitment.",
+    accent: "#0066FF",
+    features: [
+      { text: "Topic Validator", included: true },
+      { text: "Chapter Architect", included: true },
+      { text: "Methodology Advisor", included: true },
+      { text: "Supervisor Email Draft", included: true },
+      { text: "Instrument Builder", included: false },
+      { text: "Writing Planner", included: false },
+      { text: "Defense Simulator", included: false },
+    ],
+    cta: "Get Started Free",
+    ctaVariant: "ghost",
+    highlight: false,
+    badge: null,
+  },
+  {
+    name: "Student",
+    price: "₦2,000",
+    period: "per month",
+    desc: "Everything you need to write a defensible, submission-ready project.",
+    accent: "#0066FF",
+    features: [
+      { text: "Everything in Free", included: true },
+      { text: "Instrument Builder", included: true },
+      { text: "Writing Planner", included: true },
+      { text: "Week-by-week schedule", included: true },
+      { text: "Progress tracking", included: true },
+      { text: "Defense Simulator", included: false },
+      { text: "Unlimited defense runs", included: false },
+    ],
+    cta: "Start Student Plan",
+    ctaVariant: "primary",
+    highlight: true,
+    badge: "MOST POPULAR",
+  },
+  {
+    name: "Defense",
+    price: "₦3,500",
+    period: "per month",
+    desc: "The full panel experience. Walk into your real defense with zero surprises.",
+    accent: "#DC2626",
+    features: [
+      { text: "Everything in Student", included: true },
+      { text: "Three-Examiner AI Panel", included: true },
+      { text: "Unlimited defense runs", included: true },
+      { text: "Confidence score report", included: true },
+      { text: "Examiner feedback export", included: true },
+      { text: "Priority AI processing", included: true },
+      { text: "Defense mode (dark theme)", included: true },
+    ],
+    cta: "Unlock Defense Mode",
+    ctaVariant: "defense",
+    highlight: false,
+    badge: null,
+  },
+];
+
+function PricingSection({ onGetStarted }) {
+  const titleRef = useRef(null);
+  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
+
+  return (
+    <section
+      id="pricing"
+      style={{
+        background: "#0D1B2A",
+        padding: "100px 24px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.45 }}
+            style={{
+              display: "inline-block",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.65rem",
+              fontWeight: 500,
+              letterSpacing: "0.14em",
+              color: "#0066FF",
+              background: "rgba(0, 102, 255, 0.1)",
+              border: "1px solid rgba(0, 102, 255, 0.2)",
+              borderRadius: 999,
+              padding: "5px 14px",
+              marginBottom: 18,
+            }}
+          >
+            PLANS
+          </motion.span>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.55, delay: 0.1 }}
+            style={{
+              fontFamily: "'DM Serif Display', serif",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              color: "#ffffff",
+              lineHeight: 1.15,
+              letterSpacing: "-0.01em",
+              marginBottom: 16,
+            }}
+          >
+            Priced for Nigerian students.<br />Not Silicon Valley startups.
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={titleInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "1rem",
+              color: "rgba(255,255,255,0.5)",
+              maxWidth: 480,
+              margin: "0 auto",
+              lineHeight: 1.65,
+            }}
+          >
+            Start free and upgrade only when you need the full arsenal.
+          </motion.p>
+        </div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate={titleInView ? "visible" : "hidden"}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 20,
+            alignItems: "start",
+          }}
+        >
+          {PLANS.map(({ name, price, period, desc, accent, features, cta, ctaVariant, highlight, badge }) => (
+            <motion.div
+              key={name}
+              variants={cardReveal}
+              style={{
+                position: "relative",
+                background: highlight
+                  ? "linear-gradient(145deg, #0F2235 0%, #091D31 100%)"
+                  : "rgba(15, 34, 53, 0.6)",
+                border: highlight
+                  ? `1px solid rgba(0, 102, 255, 0.35)`
+                  : `1px solid rgba(255,255,255,0.07)`,
+                borderTop: `3px solid ${accent}`,
+                borderRadius: 16,
+                padding: "32px 28px",
+                boxShadow: highlight ? "0 0 40px rgba(0, 102, 255, 0.12)" : "none",
+              }}
+              whileHover={{
+                y: -4,
+                boxShadow: highlight
+                  ? "0 16px 40px rgba(0,0,0,0.4), 0 0 40px rgba(0, 102, 255, 0.2)"
+                  : "0 12px 32px rgba(0,0,0,0.35)",
+              }}
+            >
+              {/* Popular badge */}
+              {badge && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -12,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    color: "#ffffff",
+                    background: accent,
+                    borderRadius: 999,
+                    padding: "4px 14px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {badge}
+                </div>
+              )}
+
+              {/* Plan name */}
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: "0.65rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.12em",
+                  color: accent,
+                  marginBottom: 12,
+                }}
+              >
+                {name.toUpperCase()}
+              </div>
+
+              {/* Price */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "2.25rem",
+                    fontWeight: 700,
+                    color: "#ffffff",
+                    lineHeight: 1,
+                  }}
+                >
+                  {price}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: "0.8rem",
+                    color: "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  /{period}
+                </span>
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "0.825rem",
+                  lineHeight: 1.6,
+                  color: "rgba(255,255,255,0.5)",
+                  margin: "0 0 24px",
+                }}
+              >
+                {desc}
+              </p>
+
+              {/* Divider */}
+              <div
+                style={{
+                  height: 1,
+                  background: "rgba(255,255,255,0.06)",
+                  marginBottom: 20,
+                }}
+              />
+
+              {/* Feature list */}
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: "0 0 28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                {features.map(({ text, included }) => (
+                  <li
+                    key={text}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "0.825rem",
+                      color: included ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.22)",
+                    }}
+                  >
+                    {included ? (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                        <circle cx="7" cy="7" r="6.5" fill={`${accent}20`} stroke={`${accent}40`} />
+                        <path d="M4.5 7l1.8 1.8 3.2-3.6" stroke={accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                        <circle cx="7" cy="7" r="6.5" stroke="rgba(255,255,255,0.1)" />
+                        <path d="M5 5l4 4M9 5l-4 4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" strokeLinecap="round" />
+                      </svg>
+                    )}
+                    {text}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA Button */}
+              <motion.button
+                onClick={onGetStarted}
+                whileHover={
+                  ctaVariant === "primary"
+                    ? { boxShadow: "0 0 24px rgba(22, 163, 74, 0.45)" }
+                    : ctaVariant === "defense"
+                    ? { boxShadow: "0 0 20px rgba(220, 38, 38, 0.35)", borderColor: "rgba(220,38,38,0.8)" }
+                    : { borderColor: "rgba(255,255,255,0.4)" }
+                }
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: "100%",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: ctaVariant === "primary" ? "#ffffff" : ctaVariant === "defense" ? "#DC2626" : "rgba(255,255,255,0.65)",
+                  background: ctaVariant === "primary" ? "#16A34A" : "transparent",
+                  border:
+                    ctaVariant === "primary"
+                      ? "none"
+                      : ctaVariant === "defense"
+                      ? "1.5px solid rgba(220, 38, 38, 0.5)"
+                      : "1.5px solid rgba(255,255,255,0.18)",
+                  borderRadius: 12,
+                  padding: "13px 24px",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease",
+                }}
+              >
+                {cta}
+              </motion.button>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA({ onGetStarted }) {
@@ -1117,6 +1922,9 @@ export default function LandingPage() {
       <FeatureStrip />
       <HowItWorks />
       <WhyFYPro />
+      <TestimonialsSection />
+      <DefensePreviewSection onGetStarted={handleGetStarted} />
+      <PricingSection onGetStarted={handleGetStarted} />
       <FinalCTA onGetStarted={handleGetStarted} />
       <Footer />
     </div>

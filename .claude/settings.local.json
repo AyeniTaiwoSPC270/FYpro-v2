@@ -9,7 +9,14 @@
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"elegant modern serif mono precision technical dark UI\" --domain typography -n 5)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"multi-step wizard onboarding flow progress stepper\" --domain ux -n 4)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"dark premium SaaS dashboard navy deep\" --domain color -n 4)",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"animation loading states skeleton\" --domain ux -n 3)"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"animation loading states skeleton\" --domain ux -n 3)",
+      "mcp__magic__21st_magic_component_inspiration",
+      "mcp__magic__21st_magic_component_builder",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }
