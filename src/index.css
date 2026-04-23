@@ -17,10 +17,18 @@ html {
 }
 
 body {
-  background: #0D1B2A;
+  background: #060E18;
   color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {

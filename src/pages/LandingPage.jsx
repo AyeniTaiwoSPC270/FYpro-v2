@@ -1,1932 +1,1070 @@
-"use client";
+import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useSpring,
+  useInView,
+  useMotionValue,
+  animate as fmAnimate,
+  useAnimate,
+} from 'framer-motion'
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+// ─── Animation Variants ───────────────────────────────────────────────────────
 
-// ─── Animation Variants ──────────────────────────────────────────────────────
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (delay = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay, ease: [0.25, 0.4, 0.25, 1] },
-  }),
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
-};
-
-const cardReveal = {
-  hidden: { opacity: 0, y: 24 },
+const examinerItem = {
+  hidden: { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   },
-};
-
-// ─── Animated Dot Canvas Background ─────────────────────────────────────────
-
-function DotCanvas() {
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-  const dotsRef = useRef([]);
-  const sizeRef = useRef({ w: 0, h: 0 });
-
-  const DOT_SPACING = 28;
-  const DOT_RADIUS = 1.2;
-  const OPACITY_MIN = 0.08;
-  const OPACITY_MAX = 0.28;
-
-  const buildDots = useCallback(() => {
-    const { w, h } = sizeRef.current;
-    if (!w || !h) return;
-    const dots = [];
-    for (let col = 0; col < Math.ceil(w / DOT_SPACING); col++) {
-      for (let row = 0; row < Math.ceil(h / DOT_SPACING); row++) {
-        const base = Math.random() * (OPACITY_MAX - OPACITY_MIN) + OPACITY_MIN;
-        dots.push({
-          x: col * DOT_SPACING + DOT_SPACING / 2,
-          y: row * DOT_SPACING + DOT_SPACING / 2,
-          opacity: base,
-          speed: (Math.random() * 0.002 + 0.0005) * (Math.random() < 0.5 ? 1 : -1),
-        });
-      }
-    }
-    dotsRef.current = dots;
-  }, []);
-
-  const resize = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const { clientWidth: w, clientHeight: h } = canvas.parentElement ?? canvas;
-    canvas.width = w;
-    canvas.height = h;
-    sizeRef.current = { w, h };
-    buildDots();
-  }, [buildDots]);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    const { w, h } = sizeRef.current;
-    if (!ctx || !w) { rafRef.current = requestAnimationFrame(draw); return; }
-
-    ctx.clearRect(0, 0, w, h);
-    dotsRef.current.forEach((d) => {
-      d.opacity += d.speed;
-      if (d.opacity >= OPACITY_MAX || d.opacity <= OPACITY_MIN) {
-        d.speed = -d.speed;
-        d.opacity = Math.max(OPACITY_MIN, Math.min(d.opacity, OPACITY_MAX));
-      }
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(0, 102, 255, ${d.opacity.toFixed(3)})`;
-      ctx.arc(d.x, d.y, DOT_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    rafRef.current = requestAnimationFrame(draw);
-  }, []);
-
-  useEffect(() => {
-    resize();
-    window.addEventListener("resize", resize);
-    rafRef.current = requestAnimationFrame(draw);
-    return () => {
-      window.removeEventListener("resize", resize);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [resize, draw]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
-  );
 }
 
-// ─── Navbar ──────────────────────────────────────────────────────────────────
+// ─── Hooks ────────────────────────────────────────────────────────────────────
 
-const NAV_LINKS = [
-  { label: "How it Works", href: "#how-it-works" },
-  { label: "Features", href: "#features" },
-  { label: "For Students", href: "#why-fypro" },
-  { label: "Pricing", href: "#pricing" },
-];
-
-function Navbar({ onGetStarted }) {
-  const [scrolled, setScrolled] = useState(false);
-
+function useCountUp(target, inView, duration = 1500) {
+  const [count, setCount] = useState(0)
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
+    if (!inView) return
+    const start = performance.now()
+    let rafId
+    const tick = (now) => {
+      const p = Math.min((now - start) / duration, 1)
+      setCount(Math.round((1 - Math.pow(1 - p, 3)) * target))
+      if (p < 1) rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(rafId)
+      setCount(0)
+    }
+  }, [inView, target, duration])
+  return count
+}
+
+function useTypewriter(text, startDelay = 1080, speed = 26) {
+  const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    let outerTimeout, interval
+    outerTimeout = setTimeout(() => {
+      let i = 0
+      interval = setInterval(() => {
+        i++
+        setDisplayed(text.slice(0, i))
+        if (i >= text.length) {
+          clearInterval(interval)
+          setTimeout(() => setDone(true), 1000)
+        }
+      }, speed)
+    }, startDelay)
+    return () => { clearTimeout(outerTimeout); clearInterval(interval) }
+  }, [text, startDelay, speed])
+  return { displayed, done }
+}
+
+function useNavActive() {
+  const [active, setActive] = useState(null)
+  useEffect(() => {
+    const ids = ['how-it-works', 'features', 'pricing']
+    const sections = ids.map(id => document.getElementById(id)).filter(Boolean)
+    const visible = {}
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { visible[e.target.id] = e.isIntersecting })
+      setActive(ids.find(id => visible[id]) || null)
+    }, { threshold: 0.2, rootMargin: '-64px 0px -35% 0px' })
+    sections.forEach(s => obs.observe(s))
+    return () => obs.disconnect()
+  }, [])
+  return active
+}
+
+// ─── SVG: Shield ──────────────────────────────────────────────────────────────
+
+const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
+
+function ShieldIcon({ size = 20, color = '#0066FF', ...rest }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width={size} height={size} fill={color} aria-hidden="true" {...rest}>
+      <path d={SHIELD_D} />
+    </svg>
+  )
+}
+
+// ─── Scroll Progress Bar ──────────────────────────────────────────────────────
+
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
+  return (
+    <motion.div
+      style={{ scaleX, transformOrigin: 'left' }}
+      className="fixed top-0 left-0 right-0 h-[3px] bg-blue-brand z-[300] pointer-events-none"
+      aria-hidden="true"
+      aria-role="progressbar"
+    />
+  )
+}
+
+// ─── Back to Top ──────────────────────────────────────────────────────────────
+
+function BackToTop() {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const h = () => setVisible(window.scrollY > 400)
+    window.addEventListener('scroll', h, { passive: true })
+    return () => window.removeEventListener('scroll', h)
+  }, [])
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.button
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 14 }}
+          whileHover={{ y: -3, boxShadow: '0 6px 28px rgba(0,102,255,0.65)' }}
+          transition={{ duration: 0.3 }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          className="fixed bottom-8 right-8 z-[250] w-11 h-11 rounded-full bg-blue-brand border-0 cursor-pointer flex items-center justify-center"
+          style={{ boxShadow: '0 4px 16px rgba(0,102,255,0.45)' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+        </motion.button>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ─── Ripple Button/Link ───────────────────────────────────────────────────────
+
+function useRipple() {
+  const [ripples, setRipples] = useState([])
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const sz = Math.max(rect.width, rect.height) * 2
+    const x = e.clientX - rect.left - sz / 2
+    const y = e.clientY - rect.top - sz / 2
+    const id = Date.now()
+    setRipples(prev => [...prev, { id, x, y, sz }])
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 420)
+  }
+  const rippleEls = ripples.map(({ id, x, y, sz }) => (
+    <motion.span
+      key={id}
+      initial={{ scale: 0, opacity: 0.26 }}
+      animate={{ scale: 3, opacity: 0 }}
+      transition={{ duration: 0.4, ease: 'linear' }}
+      className="absolute rounded-full bg-white/[0.26] pointer-events-none"
+      style={{ width: sz, height: sz, left: x, top: y }}
+    />
+  ))
+  return { handleClick, rippleEls }
+}
+
+function BtnLink({ href, className, children }) {
+  const { handleClick, rippleEls } = useRipple()
+  return (
+    <a href={href} className={`relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all no-underline ${className}`} onClick={handleClick}>
+      {children}
+      {rippleEls}
+    </a>
+  )
+}
+
+function BtnButton({ className, children, onClick }) {
+  const { handleClick, rippleEls } = useRipple()
+  return (
+    <button className={`relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all border-0 ${className}`} onClick={(e) => { handleClick(e); onClick?.(e) }}>
+      {children}
+      {rippleEls}
+    </button>
+  )
+}
+
+// ─── Reveal (scroll-reveal wrapper) ──────────────────────────────────────────
+
+function Reveal({ children, delay = 0, as = 'div', className, style }) {
+  const Tag = motion[as] || motion.div
+  return (
+    <Tag
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </Tag>
+  )
+}
+
+// ─── Section Divider ─────────────────────────────────────────────────────────
+
+function SectionDivider() {
+  return (
+    <div className="h-px bg-white/[0.04] relative overflow-hidden">
+      <motion.div
+        className="absolute inset-y-0 w-1/2"
+        style={{ background: 'linear-gradient(90deg, transparent 0%, #0066FF 50%, transparent 100%)' }}
+        animate={{ x: ['-200%', '200%'] }}
+        transition={{ duration: 2.8, ease: 'easeInOut', repeat: Infinity }}
+      />
+    </div>
+  )
+}
+
+// ─── Magnetic Feature Card ────────────────────────────────────────────────────
+
+function MagneticCard({ children, className, style, hoverShadow, dataN }) {
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  const onMove = useCallback((e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    x.set(((e.clientX - r.left - r.width / 2) / (r.width / 2)) * 8)
+    y.set(((e.clientY - r.top - r.height / 2) / (r.height / 2)) * 8)
+  }, [x, y])
+
+  const onLeave = useCallback(() => {
+    fmAnimate(x, 0, { duration: 0.45, ease: [0.22, 1, 0.36, 1] })
+    fmAnimate(y, 0, { duration: 0.45, ease: [0.22, 1, 0.36, 1] })
+  }, [x, y])
 
   return (
-    <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        transition: "background 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease",
-        background: scrolled ? "rgba(13, 27, 42, 0.9)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
-      }}
+    <motion.div
+      className={className}
+      style={{ x, y, transformStyle: 'preserve-3d', ...style }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      whileHover={{ boxShadow: hoverShadow, transition: { duration: 0.3 } }}
+      data-n={dataN}
     >
-      <div
+      {children}
+    </motion.div>
+  )
+}
+
+// ─── Testimonials Ticker ──────────────────────────────────────────────────────
+
+function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
+  return (
+    <motion.div
+      className="flex flex-col gap-[18px] p-7 rounded-2xl border border-white/[0.07] transition-colors duration-200"
+      style={{
+        background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
+        ...(fixed ? { width: 380, flexShrink: 0 } : {}),
+      }}
+      whileHover={fixed ? {} : { borderColor: 'rgba(0,102,255,0.22)', y: -3 }}
+    >
+      <div className="text-[#F59E0B] text-[0.75rem] tracking-[2px]">★★★★★</div>
+      <p className="text-[0.875rem] text-white/[0.78] leading-[1.75] italic flex-1 relative pt-2.5">
+        <span className="absolute top-0 left-[-4px] font-serif text-[3.5rem] text-blue-brand leading-none opacity-70 pointer-events-none select-none">&ldquo;</span>
+        {quote}
+      </p>
+      <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
+        <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-mono text-[0.7rem] font-bold text-white flex-shrink-0" style={avatarStyle}>{initials}</div>
+        <div>
+          <div className="text-[0.875rem] font-semibold text-white">{name}</div>
+          <div className="text-[0.75rem] text-white/65">{dept}</div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+const TESTI_DATA = [
+  {
+    quote: "My supervisor had not read my chapter for six weeks. FYPro validated my entire methodology section and flagged three gaps before he eventually did. I walked into that meeting actually prepared.",
+    name: "Adaeze O.",
+    dept: "Mass Communication · UNILAG · 400 Level",
+    initials: "AO",
+    avatarStyle: { background: 'linear-gradient(135deg, #0066FF, #3B82F6)' },
+  },
+  {
+    quote: "The defense simulator asked me about the generalisability of my sample — a question I had genuinely never considered. I would have frozen in front of the panel. Instead, I had an answer ready.",
+    name: "Tunde F.",
+    dept: "Business Administration · LASU · 400 Level",
+    initials: "TF",
+    avatarStyle: { background: 'linear-gradient(135deg, #16A34A, #4ADE80)' },
+  },
+  {
+    quote: "I spent three months on a topic that wasn't even researchable at my level. FYPro would have told me in three minutes. I wish this existed when I started, not when I was already in a panic.",
+    name: "Chisom M.",
+    dept: "Computer Science · FUTA · 400 Level",
+    initials: "CM",
+    avatarStyle: { background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' },
+  },
+]
+
+function TestimonialsTickerSection() {
+  const [scope, tickerAnimate] = useAnimate()
+  const animRef = useRef(null)
+
+  useEffect(() => {
+    const anim = tickerAnimate(scope.current, { x: ['0%', '-50%'] }, {
+      duration: 34,
+      ease: 'linear',
+      repeat: Infinity,
+      repeatType: 'loop',
+    })
+    animRef.current = anim
+    return () => anim?.stop?.()
+  }, [tickerAnimate, scope])
+
+  return (
+    <div className="overflow-hidden relative"
+      onMouseEnter={() => animRef.current?.pause()}
+      onMouseLeave={() => animRef.current?.play()}
+    >
+      <div className="absolute left-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to right, #060E18, transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to left, #060E18, transparent)' }} />
+      <div ref={scope} className="flex gap-[18px]" style={{ width: 'max-content' }}>
+        {[...TESTI_DATA, ...TESTI_DATA].map((t, i) => <TestiCard key={i} {...t} fixed />)}
+      </div>
+    </div>
+  )
+}
+
+// ─── Stat Item (count-up) ─────────────────────────────────────────────────────
+
+function StatItem({ renderNumber, target, label, delay }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: false, amount: 0.5 })
+  const count = useCountUp(target, inView)
+  return (
+    <Reveal delay={delay} className="text-center">
+      <div ref={ref} className="font-serif text-[2.6rem] text-white leading-none mb-1.5">
+        {renderNumber(count)}
+      </div>
+      <div className="text-[0.8rem] text-white/65 font-medium">{label}</div>
+    </Reveal>
+  )
+}
+
+// ─── NAVBAR ───────────────────────────────────────────────────────────────────
+
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const activeSection = useNavActive()
+
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 30)
+    window.addEventListener('scroll', h, { passive: true })
+    return () => window.removeEventListener('scroll', h)
+  }, [])
+
+  const scrollTo = (id) => (e) => {
+    e.preventDefault()
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setMobileOpen(false)
+  }
+
+  const navLinks = [
+    { label: 'How It Works', id: 'how-it-works', href: '#how-it-works' },
+    { label: 'Features', id: 'features', href: '#features' },
+    { label: 'Pricing', id: 'pricing', href: '#pricing' },
+  ]
+
+  return (
+    <>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-12 border-b transition-all duration-200 ${
+          scrolled
+            ? 'border-[rgba(0,102,255,0.18)]'
+            : 'border-white/[0.06]'
+        }`}
         style={{
-          maxWidth: 1120,
-          margin: "0 auto",
-          padding: "0 24px",
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          background: scrolled ? 'rgba(6,14,24,0.94)' : 'rgba(6,14,24,0.82)',
+          backdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
+          WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
+          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.4)' : 'none',
         }}
       >
-        {/* Logo */}
-        <a
-          href="#"
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: "1.5rem",
-            color: "#ffffff",
-            textDecoration: "none",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          FYPro
-        </a>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        </div>
 
-        {/* Nav links — hidden on mobile */}
-        <div className="hidden md:flex" style={{ gap: 32, alignItems: "center" }}>
-          {NAV_LINKS.map(({ label, href }) => (
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map(({ label, id, href }) => (
             <a
-              key={label}
+              key={id}
               href={href}
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.65)",
-                textDecoration: "none",
-                transition: "color 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.target.style.color = "#ffffff")}
-              onMouseLeave={(e) => (e.target.style.color = "rgba(255,255,255,0.65)")}
+              onClick={scrollTo(id)}
+              className={`text-[0.875rem] font-medium transition-colors duration-150 relative no-underline after:content-[''] after:absolute after:bottom-[-3px] after:left-0 after:right-0 after:h-px after:bg-blue-brand after:transition-transform after:duration-150 after:origin-left ${
+                activeSection === id
+                  ? 'text-white after:scale-x-100'
+                  : 'text-white/65 hover:text-white after:scale-x-0 hover:after:scale-x-100'
+              }`}
             >
               {label}
             </a>
           ))}
         </div>
 
-        {/* CTA */}
-        <motion.button
-          onClick={onGetStarted}
-          whileHover={{ boxShadow: "0 0 20px rgba(22, 163, 74, 0.45)" }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            color: "#ffffff",
-            background: "#16A34A",
-            border: "none",
-            borderRadius: 10,
-            padding: "10px 22px",
-            cursor: "pointer",
-            transition: "background 0.2s ease",
-          }}
+        <div className="hidden md:flex items-center gap-2.5">
+          <BtnLink href="/login" className="px-5 py-2 text-[0.8rem] bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">Login</BtnLink>
+          <BtnLink href="/login" className="px-5 py-2 text-[0.8rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Try Free</BtnLink>
+        </div>
+
+        <button
+          className="md:hidden flex flex-col justify-center items-center gap-[5px] w-10 h-10 bg-transparent border border-white/[0.18] rounded-lg cursor-pointer hover:border-white/40 transition-colors"
+          onClick={() => setMobileOpen(o => !o)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
         >
-          Get Started
-        </motion.button>
-      </div>
-    </motion.nav>
-  );
-}
-
-// ─── Hero Section ─────────────────────────────────────────────────────────────
-
-function HeroSection({ onGetStarted }) {
-  const words = "The Supervisor You Never Had.".split(" ");
-
-  return (
-    <section
-      style={{
-        position: "relative",
-        minHeight: "100vh",
-        background: "#0D1B2A",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-      }}
-    >
-      {/* Animated dot canvas */}
-      <DotCanvas />
-
-      {/* Radial vignette */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 80% 70% at 50% 50%, transparent 20%, #0D1B2A 90%)",
-          zIndex: 1,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Bottom fade */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 180,
-          background: "linear-gradient(to top, #0D1B2A, transparent)",
-          zIndex: 1,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Content */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          textAlign: "center",
-          maxWidth: 820,
-          margin: "0 auto",
-          padding: "80px 24px 48px",
-        }}
-      >
-        {/* Badge */}
-        <motion.div
-          custom={0}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          style={{ marginBottom: 28 }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.12em",
-              color: "rgba(0, 102, 255, 0.9)",
-              background: "rgba(0, 102, 255, 0.1)",
-              border: "1px solid rgba(0, 102, 255, 0.25)",
-              borderRadius: 999,
-              padding: "6px 16px",
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#0066FF",
-                display: "inline-block",
-              }}
-            />
-            AI-POWERED · BUILT FOR NIGERIAN UNIVERSITIES
-          </span>
-        </motion.div>
-
-        {/* Heading — word by word */}
-        <motion.h1
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: "clamp(2.75rem, 7vw, 5.5rem)",
-            lineHeight: 1.1,
-            color: "#ffffff",
-            marginBottom: 28,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {words.map((word, i) => (
+          {[0, 1, 2].map(i => (
             <motion.span
               key={i}
-              custom={0.35 + i * 0.09}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              style={{ display: "inline-block", marginRight: "0.25em" }}
-            >
-              {word}
-            </motion.span>
+              className="block w-4 h-0.5 bg-white/85 rounded-sm"
+              animate={
+                mobileOpen
+                  ? i === 0 ? { y: 7, rotate: 45 }
+                  : i === 1 ? { opacity: 0 }
+                  : { y: -7, rotate: -45 }
+                  : { y: 0, rotate: 0, opacity: 1 }
+              }
+              transition={{ duration: i === 1 ? 0.2 : 0.25 }}
+            />
           ))}
-        </motion.h1>
+        </button>
+      </nav>
 
-        {/* Subheading */}
-        <motion.p
-          custom={0.85}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "clamp(1rem, 2.2vw, 1.2rem)",
-            lineHeight: 1.7,
-            color: "rgba(255,255,255,0.62)",
-            maxWidth: 580,
-            margin: "0 auto 44px",
-          }}
-        >
-          FYPro guides Nigerian final year students from a rough topic idea to a
-          defensible project — and puts you in front of an AI panel before the
-          real defense. No supervisor required.
-        </motion.p>
-
-        {/* CTA */}
-        <motion.div
-          custom={1.1}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}
-        >
-          <motion.button
-            onClick={onGetStarted}
-            whileHover={{
-              scale: 1.03,
-              boxShadow: "0 0 32px rgba(22, 163, 74, 0.55)",
-            }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#ffffff",
-              background: "#16A34A",
-              border: "none",
-              borderRadius: 12,
-              padding: "15px 36px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-            }}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="md:hidden fixed top-[66px] left-0 right-0 z-[190] border-b border-white/[0.07] px-6 pt-5 pb-7 flex flex-col gap-5 pointer-events-auto"
+            style={{ background: 'rgba(6,14,24,0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+            aria-hidden={!mobileOpen}
           >
-            Get Started
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </motion.button>
+            <div className="flex flex-col gap-1">
+              {navLinks.map(({ label, id, href }) => (
+                <a key={id} href={href} onClick={scrollTo(id)} className="block py-3 px-2 text-base font-medium text-white/65 border-b border-white/[0.06] hover:text-white transition-colors no-underline">
+                  {label}
+                </a>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <BtnLink href="/login" className="w-full py-2.5 px-[22px] text-[0.875rem] bg-transparent text-white border border-white/[0.22] hover:border-white/45">Login</BtnLink>
+              <BtnLink href="/login" className="w-full py-2.5 px-[22px] text-[0.875rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)]">Start Free</BtnLink>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
 
-          <motion.a
-            href="#how-it-works"
-            whileHover={{ borderColor: "rgba(255,255,255,0.4)" }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "rgba(255,255,255,0.7)",
-              background: "transparent",
-              border: "1.5px solid rgba(255,255,255,0.18)",
-              borderRadius: 12,
-              padding: "15px 36px",
-              cursor: "pointer",
-              textDecoration: "none",
-              display: "inline-flex",
-              alignItems: "center",
-              transition: "border-color 0.2s ease, color 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-          >
-            See how it works
-          </motion.a>
-        </motion.div>
+// ─── HERO ─────────────────────────────────────────────────────────────────────
 
-        {/* Stats strip */}
-        <motion.div
-          custom={1.35}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          style={{
-            marginTop: 64,
-            display: "flex",
-            justifyContent: "center",
-            gap: 48,
-            flexWrap: "wrap",
-          }}
-        >
-          {[
-            { value: "6", label: "Guided Steps" },
-            { value: "3", label: "AI Examiners" },
-            { value: "100%", label: "Free to Use" },
-          ].map(({ value, label }) => (
-            <div key={label} style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "1.75rem",
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  lineHeight: 1,
-                }}
-              >
-                {value}
-              </div>
-              <div
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.75rem",
-                  color: "rgba(255,255,255,0.45)",
-                  marginTop: 6,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {label}
-              </div>
+function HeroMockup() {
+  const ref = useRef(null)
+  const inView = useInView(ref, { amount: 0.25 })
+
+  const steps = [
+    { label: 'Topic Validator', done: true },
+    { label: 'Chapter Architect', done: true },
+    { label: 'Methodology Advisor', done: true },
+    { label: 'Instrument Builder', done: true },
+    { label: 'Writing Planner', done: true },
+    { label: 'Defense Simulator', active: true },
+  ]
+
+  const examiners = [
+    {
+      av: 'TM', avCls: 'bg-[rgba(0,102,255,0.3)] border-[1.5px] border-[rgba(0,102,255,0.6)]',
+      name: 'The Methodologist', role: 'EXTERNAL EXAMINER',
+      q: '"Your research objectives claim to be exploratory yet your design is conclusive. Justify this contradiction before we go further."',
+      asking: true,
+    },
+    {
+      av: 'SE', avCls: 'bg-[rgba(245,158,11,0.2)] border-[1.5px] border-[rgba(245,158,11,0.5)]',
+      name: 'The Subject Expert', role: 'INTERNAL EXAMINER',
+      q: '"What makes your contribution original? Every paper you cited arrived at a similar conclusion. Where is the gap you are filling?"',
+      asking: false,
+    },
+    {
+      av: 'DA', avCls: 'bg-[rgba(22,163,74,0.2)] border-[1.5px] border-[rgba(22,163,74,0.5)]',
+      name: "The Devil's Advocate", role: 'SUPERVISOR · DEPT. REP',
+      q: '"If your supervisor had never seen this project before today, what is the one thing they would reject immediately?"',
+      asking: false,
+    },
+  ]
+
+  return (
+    <div className="relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
+      {/* Chrome */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-white/[0.03]">
+        <div className="flex gap-1.5">
+          {[0,1,2].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/[0.08] border border-white/[0.14]" />)}
+        </div>
+        <div className="flex-1 bg-white/5 rounded-lg py-[5px] px-3 font-mono text-[0.7rem] text-white/35 text-center">fypro.vercel.app — Step 6: Defense Simulator</div>
+      </div>
+
+      {/* Shell */}
+      <div className="grid min-h-[370px] grid-cols-1 md:grid-cols-[220px_1fr]">
+        {/* Sidebar */}
+        <div className="hidden md:block border-r border-white/5 py-5 bg-black/20">
+          <div className="flex items-center gap-2 px-5 pb-4 border-b border-white/5 mb-3">
+            <ShieldIcon size={20} />
+            <span className="font-serif text-[0.9rem] text-white"><span>FY</span><span style={{ color: '#0066FF' }}>Pro</span></span>
+          </div>
+          {steps.map(({ label, done, active }) => (
+            <div key={label} className={`flex items-center gap-2 px-5 py-[9px] text-[0.72rem] font-medium border-l-2 ${active ? 'text-white bg-[rgba(0,102,255,0.12)] border-blue-brand' : done ? 'text-[rgba(22,163,74,0.8)] border-transparent' : 'text-white/40 border-transparent'}`}>
+              <div className="w-[7px] h-[7px] rounded-full bg-current flex-shrink-0" />{label}
             </div>
           ))}
-        </motion.div>
-      </div>
+        </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.8 }}
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 2,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-          style={{
-            width: 24,
-            height: 38,
-            border: "1.5px solid rgba(255,255,255,0.2)",
-            borderRadius: 12,
-            display: "flex",
-            justifyContent: "center",
-            paddingTop: 6,
-          }}
-        >
-          <div
-            style={{
-              width: 4,
-              height: 8,
-              background: "rgba(255,255,255,0.4)",
-              borderRadius: 2,
-            }}
-          />
-        </motion.div>
-      </motion.div>
-    </section>
-  );
+        {/* Content */}
+        <div className="p-6 flex flex-col gap-3.5">
+          <div className="border-b border-white/5 pb-3.5">
+            <div className="font-mono text-[0.62rem] tracking-[0.12em] uppercase text-blue-brand mb-1">Step 6 of 6 — Defense Prep</div>
+            <div className="font-serif text-[1.1rem] text-white">Three-Examiner Panel Simulation</div>
+          </div>
+
+          {/* Examiners — staggered entrance */}
+          <motion.div
+            ref={ref}
+            className="grid gap-2.5"
+            style={{ gridTemplateColumns: 'repeat(3,1fr)' }}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}
+            initial="hidden"
+            animate={inView ? 'visible' : 'hidden'}
+          >
+            {examiners.map(({ av, avCls, name, role, q, asking }) => (
+              <motion.div
+                key={name}
+                variants={examinerItem}
+                className={`rounded-xl p-3.5 border ${asking ? 'border-[rgba(0,102,255,0.4)] bg-[rgba(0,102,255,0.07)]' : 'bg-white/[0.03] border-white/[0.07]'}`}
+              >
+                <motion.div
+                  className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.6rem] font-bold text-white mb-2 cursor-default ${avCls}`}
+                  whileHover={{ boxShadow: asking ? '0 0 14px rgba(0,102,255,0.75), 0 0 30px rgba(0,102,255,0.35)' : undefined }}
+                >{av}</motion.div>
+                <div className="text-[0.68rem] font-bold text-white mb-0.5">{name}</div>
+                <div className="font-mono text-[0.58rem] text-white/35 mb-2">{role}</div>
+                <div className="text-[0.66rem] text-white/65 leading-[1.5] text-left">{q}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Vulnerabilities */}
+          <div className="bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.22)] rounded-xl p-3 px-3.5">
+            <div className="font-mono text-[0.6rem] tracking-[0.1em] uppercase text-[rgba(248,113,113,0.9)] mb-2">PROJECT VULNERABILITIES DETECTED</div>
+            {[
+              '⚠ Sampling frame excludes postgraduate respondents — representativeness risk',
+              '⚠ Chapter 2 theoretical framework not linked to research objectives',
+              '⚠ No triangulation strategy declared for mixed-methods design',
+            ].map((v, i) => (
+              <div key={i} className={`text-[0.68rem] text-white/[0.62] leading-[1.6] py-[3px] ${i > 0 ? 'border-t border-[rgba(220,38,38,0.1)]' : ''}`}>{v}</div>
+            ))}
+          </div>
+
+          {/* Chips */}
+          <div className="flex gap-2 flex-wrap">
+            <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(22,163,74,0.12)] border border-[rgba(22,163,74,0.3)] text-[#4ADE80]">Readiness Score: 84 / 100</div>
+            <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(0,102,255,0.12)] border border-[rgba(0,102,255,0.3)] text-[#60A5FA]">3 questions remaining</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-// ─── How It Works — 6 Steps ───────────────────────────────────────────────────
+function HeroHeadline() {
+  const words = ['The', 'Supervisor', 'Most', 'Final', 'Year', 'Students', 'Never', 'Had']
+  const italic = new Set(['Never', 'Had'])
+  return (
+    <h1 className="relative z-[1] font-serif font-normal leading-[1.1] text-white max-w-[820px] mb-[22px]" style={{ fontSize: 'clamp(2.4rem,6vw,4.4rem)' }}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.38, ease: 'easeOut', delay: i * 0.08 }}
+          className="inline-block mr-[0.25em]"
+        >
+          {italic.has(word) ? <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>{word}</em> : word}
+        </motion.span>
+      ))}
+    </h1>
+  )
+}
+
+function HeroSub() {
+  const text = "FYPro guides you from a rough topic to a defensible project — then puts you in front of three examiners before your real panel does."
+  const { displayed, done } = useTypewriter(text, 1080, 26)
+  return (
+    <motion.p
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.16, duration: 0.65 }}
+      className="relative z-[1] text-[1.05rem] text-white/65 max-w-[540px] leading-[1.75] mb-[38px]"
+    >
+      {displayed}
+      {!done && (
+        <motion.span
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.55, repeat: Infinity, repeatType: 'reverse' }}
+          className="inline-block w-[2px] h-[0.9em] bg-white/65 ml-px align-text-bottom"
+        />
+      )}
+    </motion.p>
+  )
+}
+
+function Hero() {
+  const heroRef = useRef(null)
+  const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
+
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect()
+      setSpotPos({ x: e.clientX - r.left, y: e.clientY - r.top })
+    }
+    const onLeave = () => setSpotPos({ x: '50%', y: '42%' })
+    el.addEventListener('mousemove', onMove, { passive: true })
+    el.addEventListener('mouseleave', onLeave)
+    return () => { el.removeEventListener('mousemove', onMove); el.removeEventListener('mouseleave', onLeave) }
+  }, [])
+
+  return (
+    <motion.section
+      ref={heroRef}
+      initial={{ opacity: 0 }}
+      animate={{
+        opacity: 1,
+        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+      }}
+      transition={{
+        opacity: { duration: 0.6 },
+        backgroundPosition: { duration: 8, ease: 'easeInOut', repeat: Infinity },
+      }}
+      className="min-h-screen flex flex-col items-center text-center relative overflow-hidden"
+      style={{
+        padding: '140px 24px 80px',
+        background: 'linear-gradient(135deg, #060E18 0%, #091623 28%, #0D1B2A 54%, #07111E 80%, #060E18 100%)',
+        backgroundSize: '400% 400%',
+      }}
+    >
+      {/* Dot grid + blue radial */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 10%, rgba(0,102,255,0.18) 0%, transparent 65%), radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
+        backgroundSize: '100% 100%, 28px 28px',
+      }} />
+      {/* Bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #060E18)' }} />
+      {/* Cursor spotlight */}
+      <div className="absolute pointer-events-none w-[700px] h-[700px] rounded-full z-0 will-change-[left,top]"
+        style={{ left: spotPos.x, top: spotPos.y, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(0,102,255,0.07) 0%, transparent 65%)', transition: 'left 0.1s ease, top 0.1s ease' }} />
+
+      {/* Eyebrow */}
+      <motion.div
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative z-[1] inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-[0.68rem] font-medium text-[#60A5FA] tracking-[0.1em] uppercase mb-7"
+        style={{ background: 'rgba(0,102,255,0.1)', border: '1px solid rgba(0,102,255,0.3)' }}
+      >
+        <motion.span
+          animate={{ opacity: [1, 0.3, 1], boxShadow: ['0 0 0 0 rgba(96,165,250,0)', '0 0 0 4px rgba(96,165,250,0.35), 0 0 12px rgba(96,165,250,0.4)', '0 0 0 0 rgba(96,165,250,0)'] }}
+          transition={{ duration: 2.4, ease: 'easeInOut', repeat: Infinity }}
+          className="w-1.5 h-1.5 rounded-full bg-[#60A5FA] flex-shrink-0"
+        />
+        Built for Nigerian Final Year Students
+      </motion.div>
+
+      <HeroHeadline />
+      <HeroSub />
+
+      {/* Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.24, duration: 0.65 }}
+        className="relative z-[1] flex gap-3 items-center justify-center flex-wrap mb-[72px]"
+      >
+        <BtnLink href="/login" className="px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
+        <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
+          See How It Works
+        </BtnLink>
+      </motion.div>
+
+      {/* App Mockup */}
+      <motion.div
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.34, duration: 0.7 }}
+        className="relative z-[1] w-full max-w-[880px]"
+      >
+        <div className="absolute pointer-events-none blur-[20px]" style={{ top: '30%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
+        <HeroMockup />
+      </motion.div>
+    </motion.section>
+  )
+}
+
+// ─── STATS BAR ────────────────────────────────────────────────────────────────
+
+function StatsBar() {
+  const stats = [
+    { target: 500, renderNumber: (n) => <>{n}<em className="not-italic text-blue-brand">K+</em></>, label: 'Final year students in Nigeria', delay: 0 },
+    { target: 6, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'Structured research steps', delay: 0.1 },
+    { target: 3, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'AI examiners on your panel', delay: 0.2 },
+    { target: 1, renderNumber: (n) => <>₦<em className="not-italic text-blue-brand">{n}B+</em></>, label: 'Academic coaching market (NG)', delay: 0.3 },
+  ]
+  return (
+    <div className="bg-bg-dark border-t border-b border-white/5 py-11">
+      <div className="max-w-[1080px] mx-auto px-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {stats.map((s, i) => <StatItem key={i} {...s} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FEATURES ─────────────────────────────────────────────────────────────────
+
+const FEATURES = [
+  {
+    color: 'blue', n: '1', kicker: 'Step 1 — Topic Validator', title: 'Is Your Topic Actually Researchable?',
+    desc: 'FYPro analyses your raw topic idea against scope, originality, and departmental feasibility. You receive a scored verdict and a sharpened topic statement before you waste weeks on a dead end.',
+    icon: <svg width="20" height="20" viewBox="0 0 256 256" fill="#60A5FA"><path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,102,255,0.3), 0 0 32px rgba(0,102,255,0.18)',
+  },
+  {
+    color: 'green', n: '2', kicker: 'Step 2 — Chapter Architect', title: 'Your Full Project Blueprint',
+    desc: 'Generate a complete five-chapter outline — section headings, key literature, theoretical framework, and a visual literature map — all tailored to your department and level, in under two minutes.',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(22,163,74,0.3), 0 0 32px rgba(22,163,74,0.16)',
+  },
+  {
+    color: 'amber', n: '3', kicker: 'Step 3 — Methodology Advisor', title: 'The Right Design for Your Research',
+    desc: 'Select the correct research design, sampling strategy, and data approach for your topic. Every choice is justified and written into language you can defend in Chapter 3.',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FCD34D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(245,158,11,0.3), 0 0 32px rgba(245,158,11,0.13)',
+  },
+  {
+    color: 'blue', n: '4', kicker: 'Step 4 — Writing Planner', title: 'A Writing Schedule You Can Actually Keep',
+    desc: 'Get a week-by-week writing schedule calculated from your submission deadline. Buffer weeks, milestone checkpoints, and chapter word targets — so you always know exactly what to write next.',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,102,255,0.3), 0 0 32px rgba(0,102,255,0.18)',
+  },
+  {
+    color: 'green', n: '5', kicker: 'Step 5 — Project Reviewer', title: 'Chapter-by-Chapter Feedback Before You Submit',
+    desc: 'Submit any chapter and receive structured feedback on argument flow, citation gaps, and examiner-facing weaknesses. The independent review your supervisor may never give you — before it is too late.',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(22,163,74,0.3), 0 0 32px rgba(22,163,74,0.16)',
+  },
+  {
+    color: 'red', n: '6', kicker: 'Step 6 — Defense Simulator', title: 'Three Examiners. Full Panel Pressure.',
+    desc: 'Face an external examiner, internal examiner, and supervisor simultaneously in a full defense simulation. Receive a readiness score and targeted prep notes. Walk into your viva knowing every question they can throw at you.',
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    hoverShadow: '0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(220,38,38,0.3), 0 0 32px rgba(220,38,38,0.13)',
+  },
+]
+
+const FEAT_COLOR_MAP = {
+  blue:  { kicker: '#60A5FA', iconBg: 'rgba(0,102,255,0.12)', border: '#0066FF' },
+  green: { kicker: '#4ADE80', iconBg: 'rgba(22,163,74,0.12)', border: '#0066FF' },
+  amber: { kicker: '#FCD34D', iconBg: 'rgba(245,158,11,0.12)', border: '#0066FF' },
+  red:   { kicker: '#F87171', iconBg: 'rgba(220,38,38,0.12)', border: '#0066FF' },
+}
+
+function FeaturesSection() {
+  return (
+    <section id="features" className="py-24 relative" style={{ background: '#060E18' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div className="max-w-[1080px] mx-auto px-10 relative">
+        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
+        <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Built for the gaps supervisors leave behind</Reveal>
+        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Every step solves a real, specific problem that final year students face with no one to call.</Reveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[18px]">
+          {FEATURES.map((f, i) => {
+            const c = FEAT_COLOR_MAP[f.color]
+            return (
+              <Reveal key={f.n} delay={i * 0.07}>
+                <MagneticCard
+                  className="relative overflow-hidden rounded-2xl p-9 h-full cursor-default"
+                  style={{ background: 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${c.border}`, transition: 'border-color 0.2s ease' }}
+                  hoverShadow={f.hoverShadow}
+                  dataN={f.n}
+                >
+                  {/* Watermark digit */}
+                  <span aria-hidden="true" className="absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
+
+                  <motion.div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: c.iconBg }}
+                    whileHover={{ rotate: 10, scale: 1.2 }}
+                    transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                  >
+                    {f.icon}
+                  </motion.div>
+                  <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase mb-2 font-medium" style={{ color: c.kicker }}>{f.kicker}</div>
+                  <h3 className="font-serif text-[1.3rem] text-white mb-2.5">{f.title}</h3>
+                  <p className="text-[0.875rem] text-white/65 leading-[1.68]">{f.desc}</p>
+                </MagneticCard>
+              </Reveal>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── HOW IT WORKS ─────────────────────────────────────────────────────────────
 
 const STEPS = [
-  {
-    num: "01",
-    title: "Topic Validator",
-    desc: "Paste your topic idea. FYPro scores its clarity, scope, and academic viability — then suggests sharper alternatives.",
-    accent: "#0066FF",
-    accentBg: "rgba(0, 102, 255, 0.07)",
-  },
-  {
-    num: "02",
-    title: "Chapter Architect",
-    desc: "Generate a full chapter outline with a literature map — structured the way your department actually expects it.",
-    accent: "#F59E0B",
-    accentBg: "rgba(245, 158, 11, 0.07)",
-  },
-  {
-    num: "03",
-    title: "Methodology Advisor",
-    desc: "Pick the right research design, sampling strategy, and data analysis method for your field and faculty.",
-    accent: "#16A34A",
-    accentBg: "rgba(22, 163, 74, 0.07)",
-  },
-  {
-    num: "04",
-    title: "Instrument Builder",
-    desc: "Build your questionnaire or interview guide from scratch — aligned with your objectives and methodology.",
-    accent: "#0066FF",
-    accentBg: "rgba(0, 102, 255, 0.07)",
-  },
-  {
-    num: "05",
-    title: "Writing Planner",
-    desc: "Get a week-by-week writing schedule that fits your submission deadline, with buffer weeks built in.",
-    accent: "#F59E0B",
-    accentBg: "rgba(245, 158, 11, 0.07)",
-  },
-  {
-    num: "06",
-    title: "Defense Prep",
-    desc: "Face a three-examiner AI panel. Each examiner has a distinct personality and grills you on your methodology.",
-    accent: "#DC2626",
-    accentBg: "rgba(220, 38, 38, 0.07)",
-  },
-];
-
-function StepCard({ step, index }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-
-  return (
-    <motion.div
-      ref={ref}
-      variants={cardReveal}
-      initial="hidden"
-      animate={inView ? "visible" : "hidden"}
-      transition={{ delay: (index % 3) * 0.1 }}
-      style={{
-        position: "relative",
-        background: step.accentBg,
-        border: `1px solid rgba(255,255,255,0.07)`,
-        borderLeft: `3px solid ${step.accent}`,
-        borderRadius: 16,
-        padding: "32px 28px",
-        overflow: "hidden",
-        cursor: "default",
-        transition: "box-shadow 0.2s ease, transform 0.2s ease",
-      }}
-      whileHover={{
-        y: -3,
-        boxShadow: `0 12px 32px rgba(0,0,0,0.35)`,
-      }}
-    >
-      {/* Watermark step number */}
-      <span
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -16,
-          right: -8,
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 100,
-          fontWeight: 700,
-          color: `${step.accent}08`,
-          lineHeight: 1,
-          pointerEvents: "none",
-          userSelect: "none",
-        }}
-      >
-        {step.num}
-      </span>
-
-      {/* Step badge */}
-      <span
-        style={{
-          display: "inline-block",
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: "0.65rem",
-          fontWeight: 500,
-          letterSpacing: "0.1em",
-          color: step.accent,
-          background: `${step.accent}18`,
-          border: `1px solid ${step.accent}30`,
-          borderRadius: 999,
-          padding: "3px 10px",
-          marginBottom: 14,
-        }}
-      >
-        STEP {step.num}
-      </span>
-
-      <h3
-        style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: "1.25rem",
-          fontWeight: 400,
-          color: "#ffffff",
-          marginBottom: 10,
-          lineHeight: 1.3,
-        }}
-      >
-        {step.title}
-      </h3>
-
-      <p
-        style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize: "0.875rem",
-          lineHeight: 1.65,
-          color: "rgba(255,255,255,0.55)",
-          margin: 0,
-        }}
-      >
-        {step.desc}
-      </p>
-    </motion.div>
-  );
-}
+  { num: '01', title: 'Topic Validator', desc: 'Enter your rough idea. Get a researchability verdict, a feasibility score against your department and level, and a refined topic statement ready to show your supervisor.' },
+  { num: '02', title: 'Chapter Architect + Literature Map', desc: 'Generate a complete five-chapter breakdown with section headings, key scholars to engage, and a visual literature map linking your theoretical framework to your research questions.' },
+  { num: '03', title: 'Methodology Advisor', desc: 'Select the right research design, sampling strategy, and data approach for your topic. Quantitative, qualitative, or mixed methods — each choice justified and ready to write into Chapter 3.' },
+  { num: '04', title: 'Writing Planner', desc: 'Get a personalised week-by-week writing schedule calculated from your submission deadline. Buffer weeks, milestone checkpoints, and a chapter-by-chapter word target — all built in.' },
+  { num: '05', title: 'Project Reviewer', desc: 'Submit any chapter for structured AI feedback on argument flow, citation gaps, and examiner-facing weaknesses. The independent review your supervisor may never give you — before it is too late to act on it.' },
+  { num: '06', title: 'Defense Simulator — Three-Examiner Panel', desc: 'Face three AI examiners in a full viva simulation. Receive a readiness score, a weak-spots report by chapter, and a preparation guide for every angle they can attack. Walk into your real defense unshakeable.' },
+]
 
 function HowItWorks() {
-  const titleRef = useRef(null);
-  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
-
   return (
-    <section
-      id="how-it-works"
-      style={{
-        background: "#060E18",
-        padding: "100px 24px",
-      }}
-    >
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        {/* Section header */}
-        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5 }}
-            style={{
-              display: "inline-block",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.14em",
-              color: "#0066FF",
-              background: "rgba(0, 102, 255, 0.1)",
-              border: "1px solid rgba(0, 102, 255, 0.2)",
-              borderRadius: 999,
-              padding: "5px 14px",
-              marginBottom: 18,
-            }}
-          >
-            THE WORKFLOW
-          </motion.span>
+    <section id="how-it-works" className="py-24 bg-bg-dark">
+      <div className="max-w-[1080px] mx-auto px-10">
+        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
+        <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Six steps. One defensible project.</Reveal>
+        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Designed around the exact journey Nigerian final year students go through — with or without a present supervisor.</Reveal>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.1 }}
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#ffffff",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-              marginBottom: 16,
-            }}
-          >
-            From idea to defense,<br />in six structured steps.
-          </motion.h2>
+        <div className="max-w-[760px] mx-auto relative">
+          {/* Vertical connector */}
+          <div className="absolute top-6 bottom-6 w-0.5 left-[23px]" style={{ background: 'linear-gradient(to bottom, #0066FF, rgba(0,102,255,0.08))' }} />
 
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "1rem",
-              color: "rgba(255,255,255,0.5)",
-              maxWidth: 520,
-              margin: "0 auto",
-              lineHeight: 1.65,
-            }}
-          >
-            Each step builds on the last. Complete them in order, or jump back
-            any time. Your progress is always saved.
-          </motion.p>
-        </div>
-
-        {/* 6-step grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-          }}
-        >
-          {STEPS.map((step, i) => (
-            <StepCard key={step.num} step={step} index={i} />
+          {STEPS.map((s, i) => (
+            <Reveal key={s.num} delay={i * 0.08} className="grid gap-6 py-[18px] items-start" style={{ gridTemplateColumns: '48px 1fr' }}>
+              <div className="w-12 h-12 rounded-full border-2 border-blue-brand flex items-center justify-center font-mono text-[0.8rem] font-semibold text-blue-brand relative z-[1] flex-shrink-0" style={{ background: '#060E18' }}>{s.num}</div>
+              <div className="pt-2">
+                <div className="font-serif text-[1.15rem] text-white mb-1.5">{s.title}</div>
+                <div className="text-[0.875rem] text-white/65 leading-[1.7]">{s.desc}</div>
+              </div>
+            </Reveal>
           ))}
         </div>
       </div>
     </section>
-  );
+  )
 }
 
-// ─── Why FYPro ────────────────────────────────────────────────────────────────
-
-const WHY_CARDS = [
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <path d="M14 3L3 8.5V14c0 6.075 4.925 10.5 11 12 6.075-1.5 11-5.925 11-12V8.5L14 3z" stroke="#0066FF" strokeWidth="1.8" strokeLinejoin="round" fill="rgba(0,102,255,0.1)" />
-        <path d="M9.5 14l3 3 6-6" stroke="#0066FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: "Built for Nigerian Universities",
-    desc: "Chapters structured to UNILAG, ABU, OAU, and FUTA faculty expectations. Not a generic international template.",
-    accent: "#0066FF",
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <circle cx="14" cy="14" r="10" stroke="#16A34A" strokeWidth="1.8" fill="rgba(22,163,74,0.1)" />
-        <path d="M14 9v5l3.5 3.5" stroke="#16A34A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: "Works Even Without a Supervisor",
-    desc: "Most final year students see their supervisor fewer than 5 times. FYPro fills the gap with always-available AI guidance.",
-    accent: "#16A34A",
-  },
-  {
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <rect x="4" y="6" width="20" height="16" rx="3" stroke="#F59E0B" strokeWidth="1.8" fill="rgba(245,158,11,0.1)" />
-        <path d="M9 11h10M9 15h7" stroke="#F59E0B" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    ),
-    title: "Defense-Ready, Not Just Written",
-    desc: "The AI examiner panel simulates real viva conditions — tough questions, follow-ups, and a final confidence score.",
-    accent: "#F59E0B",
-  },
-];
-
-function WhyFYPro() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
-  return (
-    <section
-      id="why-fypro"
-      style={{
-        background: "#0D1B2A",
-        padding: "100px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        {/* Header */}
-        <div ref={ref} style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45 }}
-            style={{
-              display: "inline-block",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.14em",
-              color: "#16A34A",
-              background: "rgba(22, 163, 74, 0.1)",
-              border: "1px solid rgba(22, 163, 74, 0.2)",
-              borderRadius: 999,
-              padding: "5px 14px",
-              marginBottom: 18,
-            }}
-          >
-            WHY FYPRO
-          </motion.span>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.1 }}
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#ffffff",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            The companion your department<br />never gave you.
-          </motion.h2>
-        </div>
-
-        {/* Cards */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={inView ? "visible" : "hidden"}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-          }}
-        >
-          {WHY_CARDS.map(({ icon, title, desc, accent }) => (
-            <motion.div
-              key={title}
-              variants={cardReveal}
-              style={{
-                background: "rgba(15, 34, 53, 0.8)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 16,
-                padding: "32px 28px",
-                transition: "box-shadow 0.2s ease",
-              }}
-              whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(0,0,0,0.3)" }}
-            >
-              <div style={{ marginBottom: 18 }}>{icon}</div>
-              <h3
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: "1.2rem",
-                  color: "#ffffff",
-                  marginBottom: 10,
-                  lineHeight: 1.3,
-                }}
-              >
-                {title}
-              </h3>
-              <p
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.875rem",
-                  lineHeight: 1.65,
-                  color: "rgba(255,255,255,0.52)",
-                  margin: 0,
-                }}
-              >
-                {desc}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Features Marquee Strip ───────────────────────────────────────────────────
-
-const FEATURE_TAGS = [
-  "Topic Validation",
-  "Chapter Outlining",
-  "Literature Mapping",
-  "Methodology Advice",
-  "Questionnaire Builder",
-  "Interview Guide",
-  "Writing Schedule",
-  "Three-Examiner Panel",
-  "AI Defense Simulation",
-  "Supervisor Email Draft",
-  "Nigerian University Format",
-  "Progress Tracking",
-];
-
-function FeatureStrip() {
-  return (
-    <div
-      id="features"
-      style={{
-        background: "#060E18",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-        padding: "20px 0",
-        overflow: "hidden",
-      }}
-      aria-hidden="true"
-    >
-      <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-        style={{ display: "flex", gap: 12, width: "max-content" }}
-      >
-        {[...FEATURE_TAGS, ...FEATURE_TAGS].map((tag, i) => (
-          <span
-            key={i}
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.7rem",
-              fontWeight: 500,
-              letterSpacing: "0.08em",
-              color: "rgba(255,255,255,0.35)",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 999,
-              padding: "6px 16px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            {tag}
-          </span>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "I was completely lost after my supervisor rejected my first topic twice. FYPro helped me reframe it in 20 minutes. My chapter outline got approved on the first submission.",
-    name: "Chidinma Eze",
-    department: "Mass Communication",
-    university: "UNILAG",
-    initials: "CE",
-    accent: "#0066FF",
-  },
-  {
-    quote:
-      "The defense simulator is no joke. Prof. Akinwale grilled me on my sampling method for 10 straight minutes. I failed the first session — but walked into my real defense completely confident.",
-    name: "Tunde Adeyemi",
-    department: "Business Administration",
-    university: "OAU",
-    initials: "TA",
-    accent: "#16A34A",
-  },
-  {
-    quote:
-      "My methodology was completely wrong for a quantitative study. FYPro caught it before I submitted. My supervisor said Chapter 3 was the best she had seen from a final year student.",
-    name: "Fatima Bello",
-    department: "Nursing Science",
-    university: "ABU Zaria",
-    initials: "FB",
-    accent: "#F59E0B",
-  },
-];
+// ─── TESTIMONIALS ─────────────────────────────────────────────────────────────
 
 function TestimonialsSection() {
-  const titleRef = useRef(null);
-  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
-
   return (
-    <section
-      style={{
-        background: "#0D1B2A",
-        padding: "100px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45 }}
-            style={{
-              display: "inline-block",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.14em",
-              color: "#F59E0B",
-              background: "rgba(245, 158, 11, 0.1)",
-              border: "1px solid rgba(245, 158, 11, 0.2)",
-              borderRadius: 999,
-              padding: "5px 14px",
-              marginBottom: 18,
-            }}
-          >
-            STUDENT VOICES
-          </motion.span>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.1 }}
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#ffffff",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Students who stopped guessing<br />and started defending.
-          </motion.h2>
-        </div>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={titleInView ? "visible" : "hidden"}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-          }}
-        >
-          {TESTIMONIALS.map(({ quote, name, department, university, initials, accent }) => (
-            <motion.div
-              key={name}
-              variants={cardReveal}
-              style={{
-                background: "rgba(15, 34, 53, 0.8)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderLeft: `3px solid ${accent}`,
-                borderRadius: 16,
-                padding: "32px 28px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 24,
-                position: "relative",
-                overflow: "hidden",
-              }}
-              whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }}
-            >
-              {/* Decorative quote mark */}
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 20,
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: 80,
-                  lineHeight: 1,
-                  color: `${accent}0a`,
-                  pointerEvents: "none",
-                  userSelect: "none",
-                }}
-              >
-                "
-              </span>
-
-              <p
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.9rem",
-                  lineHeight: 1.7,
-                  color: "rgba(255,255,255,0.72)",
-                  margin: 0,
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              >
-                "{quote}"
-              </p>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: `${accent}20`,
-                    border: `1.5px solid ${accent}40`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    color: accent,
-                    flexShrink: 0,
-                  }}
-                >
-                  {initials}
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      color: "#ffffff",
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {name}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize: "0.75rem",
-                      color: "rgba(255,255,255,0.38)",
-                      marginTop: 2,
-                    }}
-                  >
-                    {department} · {university}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+    <section className="py-24 relative" style={{ background: '#060E18' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <div className="max-w-[1080px] mx-auto px-10 relative">
+        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
+        <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>What it felt like to go from confused to confident</Reveal>
+        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">&nbsp;</Reveal>
       </div>
+      <TestimonialsTickerSection />
     </section>
-  );
+  )
 }
 
-// ─── Defense Simulator Preview ────────────────────────────────────────────────
-
-const EXAMINERS = [
-  {
-    code: "EXAM-01",
-    name: "Prof. Akinwale",
-    title: "The Methodologist",
-    personality: "Cold. Precise. Will dismantle every assumption in your research design.",
-    accent: "#DC2626",
-    sampleQ: "Why did you choose a sample size of 120? Justify your choice of SPSS over AMOS for this SEM.",
-  },
-  {
-    code: "EXAM-02",
-    name: "Dr. Okafor",
-    title: "The Literaturist",
-    personality: "Sharp. Expects you to have read everything. Will probe your theoretical gaps.",
-    accent: "#F59E0B",
-    sampleQ: "Which theorist grounds your conceptual framework? How current is your literature review?",
-  },
-  {
-    code: "EXAM-03",
-    name: "Dr. Bello",
-    title: "The Chair",
-    personality: "Measured. Tests overall coherence. Ensures your conclusions match your data.",
-    accent: "#0066FF",
-    sampleQ: "Do your findings directly answer your research questions? What are the policy implications?",
-  },
-];
-
-function DefensePreviewSection({ onGetStarted }) {
-  const titleRef = useRef(null);
-  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
-
-  return (
-    <section
-      style={{
-        background: "#060E18",
-        padding: "100px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45 }}
-            style={{
-              display: "inline-block",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.14em",
-              color: "#DC2626",
-              background: "rgba(220, 38, 38, 0.1)",
-              border: "1px solid rgba(220, 38, 38, 0.2)",
-              borderRadius: 999,
-              padding: "5px 14px",
-              marginBottom: 18,
-            }}
-          >
-            STEP 06 · DEFENSE SIMULATOR
-          </motion.span>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.1 }}
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#ffffff",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-              marginBottom: 16,
-            }}
-          >
-            Three examiners. No mercy.<br />Practice until you're ready.
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "1rem",
-              color: "rgba(255,255,255,0.5)",
-              maxWidth: 520,
-              margin: "0 auto",
-              lineHeight: 1.65,
-            }}
-          >
-            Each AI examiner has a distinct persona, grilling style, and area of focus.
-            You don't pass until you can handle all three.
-          </motion.p>
-        </div>
-
-        {/* Examiner cards */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={titleInView ? "visible" : "hidden"}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-            marginBottom: 48,
-          }}
-        >
-          {EXAMINERS.map(({ code, name, title, personality, accent, sampleQ }) => (
-            <motion.div
-              key={code}
-              variants={cardReveal}
-              style={{
-                background: "rgba(6, 14, 24, 0.9)",
-                border: `1px solid ${accent}25`,
-                borderTop: `3px solid ${accent}`,
-                borderRadius: 16,
-                padding: "28px",
-                position: "relative",
-                overflow: "hidden",
-              }}
-              whileHover={{ y: -3, boxShadow: `0 12px 32px rgba(0,0,0,0.45), 0 0 24px ${accent}15` }}
-            >
-              {/* Watermark code */}
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  bottom: -10,
-                  right: -4,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 72,
-                  fontWeight: 700,
-                  color: `${accent}07`,
-                  lineHeight: 1,
-                  pointerEvents: "none",
-                  userSelect: "none",
-                }}
-              >
-                {code}
-              </span>
-
-              {/* Code badge */}
-              <span
-                style={{
-                  display: "inline-block",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.6rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.1em",
-                  color: accent,
-                  background: `${accent}15`,
-                  border: `1px solid ${accent}30`,
-                  borderRadius: 999,
-                  padding: "3px 10px",
-                  marginBottom: 16,
-                }}
-              >
-                {code}
-              </span>
-
-              <h3
-                style={{
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: "1.3rem",
-                  fontWeight: 400,
-                  color: "#ffffff",
-                  marginBottom: 4,
-                  lineHeight: 1.2,
-                }}
-              >
-                {name}
-              </h3>
-
-              <div
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.7rem",
-                  fontWeight: 500,
-                  color: accent,
-                  letterSpacing: "0.06em",
-                  marginBottom: 14,
-                }}
-              >
-                {title}
-              </div>
-
-              <p
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.8rem",
-                  lineHeight: 1.6,
-                  color: "rgba(255,255,255,0.5)",
-                  margin: "0 0 20px",
-                }}
-              >
-                {personality}
-              </p>
-
-              {/* Sample question */}
-              <div
-                style={{
-                  background: `${accent}0c`,
-                  border: `1px solid ${accent}20`,
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.58rem",
-                    fontWeight: 500,
-                    letterSpacing: "0.1em",
-                    color: "rgba(255,255,255,0.3)",
-                    marginBottom: 6,
-                  }}
-                >
-                  SAMPLE QUESTION
-                </div>
-                <p
-                  style={{
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: "0.8rem",
-                    lineHeight: 1.55,
-                    color: "rgba(255,255,255,0.65)",
-                    margin: 0,
-                    fontStyle: "italic",
-                  }}
-                >
-                  "{sampleQ}"
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Enter defense CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={titleInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.45 }}
-          style={{ textAlign: "center" }}
-        >
-          <motion.button
-            onClick={onGetStarted}
-            whileHover={{ scale: 1.03, boxShadow: "0 0 32px rgba(220, 38, 38, 0.4)" }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "0.9rem",
-              fontWeight: 600,
-              color: "#ffffff",
-              background: "transparent",
-              border: "1.5px solid rgba(220, 38, 38, 0.6)",
-              borderRadius: 12,
-              padding: "13px 32px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              transition: "border-color 0.2s ease",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <circle cx="7" cy="7" r="5.5" stroke="#DC2626" strokeWidth="1.5" />
-              <circle cx="7" cy="7" r="2" fill="#DC2626" />
-            </svg>
-            Enter the Defense Room
-          </motion.button>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Pricing Table ────────────────────────────────────────────────────────────
+// ─── PRICING ──────────────────────────────────────────────────────────────────
 
 const PLANS = [
   {
-    name: "Free",
-    price: "₦0",
-    period: "forever",
-    desc: "Get your project started. Core AI guidance, no commitment.",
-    accent: "#0066FF",
-    features: [
-      { text: "Topic Validator", included: true },
-      { text: "Chapter Architect", included: true },
-      { text: "Methodology Advisor", included: true },
-      { text: "Supervisor Email Draft", included: true },
-      { text: "Instrument Builder", included: false },
-      { text: "Writing Planner", included: false },
-      { text: "Defense Simulator", included: false },
-    ],
-    cta: "Get Started Free",
-    ctaVariant: "ghost",
-    highlight: false,
-    badge: null,
+    tier: 'Free', amount: '₦0', period: 'forever', featured: false,
+    features: ['Topic Validator (3 runs)', 'Chapter Architect (basic outline)', 'Methodology Advisor (recommendation only)', 'Writing Planner (4 weeks only)'],
+    ctaLabel: 'Start Free', ctaGhost: true,
   },
   {
-    name: "Student",
-    price: "₦2,000",
-    period: "per month",
-    desc: "Everything you need to write a defensible, submission-ready project.",
-    accent: "#0066FF",
-    features: [
-      { text: "Everything in Free", included: true },
-      { text: "Instrument Builder", included: true },
-      { text: "Writing Planner", included: true },
-      { text: "Week-by-week schedule", included: true },
-      { text: "Progress tracking", included: true },
-      { text: "Defense Simulator", included: false },
-      { text: "Unlimited defense runs", included: false },
-    ],
-    cta: "Start Student Plan",
-    ctaVariant: "primary",
-    highlight: true,
-    badge: "MOST POPULAR",
+    tier: 'Student', amount: '₦2,000', period: 'one-time per project', featured: true, badge: 'MOST POPULAR',
+    features: ['Everything in Free', 'Topic Validator (20 runs)', 'Chapter Architect (full breakdown)', 'Methodology Advisor (full + defense answer)', 'Writing Planner (full semester)', 'Literature Map', 'Instrument Builder', 'Abstract Generator', 'Project Reviewer (10 submissions)', 'Supervisor Email Generator'],
+    ctaLabel: 'Get Student Plan', ctaGhost: false,
   },
   {
-    name: "Defense",
-    price: "₦3,500",
-    period: "per month",
-    desc: "The full panel experience. Walk into your real defense with zero surprises.",
-    accent: "#DC2626",
-    features: [
-      { text: "Everything in Student", included: true },
-      { text: "Three-Examiner AI Panel", included: true },
-      { text: "Unlimited defense runs", included: true },
-      { text: "Confidence score report", included: true },
-      { text: "Examiner feedback export", included: true },
-      { text: "Priority AI processing", included: true },
-      { text: "Defense mode (dark theme)", included: true },
-    ],
-    cta: "Unlock Defense Mode",
-    ctaVariant: "defense",
-    highlight: false,
-    badge: null,
+    tier: 'Defense', amount: '₦3,500', period: 'one-time per project', featured: false,
+    features: ['Everything in Student', 'Red Flag Detector (3 runs)', 'Defense Simulator (5 full sessions)', 'Three examiner voices', 'Live confidence scoring', 'Session summary report'],
+    ctaLabel: 'Get Defense Plan', ctaGhost: true,
   },
-];
+]
 
-function PricingSection({ onGetStarted }) {
-  const titleRef = useRef(null);
-  const titleInView = useInView(titleRef, { once: true, margin: "-80px" });
-
+function PricingSection() {
   return (
-    <section
-      id="pricing"
-      style={{
-        background: "#0D1B2A",
-        padding: "100px 24px",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        <div ref={titleRef} style={{ textAlign: "center", marginBottom: 64 }}>
-          <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45 }}
-            style={{
-              display: "inline-block",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.65rem",
-              fontWeight: 500,
-              letterSpacing: "0.14em",
-              color: "#0066FF",
-              background: "rgba(0, 102, 255, 0.1)",
-              border: "1px solid rgba(0, 102, 255, 0.2)",
-              borderRadius: 999,
-              padding: "5px 14px",
-              marginBottom: 18,
-            }}
-          >
-            PLANS
-          </motion.span>
+    <section id="pricing" className="py-24 bg-bg-dark">
+      <div className="max-w-[1080px] mx-auto px-10">
+        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Pricing</Reveal>
+        <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Simple, honest pricing</Reveal>
+        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Start free. Upgrade only when your defense date gets close.</Reveal>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.1 }}
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(2rem, 4vw, 3rem)",
-              color: "#ffffff",
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
-              marginBottom: 16,
-            }}
-          >
-            Priced for Nigerian students.<br />Not Silicon Valley startups.
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={titleInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "1rem",
-              color: "rgba(255,255,255,0.5)",
-              maxWidth: 480,
-              margin: "0 auto",
-              lineHeight: 1.65,
-            }}
-          >
-            Start free and upgrade only when you need the full arsenal.
-          </motion.p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[18px] items-start">
+          {PLANS.map((p, i) => (
+            <Reveal key={p.tier} delay={i * 0.08}>
+              <motion.div
+                className="relative rounded-2xl py-9 px-8"
+                style={{
+                  background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, #0A1929 100%)' : 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)',
+                  border: p.featured ? '1px solid #0066FF' : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: p.featured ? '0 0 48px rgba(0,102,255,0.12)' : 'none',
+                  transform: p.featured ? 'scale(1.025)' : 'none',
+                }}
+                whileHover={!p.featured ? { y: -4, borderColor: 'rgba(0,102,255,0.3)' } : {}}
+              >
+                {p.badge && (
+                  <motion.div
+                    animate={{ boxShadow: ['0 0 0 0 rgba(0,102,255,0.55)', '0 0 0 5px rgba(0,102,255,0.08), 0 0 18px rgba(0,102,255,0.38)', '0 0 0 0 rgba(0,102,255,0.55)'] }}
+                    transition={{ duration: 2.2, ease: 'easeInOut', repeat: Infinity }}
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-brand text-white font-mono text-[0.58rem] tracking-[0.1em] px-3.5 py-1 rounded-full whitespace-nowrap"
+                  >{p.badge}</motion.div>
+                )}
+                <div className="font-mono text-[0.68rem] tracking-[0.1em] uppercase text-white/65 mb-3.5">{p.tier}</div>
+                <div className="font-serif text-[2.8rem] text-white leading-none mb-[3px]">{p.amount}</div>
+                <div className="text-[0.78rem] text-white/65 mb-5">{p.period}</div>
+                <hr className="border-none border-t border-white/[0.07] mb-5" />
+                <ul className="list-none flex flex-col gap-2.5 mb-7">
+                  {p.features.map(f => (
+                    <li key={f} className="text-[0.845rem] text-white/[0.72] flex items-start gap-2 leading-[1.5]">
+                      <span className="text-green-brand font-bold flex-shrink-0 mt-[1px]">✓</span>{f}
+                    </li>
+                  ))}
+                </ul>
+                <BtnButton
+                  className={`w-full py-3 text-[0.875rem] ${p.ctaGhost ? 'bg-transparent text-white border border-white/[0.2] hover:border-white/[0.42] hover:bg-white/[0.04]' : 'bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)]'}`}
+                  onClick={() => window.location.href = '/login'}
+                >
+                  {p.ctaLabel}
+                </BtnButton>
+              </motion.div>
+            </Reveal>
+          ))}
         </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate={titleInView ? "visible" : "hidden"}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-            alignItems: "start",
-          }}
-        >
-          {PLANS.map(({ name, price, period, desc, accent, features, cta, ctaVariant, highlight, badge }) => (
-            <motion.div
-              key={name}
-              variants={cardReveal}
-              style={{
-                position: "relative",
-                background: highlight
-                  ? "linear-gradient(145deg, #0F2235 0%, #091D31 100%)"
-                  : "rgba(15, 34, 53, 0.6)",
-                border: highlight
-                  ? `1px solid rgba(0, 102, 255, 0.35)`
-                  : `1px solid rgba(255,255,255,0.07)`,
-                borderTop: `3px solid ${accent}`,
-                borderRadius: 16,
-                padding: "32px 28px",
-                boxShadow: highlight ? "0 0 40px rgba(0, 102, 255, 0.12)" : "none",
-              }}
-              whileHover={{
-                y: -4,
-                boxShadow: highlight
-                  ? "0 16px 40px rgba(0,0,0,0.4), 0 0 40px rgba(0, 102, 255, 0.2)"
-                  : "0 12px 32px rgba(0,0,0,0.35)",
-              }}
-            >
-              {/* Popular badge */}
-              {badge && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -12,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "0.58rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    color: "#ffffff",
-                    background: accent,
-                    borderRadius: 999,
-                    padding: "4px 14px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {badge}
-                </div>
-              )}
-
-              {/* Plan name */}
-              <div
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.65rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.12em",
-                  color: accent,
-                  marginBottom: 12,
-                }}
-              >
-                {name.toUpperCase()}
-              </div>
-
-              {/* Price */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span
-                  style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: "2.25rem",
-                    fontWeight: 700,
-                    color: "#ffffff",
-                    lineHeight: 1,
-                  }}
-                >
-                  {price}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: "0.8rem",
-                    color: "rgba(255,255,255,0.35)",
-                  }}
-                >
-                  /{period}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.825rem",
-                  lineHeight: 1.6,
-                  color: "rgba(255,255,255,0.5)",
-                  margin: "0 0 24px",
-                }}
-              >
-                {desc}
-              </p>
-
-              {/* Divider */}
-              <div
-                style={{
-                  height: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  marginBottom: 20,
-                }}
-              />
-
-              {/* Feature list */}
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: "0 0 28px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                {features.map(({ text, included }) => (
-                  <li
-                    key={text}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize: "0.825rem",
-                      color: included ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.22)",
-                    }}
-                  >
-                    {included ? (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                        <circle cx="7" cy="7" r="6.5" fill={`${accent}20`} stroke={`${accent}40`} />
-                        <path d="M4.5 7l1.8 1.8 3.2-3.6" stroke={accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                        <circle cx="7" cy="7" r="6.5" stroke="rgba(255,255,255,0.1)" />
-                        <path d="M5 5l4 4M9 5l-4 4" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" strokeLinecap="round" />
-                      </svg>
-                    )}
-                    {text}
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Button */}
-              <motion.button
-                onClick={onGetStarted}
-                whileHover={
-                  ctaVariant === "primary"
-                    ? { boxShadow: "0 0 24px rgba(22, 163, 74, 0.45)" }
-                    : ctaVariant === "defense"
-                    ? { boxShadow: "0 0 20px rgba(220, 38, 38, 0.35)", borderColor: "rgba(220,38,38,0.8)" }
-                    : { borderColor: "rgba(255,255,255,0.4)" }
-                }
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  width: "100%",
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: ctaVariant === "primary" ? "#ffffff" : ctaVariant === "defense" ? "#DC2626" : "rgba(255,255,255,0.65)",
-                  background: ctaVariant === "primary" ? "#16A34A" : "transparent",
-                  border:
-                    ctaVariant === "primary"
-                      ? "none"
-                      : ctaVariant === "defense"
-                      ? "1.5px solid rgba(220, 38, 38, 0.5)"
-                      : "1.5px solid rgba(255,255,255,0.18)",
-                  borderRadius: 12,
-                  padding: "13px 24px",
-                  cursor: "pointer",
-                  transition: "border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease",
-                }}
-              >
-                {cta}
-              </motion.button>
-            </motion.div>
-          ))}
-        </motion.div>
+        <p className="text-center mt-7 text-[0.8rem] text-white/65 font-mono">Project Reset — start a new project from ₦1,500</p>
       </div>
     </section>
-  );
+  )
 }
 
-// ─── Final CTA ────────────────────────────────────────────────────────────────
+// ─── FINAL CTA ────────────────────────────────────────────────────────────────
 
-function FinalCTA({ onGetStarted }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
+function FinalCTA() {
   return (
-    <section
-      style={{
-        background: "#060E18",
-        padding: "120px 24px",
-      }}
-    >
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, y: 24 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.6 }}
-        style={{
-          maxWidth: 700,
-          margin: "0 auto",
-          textAlign: "center",
-        }}
-      >
-        {/* Decorative line */}
-        <div
-          aria-hidden="true"
-          style={{
-            width: 48,
-            height: 2,
-            background: "linear-gradient(90deg, #0066FF, #16A34A)",
-            borderRadius: 999,
-            margin: "0 auto 32px",
-          }}
-        />
-
-        <h2
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: "clamp(2.2rem, 5vw, 3.5rem)",
-            color: "#ffffff",
-            lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            marginBottom: 20,
-          }}
-        >
-          Ready to ace<br />your defense?
-        </h2>
-
-        <p
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "1.05rem",
-            color: "rgba(255,255,255,0.5)",
-            maxWidth: 480,
-            margin: "0 auto 40px",
-            lineHeight: 1.65,
-          }}
-        >
-          Join thousands of Nigerian students who are approaching their final year
-          with clarity and confidence.
-        </p>
-
-        <motion.button
-          onClick={onGetStarted}
-          whileHover={{
-            scale: 1.04,
-            boxShadow: "0 0 40px rgba(22, 163, 74, 0.5)",
-          }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 380, damping: 18 }}
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "1rem",
-            fontWeight: 600,
-            color: "#ffffff",
-            background: "#16A34A",
-            border: "none",
-            borderRadius: 12,
-            padding: "16px 48px",
-            cursor: "pointer",
-          }}
-        >
-          Get Started — It's Free
-        </motion.button>
-      </motion.div>
+    <section className="py-24 relative overflow-hidden" style={{ background: '#060E18' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(0,102,255,0.14) 0%, transparent 65%)' }} />
+      <div className="max-w-[1080px] mx-auto px-10 relative z-[1]">
+        <div className="max-w-[620px] mx-auto text-center">
+          <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
+          <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>Your defense is coming.<br />Are you ready?</Reveal>
+          <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-9">Every question an examiner can ask, FYPro has already asked you first.<br />Start now — it's free, no account needed.</Reveal>
+          <Reveal delay={0.15} className="flex justify-center gap-3 flex-wrap">
+            <BtnLink href="/login" className="px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free — No Sign Up</BtnLink>
+            <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">See the 6 Steps</BtnLink>
+          </Reveal>
+        </div>
+      </div>
     </section>
-  );
+  )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
+// ─── FOOTER ───────────────────────────────────────────────────────────────────
 
 function Footer() {
   return (
-    <footer
-      style={{
-        background: "#060E18",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "32px 24px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1120,
-          margin: "0 auto",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: "1.25rem",
-            color: "#ffffff",
-          }}
-        >
-          FYPro
-        </span>
-
-        <span
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "0.75rem",
-            color: "rgba(255,255,255,0.3)",
-          }}
-        >
-          Built for the CBC UNILAG Claude AI Hackathon · April 2026
-        </span>
-
-        <div style={{ display: "flex", gap: 20 }}>
-          {["How it Works", "Features", "For Students"].map((link) => (
-            <a
-              key={link}
-              href="#"
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "0.75rem",
-                color: "rgba(255,255,255,0.35)",
-                textDecoration: "none",
-                transition: "color 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.target.style.color = "rgba(255,255,255,0.7)")}
-              onMouseLeave={(e) => (e.target.style.color = "rgba(255,255,255,0.35)")}
+    <footer className="relative border-t border-white/[0.06]" style={{ background: '#030A12', padding: '56px 0 28px' }}>
+      <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, #060E18, transparent)' }} />
+      <div className="max-w-[1080px] mx-auto px-10 relative z-[1]">
+        <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
+          <div>
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
+              className="flex items-center gap-[9px] mb-3"
             >
-              {link}
-            </a>
-          ))}
+              <ShieldIcon size={26} />
+              <span className="font-serif text-[1.4rem] text-white"><span>FY</span><span style={{ color: '#0066FF' }}>Pro</span></span>
+            </motion.div>
+            <p className="text-[0.82rem] text-white/65 leading-[1.65] mb-[18px]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
+            <div className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-[5px] font-mono text-[0.6rem] tracking-[0.06em] text-[#60A5FA]" style={{ background: 'rgba(0,102,255,0.09)', border: '1px solid rgba(0,102,255,0.3)' }}>
+              ✦ CBC UNILAG Claude AI Hackathon 2026
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">Product</div>
+            <ul className="list-none flex flex-col gap-[9px]">
+              {[['#how-it-works','How It Works'],['#features','Features'],['#pricing','Pricing'],['/login','Launch App']].map(([href, label]) => (
+                <li key={label}><a href={href} className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{label}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">Steps</div>
+            <ul className="list-none flex flex-col gap-[9px]">
+              {['Topic Validator','Chapter Architect','Methodology Advisor','Writing Planner','Project Reviewer','Defense Simulator'].map(s => (
+                <li key={s}><a href="/login" className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{s}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">About</div>
+            <ul className="list-none flex flex-col gap-[9px]">
+              {['Built at UNILAG','Powered by Claude AI','Contact'].map(s => (
+                <li key={s}><a href="#" className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{s}</a></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-[22px] border-t border-white/5 flex-wrap gap-2.5">
+          <div className="text-[0.76rem] text-white/[0.28]">
+            © 2026 FYPro. Built for the <span className="text-[rgba(0,102,255,0.6)]">CBC UNILAG Claude AI Hackathon</span>. Powered by <span className="text-[rgba(0,102,255,0.6)]">Claude AI</span>.
+          </div>
+          <div className="flex gap-[18px]">
+            {['Privacy','Terms'].map(l => (
+              <a key={l} href="#" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">{l}</a>
+            ))}
+          </div>
         </div>
       </div>
     </footer>
-  );
+  )
 }
 
-// ─── Page Composition ─────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const handleGetStarted = () => {
-    // Wire to app routing when ready
-    console.log("Get started clicked");
-  };
-
   return (
-    <div style={{ background: "#0D1B2A" }}>
-      <Navbar onGetStarted={handleGetStarted} />
-      <HeroSection onGetStarted={handleGetStarted} />
-      <FeatureStrip />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+      <ScrollProgressBar />
+      <Navbar />
+      <Hero />
+      <StatsBar />
+      <FeaturesSection />
+      <SectionDivider />
       <HowItWorks />
-      <WhyFYPro />
+      <SectionDivider />
       <TestimonialsSection />
-      <DefensePreviewSection onGetStarted={handleGetStarted} />
-      <PricingSection onGetStarted={handleGetStarted} />
-      <FinalCTA onGetStarted={handleGetStarted} />
+      <SectionDivider />
+      <PricingSection />
+      <FinalCTA />
       <Footer />
-    </div>
-  );
+      <BackToTop />
+    </motion.div>
+  )
 }
