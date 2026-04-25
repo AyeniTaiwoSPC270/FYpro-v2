@@ -368,7 +368,7 @@ function Navbar() {
   const navLinks = [
     { label: 'How It Works', id: 'how-it-works', href: '#how-it-works' },
     { label: 'Features', id: 'features', href: '#features' },
-    { label: 'Pricing', id: 'pricing', href: '#pricing' },
+    { label: 'Pricing', id: 'pricing', href: '/pricing' },
   ]
 
   return (
@@ -395,7 +395,7 @@ function Navbar() {
             <a
               key={id}
               href={href}
-              onClick={scrollTo(id)}
+              onClick={href.startsWith('#') ? scrollTo(id) : undefined}
               className={`text-[0.875rem] font-medium transition-colors duration-150 relative no-underline after:content-[''] after:absolute after:bottom-[-3px] after:left-0 after:right-0 after:h-px after:bg-blue-brand after:transition-transform after:duration-150 after:origin-left ${
                 activeSection === id
                   ? 'text-white after:scale-x-100'
@@ -448,7 +448,7 @@ function Navbar() {
           >
             <div className="flex flex-col gap-1">
               {navLinks.map(({ label, id, href }) => (
-                <a key={id} href={href} onClick={scrollTo(id)} className="block py-3 px-2 text-base font-medium text-white/65 border-b border-white/[0.06] hover:text-white transition-colors no-underline">
+                <a key={id} href={href} onClick={href.startsWith('#') ? scrollTo(id) : undefined} className="block py-3 px-2 text-base font-medium text-white/65 border-b border-white/[0.06] hover:text-white transition-colors no-underline">
                   {label}
                 </a>
               ))}

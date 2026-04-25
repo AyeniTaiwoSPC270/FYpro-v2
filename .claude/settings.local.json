@@ -16,7 +16,12 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npx skills *)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/tailwindcss/package.json'\\); console.log\\(pkg.version\\)\")",
+      "Bash(npm install *)",
+      "Bash(npx vite *)",
+      "Read(//c/Users/FEYISAYO ATINUKE/Downloads/FYpro/**)"
     ]
   }
 }

@@ -1,57 +1,23 @@
-import { useEffect } from 'react'
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { useEffect, useState, useRef } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
+import { useApp } from '../context/AppContext'
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const STUDENT = {
-  name: 'Adaeze Okonkwo',
-  initials: 'AO',
-  university: 'University of Lagos',
-  department: 'Computer Science',
-  level: '400 Level',
-  stepsCompleted: 3,
-  totalSteps: 6,
-  currentStepId: 4,
-}
-
-const STEPS = [
-  {
-    id: 1,
-    name: 'Topic Validator',
-    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',
-    status: 'completed',
-  },
-  {
-    id: 2,
-    name: 'Chapter Architect',
-    desc: 'Generated a complete five-chapter breakdown with section headings, key literature, and a visual literature map.',
-    status: 'completed',
-  },
-  {
-    id: 3,
-    name: 'Methodology Advisor',
-    desc: 'Selected research design, sampling strategy, and data approach — all justified for Chapter 3.',
-    status: 'completed',
-  },
-  {
-    id: 4,
-    name: 'Instrument Builder',
-    desc: 'Build your data collection tools — questionnaire, interview guide, or observation checklist — ready for field work.',
-    status: 'active',
-  },
-  {
-    id: 5,
-    name: 'Writing Planner',
-    desc: 'Get a week-by-week writing schedule calculated from your submission deadline with buffer weeks and word targets.',
-    status: 'locked',
-  },
-  {
-    id: 6,
-    name: 'Defense Simulator',
-    desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.',
-    status: 'locked',
-  },
+const STEP_DEFS = [
+  { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/workflow/topic-validator' },
+  { id: 2, name: 'Chapter Architect',  desc: 'Generated a complete five-chapter breakdown with section headings, key literature, and a visual literature map.',        path: '/workflow/chapter-architect' },
+  { id: 3, name: 'Methodology Advisor',desc: 'Selected research design, sampling strategy, and data approach — all justified for Chapter 3.',                          path: '/workflow/methodology-advisor' },
+  { id: 4, name: 'Instrument Builder', desc: 'Build your data collection tools — questionnaire, interview guide, or observation checklist — ready for field work.',    path: '/workflow/instrument-builder' },
+  { id: 5, name: 'Writing Planner',    desc: 'Get a week-by-week writing schedule calculated from your submission deadline with buffer weeks and word targets.',        path: '/workflow/writing-planner' },
+  { id: 6, name: 'Defense Simulator',  desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.', path: '/workflow/defense-simulator' },
 ]
+
+function buildSteps(stepsCompleted, currentStep) {
+  return STEP_DEFS.map((def, i) => ({
+    ...def,
+    status: stepsCompleted[i] ? 'completed' : currentStep === def.id ? 'active' : 'locked',
+  }))
+}
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 
@@ -148,7 +114,7 @@ function ProgressRing({ completed, total }) {
 
   return (
     <div
-      className="relative flex items-center justify-center"
+      className="relative flex items-center justify-center flex-shrink-0"
       style={{ width: 136, height: 136 }}
     >
       <svg
@@ -162,21 +128,15 @@ function ProgressRing({ completed, total }) {
         aria-valuemax={total}
         aria-label={`${completed} of ${total} steps completed`}
       >
-        {/* Track ring */}
         <circle
-          cx="68"
-          cy="68"
-          r={radius}
+          cx="68" cy="68" r={radius}
           fill="transparent"
-          stroke="rgba(0,102,255,0.1)"
+          stroke="rgba(0,102,255,0.12)"
           strokeWidth="10"
           strokeLinecap="round"
         />
-        {/* Animated progress */}
         <motion.circle
-          cx="68"
-          cy="68"
-          r={radius}
+          cx="68" cy="68" r={radius}
           fill="transparent"
           stroke="#0066FF"
           strokeWidth="10"
@@ -185,17 +145,16 @@ function ProgressRing({ completed, total }) {
           style={{ strokeDashoffset }}
         />
       </svg>
-      {/* Center label */}
       <div className="absolute flex flex-col items-center justify-center">
         <span
-          className="font-mono font-bold leading-none"
-          style={{ fontSize: '1.9rem', color: '#0D1B2A' }}
+          className="font-mono font-bold leading-none text-white"
+          style={{ fontSize: '1.9rem' }}
         >
           {completed}
         </span>
         <span
-          className="font-mono"
-          style={{ fontSize: '0.62rem', color: 'rgba(13,27,42,0.38)', marginTop: 3 }}
+          className="font-mono text-slate-600 mt-[3px]"
+          style={{ fontSize: '0.62rem' }}
         >
           of {total}
         </span>
@@ -206,62 +165,35 @@ function ProgressRing({ completed, total }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function Sidebar() {
+function DashSidebar({ STUDENT, STEPS, onNewSession }) {
   return (
     <aside
+      className="flex flex-col flex-shrink-0 border-r border-slate-800/60"
       style={{
         width: 260,
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #0D1B2A 0%, #091420 100%)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
+        background: 'linear-gradient(180deg, #070C18 0%, #050A13 100%)',
       }}
     >
       {/* Logo */}
-      <div
-        style={{
-          padding: '26px 22px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
+      <div className="flex items-center gap-2.5 border-b border-slate-800/60 px-[22px] py-[26px]">
         <ShieldIcon size={28} />
-        <span
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: '1.45rem',
-            color: '#fff',
-            lineHeight: 1,
-          }}
-        >
+        <span className="font-serif text-[1.45rem] text-white leading-none">
           FY<span style={{ color: '#0066FF' }}>Pro</span>
         </span>
       </div>
 
       {/* Navigation label */}
-      <div
-        style={{
-          padding: '20px 20px 10px',
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '0.58rem',
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.26)',
-        }}
-      >
+      <div className="px-5 pt-5 pb-2.5 font-mono text-[0.58rem] tracking-[0.14em] uppercase text-slate-600">
         Research Steps
       </div>
 
       {/* Step list */}
-      <nav style={{ flex: 1, paddingBottom: 16 }}>
+      <nav className="flex-1 pb-4">
         {STEPS.map((step, i) => {
           const isCompleted = step.status === 'completed'
-          const isActive = step.status === 'active'
-          const isLocked = step.status === 'locked'
+          const isActive    = step.status === 'active'
+          const isLocked    = step.status === 'locked'
 
           return (
             <motion.div
@@ -276,50 +208,28 @@ function Sidebar() {
               role="button"
               tabIndex={isLocked ? -1 : 0}
               aria-disabled={isLocked}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 11,
-                padding: '10px 16px',
-                marginBottom: 2,
-                borderLeft: isActive
-                  ? '3px solid #0066FF'
-                  : '3px solid transparent',
-                background: isActive
-                  ? 'rgba(0,102,255,0.08)'
-                  : 'transparent',
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                opacity: isLocked ? 0.38 : 1,
-                transition: 'all 0.2s ease',
-                outline: 'none',
-              }}
+              className={`flex items-center gap-[11px] pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
+                isActive
+                  ? 'bg-blue-600/20 border-l-4 border-l-blue-500 pl-3'
+                  : 'border-l-4 border-l-transparent pl-3'
+              } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {/* Step badge */}
               <div
-                style={{
-                  width: 27,
-                  height: 27,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  background: isCompleted
-                    ? '#16A34A'
+                className={`w-[27px] h-[27px] rounded-full flex items-center justify-center flex-shrink-0 font-mono text-[0.62rem] font-bold ${
+                  isCompleted
+                    ? 'bg-green-600 text-white'
                     : isActive
-                    ? '#0066FF'
-                    : 'rgba(255,255,255,0.07)',
-                  border: isLocked
-                    ? '1.5px solid rgba(255,255,255,0.12)'
-                    : 'none',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: '0.62rem',
-                  fontWeight: 700,
-                  color:
-                    isCompleted || isActive
-                      ? '#fff'
-                      : 'rgba(255,255,255,0.35)',
-                }}
+                    ? 'text-white'
+                    : 'text-slate-500'
+                }`}
+                style={
+                  isActive
+                    ? { background: '#0066FF' }
+                    : !isCompleted
+                    ? { background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)' }
+                    : {}
+                }
               >
                 {isCompleted ? (
                   <motion.span
@@ -342,23 +252,18 @@ function Sidebar() {
 
               {/* Step name */}
               <span
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: '0.78rem',
-                  fontWeight: isActive ? 600 : 500,
-                  color: isCompleted
-                    ? 'rgba(255,255,255,0.72)'
+                className={`font-sans text-[0.78rem] flex-1 leading-[1.3] ${
+                  isCompleted
+                    ? 'text-blue-400 font-medium'
                     : isActive
-                    ? '#fff'
-                    : 'rgba(255,255,255,0.35)',
-                  lineHeight: 1.3,
-                  flex: 1,
-                }}
+                    ? 'text-white font-semibold'
+                    : 'text-slate-500 font-medium'
+                }`}
               >
                 {step.name}
               </span>
 
-              {/* Active pulse dot — blue glow animation */}
+              {/* Active pulse dot */}
               {isActive && (
                 <motion.span
                   animate={{
@@ -370,13 +275,8 @@ function Sidebar() {
                     ],
                   }}
                   transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#0066FF',
-                    flexShrink: 0,
-                  }}
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: '#0066FF' }}
                 />
               )}
             </motion.div>
@@ -384,60 +284,27 @@ function Sidebar() {
         })}
       </nav>
 
-      {/* University info card */}
+      {/* Student context card */}
       <div
+        className="mx-3.5 mb-6 p-4 rounded-xl"
         style={{
-          margin: '0 14px 24px',
-          padding: '14px 16px',
-          borderRadius: 12,
-          background: 'rgba(0,102,255,0.07)',
-          borderLeft: '3px solid rgba(0,102,255,0.45)',
+          background: '#0D1425',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderLeft: '3px solid rgba(0,102,255,0.5)',
         }}
       >
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.56rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'rgba(0,102,255,0.85)',
-            marginBottom: 8,
-          }}
-        >
+        <div className="font-mono text-[0.56rem] tracking-[0.12em] uppercase text-blue-400 mb-2">
           Active Project
         </div>
-        <div
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.74rem',
-            fontWeight: 600,
-            color: '#fff',
-            marginBottom: 3,
-            lineHeight: 1.3,
-          }}
-        >
+        <div className="font-sans text-[0.74rem] font-semibold text-white mb-[3px] leading-[1.3]">
           {STUDENT.university}
         </div>
-        <div
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.68rem',
-            color: 'rgba(255,255,255,0.48)',
-            marginBottom: 5,
-          }}
-        >
+        <div className="font-sans text-[0.68rem] text-slate-500 mb-1.5">
           {STUDENT.department}
         </div>
         <div
-          style={{
-            display: 'inline-block',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.58rem',
-            color: 'rgba(255,255,255,0.28)',
-            background: 'rgba(255,255,255,0.06)',
-            padding: '2px 8px',
-            borderRadius: 999,
-          }}
+          className="inline-block font-mono text-[0.58rem] text-slate-600 px-2 py-[2px] rounded-full"
+          style={{ background: 'rgba(255,255,255,0.06)' }}
         >
           {STUDENT.level}
         </div>
@@ -448,27 +315,29 @@ function Sidebar() {
 
 // ─── Top Bar ──────────────────────────────────────────────────────────────────
 
-function TopBar() {
+function DashTopBar({ STUDENT, onNewSession }) {
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = STUDENT.name.split(' ')[0]
 
+  const [avatarOpen, setAvatarOpen] = useState(false)
+  const avatarRef = useRef(null)
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (avatarRef.current && !avatarRef.current.contains(e.target)) {
+        setAvatarOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
   return (
     <header
-      style={{
-        height: 68,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 32px',
-        background: '#fff',
-        borderBottom: 'none',
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        flexShrink: 0,
-      }}
+      className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
+      style={{ background: '#070C18' }}
     >
       {/* Greeting */}
       <motion.div
@@ -476,24 +345,10 @@ function TopBar() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div
-          style={{
-            fontFamily: "'DM Serif Display', serif",
-            fontSize: '1.18rem',
-            color: '#0D1B2A',
-            lineHeight: 1.15,
-          }}
-        >
+        <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
           {greeting}, {firstName}
         </div>
-        <div
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.72rem',
-            color: 'rgba(13,27,42,0.42)',
-            marginTop: 2,
-          }}
-        >
+        <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
           {STUDENT.stepsCompleted} steps done — Step {STUDENT.currentStepId} is waiting.
         </div>
       </motion.div>
@@ -503,30 +358,17 @@ function TopBar() {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+        className="flex items-center gap-2.5"
       >
         {/* New Project */}
         <motion.button
-          whileHover={{ y: -1, boxShadow: '0 0 22px rgba(0,102,255,0.38)' }}
+          whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
           whileTap={{ scale: 0.96 }}
           aria-label="Start a new project"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '9px 18px',
-            background: '#0066FF',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
+          onClick={onNewSession}
+          className="flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 text-white border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
         >
-          <PlusIcon /> New Project
+          <PlusIcon /> New Session
         </motion.button>
 
         {/* Bell */}
@@ -534,33 +376,17 @@ function TopBar() {
           whileHover={{ scale: 1.09 }}
           whileTap={{ scale: 0.94 }}
           aria-label="Notifications"
+          className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
-            position: 'relative',
-            width: 38,
-            height: 38,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(13,27,42,0.04)',
-            border: '1px solid rgba(13,27,42,0.09)',
-            borderRadius: 10,
-            cursor: 'pointer',
-            color: 'rgba(13,27,42,0.55)',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
           <BellIcon />
           <span
             aria-hidden="true"
-            style={{
-              position: 'absolute',
-              top: 9,
-              right: 9,
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: '#0066FF',
-              border: '1.5px solid #fff',
-            }}
+            className="absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full"
+            style={{ background: '#0066FF', border: '1.5px solid #070C18' }}
           />
         </motion.button>
 
@@ -569,58 +395,72 @@ function TopBar() {
           whileHover={{ scale: 1.09 }}
           whileTap={{ scale: 0.94 }}
           aria-label="Settings"
+          className="w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
-            width: 38,
-            height: 38,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(13,27,42,0.04)',
-            border: '1px solid rgba(13,27,42,0.09)',
-            borderRadius: 10,
-            cursor: 'pointer',
-            color: 'rgba(13,27,42,0.55)',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
           <GearIcon />
         </motion.button>
 
-        {/* Avatar */}
-        <motion.button
-          whileHover={{ scale: 1.07, boxShadow: '0 0 18px rgba(0,102,255,0.3)' }}
-          aria-label={`Profile: ${STUDENT.name}`}
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.68rem',
-            fontWeight: 700,
-            color: '#fff',
-            cursor: 'pointer',
-            border: '2px solid rgba(0,102,255,0.35)',
-          }}
-        >
-          {STUDENT.initials}
-        </motion.button>
+        {/* Avatar + dropdown */}
+        <div className="relative" ref={avatarRef}>
+          <motion.button
+            whileHover={{ scale: 1.07, boxShadow: '0 0 18px rgba(0,102,255,0.3)' }}
+            aria-label={`Profile: ${STUDENT.name}`}
+            aria-expanded={avatarOpen}
+            onClick={() => setAvatarOpen((v) => !v)}
+            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-mono text-[0.68rem] font-bold text-white cursor-pointer"
+            style={{
+              background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
+              border: '2px solid rgba(0,102,255,0.35)',
+            }}
+          >
+            {STUDENT.initials}
+          </motion.button>
+
+          <AnimatePresence>
+            {avatarOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute right-0 mt-2 w-48 rounded-xl overflow-hidden"
+                style={{
+                  top: '100%',
+                  background: '#0D1425',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                }}
+              >
+                <div className="px-4 py-3 border-b border-slate-800/80">
+                  <div className="font-sans text-[0.8rem] font-semibold text-white truncate">{STUDENT.name}</div>
+                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">Free Plan</div>
+                </div>
+                <div className="py-1.5">
+                  <Link
+                    to="/profile"
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-slate-300">Profile</span>
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
 
       {/* Gradient border bottom */}
       <div
         aria-hidden="true"
+        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 1,
           background:
             'linear-gradient(to right, transparent 0%, rgba(0,102,255,0.18) 20%, rgba(0,102,255,0.45) 50%, rgba(0,102,255,0.18) 80%, transparent 100%)',
-          pointerEvents: 'none',
         }}
       />
     </header>
@@ -642,18 +482,13 @@ const cardEnter = {
   }),
 }
 
-function StatCards() {
+function DashStatCards({ STUDENT, STEPS }) {
+  const navigate  = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active')
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 20,
-        marginBottom: 28,
-      }}
-    >
+    <div className="grid grid-cols-3 gap-5 mb-7">
+
       {/* ── Card 1: Circular Progress ── */}
       <motion.div
         custom={0}
@@ -662,37 +497,20 @@ function StatCards() {
         animate="visible"
         whileHover={{
           y: -5,
-          boxShadow: '0 14px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+          boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.12)',
         }}
+        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex items-center gap-[22px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-          borderRadius: 16,
-          border: '1px solid rgba(13,27,42,0.08)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          padding: '28px',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 22,
-          transition: 'box-shadow 0.2s ease',
+          background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+          borderLeft: '4px solid #3B82F6',
+          boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
         {/* Watermark */}
         <span
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            right: -12,
-            top: -18,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 130,
-            fontWeight: 700,
-            color: 'rgba(0,102,255,0.04)',
-            lineHeight: 1,
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
+          className="absolute right-[-12px] top-[-18px] font-mono text-[130px] font-bold leading-none select-none pointer-events-none"
+          style={{ color: 'rgba(59,130,246,0.04)' }}
         >
           ✦
         </span>
@@ -703,45 +521,21 @@ function StatCards() {
         />
 
         <div>
-          <div
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.6rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: '#0066FF',
-              marginBottom: 8,
-            }}
-          >
+          <div className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-blue-400 mb-2">
             Overall Progress
           </div>
-          <div
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: '1.35rem',
-              color: '#0D1B2A',
-              lineHeight: 1.2,
-              marginBottom: 7,
-            }}
-          >
+          <div className="font-serif text-[1.35rem] text-white leading-[1.2] mb-[7px]">
             {STUDENT.stepsCompleted} Steps
             <br />
             Completed
           </div>
-          <div
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.73rem',
-              color: 'rgba(13,27,42,0.45)',
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="font-sans text-[0.73rem] text-slate-500 leading-[1.5]">
             {STUDENT.totalSteps - STUDENT.stepsCompleted} steps remaining
           </div>
         </div>
       </motion.div>
 
-      {/* ── Card 2: Current Step — shimmer gradient ── */}
+      {/* ── Card 2: Current Step ── */}
       <motion.div
         custom={1}
         variants={cardEnter}
@@ -749,39 +543,20 @@ function StatCards() {
         animate="visible"
         whileHover={{
           y: -5,
-          boxShadow: '0 14px 40px rgba(0,0,0,0.1), 0 0 32px rgba(22,163,74,0.1)',
+          boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 32px rgba(22,163,74,0.14)',
         }}
+        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col justify-between gap-[18px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #ffffff 0%, #f0fff4 60%, #f8fafc 100%)',
-          borderRadius: 16,
-          border: '1px solid rgba(13,27,42,0.08)',
+          background: 'linear-gradient(145deg, #0D1425 0%, #0B1E10 60%, #111827 100%)',
           borderLeft: '4px solid #16A34A',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          padding: '28px',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: 18,
-          transition: 'box-shadow 0.2s ease',
+          boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
         {/* Step watermark digit */}
         <span
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            right: -8,
-            bottom: -20,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 110,
-            fontWeight: 700,
-            color: 'rgba(22,163,74,0.05)',
-            lineHeight: 1,
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
+          className="absolute right-[-8px] bottom-[-20px] font-mono text-[110px] font-bold leading-none select-none pointer-events-none"
+          style={{ color: 'rgba(22,163,74,0.05)' }}
         >
           {activeStep?.id}
         </span>
@@ -791,85 +566,36 @@ function StatCards() {
           animate={{ x: ['-100%', '200%'] }}
           transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
           aria-hidden="true"
+          className="absolute top-0 bottom-0 w-[60%] pointer-events-none z-0"
           style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            width: '60%',
             background:
               'linear-gradient(90deg, transparent 0%, rgba(22,163,74,0.07) 50%, transparent 100%)',
-            pointerEvents: 'none',
-            zIndex: 0,
           }}
         />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.6rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: '#16A34A',
-              marginBottom: 8,
-            }}
-          >
+        <div className="relative z-10">
+          <div className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-green-400 mb-2">
             Current Step
           </div>
-          <div
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: '1.22rem',
-              color: '#0D1B2A',
-              lineHeight: 1.25,
-              marginBottom: 9,
-            }}
-          >
+          <div className="font-serif text-[1.22rem] text-white leading-[1.25] mb-[9px]">
             {activeStep?.name}
           </div>
-          <p
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.73rem',
-              color: 'rgba(13,27,42,0.48)',
-              lineHeight: 1.58,
-              maxWidth: '38ch',
-            }}
-          >
+          <p className="font-sans text-[0.73rem] text-slate-400 leading-[1.58] max-w-[38ch]">
             {activeStep?.desc}
           </p>
         </div>
 
         <motion.button
-          whileHover={{
-            y: -1,
-            boxShadow: '0 0 20px rgba(22,163,74,0.38)',
-          }}
+          whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.38)' }}
           whileTap={{ scale: 0.96 }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '11px 22px',
-            background: '#16A34A',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 10,
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            alignSelf: 'flex-start',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-            zIndex: 1,
-          }}
+          onClick={() => navigate(activeStep?.path ?? '/workflow/topic-validator')}
+          className="inline-flex items-center gap-2 px-[22px] py-[11px] bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans text-[0.82rem] font-semibold cursor-pointer self-start transition-all duration-200 relative z-10"
         >
           Continue <ArrowRightIcon />
         </motion.button>
       </motion.div>
 
-      {/* ── Card 3: Project Info — shield watermark ── */}
+      {/* ── Card 3: Project Info ── */}
       <motion.div
         custom={2}
         variants={cardEnter}
@@ -877,46 +603,25 @@ function StatCards() {
         animate="visible"
         whileHover={{
           y: -5,
-          boxShadow: '0 14px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+          boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.1)',
         }}
+        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col gap-[14px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-          borderRadius: 16,
-          border: '1px solid rgba(13,27,42,0.08)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          padding: '28px',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-          transition: 'box-shadow 0.2s ease',
+          background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+          borderLeft: '4px solid #3B82F6',
+          boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
-        {/* FYPro shield watermark at 4% opacity */}
+        {/* FYPro shield watermark */}
         <div
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            right: -20,
-            bottom: -20,
-            opacity: 0.04,
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
+          className="absolute right-[-20px] bottom-[-20px] pointer-events-none select-none"
+          style={{ opacity: 0.04 }}
         >
           <ShieldIcon size={180} color="#0066FF" />
         </div>
 
-        <div
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.6rem',
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#0066FF',
-          }}
-        >
+        <div className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-blue-400">
           Project Details
         </div>
 
@@ -926,28 +631,10 @@ function StatCards() {
           { label: 'Academic Level', value: STUDENT.level },
         ].map(({ label, value }) => (
           <div key={label}>
-            <div
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: '0.62rem',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-                color: 'rgba(13,27,42,0.36)',
-                marginBottom: 3,
-              }}
-            >
+            <div className="font-sans text-[0.62rem] font-medium uppercase tracking-[0.07em] text-slate-600 mb-[3px]">
               {label}
             </div>
-            <div
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: '0.83rem',
-                fontWeight: 600,
-                color: '#0D1B2A',
-                lineHeight: 1.3,
-              }}
-            >
+            <div className="font-sans text-[0.83rem] font-semibold text-white leading-[1.3]">
               {value}
             </div>
           </div>
@@ -959,75 +646,57 @@ function StatCards() {
 
 // ─── Progress Journey ─────────────────────────────────────────────────────────
 
-function ProgressJourney() {
+const STEP_PATHS = {
+  1: '/workflow/topic-validator',
+  2: '/workflow/chapter-architect',
+  3: '/workflow/methodology-advisor',
+  4: '/workflow/instrument-builder',
+  5: '/workflow/writing-planner',
+  6: '/workflow/defense-simulator',
+}
+
+function DashProgressJourney({ STEPS, STUDENT }) {
+  const navigate = useNavigate()
   return (
     <motion.section
       initial={{ opacity: 0, y: 22 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.38, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
       aria-labelledby="journey-heading"
+      className="rounded-2xl border border-slate-800/80 p-8 mb-7"
       style={{
-        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-        borderRadius: 16,
-        border: '1px solid rgba(13,27,42,0.08)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-        padding: '32px',
-        marginBottom: 28,
+        background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+        boxShadow: '0 8px 40px rgba(59,130,246,0.06)',
       }}
     >
       {/* Section header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: 28,
-        }}
-      >
+      <div className="flex items-baseline justify-between mb-7">
         <div>
           <h2
             id="journey-heading"
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: '1.45rem',
-              color: '#0D1B2A',
-              lineHeight: 1.2,
-              marginBottom: 4,
-            }}
+            className="font-serif text-[1.45rem] text-white leading-[1.2] mb-1"
           >
             Your Research Journey
           </h2>
-          <div
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.73rem',
-              color: 'rgba(13,27,42,0.42)',
-            }}
-          >
+          <div className="font-sans text-[0.73rem] text-slate-500">
             Six steps from idea to defense-ready.
           </div>
         </div>
         <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.65rem',
-            color: 'rgba(13,27,42,0.3)',
-            background: 'rgba(13,27,42,0.05)',
-            padding: '4px 12px',
-            borderRadius: 999,
-          }}
+          className="font-mono text-[0.65rem] text-slate-600 px-3 py-1 rounded-full border border-slate-800"
+          style={{ background: 'rgba(255,255,255,0.03)' }}
         >
           {STUDENT.stepsCompleted} / {STUDENT.totalSteps}
         </span>
       </div>
 
       {/* Step items */}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="flex flex-col">
         {STEPS.map((step, i) => {
           const isCompleted = step.status === 'completed'
-          const isActive = step.status === 'active'
-          const isLocked = step.status === 'locked'
-          const isLast = i === STEPS.length - 1
+          const isActive    = step.status === 'active'
+          const isLocked    = step.status === 'locked'
+          const isLast      = i === STEPS.length - 1
 
           return (
             <motion.div
@@ -1039,37 +708,21 @@ function ProgressJourney() {
                 duration: 0.42,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              style={{ display: 'flex', gap: 20 }}
+              className="flex gap-5"
             >
               {/* Timeline column */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  width: 44,
-                  flexShrink: 0,
-                }}
-              >
+              <div className="flex flex-col items-center w-11 flex-shrink-0">
                 {/* Badge */}
                 <motion.div
                   whileHover={!isLocked ? { scale: 1.14 } : {}}
                   transition={{ duration: 0.2 }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 relative z-10 font-mono text-[0.75rem] font-bold transition-all duration-300"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    position: 'relative',
-                    zIndex: 1,
                     background: isCompleted
                       ? '#16A34A'
                       : isActive
                       ? '#0066FF'
-                      : 'rgba(13,27,42,0.06)',
+                      : 'rgba(255,255,255,0.05)',
                     boxShadow: isActive
                       ? '0 0 22px rgba(0,102,255,0.32)'
                       : isCompleted
@@ -1077,15 +730,13 @@ function ProgressJourney() {
                       : 'none',
                     border: isActive
                       ? '2px solid rgba(0,102,255,0.35)'
+                      : isLocked
+                      ? '1.5px solid rgba(255,255,255,0.1)'
                       : 'none',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
                     color:
                       isCompleted || isActive
                         ? '#fff'
-                        : 'rgba(13,27,42,0.28)',
-                    transition: 'all 0.25s ease',
+                        : 'rgba(255,255,255,0.25)',
                   }}
                 >
                   {isCompleted ? (
@@ -1097,7 +748,7 @@ function ProgressJourney() {
                   )}
                 </motion.div>
 
-                {/* Connector — draws itself downward on load */}
+                {/* Connector */}
                 {!isLast && (
                   <motion.div
                     initial={{ scaleY: 0 }}
@@ -1107,16 +758,11 @@ function ProgressJourney() {
                       duration: 0.45,
                       ease: [0.22, 1, 0.36, 1],
                     }}
+                    className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]"
                     style={{
-                      width: 2,
-                      flex: 1,
-                      minHeight: 24,
-                      marginTop: 4,
-                      marginBottom: 4,
                       background: isCompleted
                         ? 'linear-gradient(to bottom, #16A34A, rgba(22,163,74,0.25))'
-                        : 'rgba(13,27,42,0.08)',
-                      borderRadius: 1,
+                        : 'rgba(255,255,255,0.07)',
                       transformOrigin: 'top',
                     }}
                   />
@@ -1125,70 +771,37 @@ function ProgressJourney() {
 
               {/* Content */}
               <div
-                style={{
-                  flex: 1,
-                  paddingBottom: isLast ? 0 : 26,
-                  opacity: isLocked ? 0.42 : 1,
-                  transition: 'opacity 0.2s ease',
-                }}
+                className={`flex-1 transition-opacity duration-200 ${isLast ? 'pb-0' : 'pb-[26px]'}`}
+                style={{ opacity: isLocked ? 0.42 : 1 }}
               >
-                {/* Name + badge */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 10,
-                    marginBottom: 7,
-                    paddingTop: 8,
-                  }}
-                >
+                {/* Name + status badge */}
+                <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
                   <span
-                    style={{
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize: '0.92rem',
-                      fontWeight: 600,
-                      color: isLocked ? 'rgba(13,27,42,0.38)' : '#0D1B2A',
-                    }}
+                    className={`font-sans text-[0.92rem] font-semibold ${
+                      isLocked ? 'text-slate-600' : 'text-white'
+                    }`}
                   >
                     {step.name}
                   </span>
 
-                  {/* Status badge — IN PROGRESS pulses */}
                   {isActive ? (
                     <motion.span
                       animate={{ opacity: [1, 0.55, 1] }}
                       transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '0.58rem',
-                        fontWeight: 500,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        padding: '3px 10px',
-                        borderRadius: 999,
-                        background: 'rgba(0,102,255,0.1)',
-                        color: '#0066FF',
-                      }}
+                      className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-blue-400"
+                      style={{ background: 'rgba(0,102,255,0.12)' }}
                     >
                       In Progress
                     </motion.span>
                   ) : (
                     <span
+                      className={`font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full ${
+                        isCompleted ? 'text-green-400' : 'text-slate-600'
+                      }`}
                       style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '0.58rem',
-                        fontWeight: 500,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        padding: '3px 10px',
-                        borderRadius: 999,
                         background: isCompleted
-                          ? 'rgba(22,163,74,0.1)'
-                          : 'rgba(13,27,42,0.06)',
-                        color: isCompleted
-                          ? '#16A34A'
-                          : 'rgba(13,27,42,0.32)',
+                          ? 'rgba(22,163,74,0.12)'
+                          : 'rgba(255,255,255,0.05)',
                       }}
                     >
                       {isCompleted ? 'Completed' : 'Locked'}
@@ -1198,14 +811,9 @@ function ProgressJourney() {
 
                 {/* Description */}
                 <p
-                  style={{
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.77rem',
-                    color: 'rgba(13,27,42,0.48)',
-                    lineHeight: 1.62,
-                    marginBottom: isLocked ? 0 : 14,
-                    maxWidth: '58ch',
-                  }}
+                  className={`font-sans text-[0.77rem] text-slate-500 leading-[1.62] max-w-[58ch] ${
+                    isLocked ? 'mb-0' : 'mb-[14px]'
+                  }`}
                 >
                   {step.desc}
                 </p>
@@ -1217,26 +825,15 @@ function ProgressJourney() {
                       y: -1,
                       boxShadow: isActive
                         ? '0 0 18px rgba(22,163,74,0.32)'
-                        : '0 4px 14px rgba(0,0,0,0.08)',
+                        : '0 4px 14px rgba(0,0,0,0.35)',
                     }}
                     whileTap={{ scale: 0.96 }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      padding: '8px 18px',
-                      background: isActive ? '#16A34A' : 'transparent',
-                      color: isActive ? '#fff' : '#0D1B2A',
-                      border: isActive
-                        ? 'none'
-                        : '1.5px solid rgba(13,27,42,0.16)',
-                      borderRadius: 8,
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize: '0.76rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
+                    onClick={() => navigate(STEP_PATHS[step.id])}
+                    className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
+                      isActive
+                        ? 'bg-green-600 hover:bg-green-500 text-white border-0'
+                        : 'bg-transparent text-slate-400 hover:text-blue-400 border border-slate-700 hover:border-blue-500/60'
+                    }`}
                   >
                     {isActive ? 'Continue' : 'Review'}
                     <ArrowRightIcon size={12} />
@@ -1253,17 +850,18 @@ function ProgressJourney() {
 
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
-const QUICK_ACTIONS = [
+const QUICK_ACTIONS_BASE = [
   {
     label: 'Continue where you left off',
-    sub: 'Step 4 — Instrument Builder',
-    iconBg: 'rgba(22,163,74,0.14)',
+    sub: 'Active Step',
+    pathKey: 'active',
+
+    iconBg: 'rgba(22,163,74,0.15)',
     iconColor: '#16A34A',
-    cardBg:
-      'linear-gradient(140deg, rgba(22,163,74,0.07) 0%, rgba(22,163,74,0.02) 100%)',
-    border: 'rgba(22,163,74,0.22)',
+    cardBg: '#111827',
+    border: 'rgba(22,163,74,0.28)',
     hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.1), 0 0 28px rgba(22,163,74,0.22), 0 4px 20px rgba(0,102,255,0.12)',
+      '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(22,163,74,0.22)',
     ctaLabel: 'Continue',
     ctaBg: '#16A34A',
     ctaColor: '#fff',
@@ -1274,40 +872,45 @@ const QUICK_ACTIONS = [
   {
     label: 'Jump to Defense Simulator',
     sub: 'Preview the three-examiner panel',
-    iconBg: 'rgba(0,102,255,0.12)',
+    iconBg: 'rgba(0,102,255,0.15)',
     iconColor: '#0066FF',
-    cardBg:
-      'linear-gradient(140deg, rgba(0,102,255,0.07) 0%, rgba(0,102,255,0.02) 100%)',
-    border: 'rgba(0,102,255,0.18)',
+    cardBg: '#111827',
+    border: 'rgba(0,102,255,0.24)',
     hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.08), 0 0 28px rgba(0,102,255,0.22)',
+      '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(0,102,255,0.22)',
     ctaLabel: 'Preview',
     ctaBg: 'transparent',
-    ctaColor: '#0066FF',
-    ctaBorder: '1.5px solid rgba(0,102,255,0.32)',
+    ctaColor: '#60A5FA',
+    ctaBorder: '1.5px solid rgba(0,102,255,0.38)',
     Icon: ZapIcon,
     breathe: false,
   },
   {
     label: 'Download Progress Report',
     sub: 'Export your research summary as PDF',
-    iconBg: 'rgba(245,158,11,0.12)',
+    iconBg: 'rgba(245,158,11,0.15)',
     iconColor: '#F59E0B',
-    cardBg:
-      'linear-gradient(140deg, rgba(245,158,11,0.07) 0%, rgba(245,158,11,0.02) 100%)',
-    border: 'rgba(245,158,11,0.18)',
+    cardBg: '#111827',
+    border: 'rgba(245,158,11,0.24)',
     hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.08), 0 0 24px rgba(245,158,11,0.18), 0 4px 20px rgba(0,102,255,0.1)',
+      '0 8px 36px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.2)',
     ctaLabel: 'Export PDF',
     ctaBg: 'transparent',
-    ctaColor: '#F59E0B',
-    ctaBorder: '1.5px solid rgba(245,158,11,0.32)',
+    ctaColor: '#FCD34D',
+    ctaBorder: '1.5px solid rgba(245,158,11,0.38)',
     Icon: DownloadIcon,
     breathe: false,
   },
 ]
 
-function QuickActions() {
+function DashQuickActions({ STEPS }) {
+  const navigate = useNavigate()
+  const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[0]
+  const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
+    a.pathKey === 'active'
+      ? { ...a, path: activeStep?.path, sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
+      : a
+  )
   return (
     <motion.section
       initial={{ opacity: 0, y: 22 }}
@@ -1317,24 +920,12 @@ function QuickActions() {
     >
       <h2
         id="quick-actions-heading"
-        style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: '1.45rem',
-          color: '#0D1B2A',
-          marginBottom: 16,
-          lineHeight: 1.2,
-        }}
+        className="font-serif text-[1.45rem] text-white mb-4 leading-[1.2]"
       >
         Quick Actions
       </h2>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 16,
-        }}
-      >
+      <div className="grid grid-cols-3 gap-4">
         {QUICK_ACTIONS.map((action, i) => (
           <motion.button
             key={action.label}
@@ -1348,63 +939,32 @@ function QuickActions() {
             whileHover={{ y: -4, boxShadow: action.hoverGlow }}
             whileTap={{ scale: 0.97 }}
             aria-label={action.label}
+            onClick={action.path ? () => navigate(action.path) : undefined}
+            className="flex flex-col items-start gap-4 p-6 rounded-2xl cursor-pointer text-left transition-all duration-200"
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              gap: 16,
-              padding: '24px',
               background: action.cardBg,
               border: `1px solid ${action.border}`,
-              borderRadius: 16,
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.22s ease',
             }}
           >
             {/* Icon */}
             <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: action.iconBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: action.iconColor,
-              }}
+              className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{ background: action.iconBg, color: action.iconColor }}
             >
               <action.Icon />
             </div>
 
             {/* Text */}
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  color: '#0D1B2A',
-                  marginBottom: 5,
-                  lineHeight: 1.3,
-                }}
-              >
+            <div className="flex-1">
+              <div className="font-sans text-[0.88rem] font-semibold text-white mb-[5px] leading-[1.3]">
                 {action.label}
               </div>
-              <div
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: '0.72rem',
-                  color: 'rgba(13,27,42,0.46)',
-                  lineHeight: 1.45,
-                }}
-              >
+              <div className="font-sans text-[0.72rem] text-slate-500 leading-[1.45]">
                 {action.sub}
               </div>
             </div>
 
-            {/* CTA chip — breathes on the Continue button */}
+            {/* CTA chip */}
             {action.breathe ? (
               <motion.span
                 animate={{ scale: [1, 1.03, 1] }}
@@ -1414,36 +974,22 @@ function QuickActions() {
                   repeatDelay: 2.4,
                   ease: 'easeInOut',
                 }}
+                className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 16px',
                   background: action.ctaBg,
                   color: action.ctaColor,
                   border: action.ctaBorder,
-                  borderRadius: 8,
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: '0.76rem',
-                  fontWeight: 600,
                 }}
               >
                 {action.ctaLabel} <ArrowRightIcon size={11} />
               </motion.span>
             ) : (
               <span
+                className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '7px 16px',
                   background: action.ctaBg,
                   color: action.ctaColor,
                   border: action.ctaBorder,
-                  borderRadius: 8,
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: '0.76rem',
-                  fontWeight: 600,
                 }}
               >
                 {action.ctaLabel} <ArrowRightIcon size={11} />
@@ -1459,44 +1005,50 @@ function QuickActions() {
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const navigate = useNavigate()
+  const { state, clearSession, isOnboarded } = useApp()
+
+  useEffect(() => {
+    if (!isOnboarded) navigate('/start', { replace: true })
+  }, [isOnboarded, navigate])
+
+  const completedCount = state.stepsCompleted.filter(Boolean).length
+  const activeStepId   = state.currentStep ?? 1
+  const STEPS          = buildSteps(state.stepsCompleted, activeStepId)
+
+  const STUDENT = {
+    name:           state.university ? state.department?.split(' ')[0] + ' Student' : 'Student',
+    initials:       (state.department || 'ST').slice(0, 2).toUpperCase(),
+    university:     state.university  || 'University',
+    department:     state.department  || 'Department',
+    level:          state.level       || '',
+    stepsCompleted: completedCount,
+    totalSteps:     6,
+    currentStepId:  activeStepId,
+  }
+
   return (
     <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        background: '#F0F4F8',
-      }}
+      className="flex h-screen overflow-hidden"
+      style={{ background: '#0A0F1C' }}
     >
-      <Sidebar />
+      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={() => { clearSession(); navigate('/start') }} />
 
-      {/* Right panel: top bar + scrollable content */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          minWidth: 0,
-        }}
-      >
-        <TopBar />
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <DashTopBar STUDENT={STUDENT} onNewSession={() => { clearSession(); navigate('/start') }} />
 
-        {/* Scrollable workspace */}
         <main
+          className="flex-1 overflow-y-auto"
           style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '32px 36px 48px',
-            backgroundColor: '#F0F4F8',
-            backgroundImage:
-              'radial-gradient(circle, rgba(0,102,255,0.055) 1px, transparent 1px)',
+            padding: '36px 40px 56px',
+            backgroundColor: '#0A0F1C',
+            backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
             backgroundSize: '28px 28px',
           }}
         >
-          <StatCards />
-          <ProgressJourney />
-          <QuickActions />
+          <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
+          <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
+          <DashQuickActions STEPS={STEPS} />
         </main>
       </div>
     </div>

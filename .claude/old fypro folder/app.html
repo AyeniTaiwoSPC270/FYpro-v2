@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FYPro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Poppins:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+      <div class="splash__content">
+        <svg
+          class="splash__shield"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 256 256"
+          width="120"
+          height="120"
+          fill="#0066FF"
+          aria-hidden="true"
+        >
+          <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z"></path>
+        </svg>
+        <p class="splash__wordmark"><span>FY</span><span style="color:#0066FF">Pro</span></p>
+      </div>
+    </div>
+
+    <!-- ONBOARDING SCREEN -->
+    <div id="onboarding-screen" class="onboarding--hidden">
+      <div class="onboarding__card">
+
+        <!-- Stagger 1: Shield + wordmark -->
+        <div class="onboarding__brand reveal-item">
+          <svg
+            class="onboarding__shield"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 256 256"
+            width="44"
+            height="44"
+            fill="#0066FF"
+            aria-hidden="true"
+          >
+            <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z"></path>
+          </svg>
+          <span class="onboarding__wordmark"><span>FY</span><span style="color:#0066FF">Pro</span></span>
+        </div>
+
+        <!-- Stagger 2: Tagline -->
+        <p class="onboarding__tagline reveal-item">The Supervisor You Never Had.</p>
+
+        <!-- Stagger 3: Intro sentence -->
+        <p class="onboarding__intro reveal-item">
+          Tell FYPro about your project and we will tell you if it is researchable.
+        </p>
+
+        <!-- Stagger 4: All five fields -->
+        <div class="onboarding__fields reveal-item">
+
+          <div class="field-group">
+            <label class="field-label" for="sel-university">University</label>
+            <select id="sel-university" class="field-select">
+              <option value="">Select university…</option>
+            </select>
+          </div>
+
+          <div class="field-group field-group--locked">
+            <label class="field-label" for="sel-faculty">Faculty</label>
+            <select id="sel-faculty" class="field-select" disabled>
+              <option value="">Select faculty…</option>
+            </select>
+          </div>
+
+          <div class="field-group field-group--locked">
+            <label class="field-label" for="sel-department">Department</label>
+            <select id="sel-department" class="field-select" disabled>
+              <option value="">Select department…</option>
+            </select>
+          </div>
+
+          <div class="field-group field-group--locked">
+            <label class="field-label">Level</label>
+            <div id="level-selector" class="level-selector">
+              <button class="level-btn" data-level="300" disabled>300</button>
+              <button class="level-btn" data-level="400" disabled>400</button>
+            </div>
+          </div>
+
+          <div class="field-group field-group--locked">
+            <label class="field-label" for="inp-topic">Research Topic</label>
+            <input
+              id="inp-topic"
+              class="field-input"
+              type="text"
+              disabled
+              placeholder="e.g. Impact of social media on academic performance among undergraduates"
+            />
+          </div>
+
+        </div><!-- /.onboarding__fields -->
+
+        <!-- Begin button -->
+        <button id="btn-begin" class="begin-btn" disabled>Begin</button>
+
+      </div><!-- /.onboarding__card -->
+    </div>
+
+    <!-- APP SHELL -->
+    <div id="app-shell" class="app-shell--hidden">
+
+      <!-- Sidebar overlay (mobile) -->
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+      <!-- Mobile sidebar toggle -->
+      <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Toggle sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar" id="app-sidebar">
+
+        <div class="sidebar__brand">
+          <img src="fypro-logo.png" alt="FYPro" style="height:36px;width:auto;" />
+        </div>
+
+        <div class="sidebar__context-card">
+          <p class="context-card__item context-card__item--university" id="ctx-university"></p>
+          <p class="context-card__item context-card__item--faculty"     id="ctx-faculty"></p>
+          <p class="context-card__item context-card__item--department"  id="ctx-department"></p>
+          <p class="context-card__item context-card__item--level"       id="ctx-level"></p>
+          <p class="context-card__item context-card__item--topic"       id="ctx-topic"></p>
+        </div>
+
+        <nav class="sidebar__steps" aria-label="Project steps">
+          <ul class="step-list" id="sidebar-step-list"></ul>
+        </nav>
+
+        <div id="sidebar-bonus" class="sidebar__bonus"></div>
+
+      </aside>
+
+      <!-- RIGHT CONTENT AREA -->
+      <main class="app-content">
+
+        <div class="step-navigator" id="step-navigator"
+             role="navigation" aria-label="Step progress"></div>
+
+        <div class="app-content__scroll">
+          <div class="placeholder-card">
+            <p class="placeholder-card__step-label" id="placeholder-step-label">Step 1: Topic Validator</p>
+            <p class="placeholder-card__subtitle">Ready to begin.</p>
+          </div>
+        </div>
+
+      </main>
+
+    </div><!-- /#app-shell -->
+
+    <script>
+      /* Mobile sidebar toggle */
+      (function () {
+        function initSidebarToggle() {
+          var btn = document.getElementById('sidebar-toggle-btn');
+          var sidebar = document.getElementById('app-sidebar');
+          var overlay = document.getElementById('sidebar-overlay');
+          if (!btn || !sidebar || !overlay) return;
+          function openSidebar() {
+            sidebar.classList.add('is-open');
+            overlay.classList.add('is-visible');
+            btn.classList.add('is-open');
+          }
+          function closeSidebar() {
+            sidebar.classList.remove('is-open');
+            overlay.classList.remove('is-visible');
+            btn.classList.remove('is-open');
+          }
+          btn.addEventListener('click', function () {
+            sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar();
+          });
+          overlay.addEventListener('click', closeSidebar);
+        }
+        document.addEventListener('DOMContentLoaded', initSidebarToggle);
+      })();
+    </script>
+    <script src="state.js"></script>
+    <script src="universities.js"></script>
+    <script src="prompts.js"></script>
+    <script src="api.js"></script>
+    <script src="step1.js"></script>
+    <script src="step2.js"></script>
+    <script src="step3.js"></script>
+    <script src="step4.js"></script>
+    <script src="step5-reviewer.js"></script>
+    <script src="step5.js"></script>
+    <script src="supervisor-email.js"></script>
+    <script src="enhancements.js"></script>
+    <script src="app.js"></script>
+  </body>
+
+  </html>
