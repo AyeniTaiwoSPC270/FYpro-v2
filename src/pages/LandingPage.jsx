@@ -1024,8 +1024,8 @@ function Footer() {
           <div>
             <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">About</div>
             <ul className="list-none flex flex-col gap-[9px]">
-              {['Built at UNILAG','Powered by Claude AI','Contact'].map(s => (
-                <li key={s}><a href="#" className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{s}</a></li>
+              {[['About FYPro', '/about'], ['Built at UNILAG', '/about'], ['Powered by Claude AI', '/about'], ['Contact', '/contact']].map(([label, href]) => (
+                <li key={label}><a href={href} className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{label}</a></li>
               ))}
             </ul>
           </div>
@@ -1036,9 +1036,8 @@ function Footer() {
             © 2026 FYPro. Built for the <span className="text-[rgba(0,102,255,0.6)]">CBC UNILAG Claude AI Hackathon</span>. Powered by <span className="text-[rgba(0,102,255,0.6)]">Claude AI</span>.
           </div>
           <div className="flex gap-[18px]">
-            {['Privacy','Terms'].map(l => (
-              <a key={l} href="#" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">{l}</a>
-            ))}
+            <a href="/privacy" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Privacy</a>
+            <a href="/terms" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Terms</a>
           </div>
         </div>
       </div>

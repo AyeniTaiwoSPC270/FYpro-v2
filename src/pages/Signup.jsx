@@ -1,5 +1,44 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+
+function ConsentCheckbox({ agreed, onChange }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="flex items-start gap-3 cursor-pointer" htmlFor="consent">
+        <div className="relative flex-shrink-0 mt-0.5">
+          <input
+            type="checkbox"
+            id="consent"
+            checked={agreed}
+            onChange={onChange}
+            className="sr-only"
+          />
+          <div
+            className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+              agreed ? 'bg-blue-600 border-blue-600' : 'bg-[#111827] border-slate-700'
+            }`}
+          >
+            {agreed && (
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+        </div>
+        <span className="text-sm text-slate-400 leading-snug">
+          I agree to FYPro&apos;s{' '}
+          <Link to="/terms" className="text-blue-400 hover:text-blue-300 transition-colors">
+            Terms of Service
+          </Link>
+          {' '}and{' '}
+          <Link to="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors">
+            Privacy Policy
+          </Link>
+        </span>
+      </label>
+    </div>
+  )
+}
 import { motion } from 'framer-motion'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -113,6 +152,8 @@ function OrDivider() {
 export default function Signup() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', email: '', university: '', password: '', confirm: '' })
+  const [agreed, setAgreed] = useState(false)
+  const [consentError, setConsentError] = useState(false)
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
@@ -141,7 +182,11 @@ export default function Signup() {
         {/* Form */}
         <form
           className="flex flex-col gap-4"
-          onSubmit={(e) => { e.preventDefault(); navigate('/verify-email', { state: { email: form.email } }) }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!agreed) { setConsentError(true); return }
+            navigate('/verify-email', { state: { email: form.email } })
+          }}
           noValidate
         >
           <TextInput
@@ -181,12 +226,25 @@ export default function Signup() {
             onChange={set('confirm')}
           />
 
+          <ConsentCheckbox
+            agreed={agreed}
+            onChange={(e) => { setAgreed(e.target.checked); if (e.target.checked) setConsentError(false) }}
+          />
+          {consentError && (
+            <p className="text-red-400 text-xs mt-1">
+              Please agree to the Terms of Service and Privacy Policy to continue.
+            </p>
+          )}
+
           <motion.button
             type="submit"
-            whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
-            whileTap={{ scale: 0.98 }}
+            disabled={!agreed}
+            whileHover={agreed ? { y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' } : {}}
+            whileTap={agreed ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
-            className="mt-2 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
+            className={`mt-2 w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${
+              agreed ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'
+            }`}
           >
             Create Account
           </motion.button>

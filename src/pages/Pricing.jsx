@@ -693,13 +693,13 @@ function PricingFooter() {
           </p>
           <div className="flex gap-6">
             <a
-              href="#"
+              href="/privacy"
               className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans"
             >
               Privacy Policy
             </a>
             <a
-              href="#"
+              href="/terms"
               className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans"
             >
               Terms

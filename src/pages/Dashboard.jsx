@@ -316,6 +316,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession }) {
 // ─── Top Bar ──────────────────────────────────────────────────────────────────
 
 function DashTopBar({ STUDENT, onNewSession }) {
+  const navigate = useNavigate()
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -395,6 +396,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
           whileHover={{ scale: 1.09 }}
           whileTap={{ scale: 0.94 }}
           aria-label="Settings"
+          onClick={() => navigate('/settings')}
           className="w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.04)',
@@ -446,6 +448,13 @@ function DashTopBar({ STUDENT, onNewSession }) {
                     className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150"
                   >
                     <span className="font-sans text-[0.82rem] text-slate-300">Profile</span>
+                  </Link>
+                  <Link
+                    to="/settings"
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-slate-300">Settings</span>
                   </Link>
                 </div>
               </motion.div>
@@ -588,7 +597,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         <motion.button
           whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.38)' }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => navigate(activeStep?.path ?? '/workflow/topic-validator')}
+          onClick={() => navigate('/app')}
           className="inline-flex items-center gap-2 px-[22px] py-[11px] bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans text-[0.82rem] font-semibold cursor-pointer self-start transition-all duration-200 relative z-10"
         >
           Continue <ArrowRightIcon />
@@ -657,6 +666,7 @@ const STEP_PATHS = {
 
 function DashProgressJourney({ STEPS, STUDENT }) {
   const navigate = useNavigate()
+  const { navigateStep } = useApp()
   return (
     <motion.section
       initial={{ opacity: 0, y: 22 }}
@@ -828,7 +838,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                         : '0 4px 14px rgba(0,0,0,0.35)',
                     }}
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => navigate(STEP_PATHS[step.id])}
+                    onClick={() => { navigateStep(step.id - 1); navigate('/app') }}
                     className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
                       isActive
                         ? 'bg-green-600 hover:bg-green-500 text-white border-0'
@@ -908,7 +918,7 @@ function DashQuickActions({ STEPS }) {
   const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[0]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
     a.pathKey === 'active'
-      ? { ...a, path: activeStep?.path, sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
+      ? { ...a, path: '/app', sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
       : a
   )
   return (
