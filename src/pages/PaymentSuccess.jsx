@@ -219,7 +219,7 @@ function Row({ label, value, valueStyle, noBorder }) {
         alignItems: 'center',
         paddingBottom: noBorder ? 0 : 12,
         marginBottom: noBorder ? 0 : 12,
-        borderBottom: noBorder ? 'none' : '1px solid #1E293B',
+        borderBottom: noBorder ? 'none' : '1px solid var(--border-color)',
       }}
     >
       <span style={styles.rowLabel}>{label}</span>
@@ -241,7 +241,7 @@ function StatusBadge() {
 const styles = {
   page: {
     minHeight: '100vh',
-    backgroundColor: '#0A0F1C',
+    backgroundColor: 'var(--bg-base)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -262,9 +262,9 @@ const styles = {
     margin: '0 auto',
   },
   card: {
-    backgroundColor: '#0D1425',
+    backgroundColor: 'var(--bg-card)',
     borderRadius: 16,
-    border: '1px solid #1E293B',
+    border: '1px solid var(--border-color)',
     padding: '40px 40px 36px',
     width: '100%',
     boxShadow: '0 8px 40px rgba(59,130,246,0.06)',
@@ -305,9 +305,9 @@ const styles = {
     marginRight: 'auto',
   },
   summaryCard: {
-    backgroundColor: '#111827',
+    backgroundColor: 'var(--bg-input)',
     borderRadius: 12,
-    border: '1px solid #1E293B',
+    border: '1px solid var(--border-color)',
     padding: '20px 20px 20px',
     marginTop: 28,
     width: '100%',

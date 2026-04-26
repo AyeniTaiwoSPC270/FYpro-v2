@@ -93,7 +93,7 @@ export default function InstrumentBuilder() {
       <form
         onSubmit={handleBuild}
         className="rounded-2xl border-l-[3px] border-l-blue-600 shadow-[0_8px_40px_rgba(59,130,246,0.06)] p-8 mb-6"
-        style={{ background: '#0D1425', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{ background: 'var(--bg-card)', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
         {state.chosenMethodology && (
           <div className="mb-4 flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function InstrumentBuilder() {
                 className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all duration-200 ${
                   instrType === opt.key
                     ? 'border-blue-500/60 bg-blue-600/10'
-                    : 'border-slate-800 bg-[#111827] hover:border-slate-600'
+                    : 'border-slate-800 bg-[var(--bg-input)] hover:border-slate-600'
                 }`}
               >
                 <div className={`w-4 h-4 rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all ${instrType === opt.key ? 'border-blue-500' : 'border-slate-600'}`}>
@@ -150,7 +150,7 @@ export default function InstrumentBuilder() {
       </form>
 
       {loading && (
-        <div className="rounded-2xl border border-slate-800 p-8" style={{ background: '#0D1425' }}>
+        <div className="rounded-2xl border border-slate-800 p-8" style={{ background: 'var(--bg-card)' }}>
           <LoadingDots />
         </div>
       )}
@@ -164,7 +164,7 @@ export default function InstrumentBuilder() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="rounded-2xl border-l-[3px] border-l-blue-600 p-8"
-            style={{ background: '#0D1425', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ background: 'var(--bg-card)', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
           >
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -193,7 +193,7 @@ export default function InstrumentBuilder() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
-                  className="bg-[#111827] rounded-xl border border-slate-800 hover:border-blue-500/25 transition-colors p-5"
+                  className="bg-[var(--bg-input)] rounded-xl border border-slate-800 hover:border-blue-500/25 transition-colors p-5"
                 >
                   <div className="font-sans text-sm font-semibold text-white mb-3">{section.title}</div>
                   <ol className="space-y-2">
@@ -209,7 +209,7 @@ export default function InstrumentBuilder() {
             </div>
 
             {result.scoring_guide && (
-              <div className="bg-[#111827] rounded-xl border border-slate-800 p-5 mb-6">
+              <div className="bg-[var(--bg-input)] rounded-xl border border-slate-800 p-5 mb-6">
                 <div className="font-mono text-[0.6rem] tracking-widest uppercase text-slate-500 mb-2">Scoring Guide</div>
                 <p className="text-slate-300 text-sm font-sans leading-relaxed">{result.scoring_guide}</p>
               </div>

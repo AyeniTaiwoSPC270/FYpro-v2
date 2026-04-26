@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
 import LandingPage from './pages/LandingPage'
 import Pricing from './pages/Pricing'
@@ -21,6 +22,7 @@ import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AppProvider>
       <BrowserRouter>
         <ToastProvider />
@@ -58,5 +60,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AppProvider>
+    </ThemeProvider>
   )
 }

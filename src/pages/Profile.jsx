@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
+import { showToast } from '../components/Toast'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ function ProfileNavbar({ initials, name }) {
     <header
       className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0 relative"
       style={{
-        background: '#070C18',
+        background: 'var(--bg-sidebar)',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}
     >
@@ -90,6 +91,7 @@ function ProfileNavbar({ initials, name }) {
           whileHover={{ scale: 1.09 }}
           whileTap={{ scale: 0.94 }}
           aria-label="Notifications"
+          onClick={() => showToast('No new notifications')}
           className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
         >
@@ -97,7 +99,7 @@ function ProfileNavbar({ initials, name }) {
           <span
             aria-hidden="true"
             className="absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full"
-            style={{ background: '#0066FF', border: '1.5px solid #070C18' }}
+            style={{ background: '#0066FF', border: '1.5px solid var(--bg-sidebar)' }}
           />
         </motion.button>
 
@@ -139,7 +141,7 @@ function ProfileNavbar({ initials, name }) {
                 transition={{ duration: 0.15, ease: 'easeOut' }}
                 className="absolute right-0 mt-2 w-52 rounded-xl overflow-hidden"
                 style={{
-                  background: '#0D1425',
+                  background: 'var(--bg-card)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
                   top: '100%',
@@ -228,12 +230,12 @@ function FormField({ label, hint, children }) {
 }
 
 const inputCls =
-  'w-full bg-[#111827] border border-[#1E293B] rounded-xl px-4 py-3 text-white font-sans text-[0.875rem] outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-600'
+  'w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-white font-sans text-[0.875rem] outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-600'
 
 // ─── Profile Page ─────────────────────────────────────────────────────────────
 
 export default function Profile() {
-  const { state, clearState } = useApp()
+  const { state, set, clearState } = useApp()
   const navigate = useNavigate()
 
   const completedCount = state.stepsCompleted.filter(Boolean).length
@@ -254,23 +256,58 @@ export default function Profile() {
     .slice(0, 2)
     .toUpperCase()
 
+  const photoInputRef = useRef(null)
+
+  function handleChangePhoto() {
+    photoInputRef.current?.click()
+    console.log('[TODO] Photo upload — requires file storage backend')
+  }
+
+  function handleSaveChanges() {
+    set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
+    console.log('[Profile] Saved:', form)
+    showToast('Changes saved')
+  }
+
+  function handleDeleteProjects() {
+    if (!window.confirm('Delete all project data? This cannot be undone.')) return
+    set({
+      roughTopic: '', topicValidation: null, validatedTopic: '',
+      chapterStructure: null, methodology: null, chosenMethodology: '',
+      writingPlan: null, uploadedProject: null, redFlags: null,
+      defenseStarted: false, defenseApiMessages: [], defenseDisplayHistory: [],
+      defenseSummary: null, defenseQuestionCount: 0,
+      stepsCompleted: [false, false, false, false, false, false], currentStep: 0,
+      stepResults: {},
+    })
+    console.log('[Profile] All project data deleted')
+    showToast('All projects deleted')
+  }
+
+  function handleDeleteAccount() {
+    if (!window.confirm('Permanently delete your FYPro account? This cannot be undone.')) return
+    console.log('[TODO] Delete account — requires auth backend')
+    clearState()
+    navigate('/')
+  }
+
   function handleChange(e) {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const cardStyle = {
-    background: '#0D1425',
+    background: 'var(--bg-card)',
     borderRadius: '1rem',
-    border: '1px solid #1E293B',
+    border: '1px solid var(--border-color)',
   }
 
   return (
     <div
       className="min-h-screen"
       style={{
-        background: '#0A0F1C',
-        backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
+        background: 'var(--bg-base)',
+        backgroundImage: 'var(--dot-bg-image)',
         backgroundSize: '28px 28px',
       }}
     >
@@ -310,10 +347,18 @@ export default function Profile() {
               <span className="font-serif text-2xl text-blue-400 leading-none">{initials}</span>
             </div>
             <button
+              onClick={handleChangePhoto}
               className="mt-2 font-sans text-xs text-blue-400 hover:text-blue-300 cursor-pointer transition-colors duration-150 bg-transparent border-0 p-0"
             >
               Change Photo
             </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => console.log('[TODO] Upload file:', e.target.files[0]?.name)}
+            />
           </div>
 
           {/* Info */}
@@ -422,6 +467,7 @@ export default function Profile() {
             <motion.button
               whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
               whileTap={{ scale: 0.97 }}
+              onClick={handleSaveChanges}
               className="font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2"
               style={{ background: '#2563EB', border: 'none' }}
             >
@@ -449,7 +495,7 @@ export default function Profile() {
               <div
                 key={label}
                 className="flex-1 rounded-xl p-4"
-                style={{ background: '#111827' }}
+                style={{ background: 'var(--bg-input)' }}
               >
                 <div className="font-sans text-2xl font-bold text-white leading-none">{value}</div>
                 <div className="font-mono text-xs text-slate-500 uppercase tracking-wider mt-1.5">{label}</div>
@@ -473,17 +519,19 @@ export default function Profile() {
               title: 'Delete all projects',
               desc:  'Permanently delete all your FYP projects and results. This cannot be undone.',
               label: 'Delete Projects',
+              handler: handleDeleteProjects,
             },
             {
               title: 'Delete account',
               desc:  'Permanently delete your FYPro account and all associated data.',
               label: 'Delete Account',
+              handler: handleDeleteAccount,
             },
           ].map((item, i) => (
             <div
               key={item.title}
               className={`flex items-center justify-between gap-4 ${
-                i < 1 ? 'border-b border-[#1E293B] pb-4 mb-4' : ''
+                i < 1 ? 'border-b border-[var(--border-color)] pb-4 mb-4' : ''
               }`}
             >
               <div className="flex-1 min-w-0">
@@ -493,6 +541,7 @@ export default function Profile() {
               <motion.button
                 whileHover={{ background: 'rgba(239,68,68,0.1)' }}
                 whileTap={{ scale: 0.97 }}
+                onClick={item.handler}
                 className="flex-shrink-0 font-sans text-sm text-red-400 rounded-xl px-4 py-2 cursor-pointer transition-all duration-200"
                 style={{
                   background: 'transparent',

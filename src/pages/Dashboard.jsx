@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useApp } from '../context/AppContext'
+import { useTheme } from '../context/ThemeContext'
+import { showToast } from '../components/Toast'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/workflow/topic-validator' },
@@ -12,12 +14,36 @@ const STEP_DEFS = [
   { id: 6, name: 'Defense Simulator',  desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.', path: '/workflow/defense-simulator' },
 ]
 
-function buildSteps(stepsCompleted, currentStep) {
+function buildSteps(stepsCompleted, activeStepId) {
   return STEP_DEFS.map((def, i) => ({
     ...def,
-    status: stepsCompleted[i] ? 'completed' : currentStep === def.id ? 'active' : 'locked',
+    status: stepsCompleted[i] ? 'completed' : activeStepId === def.id ? 'active' : 'locked',
   }))
 }
+
+// ─── useReveal hook (FIX 6) ───────────────────────────────────────────────────
+
+function useReveal() {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { setVisible(entry.isIntersecting) },
+      { threshold: 0.12 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, visible]
+}
+
+const revealStyle = (visible) => ({
+  opacity: visible ? 1 : 0,
+  transform: visible ? 'translateY(0)' : 'translateY(24px)',
+  transition: 'opacity 0.5s ease, transform 0.5s ease',
+})
 
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 
@@ -88,6 +114,22 @@ const ZapIcon = () => (
 const PlayIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+const SunIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+)
+
+const MoonIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 )
 
@@ -163,6 +205,39 @@ function ProgressRing({ completed, total }) {
   )
 }
 
+// ─── New Session Modal (FIX 5) ────────────────────────────────────────────────
+
+function NewSessionModal({ onClose, onConfirm }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center">
+      <div
+        className="mt-[20vh] w-full max-w-md mx-4 rounded-2xl p-8"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+      >
+        <h2 className="text-white font-semibold text-lg">Start a new project?</h2>
+        <p className="text-slate-400 text-sm mt-2">
+          Starting a new session will require a project payment. Your current project progress will be saved.
+        </p>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl px-6 py-2 font-sans text-sm font-medium text-slate-400 hover:border-slate-500 transition-colors duration-150"
+            style={{ border: '1px solid #334155' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-6 py-2 font-sans text-sm font-semibold transition-colors duration-150"
+          >
+            Continue to Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function DashSidebar({ STUDENT, STEPS, onNewSession }) {
@@ -172,7 +247,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession }) {
       style={{
         width: 260,
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #070C18 0%, #050A13 100%)',
+        background: 'linear-gradient(180deg, var(--bg-sidebar) 0%, #050A13 100%)',
       }}
     >
       {/* Logo */}
@@ -288,7 +363,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession }) {
       <div
         className="mx-3.5 mb-6 p-4 rounded-xl"
         style={{
-          background: '#0D1425',
+          background: 'var(--bg-card)',
           border: '1px solid rgba(255,255,255,0.07)',
           borderLeft: '3px solid rgba(0,102,255,0.5)',
         }}
@@ -317,13 +392,19 @@ function DashSidebar({ STUDENT, STEPS, onNewSession }) {
 
 function DashTopBar({ STUDENT, onNewSession }) {
   const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
   const hour = new Date().getHours()
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = STUDENT.name.split(' ')[0]
 
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef(null)
+
+  // FIX 3 — notifications state: dot only shows when there are unread notifications
+  const [notifications, setNotifications] = useState([]) // eslint-disable-line no-unused-vars
+
+  // FIX 6 — scroll reveal for welcome header
+  const [headerRef, headerVisible] = useReveal()
 
   useEffect(() => {
     function handleOutside(e) {
@@ -338,21 +419,17 @@ function DashTopBar({ STUDENT, onNewSession }) {
   return (
     <header
       className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
-      style={{ background: '#070C18' }}
+      style={{ background: 'var(--bg-sidebar)' }}
     >
-      {/* Greeting */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      >
+      {/* FIX 1 — Greeting: shows actual first name and correct subtitle */}
+      <div ref={headerRef} style={revealStyle(headerVisible)}>
         <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
           {greeting}, {firstName}
         </div>
         <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
           {STUDENT.stepsCompleted} steps done — Step {STUDENT.currentStepId} is waiting.
         </div>
-      </motion.div>
+      </div>
 
       {/* Controls */}
       <motion.div
@@ -361,7 +438,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
         transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center gap-2.5"
       >
-        {/* New Project */}
+        {/* FIX 5 — New Session opens modal instead of clearing session immediately */}
         <motion.button
           whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
           whileTap={{ scale: 0.96 }}
@@ -372,11 +449,12 @@ function DashTopBar({ STUDENT, onNewSession }) {
           <PlusIcon /> New Session
         </motion.button>
 
-        {/* Bell */}
+        {/* FIX 3 — Bell: dot only renders when notifications.length > 0 */}
         <motion.button
           whileHover={{ scale: 1.09 }}
           whileTap={{ scale: 0.94 }}
           aria-label="Notifications"
+          onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
           className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.04)',
@@ -384,11 +462,30 @@ function DashTopBar({ STUDENT, onNewSession }) {
           }}
         >
           <BellIcon />
-          <span
-            aria-hidden="true"
-            className="absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full"
-            style={{ background: '#0066FF', border: '1.5px solid #070C18' }}
-          />
+          {notifications.length > 0 && (
+            <span
+              aria-label={`${notifications.length} unread notifications`}
+              className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center font-mono font-bold"
+              style={{ fontSize: '0.55rem' }}
+            >
+              {notifications.length}
+            </span>
+          )}
+        </motion.button>
+
+        {/* Theme toggle */}
+        <motion.button
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={toggleTheme}
+          className="w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
         </motion.button>
 
         {/* Settings */}
@@ -406,17 +503,19 @@ function DashTopBar({ STUDENT, onNewSession }) {
           <GearIcon />
         </motion.button>
 
-        {/* Avatar + dropdown */}
+        {/* FIX 2 — Avatar: shows actual initials from full name */}
         <div className="relative" ref={avatarRef}>
           <motion.button
             whileHover={{ scale: 1.07, boxShadow: '0 0 18px rgba(0,102,255,0.3)' }}
             aria-label={`Profile: ${STUDENT.name}`}
             aria-expanded={avatarOpen}
             onClick={() => setAvatarOpen((v) => !v)}
-            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-mono text-[0.68rem] font-bold text-white cursor-pointer"
+            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-white cursor-pointer"
             style={{
               background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
               border: '2px solid rgba(0,102,255,0.35)',
+              fontSize: '0.68rem',
+              fontFamily: "'DM Serif Display', serif",
             }}
           >
             {STUDENT.initials}
@@ -432,7 +531,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
                 className="absolute right-0 mt-2 w-48 rounded-xl overflow-hidden"
                 style={{
                   top: '100%',
-                  background: '#0D1425',
+                  background: 'var(--bg-card)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
                 }}
@@ -495,8 +594,11 @@ function DashStatCards({ STUDENT, STEPS }) {
   const navigate  = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active')
 
+  // FIX 6 — scroll reveal for stats row
+  const [rowRef, rowVisible] = useReveal()
+
   return (
-    <div className="grid grid-cols-3 gap-5 mb-7">
+    <div ref={rowRef} style={revealStyle(rowVisible)} className="grid grid-cols-3 gap-5 mb-7">
 
       {/* ── Card 1: Circular Progress ── */}
       <motion.div
@@ -510,7 +612,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         }}
         className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex items-center gap-[22px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+          background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
           borderLeft: '4px solid #3B82F6',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
@@ -556,7 +658,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         }}
         className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col justify-between gap-[18px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #0D1425 0%, #0B1E10 60%, #111827 100%)',
+          background: 'linear-gradient(145deg, var(--bg-card) 0%, #0B1E10 60%, var(--bg-input) 100%)',
           borderLeft: '4px solid #16A34A',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
@@ -616,7 +718,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         }}
         className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col gap-[14px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+          background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
           borderLeft: '4px solid #3B82F6',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
@@ -655,27 +757,28 @@ function DashStatCards({ STUDENT, STEPS }) {
 
 // ─── Progress Journey ─────────────────────────────────────────────────────────
 
-const STEP_PATHS = {
-  1: '/workflow/topic-validator',
-  2: '/workflow/chapter-architect',
-  3: '/workflow/methodology-advisor',
-  4: '/workflow/instrument-builder',
-  5: '/workflow/writing-planner',
-  6: '/workflow/defense-simulator',
-}
-
 function DashProgressJourney({ STEPS, STUDENT }) {
   const navigate = useNavigate()
   const { navigateStep } = useApp()
+
+  // FIX 6 — scroll reveal: section + each step card individually
+  const [sectionRef, sectionVisible] = useReveal()
+  const [r0, v0] = useReveal()
+  const [r1, v1] = useReveal()
+  const [r2, v2] = useReveal()
+  const [r3, v3] = useReveal()
+  const [r4, v4] = useReveal()
+  const [r5, v5] = useReveal()
+  const stepReveals = [[r0, v0], [r1, v1], [r2, v2], [r3, v3], [r4, v4], [r5, v5]]
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.38, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+    <section
+      ref={sectionRef}
       aria-labelledby="journey-heading"
       className="rounded-2xl border border-slate-800/80 p-8 mb-7"
       style={{
-        background: 'linear-gradient(145deg, #0D1425 0%, #111827 100%)',
+        ...revealStyle(sectionVisible),
+        background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
         boxShadow: '0 8px 40px rgba(59,130,246,0.06)',
       }}
     >
@@ -707,22 +810,18 @@ function DashProgressJourney({ STEPS, STUDENT }) {
           const isActive    = step.status === 'active'
           const isLocked    = step.status === 'locked'
           const isLast      = i === STEPS.length - 1
+          const [stepRef, stepVisible] = stepReveals[i] || [null, true]
 
           return (
-            <motion.div
+            <div
               key={step.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                delay: 0.45 + i * 0.07,
-                duration: 0.42,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              ref={stepRef}
+              style={revealStyle(stepVisible)}
               className="flex gap-5"
             >
               {/* Timeline column */}
               <div className="flex flex-col items-center w-11 flex-shrink-0">
-                {/* Badge */}
+                {/* FIX 7 — Badge: locked steps use bg-slate-800 border-slate-700 */}
                 <motion.div
                   whileHover={!isLocked ? { scale: 1.14 } : {}}
                   transition={{ duration: 0.2 }}
@@ -732,7 +831,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                       ? '#16A34A'
                       : isActive
                       ? '#0066FF'
-                      : 'rgba(255,255,255,0.05)',
+                      : 'var(--border-color)',
                     boxShadow: isActive
                       ? '0 0 22px rgba(0,102,255,0.32)'
                       : isCompleted
@@ -741,7 +840,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                     border: isActive
                       ? '2px solid rgba(0,102,255,0.35)'
                       : isLocked
-                      ? '1.5px solid rgba(255,255,255,0.1)'
+                      ? '1px solid #334155'
                       : 'none',
                     color:
                       isCompleted || isActive
@@ -780,11 +879,8 @@ function DashProgressJourney({ STEPS, STUDENT }) {
               </div>
 
               {/* Content */}
-              <div
-                className={`flex-1 transition-opacity duration-200 ${isLast ? 'pb-0' : 'pb-[26px]'}`}
-                style={{ opacity: isLocked ? 0.42 : 1 }}
-              >
-                {/* Name + status badge */}
+              <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-[26px]'}`}>
+                {/* FIX 7 — Name + lock icon next to name for locked steps */}
                 <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
                   <span
                     className={`font-sans text-[0.92rem] font-semibold ${
@@ -793,6 +889,13 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                   >
                     {step.name}
                   </span>
+
+                  {/* FIX 7 — Lock icon visible next to step name when locked */}
+                  {isLocked && (
+                    <span className="text-slate-700">
+                      <LockIcon size={13} />
+                    </span>
+                  )}
 
                   {isActive ? (
                     <motion.span
@@ -803,32 +906,26 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                     >
                       In Progress
                     </motion.span>
-                  ) : (
+                  ) : !isLocked ? (
                     <span
-                      className={`font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full ${
-                        isCompleted ? 'text-green-400' : 'text-slate-600'
-                      }`}
-                      style={{
-                        background: isCompleted
-                          ? 'rgba(22,163,74,0.12)'
-                          : 'rgba(255,255,255,0.05)',
-                      }}
+                      className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400"
+                      style={{ background: 'rgba(22,163,74,0.12)' }}
                     >
-                      {isCompleted ? 'Completed' : 'Locked'}
+                      Completed
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
-                {/* Description */}
+                {/* FIX 7 — Description: text-slate-700 for locked, text-slate-500 otherwise */}
                 <p
-                  className={`font-sans text-[0.77rem] text-slate-500 leading-[1.62] max-w-[58ch] ${
-                    isLocked ? 'mb-0' : 'mb-[14px]'
+                  className={`font-sans text-[0.77rem] leading-[1.62] max-w-[58ch] ${
+                    isLocked ? 'text-slate-700 mb-0' : 'text-slate-500 mb-[14px]'
                   }`}
                 >
                   {step.desc}
                 </p>
 
-                {/* Action button */}
+                {/* Action button — only for non-locked steps */}
                 {!isLocked && (
                   <motion.button
                     whileHover={{
@@ -850,11 +947,11 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                   </motion.button>
                 )}
               </div>
-            </motion.div>
+            </div>
           )
         })}
       </div>
-    </motion.section>
+    </section>
   )
 }
 
@@ -865,13 +962,12 @@ const QUICK_ACTIONS_BASE = [
     label: 'Continue where you left off',
     sub: 'Active Step',
     pathKey: 'active',
-
+    lockable: false,
     iconBg: 'rgba(22,163,74,0.15)',
     iconColor: '#16A34A',
-    cardBg: '#111827',
+    cardBg: 'var(--bg-input)',
     border: 'rgba(22,163,74,0.28)',
-    hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(22,163,74,0.22)',
+    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(22,163,74,0.22)',
     ctaLabel: 'Continue',
     ctaBg: '#16A34A',
     ctaColor: '#fff',
@@ -882,28 +978,29 @@ const QUICK_ACTIONS_BASE = [
   {
     label: 'Jump to Defense Simulator',
     sub: 'Preview the three-examiner panel',
+    lockable: true,
     iconBg: 'rgba(0,102,255,0.15)',
     iconColor: '#0066FF',
-    cardBg: '#111827',
+    cardBg: 'var(--bg-input)',
     border: 'rgba(0,102,255,0.24)',
-    hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(0,102,255,0.22)',
+    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(0,102,255,0.22)',
     ctaLabel: 'Preview',
     ctaBg: 'transparent',
     ctaColor: '#60A5FA',
     ctaBorder: '1.5px solid rgba(0,102,255,0.38)',
     Icon: ZapIcon,
     breathe: false,
+    path: '/workflow/defense-simulator',
   },
   {
     label: 'Download Progress Report',
     sub: 'Export your research summary as PDF',
+    lockable: true,
     iconBg: 'rgba(245,158,11,0.15)',
     iconColor: '#F59E0B',
-    cardBg: '#111827',
+    cardBg: 'var(--bg-input)',
     border: 'rgba(245,158,11,0.24)',
-    hoverGlow:
-      '0 8px 36px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.2)',
+    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.2)',
     ctaLabel: 'Export PDF',
     ctaBg: 'transparent',
     ctaColor: '#FCD34D',
@@ -913,7 +1010,7 @@ const QUICK_ACTIONS_BASE = [
   },
 ]
 
-function DashQuickActions({ STEPS }) {
+function DashQuickActions({ STEPS, allComplete, showToastMessage }) {
   const navigate = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[0]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
@@ -921,13 +1018,16 @@ function DashQuickActions({ STEPS }) {
       ? { ...a, path: '/app', sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
       : a
   )
+
+  // FIX 6 — scroll reveal: section heading + each card individually
+  const [sectionRef, sectionVisible] = useReveal()
+  const [r0, v0] = useReveal()
+  const [r1, v1] = useReveal()
+  const [r2, v2] = useReveal()
+  const cardReveals = [[r0, v0], [r1, v1], [r2, v2]]
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.52, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
-      aria-labelledby="quick-actions-heading"
-    >
+    <section ref={sectionRef} style={revealStyle(sectionVisible)} aria-labelledby="quick-actions-heading">
       <h2
         id="quick-actions-heading"
         className="font-serif text-[1.45rem] text-white mb-4 leading-[1.2]"
@@ -936,79 +1036,100 @@ function DashQuickActions({ STEPS }) {
       </h2>
 
       <div className="grid grid-cols-3 gap-4">
-        {QUICK_ACTIONS.map((action, i) => (
-          <motion.button
-            key={action.label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: 0.58 + i * 0.1,
-              duration: 0.45,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            whileHover={{ y: -4, boxShadow: action.hoverGlow }}
-            whileTap={{ scale: 0.97 }}
-            aria-label={action.label}
-            onClick={action.path ? () => navigate(action.path) : undefined}
-            className="flex flex-col items-start gap-4 p-6 rounded-2xl cursor-pointer text-left transition-all duration-200"
-            style={{
-              background: action.cardBg,
-              border: `1px solid ${action.border}`,
-            }}
-          >
-            {/* Icon */}
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ background: action.iconBg, color: action.iconColor }}
-            >
-              <action.Icon />
-            </div>
+        {QUICK_ACTIONS.map((action, i) => {
+          // FIX 4 — lockable cards are disabled until all 6 steps complete
+          const isLockedAction = action.lockable && !allComplete
+          const [cardRef, cardVisible] = cardReveals[i] || [null, true]
 
-            {/* Text */}
-            <div className="flex-1">
-              <div className="font-sans text-[0.88rem] font-semibold text-white mb-[5px] leading-[1.3]">
-                {action.label}
-              </div>
-              <div className="font-sans text-[0.72rem] text-slate-500 leading-[1.45]">
-                {action.sub}
-              </div>
-            </div>
-
-            {/* CTA chip */}
-            {action.breathe ? (
-              <motion.span
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{
-                  duration: 0.6,
-                  repeat: Infinity,
-                  repeatDelay: 2.4,
-                  ease: 'easeInOut',
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
+          return (
+            <div key={action.label} ref={cardRef} style={revealStyle(cardVisible)}>
+              <motion.button
+                whileHover={!isLockedAction ? { y: -4, boxShadow: action.hoverGlow } : {}}
+                whileTap={!isLockedAction ? { scale: 0.97 } : {}}
+                aria-label={action.label}
+                aria-disabled={isLockedAction}
+                onClick={
+                  isLockedAction
+                    ? () => showToastMessage('Complete all 6 steps to unlock this feature')
+                    : action.path
+                    ? () => navigate(action.path)
+                    : undefined
+                }
+                className={`relative flex flex-col items-start gap-4 p-6 rounded-2xl text-left transition-all duration-200 w-full ${
+                  isLockedAction ? 'cursor-not-allowed' : 'cursor-pointer'
+                }`}
                 style={{
-                  background: action.ctaBg,
-                  color: action.ctaColor,
-                  border: action.ctaBorder,
+                  background: action.cardBg,
+                  border: `1px solid ${isLockedAction ? '#334155' : action.border}`,
+                  opacity: isLockedAction ? 0.6 : 1,
                 }}
               >
-                {action.ctaLabel} <ArrowRightIcon size={11} />
-              </motion.span>
-            ) : (
-              <span
-                className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
-                style={{
-                  background: action.ctaBg,
-                  color: action.ctaColor,
-                  border: action.ctaBorder,
-                }}
-              >
-                {action.ctaLabel} <ArrowRightIcon size={11} />
-              </span>
-            )}
-          </motion.button>
-        ))}
+                {/* FIX 4 — Lock overlay icon for locked actions */}
+                {isLockedAction && (
+                  <div className="absolute top-4 right-4 text-slate-600">
+                    <LockIcon size={15} />
+                  </div>
+                )}
+
+                {/* Icon */}
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ background: action.iconBg, color: action.iconColor }}
+                >
+                  <action.Icon />
+                </div>
+
+                {/* Text */}
+                <div className="flex-1">
+                  <div className="font-sans text-[0.88rem] font-semibold text-white mb-[5px] leading-[1.3]">
+                    {action.label}
+                  </div>
+                  <div className="font-sans text-[0.72rem] text-slate-500 leading-[1.45]">
+                    {action.sub}
+                  </div>
+                </div>
+
+                {/* FIX 4 — CTA chip: opacity-50 cursor-not-allowed when locked */}
+                {action.breathe ? (
+                  <motion.span
+                    animate={!isLockedAction ? { scale: [1, 1.03, 1] } : {}}
+                    transition={{
+                      duration: 0.6,
+                      repeat: Infinity,
+                      repeatDelay: 2.4,
+                      ease: 'easeInOut',
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
+                    style={{
+                      background: action.ctaBg,
+                      color: action.ctaColor,
+                      border: action.ctaBorder,
+                      opacity: isLockedAction ? 0.5 : 1,
+                      cursor: isLockedAction ? 'not-allowed' : 'default',
+                    }}
+                  >
+                    {action.ctaLabel} <ArrowRightIcon size={11} />
+                  </motion.span>
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
+                    style={{
+                      background: action.ctaBg,
+                      color: action.ctaColor,
+                      border: action.ctaBorder,
+                      opacity: isLockedAction ? 0.5 : 1,
+                      cursor: isLockedAction ? 'not-allowed' : 'default',
+                    }}
+                  >
+                    {action.ctaLabel} <ArrowRightIcon size={11} />
+                  </span>
+                )}
+              </motion.button>
+            </div>
+          )
+        })}
       </div>
-    </motion.section>
+    </section>
   )
 }
 
@@ -1016,19 +1137,44 @@ function DashQuickActions({ STEPS }) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { state, clearSession, isOnboarded } = useApp()
+  const { state, clearState, isOnboarded } = useApp()
 
   useEffect(() => {
     if (!isOnboarded) navigate('/start', { replace: true })
   }, [isOnboarded, navigate])
 
+  // FIX 5 — new session modal state
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false)
+
+  // Toast state (used by FIX 4)
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const toastTimer = useRef(null)
+
+  function showToastMessage(msg) {
+    setToastMsg(msg)
+    setToastVisible(true)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToastVisible(false), 3000)
+  }
+
   const completedCount = state.stepsCompleted.filter(Boolean).length
-  const activeStepId   = state.currentStep ?? 1
-  const STEPS          = buildSteps(state.stepsCompleted, activeStepId)
+  // FIX 1 — activeStepId: state.currentStep is 0-indexed count; step IDs are 1-indexed
+  const activeStepId = Math.min(6, (state.currentStep ?? 0) + 1)
+  const STEPS = buildSteps(state.stepsCompleted, activeStepId)
+
+  // FIX 4 — allComplete: all 6 steps must be done to unlock Defense/Report cards
+  const allComplete = state.stepsCompleted.every(Boolean)
+
+  // FIX 1 + FIX 2 — derive name and initials from state.name
+  const fullName = state.name || ''
+  const initials = fullName
+    ? fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'ST'
 
   const STUDENT = {
-    name:           state.university ? state.department?.split(' ')[0] + ' Student' : 'Student',
-    initials:       (state.department || 'ST').slice(0, 2).toUpperCase(),
+    name:           fullName || 'Student',
+    initials,
     university:     state.university  || 'University',
     department:     state.department  || 'Department',
     level:          state.level       || '',
@@ -1037,30 +1183,78 @@ export default function Dashboard() {
     currentStepId:  activeStepId,
   }
 
+  function handleNewSession() {
+    setShowNewSessionModal(true)
+  }
+
+  function handleModalClose() {
+    setShowNewSessionModal(false)
+  }
+
+  function handleModalConfirm() {
+    setShowNewSessionModal(false)
+    navigate('/payment')
+  }
+
   return (
     <div
       className="flex h-screen overflow-hidden"
-      style={{ background: '#0A0F1C' }}
+      style={{ background: 'var(--bg-base)' }}
     >
-      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={() => { clearSession(); navigate('/start') }} />
+      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={handleNewSession} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashTopBar STUDENT={STUDENT} onNewSession={() => { clearSession(); navigate('/start') }} />
+        <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} />
 
         <main
           className="flex-1 overflow-y-auto"
           style={{
             padding: '36px 40px 56px',
-            backgroundColor: '#0A0F1C',
-            backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
+            backgroundColor: 'var(--bg-base)',
+            backgroundImage: 'var(--dot-bg-image)',
             backgroundSize: '28px 28px',
           }}
         >
           <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
           <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
-          <DashQuickActions STEPS={STEPS} />
+          <DashQuickActions STEPS={STEPS} allComplete={allComplete} showToastMessage={showToastMessage} />
         </main>
       </div>
+
+      {/* FIX 5 — New Session confirmation modal */}
+      <AnimatePresence>
+        {showNewSessionModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <NewSessionModal onClose={handleModalClose} onConfirm={handleModalConfirm} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FIX 4 — Toast notification */}
+      <AnimatePresence>
+        {toastVisible && (
+          <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.22 }}
+              className="pointer-events-auto font-sans text-sm text-white px-5 py-3 rounded-xl border border-slate-700"
+              style={{
+                background: 'var(--bg-card)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              }}
+            >
+              {toastMsg}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -59,7 +59,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
 
   const completedIds = STEP_DEFS.filter((_, i) => stepsCompleted[i]).map((s) => s.id)
   const allDone = stepsCompleted.slice(0, 4).every(Boolean)
-  const pageBg = defenseMode ? '#060A14' : '#0A0F1C'
+  const pageBg = defenseMode ? '#060A14' : 'var(--bg-base)'
 
   function handleStepClick(step) {
     const done   = completedIds.includes(step.id)
@@ -73,7 +73,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
       {/* ── Top Step Navigator ── */}
       <nav
         className="flex-shrink-0 z-30 border-b border-slate-800"
-        style={{ background: '#070C18' }}
+        style={{ background: 'var(--bg-sidebar)' }}
         aria-label="Research step progress"
       >
         <div className="flex items-start justify-center gap-0 px-6 py-4 max-w-5xl mx-auto">
@@ -93,7 +93,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
                       done
                         ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-500'
                         : active
-                        ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-2 ring-offset-[#070C18] shadow-[0_0_16px_rgba(59,130,246,0.5)]'
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-500 ring-offset-2 ring-offset-[var(--bg-sidebar)] shadow-[0_0_16px_rgba(59,130,246,0.5)]'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}
                   >
@@ -128,7 +128,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
         {/* ── Sidebar ── */}
         <aside
           className="flex flex-col flex-shrink-0 border-r border-slate-800"
-          style={{ width: 244, background: '#070C18' }}
+          style={{ width: 244, background: 'var(--bg-sidebar)' }}
           aria-label="Navigation sidebar"
         >
           {/* Logo */}
@@ -146,7 +146,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
             <div
               className="mx-3 mt-4 rounded-xl p-4"
               style={{
-                background: '#0D1425',
+                background: 'var(--bg-card)',
                 border: '1px solid rgba(255,255,255,0.07)',
                 borderLeft: '3px solid rgba(0,102,255,0.5)',
               }}
@@ -245,7 +245,7 @@ export default function StepLayout({ currentStep, children, defenseMode = false 
           className="flex-1 overflow-y-auto"
           style={{
             backgroundColor: pageBg,
-            backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
+            backgroundImage: 'var(--dot-bg-image)',
             backgroundSize: '28px 28px',
           }}
         >

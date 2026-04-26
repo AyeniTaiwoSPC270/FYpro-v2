@@ -31,7 +31,7 @@ export default function ForgotPassword() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ backgroundColor: '#0A0F1C' }}
+      style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
-          backgroundColor: '#0D1425',
+          backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
                 placeholder="you@university.edu.ng"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#111827] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+                className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
               />
             </div>
 

@@ -90,22 +90,46 @@ function PricingNavbar() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
+  const navLinks = [
+    { label: 'How It Works', href: '/#how-it-works' },
+    { label: 'Features', href: '/#features' },
+    { label: 'Pricing', href: '/pricing' },
+    { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
+  ]
+
   return (
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-6 md:px-12 border-b transition-all duration-200 ${
-          scrolled ? 'border-[rgba(37,99,235,0.18)]' : 'border-white/[0.06]'
+          scrolled ? 'border-[rgba(0,102,255,0.18)]' : 'border-white/[0.06]'
         }`}
         style={{
-          background: scrolled ? 'rgba(10,15,28,0.96)' : 'rgba(10,15,28,0.82)',
-          backdropFilter: 'blur(22px)',
-          WebkitBackdropFilter: 'blur(22px)',
+          background: scrolled ? 'rgba(6,14,24,0.94)' : 'rgba(6,14,24,0.82)',
+          backdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
+          WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
           boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.4)' : 'none',
         }}
       >
         <a href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
           <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
         </a>
+
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map(({ label, href }) => (
+            <a
+              key={label}
+              href={href}
+              className={`text-[0.875rem] font-medium transition-colors duration-150 relative no-underline after:content-[''] after:absolute after:bottom-[-3px] after:left-0 after:right-0 after:h-px after:bg-blue-500 after:transition-transform after:duration-150 after:origin-left ${
+                href === '/pricing'
+                  ? 'text-white after:scale-x-100'
+                  : 'text-white/65 hover:text-white after:scale-x-0 hover:after:scale-x-100'
+              }`}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
 
         <div className="hidden md:flex items-center gap-2.5">
           <BtnLink
@@ -115,10 +139,10 @@ function PricingNavbar() {
             Login
           </BtnLink>
           <BtnLink
-            href="/signup"
-            className="px-5 py-2 text-[0.8rem] bg-blue-brand text-white hover:shadow-blue-glow hover:-translate-y-0.5"
+            href="/login"
+            className="px-5 py-2 text-[0.8rem] bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-0.5"
           >
-            Sign Up
+            Try Free
           </BtnLink>
         </div>
 
@@ -154,13 +178,18 @@ function PricingNavbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden fixed top-[66px] left-0 right-0 z-[190] border-b border-white/[0.07] px-6 pt-5 pb-7 flex flex-col gap-4"
+            className="md:hidden fixed top-[66px] left-0 right-0 z-[190] border-b border-white/[0.07] px-6 pt-5 pb-7 flex flex-col gap-5"
             style={{
-              background: 'rgba(10,15,28,0.98)',
+              background: 'rgba(6,14,24,0.98)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
+            <div className="flex flex-col gap-1">
+              {navLinks.map(({ label, href }) => (
+                <a key={label} href={href} className="block py-3 px-2 text-base font-medium text-white/65 border-b border-white/[0.06] hover:text-white transition-colors no-underline">{label}</a>
+              ))}
+            </div>
             <div className="flex flex-col gap-2.5">
               <BtnLink
                 href="/login"
@@ -169,10 +198,10 @@ function PricingNavbar() {
                 Login
               </BtnLink>
               <BtnLink
-                href="/signup"
-                className="w-full py-2.5 px-[22px] text-[0.875rem] bg-blue-brand text-white"
+                href="/login"
+                className="w-full py-2.5 px-[22px] text-[0.875rem] bg-blue-600 text-white"
               >
-                Sign Up
+                Try Free
               </BtnLink>
             </div>
           </motion.div>
@@ -353,7 +382,7 @@ function PricingCards() {
           {/* ── Free ── */}
           <Reveal delay={0}>
             <motion.div
-              className="bg-[#0D1425] rounded-2xl border border-[#1E293B] p-8"
+              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8"
               whileHover={{ y: -4, borderColor: 'rgba(37,99,235,0.35)', transition: { duration: 0.2 } }}
             >
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
@@ -361,7 +390,7 @@ function PricingCards() {
               </div>
               <div className="font-serif text-5xl text-white mt-2">₦0</div>
               <div className="text-slate-500 text-sm mt-1">forever</div>
-              <div className="border-t border-[#1E293B] my-6" />
+              <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
                 {FREE_FEATURES.map((f, i) => (
                   <FeatureItem key={i} {...f} />
@@ -383,7 +412,7 @@ function PricingCards() {
                 Most Popular
               </div>
               <motion.div
-                className="bg-[#0D1425] rounded-2xl border-2 border-blue-500 p-8"
+                className="bg-[var(--bg-card)] rounded-2xl border-2 border-blue-500 p-8"
                 style={{ boxShadow: '0 0 40px rgba(59,130,246,0.15)' }}
                 whileHover={{
                   boxShadow: '0 0 56px rgba(59,130,246,0.26)',
@@ -395,7 +424,7 @@ function PricingCards() {
                 </div>
                 <div className="font-serif text-5xl text-white mt-2">₦2,000</div>
                 <div className="text-slate-400 text-sm mt-1">per project, one-time</div>
-                <div className="border-t border-[#1E293B] my-6" />
+                <div className="border-t border-[var(--border-color)] my-6" />
                 <ul className="flex flex-col gap-3">
                   {STUDENT_FEATURES.map((f, i) => (
                     <FeatureItem key={i} {...f} />
@@ -414,7 +443,7 @@ function PricingCards() {
           {/* ── Defense Plan ── */}
           <Reveal delay={0.16}>
             <motion.div
-              className="bg-[#0D1425] rounded-2xl border border-[#1E293B] p-8"
+              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8"
               whileHover={{ y: -4, borderColor: 'rgba(37,99,235,0.35)', transition: { duration: 0.2 } }}
             >
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
@@ -422,7 +451,7 @@ function PricingCards() {
               </div>
               <div className="font-serif text-5xl text-white mt-2">₦3,500</div>
               <div className="text-slate-500 text-sm mt-1">per project, one-time</div>
-              <div className="border-t border-[#1E293B] my-6" />
+              <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
                 {DEFENSE_FEATURES.map((f, i) => (
                   <FeatureItem key={i} {...f} />
@@ -456,7 +485,7 @@ const TABLE_ROWS = [
 ]
 
 function TableCell({ value, isEven }) {
-  const base = `text-center py-4 px-6 ${isEven ? 'bg-[#0D1425]/50' : ''}`
+  const base = `text-center py-4 px-6 ${isEven ? 'bg-[var(--bg-card)]/50' : ''}`
   if (value === true) {
     return (
       <td className={base}>
@@ -495,20 +524,20 @@ function ComparisonTable() {
           See exactly what each plan includes
         </Reveal>
         <Reveal delay={0.1}>
-          <div className="overflow-x-auto rounded-xl border border-[#1E293B]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--border-color)]">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-[#0D1425]">
-                  <th className="text-left py-4 px-6 text-slate-400 text-sm font-semibold font-sans border-b border-[#1E293B]">
+                <tr className="bg-[var(--bg-card)]">
+                  <th className="text-left py-4 px-6 text-slate-400 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Feature
                   </th>
-                  <th className="text-center py-4 px-6 text-slate-300 text-sm font-semibold font-sans border-b border-[#1E293B]">
+                  <th className="text-center py-4 px-6 text-slate-300 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Free
                   </th>
-                  <th className="text-center py-4 px-6 text-blue-400 text-sm font-semibold font-sans border-b border-[#1E293B]">
+                  <th className="text-center py-4 px-6 text-blue-400 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Student
                   </th>
-                  <th className="text-center py-4 px-6 text-slate-300 text-sm font-semibold font-sans border-b border-[#1E293B]">
+                  <th className="text-center py-4 px-6 text-slate-300 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Defense
                   </th>
                 </tr>
@@ -517,7 +546,7 @@ function ComparisonTable() {
                 {TABLE_ROWS.map((row, i) => {
                   const isEven = i % 2 !== 0
                   return (
-                    <tr key={row.feature} className="border-b border-[#1E293B] last:border-b-0">
+                    <tr key={row.feature} className="border-b border-[var(--border-color)] last:border-b-0">
                       <td
                         className="text-slate-300 text-sm font-medium py-4 px-6"
                         style={{ background: isEven ? 'rgba(13,20,37,0.5)' : 'transparent' }}
@@ -570,7 +599,7 @@ const FAQ_ITEMS = [
 
 function FAQItem({ q, a, isOpen, onToggle }) {
   return (
-    <div className="border-b border-[#1E293B]">
+    <div className="border-b border-[var(--border-color)]">
       <button
         className="w-full flex items-center justify-between py-5 text-left bg-transparent border-0 cursor-pointer group"
         onClick={onToggle}
@@ -678,7 +707,7 @@ function BottomCTA() {
 
 function PricingFooter() {
   return (
-    <footer className="border-t border-[#1E293B] py-8" style={{ background: '#070C18' }}>
+    <footer className="border-t border-[var(--border-color)] py-8" style={{ background: 'var(--bg-sidebar)' }}>
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
@@ -689,7 +718,7 @@ function PricingFooter() {
             </span>
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">
-            © 2026 FYPro. Built for the CBC UNILAG Hackathon.
+            © 2026 FYPro. Built for African students.
           </p>
           <div className="flex gap-6">
             <a
@@ -719,7 +748,7 @@ export default function Pricing() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen bg-[#0A0F1C]"
+      className="min-h-screen bg-[var(--bg-base)]"
       style={{
         backgroundImage:
           'radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',

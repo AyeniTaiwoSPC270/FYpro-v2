@@ -47,7 +47,7 @@ function Reveal({ children, delay = 0, className, style }) {
     <motion.div
       initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
       className={className}
       style={style}
@@ -184,7 +184,7 @@ function Navbar() {
 
 function Footer() {
   return (
-    <footer className="border-t border-[#1E293B] py-8" style={{ background: '#070C18' }}>
+    <footer className="border-t border-[var(--border-color)] py-8" style={{ background: 'var(--bg-sidebar)' }}>
       <div className="max-w-4xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
@@ -194,7 +194,7 @@ function Footer() {
             </span>
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">
-            © 2026 FYPro. Built for the CBC UNILAG Hackathon.
+            © 2026 FYPro. Built for African students.
           </p>
           <div className="flex gap-6">
             <a href="/privacy" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Privacy Policy</a>
@@ -277,7 +277,7 @@ function XIcon() {
 
 function InfoCard({ icon, title, value, note }) {
   return (
-    <div className="bg-[#0D1425] rounded-2xl border border-[#1E293B] p-6">
+    <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6">
       {icon}
       <div className="text-white font-semibold mt-3 font-sans">{title}</div>
       <div className="text-blue-400 text-sm mt-1 font-sans hover:text-blue-300 cursor-pointer transition-colors duration-150">{value}</div>
@@ -306,7 +306,7 @@ function SubmitButton({ children }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const INPUT_CLS = 'bg-[#111827] border border-[#1E293B] rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all font-sans text-sm'
+const INPUT_CLS = 'bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all font-sans text-sm'
 const LABEL_CLS = 'block text-slate-400 text-sm font-medium mb-2 font-sans'
 
 export default function Contact() {
@@ -331,7 +331,7 @@ export default function Contact() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen"
-      style={{ background: '#0A0F1C' }}
+      style={{ background: 'var(--bg-base)' }}
     >
       <Navbar />
 
@@ -362,7 +362,7 @@ export default function Contact() {
 
           {/* Left — Contact Form */}
           <Reveal>
-            <div className="bg-[#0D1425] rounded-2xl border border-[#1E293B] p-8">
+            <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8">
               <h2 className="text-white font-semibold text-lg mb-6 font-sans">Send us a message</h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
@@ -461,13 +461,13 @@ export default function Contact() {
       {/* ── FAQ Teaser ────────────────────────────────────────────────────── */}
       <div className="mt-20 max-w-2xl mx-auto text-center px-6 pb-24">
         <Reveal>
-          <div className="bg-[#0D1425] rounded-2xl border border-[#1E293B] p-10">
+          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-10">
             <h2 className="text-white font-semibold text-xl font-sans">Looking for quick answers?</h2>
             <p className="text-slate-400 text-sm mt-2 leading-relaxed font-sans">
               Check our frequently asked questions — most common issues are answered there.
             </p>
             <a
-              href="/pricing"
+              href="/#faq"
               className="border border-slate-700 hover:border-blue-500 hover:text-blue-400 text-slate-400 rounded-xl px-6 py-3 mt-6 transition-all inline-block font-sans text-sm no-underline"
             >
               View FAQ

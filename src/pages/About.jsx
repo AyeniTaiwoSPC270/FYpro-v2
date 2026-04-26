@@ -57,6 +57,7 @@ function Navbar() {
     { label: 'Features', href: '/#features' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
   ]
 
   return (
@@ -153,7 +154,7 @@ function Reveal({ children, delay = 0, className, style }) {
     <motion.div
       initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
       className={className}
       style={style}
@@ -167,7 +168,7 @@ function Reveal({ children, delay = 0, className, style }) {
 
 function Footer() {
   return (
-    <footer className="border-t border-[#1E293B] py-8" style={{ background: '#070C18' }}>
+    <footer className="border-t border-[var(--border-color)] py-8" style={{ background: 'var(--bg-sidebar)' }}>
       <div className="max-w-4xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
@@ -177,7 +178,7 @@ function Footer() {
             </span>
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">
-            © 2026 FYPro. Built for the CBC UNILAG Hackathon.
+            © 2026 FYPro. Built for African students.
           </p>
           <div className="flex gap-6">
             <a href="/privacy" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Privacy Policy</a>
@@ -200,9 +201,9 @@ export default function About() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-[#0A0F1C]"
+      className="min-h-screen bg-[var(--bg-base)]"
       style={{
-        backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px)',
+        backgroundImage: 'var(--dot-bg-image)',
         backgroundSize: '28px 28px',
       }}
     >
@@ -250,8 +251,8 @@ export default function About() {
         <section className="mt-20 max-w-2xl mx-auto px-6">
           <Reveal>
             <div
-              className="rounded-2xl border border-[#1E293B] p-8"
-              style={{ background: '#0D1425' }}
+              className="rounded-2xl border border-[var(--border-color)] p-8"
+              style={{ background: 'var(--bg-card)' }}
             >
               <div className="flex flex-row gap-6 items-start">
                 {/* Avatar */}
@@ -300,8 +301,8 @@ export default function About() {
               ].map(({ number, label }) => (
                 <div
                   key={label}
-                  className="flex-1 rounded-2xl border border-[#1E293B] p-8 text-center"
-                  style={{ background: '#0D1425' }}
+                  className="flex-1 rounded-2xl border border-[var(--border-color)] p-8 text-center"
+                  style={{ background: 'var(--bg-card)' }}
                 >
                   <div className="font-serif text-4xl text-white">{number}</div>
                   <div className="font-sans text-slate-400 text-sm mt-2">{label}</div>
@@ -349,8 +350,8 @@ export default function About() {
             ].map(({ icon, title, body }) => (
               <Reveal key={title} delay={0.05} className="flex-1">
                 <div
-                  className="rounded-2xl border border-[#1E293B] p-6 h-full"
-                  style={{ background: '#0D1425' }}
+                  className="rounded-2xl border border-[var(--border-color)] p-6 h-full"
+                  style={{ background: 'var(--bg-card)' }}
                 >
                   {icon}
                   <div className="font-sans text-white font-semibold mt-4">{title}</div>

@@ -219,7 +219,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
 
           {/* Panel score */}
           {panelVerdict && (
-            <div className="rounded-2xl border p-6 mb-6 text-center" style={{ background: '#0D1425', borderColor: `${verdictColor}40` }}>
+            <div className="rounded-2xl border p-6 mb-6 text-center" style={{ background: 'var(--bg-card)', borderColor: `${verdictColor}40` }}>
               <div className="font-mono text-[0.6rem] tracking-widest uppercase mb-2" style={{ color: verdictColor }}>Panel Verdict</div>
               <div className="font-serif text-5xl text-white font-bold mb-1">{panelVerdict.score}<span className="text-2xl text-slate-500">/100</span></div>
               <div className="font-sans text-sm font-semibold mb-3" style={{ color: verdictColor }}>{panelVerdict.verdict}</div>
@@ -231,7 +231,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
           {summary.examiner_verdicts?.length > 0 && (
             <div className="flex flex-col gap-3 mb-6">
               {summary.examiner_verdicts.map((v, i) => (
-                <div key={i} className="bg-[#0D1425] rounded-xl border border-slate-800 p-5" style={{ borderLeft: `3px solid ${EXAMINER_COLORS[i]}` }}>
+                <div key={i} className="bg-[var(--bg-card)] rounded-xl border border-slate-800 p-5" style={{ borderLeft: `3px solid ${EXAMINER_COLORS[i]}` }}>
                   <div className="font-mono text-[0.6rem] tracking-widest uppercase mb-1" style={{ color: EXAMINER_COLORS[i] }}>{EXAMINER_LABELS[i]}</div>
                   <div className="font-sans text-sm font-semibold text-white mb-1">{v.verdict}</div>
                   <p className="text-slate-400 text-xs font-sans leading-relaxed">{v.feedback}</p>
@@ -243,7 +243,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
           {/* Strengths & Gaps */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             {summary.strengths?.length > 0 && (
-              <div className="bg-[#0D1425] rounded-xl border border-green-500/20 p-5">
+              <div className="bg-[var(--bg-card)] rounded-xl border border-green-500/20 p-5">
                 <div className="font-mono text-[0.6rem] tracking-widest uppercase text-green-400 mb-3">Strengths</div>
                 <ul className="space-y-2">
                   {summary.strengths.map((s, i) => (
@@ -255,7 +255,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
               </div>
             )}
             {summary.gaps?.length > 0 && (
-              <div className="bg-[#0D1425] rounded-xl border border-red-500/20 p-5">
+              <div className="bg-[var(--bg-card)] rounded-xl border border-red-500/20 p-5">
                 <div className="font-mono text-[0.6rem] tracking-widest uppercase text-red-400 mb-3">Gaps to Address</div>
                 <ul className="space-y-2">
                   {summary.gaps.map((g, i) => (
@@ -333,7 +333,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
                   <div
                     className="rounded-2xl p-6"
                     style={{
-                      background: '#0D1425',
+                      background: 'var(--bg-card)',
                       borderLeft: `4px solid ${EXAMINER_COLORS[0]}99`,
                       border: '1px solid rgba(239,68,68,0.2)',
                     }}
@@ -369,7 +369,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
 
           {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="rounded-2xl p-4" style={{ background: '#0D1425', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div className="rounded-2xl p-4" style={{ background: 'var(--bg-card)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <LoadingDots label="Panel is deliberating..." />
               </div>
             </motion.div>
@@ -391,7 +391,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
           <div className="max-w-2xl mx-auto">
             <div
               className="flex gap-2 rounded-2xl border border-slate-700 focus-within:border-blue-500 transition-colors"
-              style={{ background: '#111827' }}
+              style={{ background: 'var(--bg-input)' }}
             >
               <textarea
                 value={answer}
@@ -455,7 +455,7 @@ function DefenseOverlay({ state: appState, set, completeStep, studentContext, on
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="rounded-2xl p-8 max-w-sm w-full"
-              style={{ background: '#0D1425', border: '1px solid rgba(239,68,68,0.3)' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid rgba(239,68,68,0.3)' }}
             >
               <div className="font-mono text-xs tracking-widest uppercase text-red-400 mb-2">Warning</div>
               <h3 className="font-serif text-xl text-white mb-3">Exit Defense Mode?</h3>
@@ -546,7 +546,7 @@ export default function DefenseSimulator() {
       {/* Red Flag Scanner */}
       <div
         className="rounded-2xl border-l-[3px] border-l-red-500 shadow-[0_8px_40px_rgba(59,130,246,0.06)] p-8 mb-6"
-        style={{ background: '#0D1425', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{ background: 'var(--bg-card)', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
         <div className="font-mono text-xs tracking-widest uppercase text-red-400 mb-1">Pre-Defense Check</div>
         <h2 className="font-serif text-xl text-white mb-2">Red Flag Scanner</h2>
@@ -589,7 +589,7 @@ export default function DefenseSimulator() {
       {/* Enter Defense */}
       <motion.div
         className="rounded-2xl border-l-[3px] border-l-red-500 p-8"
-        style={{ background: '#0D1425', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{ background: 'var(--bg-card)', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         whileHover={{ boxShadow: '0 14px 40px rgba(239,68,68,0.12)' }}
         transition={{ duration: 0.2 }}
       >

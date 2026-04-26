@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { showToast } from '../components/Toast'
 
 function ConsentCheckbox({ agreed, onChange }) {
   return (
@@ -15,7 +16,7 @@ function ConsentCheckbox({ agreed, onChange }) {
           />
           <div
             className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
-              agreed ? 'bg-blue-600 border-blue-600' : 'bg-[#111827] border-slate-700'
+              agreed ? 'bg-blue-600 border-blue-600' : 'bg-[var(--bg-input)] border-slate-700'
             }`}
           >
             {agreed && (
@@ -104,7 +105,7 @@ function PasswordInput({ label, id, placeholder, value, onChange }) {
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="bg-[#111827] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all pr-11"
+          className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all pr-11"
         />
         <button
           type="button"
@@ -131,7 +132,7 @@ function TextInput({ label, id, type = 'text', placeholder, value, onChange }) {
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="bg-[#111827] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+        className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
       />
     </div>
   )
@@ -160,7 +161,7 @@ export default function Signup() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ backgroundColor: '#0A0F1C' }}
+      style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
@@ -168,7 +169,7 @@ export default function Signup() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
-          backgroundColor: '#0D1425',
+          backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
@@ -257,7 +258,11 @@ export default function Signup() {
           type="button"
           whileHover={{ borderColor: 'rgba(100,116,139,0.65)' }}
           whileTap={{ scale: 0.98 }}
-          className="bg-[#111827] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
+          onClick={() => {
+            console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
+            showToast('Google sign-in coming soon')
+          }}
+          className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
         >
           <GoogleIcon />
           Continue with Google

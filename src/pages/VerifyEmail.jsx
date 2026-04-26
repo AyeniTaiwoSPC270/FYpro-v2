@@ -42,7 +42,7 @@ export default function VerifyEmail() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-12"
-      style={{ backgroundColor: '#0A0F1C' }}
+      style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 18 }}
@@ -50,7 +50,7 @@ export default function VerifyEmail() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
-          backgroundColor: '#0D1425',
+          backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
@@ -71,7 +71,7 @@ export default function VerifyEmail() {
           We've sent a verification link to
         </p>
         <div className="flex justify-center mt-1">
-          <span className="text-sm text-white font-semibold bg-[#111827] rounded-lg px-4 py-2 inline-block">
+          <span className="text-sm text-white font-semibold bg-[var(--bg-input)] rounded-lg px-4 py-2 inline-block">
             {email}
           </span>
         </div>

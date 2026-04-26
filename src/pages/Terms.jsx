@@ -13,6 +13,22 @@ function ShieldIcon({ size = 20, color = '#0066FF' }) {
   )
 }
 
+// ─── Reveal ───────────────────────────────────────────────────────────────────
+
+function Reveal({ children, delay = 0, className }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 function Navbar() {
@@ -30,6 +46,7 @@ function Navbar() {
     { label: 'Features', href: '/#features' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
   ]
 
   return (
@@ -63,7 +80,7 @@ function Navbar() {
 
         <div className="hidden md:flex items-center gap-2.5">
           <a href="/login" className="relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all no-underline px-5 py-2 text-[0.8rem] bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">Login</a>
-          <a href="/signup" className="relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all no-underline px-5 py-2 text-[0.8rem] bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-0.5">Try Free</a>
+          <a href="/login" className="relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all no-underline px-5 py-2 text-[0.8rem] bg-blue-600 text-white hover:bg-blue-500 hover:-translate-y-0.5">Try Free</a>
         </div>
 
         <button
@@ -119,7 +136,7 @@ function Navbar() {
 
 function Footer() {
   return (
-    <footer className="border-t border-[#1E293B] py-8" style={{ background: '#070C18' }}>
+    <footer className="border-t border-[var(--border-color)] py-8" style={{ background: 'var(--bg-sidebar)' }}>
       <div className="max-w-4xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
@@ -129,7 +146,7 @@ function Footer() {
             </span>
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">
-            © 2026 FYPro. Built for the CBC UNILAG Hackathon.
+            © 2026 FYPro. Built for African students.
           </p>
           <div className="flex gap-6">
             <a href="/privacy" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Privacy Policy</a>
@@ -224,9 +241,9 @@ export default function Terms() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-[#0A0F1C]"
+      className="min-h-screen bg-[var(--bg-base)]"
       style={{
-        backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px)',
+        backgroundImage: 'var(--dot-bg-image)',
         backgroundSize: '28px 28px',
       }}
     >
@@ -244,23 +261,25 @@ export default function Terms() {
           </p>
 
           {/* Sections */}
-          {SECTIONS.map(({ heading, paras, list }) => (
-            <div key={heading}>
-              <h2 className="text-white font-semibold text-lg mt-10 mb-3">{heading}</h2>
-              {paras?.map((p, i) => (
-                <p key={i} className="text-slate-400 text-base leading-loose">{p}</p>
-              ))}
-              {list && (
-                <ul className="list-none mt-2 space-y-1.5">
-                  {list.map((item, i) => (
-                    <li key={i} className="text-slate-400 text-base leading-loose flex gap-2.5">
-                      <span className="text-slate-500 flex-shrink-0 select-none">—</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          {SECTIONS.map(({ heading, paras, list }, idx) => (
+            <Reveal key={heading} delay={idx * 0.03}>
+              <div>
+                <h2 className="text-white font-semibold text-lg mt-10 mb-3">{heading}</h2>
+                {paras?.map((p, i) => (
+                  <p key={i} className="text-slate-400 text-base leading-loose">{p}</p>
+                ))}
+                {list && (
+                  <ul className="list-none mt-2 space-y-1.5">
+                    {list.map((item, i) => (
+                      <li key={i} className="text-slate-400 text-base leading-loose flex gap-2.5">
+                        <span className="text-slate-500 flex-shrink-0 select-none">—</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </Reveal>
           ))}
 
         </div>

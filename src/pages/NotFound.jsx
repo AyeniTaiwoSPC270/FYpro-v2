@@ -53,7 +53,7 @@ export default function NotFound() {
 
   return (
     <div
-      style={{ backgroundColor: '#0A0F1C', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+      style={{ backgroundColor: 'var(--bg-base)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
     >
       {/* Minimal navbar */}
       <nav
@@ -236,8 +236,8 @@ export default function NotFound() {
                 key={to}
                 onClick={() => navigate(to)}
                 style={{
-                  backgroundColor: '#0D1425',
-                  border: '1px solid #1E293B',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '999px',
                   padding: '8px 24px',
                   fontSize: '0.875rem',
@@ -251,7 +251,7 @@ export default function NotFound() {
                   e.currentTarget.style.color = '#60a5fa'
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = '#1E293B'
+                  e.currentTarget.style.borderColor = 'var(--border-color)'
                   e.currentTarget.style.color = '#94a3b8'
                 }}
               >

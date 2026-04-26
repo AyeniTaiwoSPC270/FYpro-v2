@@ -2,24 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   motion,
   AnimatePresence,
-  useScroll,
-  useSpring,
   useInView,
   useMotionValue,
   animate as fmAnimate,
   useAnimate,
 } from 'framer-motion'
-
-// ─── Animation Variants ───────────────────────────────────────────────────────
-
-const examinerItem = {
-  hidden: { opacity: 0, y: 14 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  },
-}
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -80,6 +67,22 @@ function useNavActive() {
   return active
 }
 
+function useReveal() {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { setVisible(entry.isIntersecting) },
+      { threshold: 0.12 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return [ref, visible]
+}
+
 // ─── SVG: Shield ──────────────────────────────────────────────────────────────
 
 const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
@@ -89,21 +92,6 @@ function ShieldIcon({ size = 20, color = '#0066FF', ...rest }) {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width={size} height={size} fill={color} aria-hidden="true" {...rest}>
       <path d={SHIELD_D} />
     </svg>
-  )
-}
-
-// ─── Scroll Progress Bar ──────────────────────────────────────────────────────
-
-function ScrollProgressBar() {
-  const { scrollYProgress } = useScroll()
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
-  return (
-    <motion.div
-      style={{ scaleX, transformOrigin: 'left' }}
-      className="fixed top-0 left-0 right-0 h-[3px] bg-blue-brand z-[300] pointer-events-none"
-      aria-hidden="true"
-      aria-role="progressbar"
-    />
   )
 }
 
@@ -188,15 +176,18 @@ function BtnButton({ className, children, onClick }) {
 // ─── Reveal (scroll-reveal wrapper) ──────────────────────────────────────────
 
 function Reveal({ children, delay = 0, as = 'div', className, style }) {
-  const Tag = motion[as] || motion.div
+  const [ref, visible] = useReveal()
+  const Tag = as
   return (
     <Tag
-      initial={{ opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+      ref={ref}
       className={className}
-      style={style}
+      style={{
+        ...style,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`,
+      }}
     >
       {children}
     </Tag>
@@ -262,10 +253,10 @@ function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
       whileHover={fixed ? {} : { borderColor: 'rgba(0,102,255,0.22)', y: -3 }}
     >
       <div className="text-[#F59E0B] text-[0.75rem] tracking-[2px]">★★★★★</div>
-      <p className="text-[0.875rem] text-white/[0.78] leading-[1.75] italic flex-1 relative pt-2.5">
-        <span className="absolute top-0 left-[-4px] font-serif text-[3.5rem] text-blue-brand leading-none opacity-70 pointer-events-none select-none">&ldquo;</span>
-        {quote}
-      </p>
+      <div className="flex-1">
+        <span className="block font-serif text-[3.5rem] leading-none mb-4 select-none pointer-events-none" style={{ color: 'rgba(37,99,235,0.4)' }} aria-hidden="true">&ldquo;</span>
+        <p className="text-[0.875rem] text-white/[0.78] leading-[1.75] italic">{quote}</p>
+      </div>
       <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
         <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-mono text-[0.7rem] font-bold text-white flex-shrink-0" style={avatarStyle}>{initials}</div>
         <div>
@@ -369,6 +360,8 @@ function Navbar() {
     { label: 'How It Works', id: 'how-it-works', href: '#how-it-works' },
     { label: 'Features', id: 'features', href: '#features' },
     { label: 'Pricing', id: 'pricing', href: '/pricing' },
+    { label: 'About', id: 'about', href: '/about' },
+    { label: 'Contact', id: 'contact', href: '/contact' },
   ]
 
   return (
@@ -467,8 +460,10 @@ function Navbar() {
 // ─── HERO ─────────────────────────────────────────────────────────────────────
 
 function HeroMockup() {
-  const ref = useRef(null)
-  const inView = useInView(ref, { amount: 0.25 })
+  const [hoveredCard, setHoveredCard] = useState(null)
+  const [card1Ref, card1Visible] = useReveal()
+  const [card2Ref, card2Visible] = useReveal()
+  const [card3Ref, card3Visible] = useReveal()
 
   const steps = [
     { label: 'Topic Validator', done: true },
@@ -532,31 +527,42 @@ function HeroMockup() {
             <div className="font-serif text-[1.1rem] text-white">Three-Examiner Panel Simulation</div>
           </div>
 
-          {/* Examiners — staggered entrance */}
-          <motion.div
-            ref={ref}
-            className="grid gap-2.5"
-            style={{ gridTemplateColumns: 'repeat(3,1fr)' }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}
-            initial="hidden"
-            animate={inView ? 'visible' : 'hidden'}
-          >
-            {examiners.map(({ av, avCls, name, role, q, asking }) => (
-              <motion.div
-                key={name}
-                variants={examinerItem}
-                className={`rounded-xl p-3.5 border ${asking ? 'border-[rgba(0,102,255,0.4)] bg-[rgba(0,102,255,0.07)]' : 'bg-white/[0.03] border-white/[0.07]'}`}
-              >
-                <motion.div
-                  className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.6rem] font-bold text-white mb-2 cursor-default ${avCls}`}
-                  whileHover={{ boxShadow: asking ? '0 0 14px rgba(0,102,255,0.75), 0 0 30px rgba(0,102,255,0.35)' : undefined }}
-                >{av}</motion.div>
-                <div className="text-[0.68rem] font-bold text-white mb-0.5">{name}</div>
-                <div className="font-mono text-[0.58rem] text-white/35 mb-2">{role}</div>
-                <div className="text-[0.66rem] text-white/65 leading-[1.5] text-left">{q}</div>
-              </motion.div>
-            ))}
-          </motion.div>
+          {/* Examiners — individual reveal */}
+          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+            {examiners.map(({ av, avCls, name, role, q, asking }, i) => {
+              const cardKeys = ['methodologist', 'subject-expert', 'devil-advocate']
+              const cardRefs = [card1Ref, card2Ref, card3Ref]
+              const cardVisibles = [card1Visible, card2Visible, card3Visible]
+              const cardKey = cardKeys[i]
+              const cardRef = cardRefs[i]
+              const cardVisible = cardVisibles[i]
+              const hovered = hoveredCard === cardKey
+              return (
+                <div
+                  key={name}
+                  ref={cardRef}
+                  onMouseEnter={() => setHoveredCard(cardKey)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  className={`rounded-xl p-3.5 cursor-default ${asking ? 'bg-[rgba(0,102,255,0.07)]' : 'bg-white/[0.03]'}`}
+                  style={{
+                    border: hovered ? '1px solid rgba(59,130,246,0.5)' : asking ? '1px solid rgba(0,102,255,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: hovered ? '0 0 24px rgba(59,130,246,0.2)' : 'none',
+                    transform: cardVisible ? (hovered ? 'translateY(-4px)' : 'translateY(0)') : 'translateY(24px)',
+                    opacity: cardVisible ? 1 : 0,
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <motion.div
+                    className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.6rem] font-bold text-white mb-2 cursor-default ${avCls}`}
+                    whileHover={{ boxShadow: asking ? '0 0 14px rgba(0,102,255,0.75), 0 0 30px rgba(0,102,255,0.35)' : undefined }}
+                  >{av}</motion.div>
+                  <div className="text-[0.68rem] font-bold text-white mb-0.5">{name}</div>
+                  <div className="font-mono text-[0.58rem] text-white/35 mb-2">{role}</div>
+                  <div className="text-[0.66rem] text-white/65 leading-[1.5] text-left">{q}</div>
+                </div>
+              )
+            })}
+          </div>
 
           {/* Vulnerabilities */}
           <div className="bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.22)] rounded-xl p-3 px-3.5">
@@ -582,34 +588,42 @@ function HeroMockup() {
 }
 
 function HeroHeadline() {
+  const [ref, visible] = useReveal()
   const words = ['The', 'Supervisor', 'Most', 'Final', 'Year', 'Students', 'Never', 'Had']
   const italic = new Set(['Never', 'Had'])
   return (
-    <h1 className="relative z-[1] font-serif font-normal leading-[1.1] text-white max-w-[820px] mb-[22px]" style={{ fontSize: 'clamp(2.4rem,6vw,4.4rem)' }}>
+    <h1
+      ref={ref}
+      className="relative z-[1] font-serif font-normal leading-[1.1] text-white max-w-[820px] mb-[22px]"
+      style={{
+        fontSize: 'clamp(2.4rem,6vw,4.4rem)',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
+      }}
+    >
       {words.map((word, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.38, ease: 'easeOut', delay: i * 0.08 }}
-          className="inline-block mr-[0.25em]"
-        >
+        <span key={i} className="inline-block mr-[0.25em]">
           {italic.has(word) ? <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>{word}</em> : word}
-        </motion.span>
+        </span>
       ))}
     </h1>
   )
 }
 
 function HeroSub() {
+  const [ref, visible] = useReveal()
   const text = "FYPro guides you from a rough topic to a defensible project — then puts you in front of three examiners before your real panel does."
   const { displayed, done } = useTypewriter(text, 1080, 26)
   return (
-    <motion.p
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.16, duration: 0.65 }}
+    <p
+      ref={ref}
       className="relative z-[1] text-[1.05rem] text-white/65 max-w-[540px] leading-[1.75] mb-[38px]"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
+      }}
     >
       {displayed}
       {!done && (
@@ -619,13 +633,15 @@ function HeroSub() {
           className="inline-block w-[2px] h-[0.9em] bg-white/65 ml-px align-text-bottom"
         />
       )}
-    </motion.p>
+    </p>
   )
 }
 
 function Hero() {
   const heroRef = useRef(null)
   const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
+  const [btnsRef, btnsVisible] = useReveal()
+  const [mockupRef, mockupVisible] = useReveal()
 
   useEffect(() => {
     const el = heroRef.current
@@ -690,29 +706,27 @@ function Hero() {
       <HeroSub />
 
       {/* Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 22 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.24, duration: 0.65 }}
+      <div
+        ref={btnsRef}
         className="relative z-[1] flex gap-3 items-center justify-center flex-wrap mb-[72px]"
+        style={{ opacity: btnsVisible ? 1 : 0, transform: btnsVisible ? 'translateY(0)' : 'translateY(24px)', transition: 'opacity 0.5s ease, transform 0.5s ease' }}
       >
         <BtnLink href="/login" className="px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
         <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
           See How It Works
         </BtnLink>
-      </motion.div>
+      </div>
 
       {/* App Mockup */}
-      <motion.div
-        initial={{ opacity: 0, y: 22 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.34, duration: 0.7 }}
+      <div
+        ref={mockupRef}
         className="relative z-[1] w-full max-w-[880px]"
+        style={{ opacity: mockupVisible ? 1 : 0, transform: mockupVisible ? 'translateY(0)' : 'translateY(24px)', transition: 'opacity 0.5s ease, transform 0.5s ease' }}
       >
         <div className="absolute pointer-events-none blur-[20px]" style={{ top: '30%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
         <HeroMockup />
-      </motion.div>
+      </div>
     </motion.section>
   )
 }
@@ -959,6 +973,103 @@ function PricingSection() {
   )
 }
 
+// ─── LANDING FAQ ─────────────────────────────────────────────────────────────
+
+const LANDING_FAQ_ITEMS = [
+  {
+    q: 'Is FYPro free to use?',
+    a: "Yes. The first three steps — Topic Validator, Chapter Architect, and Methodology Advisor — are completely free. You only pay when you're ready to unlock Writing Planner, Project Reviewer, or the Defense Simulator.",
+  },
+  {
+    q: 'How is FYPro different from ChatGPT?',
+    a: 'ChatGPT is a blank box. FYPro is a structured journey. FYPro knows your faculty, your department, your deadline, and your methodology — and every response uses that context. ChatGPT will not interrogate you in a defense simulation. FYPro will.',
+  },
+  {
+    q: 'Will FYPro write my project for me?',
+    a: 'No — and that is intentional. FYPro thinks with you, not for you. It validates your thinking, maps your chapters, recommends your methodology, and prepares you for hard questions. Your project stays yours.',
+  },
+  {
+    q: 'What Nigerian universities does FYPro support?',
+    a: 'FYPro currently supports UNILAG, FUTA, LASU, OAU, UNIPORT, ABU, UNIBEN, and UNILORIN with more being added. The Topic Validator and Methodology Advisor understand faculty structures across all supported universities.',
+  },
+  {
+    q: 'What payment methods are accepted?',
+    a: 'All Nigerian debit cards, bank transfers, and USSD payments through Paystack. No international card required.',
+  },
+  {
+    q: 'Can I use FYPro on my phone?',
+    a: 'Yes. FYPro is fully responsive and works on any device. The Defense Simulator works best on desktop but all other steps work perfectly on mobile.',
+  },
+  {
+    q: 'What if I change my topic mid-project?',
+    a: 'You can reset your project at any time. A Project Reset costs ₦1,500 and gives you a fresh start while keeping your account and history.',
+  },
+]
+
+function LandingFAQItem({ q, a, isOpen, onToggle }) {
+  return (
+    <div className="border-b border-[var(--border-color)] py-5">
+      <button
+        className="w-full flex items-center justify-between text-left bg-transparent border-0 cursor-pointer group"
+        onClick={onToggle}
+      >
+        <span className="font-sans font-medium text-white text-[0.9rem] pr-4 leading-snug">{q}</span>
+        <motion.svg
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="flex-shrink-0 text-slate-500 group-hover:text-slate-300 transition-colors duration-150"
+          width="20" height="20" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </motion.svg>
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <p className="font-sans text-slate-400 text-sm leading-relaxed mt-3 pb-2">{a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function LandingFAQSection() {
+  const [openIndex, setOpenIndex] = useState(null)
+  return (
+    <section id="faq" className="py-24 bg-bg-dark">
+      <div className="max-w-3xl mx-auto px-10">
+        <Reveal>
+          <h2 className="font-serif text-4xl text-white text-center">Frequently asked questions</h2>
+        </Reveal>
+        <Reveal delay={0.06}>
+          <p className="text-slate-400 text-center mt-3 mb-12">Everything you need to know before you start.</p>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <div>
+            {LANDING_FAQ_ITEMS.map((item, i) => (
+              <LandingFAQItem
+                key={i}
+                q={item.q}
+                a={item.a}
+                isOpen={openIndex === i}
+                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+              />
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
 // ─── FINAL CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
@@ -988,6 +1099,7 @@ function Footer() {
       <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, #060E18, transparent)' }} />
       <div className="max-w-[1080px] mx-auto px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
+          <Reveal>
           <div>
             <motion.div
               animate={{ y: [0, -3, 0] }}
@@ -997,12 +1109,11 @@ function Footer() {
               <ShieldIcon size={26} />
               <span className="font-serif text-[1.4rem] text-white"><span>FY</span><span style={{ color: '#0066FF' }}>Pro</span></span>
             </motion.div>
-            <p className="text-[0.82rem] text-white/65 leading-[1.65] mb-[18px]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
-            <div className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-[5px] font-mono text-[0.6rem] tracking-[0.06em] text-[#60A5FA]" style={{ background: 'rgba(0,102,255,0.09)', border: '1px solid rgba(0,102,255,0.3)' }}>
-              ✦ CBC UNILAG Claude AI Hackathon 2026
-            </div>
+            <p className="text-[0.82rem] text-white/65 leading-[1.65]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
           </div>
+          </Reveal>
 
+          <Reveal delay={0.05}>
           <div>
             <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">Product</div>
             <ul className="list-none flex flex-col gap-[9px]">
@@ -1011,7 +1122,9 @@ function Footer() {
               ))}
             </ul>
           </div>
+          </Reveal>
 
+          <Reveal delay={0.1}>
           <div>
             <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">Steps</div>
             <ul className="list-none flex flex-col gap-[9px]">
@@ -1020,20 +1133,23 @@ function Footer() {
               ))}
             </ul>
           </div>
+          </Reveal>
 
+          <Reveal delay={0.15}>
           <div>
             <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">About</div>
             <ul className="list-none flex flex-col gap-[9px]">
-              {[['About FYPro', '/about'], ['Built at UNILAG', '/about'], ['Powered by Claude AI', '/about'], ['Contact', '/contact']].map(([label, href]) => (
+              {[['About FYPro', '/about'], ['Contact', '/contact']].map(([label, href]) => (
                 <li key={label}><a href={href} className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{label}</a></li>
               ))}
             </ul>
           </div>
+          </Reveal>
         </div>
 
         <div className="flex items-center justify-between pt-[22px] border-t border-white/5 flex-wrap gap-2.5">
           <div className="text-[0.76rem] text-white/[0.28]">
-            © 2026 FYPro. Built for the <span className="text-[rgba(0,102,255,0.6)]">CBC UNILAG Claude AI Hackathon</span>. Powered by <span className="text-[rgba(0,102,255,0.6)]">Claude AI</span>.
+            © 2026 FYPro. Built for African students.
           </div>
           <div className="flex gap-[18px]">
             <a href="/privacy" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Privacy</a>
@@ -1048,9 +1164,22 @@ function Footer() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const [scrollProgress, setScrollProgress] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0
+      setScrollProgress(progress)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-      <ScrollProgressBar />
+      <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: scrollProgress + '%', backgroundColor: '#2563EB', zIndex: 9999, transition: 'width 0.1s linear' }} />
       <Navbar />
       <Hero />
       <StatsBar />
@@ -1061,6 +1190,8 @@ export default function LandingPage() {
       <TestimonialsSection />
       <SectionDivider />
       <PricingSection />
+      <SectionDivider />
+      <LandingFAQSection />
       <FinalCTA />
       <Footer />
       <BackToTop />
