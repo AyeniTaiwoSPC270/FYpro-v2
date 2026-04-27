@@ -1413,8 +1413,9 @@ html, body {
 
 /* ── Recommendation banner ───────────────────────────────── */
 .ma-rec-banner {
-  background: rgba(0,102,255,0.07);
-  border: 1px solid rgba(0,102,255,0.2);
+  background: rgba(22,163,74,0.07);
+  border: 1px solid rgba(22,163,74,0.22);
+  border-left: 4px solid #16A34A;
   border-radius: 12px;
   padding: 16px 20px;
   display: flex;
@@ -1427,13 +1428,13 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(0,102,255,0.65);
+  color: rgba(22,163,74,0.75);
 }
 .ma-rec-name {
   font-family: 'Poppins', sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0066FF;
+  color: #16A34A;
 }
 .ma-rec-reason {
   font-family: 'Poppins', sans-serif;

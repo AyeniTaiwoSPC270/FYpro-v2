@@ -213,62 +213,14 @@ export default function MethodologyAdvisor() {
         >
           {maData && (
             <>
-              <div className="ma-bento-grid">
-
-                {/* Row 1: Claude Recommends — full width */}
-                <div id="ma-rec-banner" className="ma-bento-rec">
-                  <p className="ma-rec-label">Claude Recommends</p>
-                  <p id="ma-rec-name" className="ma-rec-name">{maData.recommended || ''}</p>
-                </div>
-
-                {/* Row 2: Justification | Defense Answer */}
-                <div className="ma-bento-row2">
-
-                  <div className="ma-bento-justification">
-                    <p className="ma-bento-cell-label">Justification</p>
-                    <p id="ma-rec-reason" className="ma-bento-cell-body">
-                      {maData.recommended_reason || ''}
-                    </p>
-                  </div>
-
-                  <div className="ma-bento-defense" id="ma-defense-section">
-                    <p className="ma-bento-cell-label">Defense Answer</p>
-                    <p className="ma-defense-hint">
-                      A word-for-word script to memorise and deliver if asked to justify your
-                      methodology choice in your defense.
-                    </p>
-                    <div
-                      id="ma-defense-body"
-                      className={`ma-defense-body${defenseRevealed ? '' : ' ma-defense-body--blurred'}`}
-                    >
-                      <p id="ma-defense-text" className="ma-defense-text">
-                        {maData.defense_answer_template || ''}
-                      </p>
-                    </div>
-                    {!defenseRevealed && (
-                      <button
-                        id="btn-reveal-defense"
-                        className="ma-btn-reveal"
-                        onClick={handleRevealDefense}
-                      >
-                        Reveal Defense Answer
-                      </button>
-                    )}
-                  </div>
-
-                </div>
-
-                {/* Row 3: Watch Out — full width, red tinted */}
-                <div id="ma-watch-out" className="ma-bento-watchout">
-                  <p className="ma-watch-out-label">⚠ Watch Out</p>
-                  <p id="ma-watch-out-text" className="ma-bento-cell-body">
-                    {maData.watch_out || ''}
-                  </p>
-                </div>
-
+              {/* CLAUDE RECOMMENDS banner */}
+              <div id="ma-rec-banner" className="ma-rec-banner">
+                <p className="ma-rec-label">Claude Recommends</p>
+                <p id="ma-rec-name" className="ma-rec-name">{maData.recommended || ''}</p>
+                <p id="ma-rec-reason" className="ma-rec-reason">{maData.recommended_reason || ''}</p>
               </div>
 
-              {/* Methodology option cards */}
+              {/* Methodology option cards — stacked vertically */}
               <div id="ma-options-list" className="ma-options-list">
                 {options.map((option, idx) => {
                   const fitKey        = normalizeFitKey(option.fit_score)
@@ -328,6 +280,40 @@ export default function MethodologyAdvisor() {
                     </div>
                   )
                 })}
+              </div>
+
+              {/* Defense answer — below all option cards */}
+              <div id="ma-defense-section" className="ma-defense-section">
+                <p className="ma-bento-cell-label">Defense Answer</p>
+                <p className="ma-defense-hint">
+                  A word-for-word script to memorise and deliver if asked to justify your
+                  methodology choice in your defense.
+                </p>
+                <div
+                  id="ma-defense-body"
+                  className={`ma-defense-body${defenseRevealed ? '' : ' ma-defense-body--blurred'}`}
+                >
+                  <p id="ma-defense-text" className="ma-defense-text">
+                    {maData.defense_answer_template || ''}
+                  </p>
+                </div>
+                {!defenseRevealed && (
+                  <button
+                    id="btn-reveal-defense"
+                    className="ma-btn-reveal"
+                    onClick={handleRevealDefense}
+                  >
+                    Reveal Defense Answer
+                  </button>
+                )}
+              </div>
+
+              {/* Watch Out — below defense */}
+              <div id="ma-watch-out" className="ma-watch-out-box">
+                <p className="ma-watch-out-label">⚠ Watch Out</p>
+                <p id="ma-watch-out-text" className="ma-watch-out-text">
+                  {maData.watch_out || ''}
+                </p>
               </div>
 
               <button

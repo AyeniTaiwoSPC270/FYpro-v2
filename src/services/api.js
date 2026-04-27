@@ -143,9 +143,10 @@ export async function adviseMethodology(studentCtx, validatedTopic, chapterStruc
 
 // ── Step 3 inline: Instrument Builder ───────────────────────────────────────
 export async function buildInstrument(studentCtx, validatedTopic, chosenMethodology, chapterStructure) {
+  console.log('[buildInstrument] chosenMethodology:', chosenMethodology)
   return callClaude(
     INSTRUMENT_BUILDER_SYSTEM,
-    [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, validatedTopic, chosenMethodology, chapterStructure) }]
+    [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, chosenMethodology) }]
   );
 }
 
