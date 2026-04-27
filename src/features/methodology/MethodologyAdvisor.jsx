@@ -37,6 +37,9 @@ export default function MethodologyAdvisor() {
         setMaBtnDisabled(false)
       })
       .catch(err => {
+        console.log('[FYPro] full error object:', err)
+        console.log('[FYPro] error message:', err?.message)
+        console.log('[FYPro] error code:', err?.code)
         setMaSection('input')
         if (!handleApiError(err, msg => {
           setMaError(msg)
