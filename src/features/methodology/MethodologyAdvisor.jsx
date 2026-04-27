@@ -5,16 +5,16 @@ import { useApp } from '../../context/AppContext'
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
 
-  // ── MA state ───────────────────────────────────────────────────────────────
-  const [maSection, setMaSection]                     = useState('input')
-  const [maData, setMaData]                           = useState(null)
+  // ── MA state — seed from persisted context on remount ─────────────────────
+  const [maSection, setMaSection]                     = useState(state.methodology ? 'result' : 'input')
+  const [maData, setMaData]                           = useState(state.methodology || null)
   const [maError, setMaError]                         = useState(null)
   const [maBtnDisabled, setMaBtnDisabled]             = useState(false)
-  const [selectedMethodology, setSelectedMethodology] = useState('')
+  const [selectedMethodology, setSelectedMethodology] = useState(state.chosenMethodology || '')
   const [defenseRevealed, setDefenseRevealed]         = useState(false)
 
   // ── DI state ───────────────────────────────────────────────────────────────
-  const [diVisible, setDiVisible]               = useState(false)
+  const [diVisible, setDiVisible]               = useState(state.stepsCompleted[2] || false)
   const [diSection, setDiSection]               = useState('input')
   const [diData, setDiData]                     = useState(null)
   const [diError, setDiError]                   = useState(null)
