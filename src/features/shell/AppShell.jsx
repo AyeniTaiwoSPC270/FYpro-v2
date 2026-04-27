@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import TopicValidator from '../topicValidator/TopicValidator'
 import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
+import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
 
 const STEPS = [
   'Topic Validator',
@@ -28,7 +29,7 @@ function StepPlaceholder({ stepIndex }) {
 const STEP_COMPONENTS = [
   TopicValidator,
   ChapterArchitect,
-  () => <StepPlaceholder stepIndex={2} />,
+  MethodologyAdvisor,
   () => <StepPlaceholder stepIndex={3} />,
   () => <StepPlaceholder stepIndex={4} />,
   () => <StepPlaceholder stepIndex={5} />,
