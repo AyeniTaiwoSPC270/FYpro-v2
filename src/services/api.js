@@ -149,7 +149,8 @@ export async function buildInstrument(studentCtx, validatedTopic, chosenMethodol
   console.log('[buildInstrument] chosenMethodology:', chosenMethodology)
   return callClaude(
     INSTRUMENT_BUILDER_SYSTEM,
-    [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, chosenMethodology) }]
+    [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, chosenMethodology) }],
+    4000
   );
 }
 
