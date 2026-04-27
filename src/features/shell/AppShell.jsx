@@ -1,0 +1,182 @@
+import { useEffect, Fragment } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useApp } from '../../context/AppContext'
+import TopicValidator from '../topicValidator/TopicValidator'
+
+const STEPS = [
+  'Topic Validator',
+  'Chapter Architect',
+  'Methodology Advisor',
+  'Writing Planner',
+  'Project Reviewer',
+  'Defence Prep',
+]
+
+// Placeholder for steps not yet converted to React
+function StepPlaceholder({ stepIndex }) {
+  return (
+    <div className="placeholder-card">
+      <p className="placeholder-card__step-label">
+        Step {stepIndex + 1}: {STEPS[stepIndex]}
+      </p>
+      <p className="placeholder-card__subtitle">Coming soon.</p>
+    </div>
+  )
+}
+
+const STEP_COMPONENTS = [
+  TopicValidator,
+  () => <StepPlaceholder stepIndex={1} />,
+  () => <StepPlaceholder stepIndex={2} />,
+  () => <StepPlaceholder stepIndex={3} />,
+  () => <StepPlaceholder stepIndex={4} />,
+  () => <StepPlaceholder stepIndex={5} />,
+]
+
+const CHECK_PATH = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
+const LOCK_PATH  = 'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
+const SHIELD_D   = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
+
+export default function AppShell() {
+  const navigate = useNavigate()
+  const { state, navigateStep, isOnboarded } = useApp()
+
+  // Redirect to onboarding if the student hasn't completed it
+  useEffect(() => {
+    if (!isOnboarded) navigate('/start', { replace: true })
+  }, []) // eslint-disable-line
+
+  const completedCount     = state.stepsCompleted.filter(Boolean).length
+  const furthestAccessible = Math.min(completedCount, STEPS.length - 1)
+
+  const CurrentStep = STEP_COMPONENTS[state.currentStep] ?? STEP_COMPONENTS[0]
+
+  return (
+    <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+
+      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
+      <aside className="sidebar" id="app-sidebar">
+
+        <div className="sidebar__brand">
+          <svg
+            className="sidebar__shield"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 256 256"
+            width="28"
+            height="28"
+            fill="#0066FF"
+            aria-hidden="true"
+          >
+            <path d={SHIELD_D} />
+          </svg>
+          <span className="sidebar__wordmark">
+            FY<span style={{ color: '#0066FF' }}>Pro</span>
+          </span>
+        </div>
+
+        {/* Student context card */}
+        <div className="sidebar__context-card">
+          <p className="context-card__item context-card__item--university">{state.university}</p>
+          <p className="context-card__item context-card__item--faculty">{state.faculty}</p>
+          <p className="context-card__item context-card__item--department">{state.department}</p>
+          <p className="context-card__item context-card__item--level">Level {state.level}</p>
+          <p className="context-card__item context-card__item--topic">
+            {state.validatedTopic || state.roughTopic}
+          </p>
+        </div>
+
+        {/* Step list */}
+        <nav className="sidebar__steps" aria-label="Project steps">
+          <ul className="step-list" id="sidebar-step-list">
+            {STEPS.map((name, i) => {
+              const isCompleted  = state.stepsCompleted[i]
+              const isCurrent    = i === state.currentStep
+              const isAccessible = i <= furthestAccessible
+              const isLocked     = !isAccessible
+
+              return (
+                <li
+                  key={i}
+                  className={[
+                    'step-list__item',
+                    isCurrent   ? 'step-list__item--current'   : '',
+                    isCompleted ? 'step-list__item--completed'  : '',
+                    isLocked    ? 'step-list__item--locked'     : '',
+                  ].filter(Boolean).join(' ')}
+                  style={isAccessible ? { cursor: 'pointer' } : undefined}
+                  onClick={isAccessible ? () => navigateStep(i) : undefined}
+                  title={isAccessible ? `Go to ${name}` : undefined}
+                >
+                  <div className="step-list__badge">
+                    {isCompleted ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+                        <path d={CHECK_PATH} />
+                      </svg>
+                    ) : String(i + 1)}
+                  </div>
+                  <span className="step-list__name">{name}</span>
+                  {(isLocked || isCompleted) && (
+                    <span className="step-list__icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill={isCompleted ? '#0066FF' : 'currentColor'} aria-hidden="true">
+                        <path d={isLocked ? LOCK_PATH : CHECK_PATH} />
+                      </svg>
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+
+        <div id="sidebar-bonus" className="sidebar__bonus" />
+
+      </aside>
+
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
+      <main className="app-content">
+
+        {/* Top step navigator */}
+        <div className="step-navigator" id="step-navigator" role="navigation" aria-label="Step progress">
+          <div className="nav-track">
+            {STEPS.map((name, i) => {
+              const isCompleted  = state.stepsCompleted[i]
+              const isCurrent    = i === state.currentStep
+              const isAccessible = i <= furthestAccessible
+
+              return (
+                <Fragment key={i}>
+                  <div
+                    className={[
+                      'nav-pill',
+                      isCompleted ? 'nav-pill--completed' : '',
+                      isCurrent   ? 'nav-pill--current'   : '',
+                    ].filter(Boolean).join(' ')}
+                    style={isAccessible ? { cursor: 'pointer' } : undefined}
+                    onClick={isAccessible ? () => navigateStep(i) : undefined}
+                    title={name}
+                  >
+                    {isCompleted ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+                        <path d={CHECK_PATH} />
+                      </svg>
+                    ) : String(i + 1)}
+                    <span className="nav-pill__label">{name.split(' ')[0]}</span>
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className={`nav-connector${isCompleted ? ' nav-connector--completed' : ''}`} />
+                  )}
+                </Fragment>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Current step */}
+        <div className="app-content__scroll">
+          <CurrentStep />
+        </div>
+
+      </main>
+    </div>
+  )
+}

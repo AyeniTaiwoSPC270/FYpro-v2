@@ -5,7 +5,6 @@ import { ToastProvider } from './components/Toast'
 import LandingPage from './pages/LandingPage'
 import Pricing from './pages/Pricing'
 import SplashOnboarding from './pages/SplashOnboarding'
-import AppShell from './components/AppShell'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
@@ -19,6 +18,7 @@ import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
+import AppShell from './features/shell/AppShell'
 
 export default function App() {
   return (
@@ -43,7 +43,7 @@ export default function App() {
           {/* App entry — splash + onboarding */}
           <Route path="/start" element={<SplashOnboarding />} />
 
-          {/* Main app shell — all 6 steps rendered inside */}
+          {/* Main app */}
           <Route path="/app" element={<AppShell />} />
 
           {/* Dashboard */}
