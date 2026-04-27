@@ -41,6 +41,7 @@ async function callClaude(system, messages, maxTokens = 2000) {
   }
 
   const raw = await res.json();
+  console.log('[FYPro] full raw response:', JSON.stringify(raw));
   const text = raw?.content?.[0]?.text ?? '';
 
   console.log('[FYPro] raw API response:', text);
