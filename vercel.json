@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/claude.js": {
+    "api/claude.cjs": {
       "maxDuration": 60
     },
     "api/speak.js": {
