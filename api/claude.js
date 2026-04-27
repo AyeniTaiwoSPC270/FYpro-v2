@@ -59,12 +59,6 @@ const handler = async (req, res) => {
 // bodyParser: true  — parse JSON / form bodies automatically (this is the default,
 //                     but being explicit prevents surprises if defaults ever change).
 // sizeLimit: '1mb' — prompts are large strings; the default 1 mb is sufficient.
-handler.config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};
 
-module.exports = handler;
+
+export default handler;

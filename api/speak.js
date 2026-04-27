@@ -127,4 +127,4 @@ handler.config = {
   }
 };
 
-module.exports = handler;
+export default handler;
