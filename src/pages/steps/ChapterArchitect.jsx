@@ -113,11 +113,17 @@ function AbstractCard({ studentContext, validatedTopic, chapterStructure }) {
       </div>
       {abstractData && section === 'result' && (
         <div className="ag-result-section tv-section--visible">
-          {['background', 'objectives', 'methodology', 'findings', 'conclusion'].map((field) =>
-            abstractData[field] ? (
-              <div key={field} className="ag-result-block">
-                <p className="ag-block-label" style={{ textTransform: 'capitalize' }}>{field}</p>
-                <p className="ag-block-text">{abstractData[field]}</p>
+          {[
+            { key: 'background',            label: 'Background' },
+            { key: 'problem_statement',     label: 'Problem Statement' },
+            { key: 'objectives',            label: 'Objectives' },
+            { key: 'methodology',           label: 'Methodology' },
+            { key: 'expected_contribution', label: 'Expected Contribution' },
+          ].map(({ key, label }) =>
+            abstractData[key] ? (
+              <div key={key} className="ag-result-block">
+                <p className="ag-block-label">{label}</p>
+                <p className="ag-block-text">{abstractData[key]}</p>
               </div>
             ) : null
           )}
@@ -163,18 +169,34 @@ function LiteratureMapCard({ studentContext, validatedTopic, chapterStructure })
       </div>
       {mapData && section === 'result' && (
         <div className="lm-result-section tv-section--visible">
-          {(mapData.themes || []).map((theme, i) => (
+          {(mapData.thematic_areas || []).map((theme, i) => (
             <div key={i} className="lm-theme-block">
-              <p className="lm-theme-title">{theme.theme || theme.area}</p>
-              {theme.description && <p className="lm-theme-description">{theme.description}</p>}
-              {(theme.key_authors || theme.search_terms) && (
+              <p className="lm-theme-title">{theme.theme}</p>
+              {(theme.search_terms || []).length > 0 && (
                 <p className="lm-theme-authors">
-                  <span className="lm-authors-label">{theme.key_authors ? 'Key Authors: ' : 'Search Terms: '}</span>
-                  {(theme.key_authors || theme.search_terms || []).join(', ')}
+                  <span className="lm-authors-label">Search Terms: </span>
+                  {theme.search_terms.join(', ')}
                 </p>
               )}
             </div>
           ))}
+          {(mapData.source_types || []).length > 0 && (
+            <div className="lm-source-types">
+              <p className="lm-authors-label">Recommended Sources</p>
+              {mapData.source_types.map((src, i) => (
+                <div key={i} className="lm-theme-block">
+                  <p className="lm-theme-title">{src.type}</p>
+                  <p className="lm-theme-description">{src.rationale} — {src.access}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {mapData.synthesis_guide && (
+            <div className="lm-theme-block">
+              <p className="lm-authors-label">Synthesis Guide</p>
+              <p className="lm-theme-description">{mapData.synthesis_guide}</p>
+            </div>
+          )}
           <button className="lm-btn-generate" onClick={handleGenerate}>Regenerate</button>
         </div>
       )}

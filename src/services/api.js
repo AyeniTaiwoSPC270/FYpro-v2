@@ -43,6 +43,8 @@ async function callClaude(system, messages, maxTokens = 2000) {
   const raw = await res.json();
   const text = raw?.content?.[0]?.text ?? '';
 
+  console.log('[FYPro] raw API response:', text);
+
   let parsed;
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
@@ -119,7 +121,7 @@ export async function buildChapters(studentCtx, validatedTopic, structureType, t
 export async function generateAbstract(studentCtx, validatedTopic, chapterStructure) {
   return callClaude(
     ABSTRACT_GENERATOR_SYSTEM,
-    [{ role: 'user', content: buildAbstractGeneratorPrompt(studentCtx, validatedTopic, chapterStructure) }]
+    [{ role: 'user', content: buildAbstractGeneratorPrompt(studentCtx, chapterStructure) }]
   );
 }
 
@@ -127,7 +129,7 @@ export async function generateAbstract(studentCtx, validatedTopic, chapterStruct
 export async function generateLiteratureMap(studentCtx, validatedTopic, chapterStructure) {
   return callClaude(
     LITERATURE_MAP_SYSTEM,
-    [{ role: 'user', content: buildLiteratureMapPrompt(studentCtx, validatedTopic, chapterStructure) }]
+    [{ role: 'user', content: buildLiteratureMapPrompt(studentCtx, chapterStructure) }]
   );
 }
 
