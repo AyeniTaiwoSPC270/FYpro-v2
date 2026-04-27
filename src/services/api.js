@@ -47,8 +47,9 @@ async function callClaude(system, messages, maxTokens = 2000) {
 
   let parsed;
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    const stripped = text.replace(/```json|```/g, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
   } catch {
     const err = new Error('JSON parse failed');
     err.code = 'JSON_PARSE';
@@ -88,8 +89,9 @@ async function callClaudeRaw(system, messages, maxTokens = 2000) {
 
   let parsed;
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    const stripped = text.replace(/```json|```/g, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
   } catch {
     const err = new Error('JSON parse failed');
     err.code = 'JSON_PARSE';
