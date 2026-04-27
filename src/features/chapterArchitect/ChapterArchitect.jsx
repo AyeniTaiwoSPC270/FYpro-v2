@@ -448,112 +448,110 @@ export default function ChapterArchitect() {
       <div className="ca-card" id="ca-card">
 
         {/* Input section */}
-        {section === 'input' && (
-          <div id="ca-input-section" className="ca-input-section tv-section--visible">
-            <button className="fy-back-btn" onClick={() => navigateStep(0)}>
-              ← Back to Topic Validator
-            </button>
-            <p className="ca-step-label">Step 2: Chapter Architect</p>
-            <p className="ca-description">
-              Choose a structure type, enter your total word count target, then let FYPro map out
-              your chapters — each with a core question, content outline, and word allocation.
-            </p>
+        <div id="ca-input-section" className={`ca-input-section ${section === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+          <button className="fy-back-btn" onClick={() => navigateStep(0)}>
+            ← Back to Topic Validator
+          </button>
+          <p className="ca-step-label">Step 2: Chapter Architect</p>
+          <p className="ca-description">
+            Choose a structure type, enter your total word count target, then let FYPro map out
+            your chapters — each with a core question, content outline, and word allocation.
+          </p>
 
-            <div className="ca-form-group">
-              <p className="ca-form-label">Structure Type</p>
-              <div className="ca-structure-toggle" id="ca-structure-toggle">
-                <button
-                  className={`ca-toggle-btn${structureType === 'standard-5' ? ' ca-toggle-btn--active' : ''}`}
-                  onClick={() => setStructureType('standard-5')}
-                >
-                  Standard 5-Chapter
-                </button>
-                <button
-                  className={`ca-toggle-btn${structureType === 'custom' ? ' ca-toggle-btn--active' : ''}`}
-                  onClick={() => setStructureType('custom')}
-                >
-                  Custom
-                </button>
-              </div>
-              {structureType === 'standard-5' && (
-                <p className="ca-toggle-hint" id="ca-toggle-hint">
-                  Intro → Literature Review → Methodology → Results &amp; Discussion → Conclusion
-                </p>
-              )}
+          <div className="ca-form-group">
+            <p className="ca-form-label">Structure Type</p>
+            <div className="ca-structure-toggle" id="ca-structure-toggle">
+              <button
+                className={`ca-toggle-btn${structureType === 'standard-5' ? ' ca-toggle-btn--active' : ''}`}
+                onClick={() => setStructureType('standard-5')}
+              >
+                Standard 5-Chapter
+              </button>
+              <button
+                className={`ca-toggle-btn${structureType === 'custom' ? ' ca-toggle-btn--active' : ''}`}
+                onClick={() => setStructureType('custom')}
+              >
+                Custom
+              </button>
             </div>
-
-            <div className="ca-form-group">
-              <p className="ca-form-label">Total Word Count Target</p>
-              <input
-                id="ca-word-count"
-                className={`ca-word-count-input${wordCountShaking ? ' ca-input--shake' : ''}`}
-                type="number"
-                min="5000"
-                placeholder="e.g. 15000"
-                value={wordCount}
-                onChange={e => setWordCount(e.target.value)}
-                onAnimationEnd={() => setWordCountShaking(false)}
-              />
-            </div>
-
-            {error && <p id="ca-error-text" className="ca-error-text">{error}</p>}
-
-            <button
-              id="btn-generate"
-              className="ca-btn-generate"
-              onClick={handleGenerate}
-              disabled={btnDisabled}
-            >
-              Generate Chapters
-            </button>
+            {structureType === 'standard-5' && (
+              <p className="ca-toggle-hint" id="ca-toggle-hint">
+                Intro → Literature Review → Methodology → Results &amp; Discussion → Conclusion
+              </p>
+            )}
           </div>
-        )}
+
+          <div className="ca-form-group">
+            <p className="ca-form-label">Total Word Count Target</p>
+            <input
+              id="ca-word-count"
+              className={`ca-word-count-input${wordCountShaking ? ' ca-input--shake' : ''}`}
+              type="number"
+              min="5000"
+              placeholder="e.g. 15000"
+              value={wordCount}
+              onChange={e => setWordCount(e.target.value)}
+              onAnimationEnd={() => setWordCountShaking(false)}
+            />
+          </div>
+
+          {error && <p id="ca-error-text" className="ca-error-text">{error}</p>}
+
+          <button
+            id="btn-generate"
+            className="ca-btn-generate"
+            onClick={handleGenerate}
+            disabled={btnDisabled}
+          >
+            Generate Chapters
+          </button>
+        </div>
 
         {/* Loading section */}
-        {section === 'loading' && (
-          <div id="ca-loading-section" className="ca-loading-section tv-section--visible">
-            <div className="skeleton-loader">
-              <div className="skeleton-bar" style={{ width: '100%' }} />
-              <div className="skeleton-bar" style={{ width: '75%' }} />
-              <div className="skeleton-bar" style={{ width: '90%' }} />
-              <div className="skeleton-bar" style={{ width: '60%' }} />
-            </div>
-            <p className="tv-loading-text">Mapping your chapters…</p>
+        <div id="ca-loading-section" className={`ca-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+          <div className="skeleton-loader">
+            <div className="skeleton-bar" style={{ width: '100%' }} />
+            <div className="skeleton-bar" style={{ width: '75%' }} />
+            <div className="skeleton-bar" style={{ width: '90%' }} />
+            <div className="skeleton-bar" style={{ width: '60%' }} />
           </div>
-        )}
+          <p className="tv-loading-text">Mapping your chapters…</p>
+        </div>
 
         {/* Result section */}
-        {section === 'result' && data && (
-          <div id="ca-result-section" className="ca-result-section tv-section--visible">
-            <p id="ca-structure-note" className="ca-structure-note">{data.structure_note || ''}</p>
-            {resultError && <p className="ca-error-text">{resultError}</p>}
+        <div id="ca-result-section" className={`ca-result-section ${section === 'result' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+          {data && (
+            <>
+              <p id="ca-structure-note" className="ca-structure-note">{data.structure_note || ''}</p>
+              {resultError && <p className="ca-error-text">{resultError}</p>}
 
-            <div id="ca-chapters-list" className="ca-chapters-list">
-              {chapters.map((chapter, idx) => (
-                <ChapterRow
-                  key={idx}
-                  chapter={chapter}
-                  idx={idx}
-                  isOpen={!!openChapters[idx]}
-                  isEditing={editingChapter === idx}
-                  editDraft={editDrafts[idx] || {}}
-                  setBodyRef={el => { bodyRefs.current[idx] = el }}
-                  onToggle={toggleChapter}
-                  onEdit={handleEditChapter}
-                  onSave={handleSaveChapter}
-                  onDraftChange={handleDraftChange}
-                />
-              ))}
-            </div>
+              <div id="ca-chapters-list" className="ca-chapters-list">
+                {chapters.map((chapter, idx) => (
+                  <ChapterRow
+                    key={idx}
+                    chapter={chapter}
+                    idx={idx}
+                    isOpen={!!openChapters[idx]}
+                    isEditing={editingChapter === idx}
+                    editDraft={editDrafts[idx] || {}}
+                    setBodyRef={el => { bodyRefs.current[idx] = el }}
+                    onToggle={toggleChapter}
+                    onEdit={handleEditChapter}
+                    onSave={handleSaveChapter}
+                    onDraftChange={handleDraftChange}
+                  />
+                ))}
+              </div>
 
-            <button id="btn-regenerate" className="ca-btn-regenerate" onClick={handleRegenerate}>
-              Regenerate
-            </button>
-            <button id="btn-confirm" className="ca-btn-confirm" onClick={handleConfirm}>
-              I am satisfied with this structure — Continue
-            </button>
-          </div>
-        )}
+              <button id="btn-regenerate" className="ca-btn-regenerate" onClick={handleRegenerate}>
+                Regenerate
+              </button>
+              <button id="btn-confirm" className="ca-btn-confirm" onClick={handleConfirm}>
+                I am satisfied with this structure — Continue
+              </button>
+            </>
+          )}
+        </div>
 
       </div>
 

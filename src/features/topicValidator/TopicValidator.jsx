@@ -150,121 +150,116 @@ export default function TopicValidator() {
     <div className={`tv-card ${verdictCardClass}`} id="tv-card">
 
       {/* ── Input section ──────────────────────────────────────────────────── */}
-      {section === 'input' && (
-        <div id="tv-input-section" className="tv-input-section tv-section--visible">
-          <p className="tv-step-label">Step 1: Topic Validator</p>
-          <p className="tv-description">
-            Edit your topic if needed, then validate it. FYPro will check scope, originality,
-            faculty fit, and data-collection feasibility.
-          </p>
-          <textarea
-            id="tv-textarea"
-            className={`tv-textarea${shaking ? ' tv-textarea--shake' : ''}`}
-            rows={4}
-            placeholder="e.g. Impact of social media on academic performance among undergraduates"
-            value={topic}
-            onChange={e => setTopic(e.target.value)}
-            onAnimationEnd={() => setShaking(false)}
-          />
-          {error && <p id="tv-error-text" className="tv-error-text">{error}</p>}
-          <button
-            id="btn-validate"
-            className="tv-btn-validate"
-            onClick={handleValidate}
-            disabled={btnDisabled}
-          >
-            Validate Topic
-          </button>
-        </div>
-      )}
+      <div id="tv-input-section" className={`tv-input-section ${section === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+        <p className="tv-step-label">Step 1: Topic Validator</p>
+        <p className="tv-description">
+          Edit your topic if needed, then validate it. FYPro will check scope, originality,
+          faculty fit, and data-collection feasibility.
+        </p>
+        <textarea
+          id="tv-textarea"
+          className={`tv-textarea${shaking ? ' tv-textarea--shake' : ''}`}
+          rows={4}
+          placeholder="e.g. Impact of social media on academic performance among undergraduates"
+          value={topic}
+          onChange={e => setTopic(e.target.value)}
+          onAnimationEnd={() => setShaking(false)}
+        />
+        {error && <p id="tv-error-text" className="tv-error-text">{error}</p>}
+        <button
+          id="btn-validate"
+          className="tv-btn-validate"
+          onClick={handleValidate}
+          disabled={btnDisabled}
+        >
+          Validate Topic
+        </button>
+      </div>
 
       {/* ── Loading section ─────────────────────────────────────────────────── */}
-      {section === 'loading' && (
-        <div id="tv-loading-section" className="tv-loading-section tv-section--visible">
-          <div className="skeleton-loader">
-            <div className="skeleton-bar" style={{ width: '100%' }} />
-            <div className="skeleton-bar" style={{ width: '75%' }} />
-            <div className="skeleton-bar" style={{ width: '90%' }} />
-            <div className="skeleton-bar" style={{ width: '60%' }} />
-          </div>
-          <p className="tv-loading-text">Analysing your topic…</p>
+      <div id="tv-loading-section" className={`tv-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+        <div className="skeleton-loader">
+          <div className="skeleton-bar" style={{ width: '100%' }} />
+          <div className="skeleton-bar" style={{ width: '75%' }} />
+          <div className="skeleton-bar" style={{ width: '90%' }} />
+          <div className="skeleton-bar" style={{ width: '60%' }} />
         </div>
-      )}
+        <p className="tv-loading-text">Analysing your topic…</p>
+      </div>
 
       {/* ── Result section ──────────────────────────────────────────────────── */}
-      {section === 'result' && data && (
-        <div id="tv-result-section" className="tv-result-section tv-section--visible">
-
-          <div className="tv-verdict-block">
-            <p className={`tv-verdict-label ${verdictLabelClass}`}>{data.verdict}</p>
-            <p className="tv-verdict-reason">{data.verdict_reason}</p>
-          </div>
-
-          <hr className="tv-divider" />
-
-          <div className="tv-refined-block">
-            <p className="tv-refined-label">Refined Topic</p>
-
-            {isEditing ? (
-              <textarea
-                id="tv-refined-edit-area"
-                className="tv-refined-edit-area"
-                rows={3}
-                value={editedTopic}
-                onChange={e => setEditedTopic(e.target.value)}
-                autoFocus
-              />
-            ) : (
-              <p
-                id="tv-refined-text"
-                className={`tv-refined-text${typewriterActive ? ' tv-typewriter--active' : ''}`}
-              >
-                {displayText}
-              </p>
-            )}
-
-            <p className="tv-refined-explanation">{data.refined_explanation}</p>
-
-            <div className="tv-refined-actions">
-              {isEditing
-                ? <button id="btn-save" className="tv-btn-save" onClick={handleSave}>Save</button>
-                : <button id="btn-edit" className="tv-btn-edit" onClick={handleEdit}>Edit</button>
-              }
+      <div id="tv-result-section" className={`tv-result-section ${section === 'result' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+        {data && (
+          <>
+            <div className="tv-verdict-block">
+              <p className={`tv-verdict-label ${verdictLabelClass}`}>{data.verdict}</p>
+              <p className="tv-verdict-reason">{data.verdict_reason}</p>
             </div>
-          </div>
 
-          <button id="btn-use" className="tv-btn-use" onClick={handleUseThisTopic}>
-            Use This Topic
-          </button>
+            <hr className="tv-divider" />
 
-          {/* Alternatives — only when Not Suitable */}
-          {data.verdict === 'Not Suitable' && data.alternatives?.length > 0 && (
-            <div id="tv-alternatives" className="tv-alternatives tv-section--visible">
-              <p className="tv-alternatives-heading">Alternative topics for your department</p>
-              <div id="tv-alternatives-list">
-                {data.alternatives.map((alt, i) => (
-                  <div key={i} className="tv-alt-card">
-                    <p className="tv-alt-topic">{alt.topic}</p>
-                    <p className="tv-alt-explanation">{alt.explanation}</p>
-                    <div className="tv-alt-footer">
-                      <span className={`tv-difficulty-badge tv-difficulty--${diffKeyFor(alt.difficulty)}`}>
-                        {alt.difficulty}
-                      </span>
-                      <button
-                        className="tv-btn-use-alt"
-                        onClick={() => handleSelectAlternative(alt.topic)}
-                      >
-                        Use This Instead
-                      </button>
-                    </div>
-                  </div>
-                ))}
+            <div className="tv-refined-block">
+              <p className="tv-refined-label">Refined Topic</p>
+
+              {isEditing ? (
+                <textarea
+                  id="tv-refined-edit-area"
+                  className="tv-refined-edit-area"
+                  rows={3}
+                  value={editedTopic}
+                  onChange={e => setEditedTopic(e.target.value)}
+                  autoFocus
+                />
+              ) : (
+                <p
+                  id="tv-refined-text"
+                  className={`tv-refined-text${typewriterActive ? ' tv-typewriter--active' : ''}`}
+                >
+                  {displayText}
+                </p>
+              )}
+
+              <p className="tv-refined-explanation">{data.refined_explanation}</p>
+
+              <div className="tv-refined-actions">
+                {isEditing
+                  ? <button id="btn-save" className="tv-btn-save" onClick={handleSave}>Save</button>
+                  : <button id="btn-edit" className="tv-btn-edit" onClick={handleEdit}>Edit</button>
+                }
               </div>
             </div>
-          )}
 
-        </div>
-      )}
+            <button id="btn-use" className="tv-btn-use" onClick={handleUseThisTopic}>
+              Use This Topic
+            </button>
+
+            {data.verdict === 'Not Suitable' && data.alternatives?.length > 0 && (
+              <div id="tv-alternatives" className="tv-alternatives tv-section--visible">
+                <p className="tv-alternatives-heading">Alternative topics for your department</p>
+                <div id="tv-alternatives-list">
+                  {data.alternatives.map((alt, i) => (
+                    <div key={i} className="tv-alt-card">
+                      <p className="tv-alt-topic">{alt.topic}</p>
+                      <p className="tv-alt-explanation">{alt.explanation}</p>
+                      <div className="tv-alt-footer">
+                        <span className={`tv-difficulty-badge tv-difficulty--${diffKeyFor(alt.difficulty)}`}>
+                          {alt.difficulty}
+                        </span>
+                        <button
+                          className="tv-btn-use-alt"
+                          onClick={() => handleSelectAlternative(alt.topic)}
+                        >
+                          Use This Instead
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
     </div>
   )
