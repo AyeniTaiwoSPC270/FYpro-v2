@@ -2,6 +2,7 @@ import { useEffect, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import TopicValidator from '../topicValidator/TopicValidator'
+import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 
 const STEPS = [
   'Topic Validator',
@@ -26,7 +27,7 @@ function StepPlaceholder({ stepIndex }) {
 
 const STEP_COMPONENTS = [
   TopicValidator,
-  () => <StepPlaceholder stepIndex={1} />,
+  ChapterArchitect,
   () => <StepPlaceholder stepIndex={2} />,
   () => <StepPlaceholder stepIndex={3} />,
   () => <StepPlaceholder stepIndex={4} />,
