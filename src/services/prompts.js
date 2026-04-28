@@ -716,6 +716,68 @@ Return only the JSON. Nothing else.
 `.trim();
 }
 
+// ── Document Relevance Check ──────────────────────────────────────────────────
+export const DOCUMENT_RELEVANCE_CHECK_SYSTEM = `
+You are FYPro — an academic document validator.
+Your only job is to determine whether an uploaded document is an academic project, chapter, or report that is relevant to a specific student's faculty and department.
+CRITICAL: Return ONLY valid JSON. No prose. No markdown.
+`.trim();
+
+export function buildDocumentRelevanceCheckPrompt(student, extractedText) {
+  const content = extractedText.slice(0, 2000)
+  return `
+${buildStudentContext(student)}
+
+DOCUMENT CONTENT (first 2000 characters):
+---
+${content}
+---
+
+Is this document a final year project, chapter, report, or academic work relevant to this student's Faculty of ${student.faculty}, Department of ${student.department}?
+
+Return ONLY this exact JSON structure:
+
+{
+  "relevant": true,
+  "reason": "One sentence explaining why this document is relevant to this student's faculty and department"
+}
+
+OR if not relevant:
+
+{
+  "relevant": false,
+  "reason": "One sentence explaining why this document does NOT match this student's Faculty of ${student.faculty}, Department of ${student.department}"
+}
+
+Return only the JSON. Nothing else.
+`.trim();
+}
+
+export function buildDocumentRelevanceCheckPDFPrompt(student) {
+  return `
+${buildStudentContext(student)}
+
+The student has uploaded a PDF document (see attached).
+Is this document a final year project, chapter, report, or academic work relevant to this student's Faculty of ${student.faculty}, Department of ${student.department}?
+
+Return ONLY this exact JSON structure:
+
+{
+  "relevant": true,
+  "reason": "One sentence explaining why this document is relevant to this student's faculty and department"
+}
+
+OR if not relevant:
+
+{
+  "relevant": false,
+  "reason": "One sentence explaining why this document does NOT match this student's Faculty of ${student.faculty}, Department of ${student.department}"
+}
+
+Return only the JSON. Nothing else.
+`.trim();
+}
+
 export function buildProjectReviewerPDFPrompt(student) {
   return `
 ${buildStudentContext(student)}

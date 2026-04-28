@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProject, reviewProjectPDF, handleApiError } from '../../services/api'
+import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 
 const UPLOAD_D =
@@ -223,6 +223,25 @@ export default function ProjectReviewer() {
       return
     }
 
+    // Relevance pre-check before committing to the full review
+    try {
+      const relevanceCheck = result.pdf
+        ? await checkDocumentRelevancePDF(studentContext, result.pdf)
+        : await checkDocumentRelevance(studentContext, result.text)
+
+      if (relevanceCheck && relevanceCheck.relevant === false) {
+        setIsProcessing(false)
+        setSection('input')
+        setError(
+          `This document does not appear to be a ${studentContext.department} project. ` +
+          `${relevanceCheck.reason} Please upload the correct file.`
+        )
+        return
+      }
+    } catch {
+      // Relevance check failure is non-fatal — proceed to full review
+    }
+
     try {
       const validatedTopic = state.validatedTopic || state.roughTopic
       const data = result.pdf
@@ -362,7 +381,7 @@ export default function ProjectReviewer() {
           <div className="skeleton-bar" style={{ width: '60%' }} />
         </div>
         <p className="tv-loading-text">Reviewing your project…</p>
-        <p className="pr-loading-subtext">FYPro is reading your content and assessing academic quality</p>
+        <p className="pr-loading-subtext">FYPro is verifying relevance and assessing academic quality</p>
       </div>
 
       {/* ── Result Section ──────────────────────────────────────── */}

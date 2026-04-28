@@ -12,6 +12,8 @@ import {
   buildLiteratureMapPrompt, LITERATURE_MAP_SYSTEM,
   buildProjectReviewerPrompt, PROJECT_REVIEWER_SYSTEM,
   buildProjectReviewerPDFPrompt,
+  buildDocumentRelevanceCheckPrompt, DOCUMENT_RELEVANCE_CHECK_SYSTEM,
+  buildDocumentRelevanceCheckPDFPrompt,
 } from './prompts.js';
 
 const ENDPOINT = '/api/claude';
@@ -159,6 +161,27 @@ export async function buildWritingPlan(studentCtx, submissionDeadline, currentDa
   return callClaude(
     WRITING_PLANNER_SYSTEM,
     [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
+  );
+}
+
+// ── Document Relevance Pre-Check ─────────────────────────────────────────────
+export async function checkDocumentRelevance(studentCtx, extractedText) {
+  return callClaude(
+    DOCUMENT_RELEVANCE_CHECK_SYSTEM,
+    [{ role: 'user', content: buildDocumentRelevanceCheckPrompt(studentCtx, extractedText) }],
+    200
+  );
+}
+
+export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaType = 'application/pdf') {
+  const userContent = [
+    { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+    { type: 'text', text: buildDocumentRelevanceCheckPDFPrompt(studentCtx) },
+  ];
+  return callClaude(
+    DOCUMENT_RELEVANCE_CHECK_SYSTEM,
+    [{ role: 'user', content: userContent }],
+    200
   );
 }
 

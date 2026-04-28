@@ -43,7 +43,7 @@ const handler = async (req, res) => {
         'anthropic-version': '2023-06-01',
         'anthropic-beta': 'pdfs-2024-09-25'
       },
-      body: JSON.stringify({ model, max_tokens, system, messages })
+      body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0 })
     });
 
     const data = await response.json();
