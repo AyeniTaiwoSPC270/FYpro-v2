@@ -115,7 +115,7 @@ export async function validateTopic(studentCtx, roughTopic) {
 export async function buildChapters(studentCtx, validatedTopic, structureType, totalWordCount) {
   return callClaude(
     CHAPTER_ARCHITECT_SYSTEM,
-    [{ role: 'user', content: buildChapterArchitectPrompt(studentCtx, validatedTopic, structureType, totalWordCount) }],
+    [{ role: 'user', content: buildChapterArchitectPrompt(studentCtx, structureType, totalWordCount) }],
     3000
   );
 }
@@ -140,7 +140,7 @@ export async function generateLiteratureMap(studentCtx, validatedTopic, chapterS
 export async function adviseMethodology(studentCtx, validatedTopic, chapterStructure) {
   return callClaude(
     METHODOLOGY_ADVISOR_SYSTEM,
-    [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx, validatedTopic, chapterStructure) }]
+    [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }]
   );
 }
 
@@ -155,10 +155,10 @@ export async function buildInstrument(studentCtx, validatedTopic, chosenMethodol
 }
 
 // ── Step 4: Writing Planner ──────────────────────────────────────────────────
-export async function buildWritingPlan(studentCtx, validatedTopic, chapterStructure, submissionDeadline, chosenMethodology) {
+export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate) {
   return callClaude(
     WRITING_PLANNER_SYSTEM,
-    [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, validatedTopic, chapterStructure, submissionDeadline, chosenMethodology) }]
+    [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
   );
 }
 
@@ -166,13 +166,16 @@ export async function buildWritingPlan(studentCtx, validatedTopic, chapterStruct
 export async function reviewProject(studentCtx, validatedTopic, extractedText) {
   return callClaude(
     PROJECT_REVIEWER_SYSTEM,
-    [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, validatedTopic, extractedText) }]
+    [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }]
   );
 }
 
 // ── Step 5: Project Reviewer (PDF base64) ────────────────────────────────────
 export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf') {
-  const userContent = buildProjectReviewerPDFPrompt(studentCtx, validatedTopic, base64Data, mediaType);
+  const userContent = [
+    { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+    { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
+  ];
   return callClaude(
     PROJECT_REVIEWER_SYSTEM,
     [{ role: 'user', content: userContent }]
@@ -183,13 +186,13 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
 export async function detectRedFlags(studentCtx, validatedTopic, methodology, chapterStructure) {
   return callClaude(
     RED_FLAG_DETECTOR_SYSTEM,
-    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, validatedTopic, methodology, chapterStructure) }]
+    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology) }]
   );
 }
 
 // ── Step 6: Three-Examiner Panel — first question ────────────────────────────
-export async function panelFirstQuestion(studentCtx, validatedTopic, methodology, chapterStructure) {
-  const system = buildThreeExaminerPanelSystem(studentCtx, validatedTopic, methodology, chapterStructure);
+export async function panelFirstQuestion(studentCtx, redFlags, uploadedReview) {
+  const system = buildThreeExaminerPanelSystem(studentCtx, redFlags, uploadedReview);
   const { parsed, rawText } = await callClaudeRaw(
     system,
     [{ role: 'user', content: THREE_EXAMINER_FIRST_QUESTION_PROMPT }],
@@ -221,7 +224,7 @@ export async function panelSummary(system, apiMessages) {
 export async function generateEmail(studentCtx, validatedTopic, chapterStructure, methodology) {
   return callClaude(
     SUPERVISOR_EMAIL_SYSTEM,
-    [{ role: 'user', content: buildSupervisorEmailPrompt(studentCtx, validatedTopic, chapterStructure, methodology) }]
+    [{ role: 'user', content: buildSupervisorEmailPrompt(studentCtx, chapterStructure) }]
   );
 }
 
