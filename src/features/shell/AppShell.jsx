@@ -6,6 +6,7 @@ import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
 import WritingPlanner from '../writingPlanner/WritingPlanner'
 import ProjectReviewer from '../projectReviewer/ProjectReviewer'
+import DefensePrep from '../defensePrep/DefensePrep'
 
 const STEPS = [
   'Topic Validator',
@@ -34,7 +35,7 @@ const STEP_COMPONENTS = [
   MethodologyAdvisor,
   WritingPlanner,
   ProjectReviewer,
-  () => <StepPlaceholder stepIndex={5} />,
+  DefensePrep,
 ]
 
 const CHECK_PATH = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
