@@ -5,6 +5,7 @@ import TopicValidator from '../topicValidator/TopicValidator'
 import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
 import WritingPlanner from '../writingPlanner/WritingPlanner'
+import ProjectReviewer from '../projectReviewer/ProjectReviewer'
 
 const STEPS = [
   'Topic Validator',
@@ -32,7 +33,7 @@ const STEP_COMPONENTS = [
   ChapterArchitect,
   MethodologyAdvisor,
   WritingPlanner,
-  () => <StepPlaceholder stepIndex={4} />,
+  ProjectReviewer,
   () => <StepPlaceholder stepIndex={5} />,
 ]
 
