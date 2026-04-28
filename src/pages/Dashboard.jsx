@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
+import { downloadProgressReport } from '../utils/generateReport'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -1008,7 +1009,8 @@ const QUICK_ACTIONS_BASE = [
   {
     label: 'Download Progress Report',
     sub: 'Export your research summary as PDF',
-    lockable: true,
+    lockable: false,
+    onClickKey: 'download',
     iconBg: 'rgba(245,158,11,0.15)',
     iconColor: '#F59E0B',
     cardBg: 'var(--bg-input)',
@@ -1023,7 +1025,7 @@ const QUICK_ACTIONS_BASE = [
   },
 ]
 
-function DashQuickActions({ STEPS, allComplete, showToastMessage }) {
+function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadReport }) {
   const navigate = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[0]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
@@ -1064,6 +1066,8 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage }) {
                 onClick={
                   isLockedAction
                     ? () => showToastMessage('Complete all 6 steps to unlock this feature')
+                    : action.onClickKey === 'download'
+                    ? onDownloadReport
                     : action.path
                     ? () => navigate(action.path)
                     : undefined
@@ -1247,7 +1251,12 @@ export default function Dashboard() {
         >
           <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
           <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
-          <DashQuickActions STEPS={STEPS} allComplete={allComplete} showToastMessage={showToastMessage} />
+          <DashQuickActions
+            STEPS={STEPS}
+            allComplete={allComplete}
+            showToastMessage={showToastMessage}
+            onDownloadReport={() => downloadProgressReport(state)}
+          />
         </main>
       </div>
 
