@@ -340,6 +340,16 @@ export default function DefensePrep() {
   // Keep submit handler ref current so speech recognition can call latest version
   submitHandlerRef.current = handleStudentSubmit
 
+  // Preload browser voices — Chrome loads them async; calling getVoices() and
+  // listening for voiceschanged ensures they are available when fallbackSpeak fires
+  useEffect(() => {
+    if (!ttsSupported) return
+    window.speechSynthesis.getVoices()
+    const onReady = () => window.speechSynthesis.getVoices()
+    window.speechSynthesis.addEventListener('voiceschanged', onReady)
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', onReady)
+  }, [ttsSupported])
+
   useEffect(() => {
     if (overlayOpen) document.body.style.overflow = 'hidden'
     else             document.body.style.overflow = ''
@@ -408,8 +418,22 @@ export default function DefensePrep() {
   function fallbackSpeak(text, examinerName) {
     if (!ttsSupported || !text) return
     const { rate, pitch } = resolveExaminerVoice(examinerName)
+    const n = (examinerName || '').toLowerCase()
+
     window.speechSynthesis.cancel()
     const utt = new SpeechSynthesisUtterance(text)
+
+    // Select distinct system voices per examiner when the browser has enough loaded
+    const enVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'))
+    if (enVoices.length >= 3) {
+      if (n.includes('subject'))    utt.voice = enVoices[1]
+      else if (n.includes('devil')) utt.voice = enVoices[enVoices.length - 1]
+      else                          utt.voice = enVoices[0]
+    } else if (enVoices.length === 2) {
+      if (n.includes('subject') || n.includes('devil')) utt.voice = enVoices[1]
+      else                                               utt.voice = enVoices[0]
+    }
+
     utt.rate  = rate
     utt.pitch = pitch
     utt.lang  = 'en-NG'
@@ -764,7 +788,6 @@ export default function DefensePrep() {
     <>
       {/* ── Card ─────────────────────────────────────────────────────────── */}
       <div className="dp-card" id="dp-card">
-        <span className="dp-watermark" aria-hidden="true">6</span>
 
         {/* Input section */}
         <div

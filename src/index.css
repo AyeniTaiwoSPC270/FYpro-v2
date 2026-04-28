@@ -3018,7 +3018,7 @@ html, body {
   pointer-events: none; user-select: none;
 }
 .wp-card::before {
-  content: '5';
+  content: '4';
   position: absolute; right: 28px; top: 12px;
   font-family: 'DM Serif Display', 'Georgia', serif;
   font-size: 7.5rem; line-height: 1;
@@ -3026,12 +3026,7 @@ html, body {
   pointer-events: none; user-select: none;
 }
 .dp-card::before {
-  content: '6';
-  position: absolute; right: 28px; top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
-  font-size: 7.5rem; line-height: 1;
-  color: rgba(37,99,235,0.04);
-  pointer-events: none; user-select: none;
+  content: none;
 }
 
 
@@ -3189,12 +3184,12 @@ html, body {
 }
 
 .di-card::before {
-  content: '4';
+  content: 'DCI';
   position: absolute;
   right: 28px;
   top: 12px;
   font-family: 'DM Serif Display', 'Georgia', serif;
-  font-size: 7.5rem;
+  font-size: 5rem;
   line-height: 1;
   color: rgba(139, 92, 246, 0.055);
   pointer-events: none;

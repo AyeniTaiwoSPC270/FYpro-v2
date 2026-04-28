@@ -351,7 +351,15 @@ export default function ChapterArchitect() {
 
     generateAbstract(studentContext, state.validatedTopic, chaps)
       .then(result => {
-        setAgData(result)
+        // Normalize: Claude sometimes wraps the response under a key like "abstract"
+        let agResult = result
+        if (!agResult?.background) {
+          const unwrapped = Object.values(agResult || {}).find(
+            v => v && typeof v === 'object' && v.background
+          )
+          if (unwrapped) agResult = unwrapped
+        }
+        setAgData(agResult)
         setAgSection('result')
         agTimers.current.forEach(clearTimeout)
         setAgVisible([])
@@ -398,7 +406,15 @@ export default function ChapterArchitect() {
 
     generateLiteratureMap(studentContext, state.validatedTopic, chaps)
       .then(result => {
-        setLmData(result)
+        // Normalize: Claude sometimes wraps the response under a key like "literature_map"
+        let lmResult = result
+        if (!Array.isArray(lmResult?.thematic_areas)) {
+          const unwrapped = Object.values(lmResult || {}).find(
+            v => v && typeof v === 'object' && Array.isArray(v.thematic_areas)
+          )
+          if (unwrapped) lmResult = unwrapped
+        }
+        setLmData(lmResult)
         setLmSection('result')
       })
       .catch(err => {
