@@ -240,10 +240,10 @@ function NewSessionModal({ onClose, onConfirm }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-function DashSidebar({ STUDENT, STEPS, onNewSession }) {
+function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
   return (
     <aside
-      className="flex flex-col flex-shrink-0 border-r border-slate-800/60"
+      className={`flex flex-col flex-shrink-0 border-r border-slate-800/60 db-sidebar${isOpen ? ' db-sidebar--open' : ''}`}
       style={{
         width: 260,
         minHeight: '100vh',
@@ -390,7 +390,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession }) {
 
 // ─── Top Bar ──────────────────────────────────────────────────────────────────
 
-function DashTopBar({ STUDENT, onNewSession }) {
+function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
   const hour = new Date().getHours()
@@ -418,9 +418,22 @@ function DashTopBar({ STUDENT, onNewSession }) {
 
   return (
     <header
-      className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
+      className="h-[68px] flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
       style={{ background: 'var(--bg-sidebar)' }}
     >
+      {/* Mobile hamburger — hidden on desktop via CSS */}
+      <button
+        className="db-menu-toggle"
+        onClick={onToggleSidebar}
+        aria-label="Toggle sidebar"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
       {/* FIX 1 — Greeting: shows actual first name and correct subtitle */}
       <div ref={headerRef} style={revealStyle(headerVisible)}>
         <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
@@ -455,7 +468,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
           whileTap={{ scale: 0.94 }}
           aria-label="Notifications"
           onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
-          className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -479,7 +492,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
           whileTap={{ scale: 0.94 }}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           onClick={toggleTheme}
-          className="w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -494,7 +507,7 @@ function DashTopBar({ STUDENT, onNewSession }) {
           whileTap={{ scale: 0.94 }}
           aria-label="Settings"
           onClick={() => navigate('/settings')}
-          className="w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -598,7 +611,7 @@ function DashStatCards({ STUDENT, STEPS }) {
   const [rowRef, rowVisible] = useReveal()
 
   return (
-    <div ref={rowRef} style={revealStyle(rowVisible)} className="grid grid-cols-3 gap-5 mb-7">
+    <div ref={rowRef} style={revealStyle(rowVisible)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-7">
 
       {/* ── Card 1: Circular Progress ── */}
       <motion.div
@@ -1035,7 +1048,7 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage }) {
         Quick Actions
       </h2>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {QUICK_ACTIONS.map((action, i) => {
           // FIX 4 — lockable cards are disabled until all 6 steps complete
           const isLockedAction = action.lockable && !allComplete
@@ -1143,6 +1156,17 @@ export default function Dashboard() {
     if (!isOnboarded) navigate('/start', { replace: true })
   }, [isOnboarded, navigate])
 
+  // Mobile sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Close sidebar when viewport expands to desktop
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const close = (e) => { if (e.matches) setSidebarOpen(false) }
+    mq.addEventListener('change', close)
+    return () => mq.removeEventListener('change', close)
+  }, [])
+
   // FIX 5 — new session modal state
   const [showNewSessionModal, setShowNewSessionModal] = useState(false)
 
@@ -1201,15 +1225,21 @@ export default function Dashboard() {
       className="flex h-screen overflow-hidden"
       style={{ background: 'var(--bg-base)' }}
     >
-      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={handleNewSession} />
+      {/* Mobile sidebar backdrop */}
+      <div
+        className={`db-sidebar-backdrop${sidebarOpen ? ' db-sidebar-backdrop--visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={handleNewSession} isOpen={sidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} />
+        <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={() => setSidebarOpen(o => !o)} />
 
         <main
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"
           style={{
-            padding: '36px 40px 56px',
             backgroundColor: 'var(--bg-base)',
             backgroundImage: 'var(--dot-bg-image)',
             backgroundSize: '28px 28px',

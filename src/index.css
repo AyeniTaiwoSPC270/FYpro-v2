@@ -7718,3 +7718,68 @@ html, body {
 [data-theme="light"] .bg-slate-800 {
   background-color: var(--bg-card) !important;
 }
+
+/* ============================================================
+   FULL RESPONSIVE PASS — 2026-04-28
+   Supplements the existing responsive blocks above.
+   ============================================================ */
+
+/* ── Step navigator: left indent so nav pills clear the hamburger ── */
+@media (max-width: 768px) {
+  .step-navigator {
+    padding-left: 60px !important;
+  }
+}
+@media (max-width: 480px) {
+  .step-navigator {
+    padding-left: 52px !important;
+  }
+}
+
+/* ── Touch targets: minimum 44px height for primary step buttons ── */
+@media (max-width: 768px) {
+  .tv-btn-validate,
+  .tv-btn-use,
+  .tv-btn-save,
+  .ca-btn-generate,
+  .ma-btn-analyse {
+    min-height: 44px;
+  }
+}
+
+/* ── Auth cards: reduce inner padding on very small phones ───── */
+@media (max-width: 480px) {
+  .rounded-2xl.border.border-slate-800.p-10 {
+    padding: 32px 20px 40px !important;
+  }
+}
+
+/* ── Pricing comparison table: smooth touch scroll ───────────── */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Dashboard header icon buttons: hide on very small screens ── */
+@media (max-width: 480px) {
+  .db-header__icon-btn {
+    display: none !important;
+  }
+}
+
+/* ── Prevent horizontal overflow globally ────────────────────── */
+body {
+  overflow-x: hidden;
+}
+
+/* ── Onboarding: give card breathing room on narrow phones ───── */
+@media (max-width: 480px) {
+  #onboarding-screen {
+    padding-left: 12px;
+    padding-right: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+

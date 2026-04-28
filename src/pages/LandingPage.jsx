@@ -367,7 +367,7 @@ function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-12 border-b transition-all duration-200 ${
+        className={`fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-5 md:px-12 border-b transition-all duration-200 ${
           scrolled
             ? 'border-[rgba(0,102,255,0.18)]'
             : 'border-white/[0.06]'
@@ -742,7 +742,7 @@ function StatsBar() {
   ]
   return (
     <div className="bg-bg-dark border-t border-b border-white/5 py-11">
-      <div className="max-w-[1080px] mx-auto px-10">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {stats.map((s, i) => <StatItem key={i} {...s} />)}
         </div>
@@ -803,7 +803,7 @@ function FeaturesSection() {
   return (
     <section id="features" className="py-24 relative" style={{ background: '#060E18' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-      <div className="max-w-[1080px] mx-auto px-10 relative">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Built for the gaps supervisors leave behind</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Every step solves a real, specific problem that final year students face with no one to call.</Reveal>
@@ -857,7 +857,7 @@ const STEPS = [
 function HowItWorks() {
   return (
     <section id="how-it-works" className="py-24 bg-bg-dark">
-      <div className="max-w-[1080px] mx-auto px-10">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Six steps. One defensible project.</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Designed around the exact journey Nigerian final year students go through — with or without a present supervisor.</Reveal>
@@ -887,7 +887,7 @@ function TestimonialsSection() {
   return (
     <section className="py-24 relative" style={{ background: '#060E18' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-      <div className="max-w-[1080px] mx-auto px-10 relative">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>What it felt like to go from confused to confident</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">&nbsp;</Reveal>
@@ -920,7 +920,7 @@ const PLANS = [
 function PricingSection() {
   return (
     <section id="pricing" className="py-24 bg-bg-dark">
-      <div className="max-w-[1080px] mx-auto px-10">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Pricing</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Simple, honest pricing</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Start free. Upgrade only when your defense date gets close.</Reveal>
@@ -1045,7 +1045,7 @@ function LandingFAQSection() {
   const [openIndex, setOpenIndex] = useState(null)
   return (
     <section id="faq" className="py-24 bg-bg-dark">
-      <div className="max-w-3xl mx-auto px-10">
+      <div className="max-w-3xl mx-auto px-5 md:px-10">
         <Reveal>
           <h2 className="font-serif text-4xl text-white text-center">Frequently asked questions</h2>
         </Reveal>
@@ -1076,7 +1076,7 @@ function FinalCTA() {
   return (
     <section className="py-24 relative overflow-hidden" style={{ background: '#060E18' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(0,102,255,0.14) 0%, transparent 65%)' }} />
-      <div className="max-w-[1080px] mx-auto px-10 relative z-[1]">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
           <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>Your defense is coming.<br />Are you ready?</Reveal>
@@ -1097,7 +1097,7 @@ function Footer() {
   return (
     <footer className="relative border-t border-white/[0.06]" style={{ background: '#030A12', padding: '56px 0 28px' }}>
       <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, #060E18, transparent)' }} />
-      <div className="max-w-[1080px] mx-auto px-10 relative z-[1]">
+      <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
           <Reveal>
           <div>

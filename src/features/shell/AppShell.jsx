@@ -1,4 +1,4 @@
-import { useEffect, Fragment } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import TopicValidator from '../topicValidator/TopicValidator'
@@ -48,6 +48,15 @@ export default function AppShell() {
     if (!isOnboarded) navigate('/start', { replace: true })
   }, []) // eslint-disable-line
 
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const close = (e) => { if (e.matches) setSidebarOpen(false) }
+    mq.addEventListener('change', close)
+    return () => mq.removeEventListener('change', close)
+  }, [])
+
   const completedCount     = state.stepsCompleted.filter(Boolean).length
   const furthestAccessible = Math.min(completedCount, STEPS.length - 1)
 
@@ -56,8 +65,27 @@ export default function AppShell() {
   return (
     <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
 
+      {/* ── Mobile sidebar overlay ──────────────────────────────────────────── */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' is-visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* ── Mobile hamburger toggle ─────────────────────────────────────────── */}
+      <button
+        className={`sidebar-toggle-btn${sidebarOpen ? ' is-open' : ''}`}
+        onClick={() => setSidebarOpen(o => !o)}
+        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={sidebarOpen}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
-      <aside className="sidebar" id="app-sidebar">
+      <aside className={`sidebar${sidebarOpen ? ' is-open' : ''}`} id="app-sidebar">
 
         <div className="sidebar__brand">
           <svg
