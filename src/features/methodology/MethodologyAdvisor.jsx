@@ -14,6 +14,7 @@ export default function MethodologyAdvisor() {
   const [defenseRevealed, setDefenseRevealed]         = useState(false)
 
   // ── DI state ───────────────────────────────────────────────────────────────
+  const [confirmDone, setConfirmDone]           = useState(state.stepsCompleted[2] || false)
   const [diVisible, setDiVisible]               = useState(state.stepsCompleted[2] || false)
   const [diSection, setDiSection]               = useState('input')
   const [diData, setDiData]                     = useState(null)
@@ -68,6 +69,7 @@ export default function MethodologyAdvisor() {
       chosenMethodology: selectedMethodology,
       stepsCompleted: updatedStepsCompleted,
     })
+    setConfirmDone(true)
     setDiVisible(true)
     // Scroll DI card into view once it mounts
     setTimeout(() => {
@@ -325,8 +327,18 @@ export default function MethodologyAdvisor() {
                 onClick={handleConfirm}
                 disabled={!confirmEnabled}
               >
-                Confirm Methodology — Continue
+                Confirm Methodology
               </button>
+
+              {confirmDone && (
+                <button
+                  className="di-btn-continue"
+                  style={{ marginTop: '12px' }}
+                  onClick={() => navigateStep(3)}
+                >
+                  Continue to Writing Planner →
+                </button>
+              )}
             </>
           )}
         </div>
@@ -342,7 +354,7 @@ export default function MethodologyAdvisor() {
             id="di-input-section"
             className={`di-input-section ${diSection === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}
           >
-            <p className="di-step-label">Step 4: Data Collection Instrument</p>
+            <p className="di-step-label">Optional: Data Collection Instrument</p>
             <span className="di-methodology-badge">{selectedMethodology}</span>
             <p className="di-description">
               FYPro will draft a complete, topic-specific data collection instrument based on your

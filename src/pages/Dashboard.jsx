@@ -6,12 +6,12 @@ import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 
 const STEP_DEFS = [
-  { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/workflow/topic-validator' },
-  { id: 2, name: 'Chapter Architect',  desc: 'Generated a complete five-chapter breakdown with section headings, key literature, and a visual literature map.',        path: '/workflow/chapter-architect' },
-  { id: 3, name: 'Methodology Advisor',desc: 'Selected research design, sampling strategy, and data approach — all justified for Chapter 3.',                          path: '/workflow/methodology-advisor' },
-  { id: 4, name: 'Instrument Builder', desc: 'Build your data collection tools — questionnaire, interview guide, or observation checklist — ready for field work.',    path: '/workflow/instrument-builder' },
-  { id: 5, name: 'Writing Planner',    desc: 'Get a week-by-week writing schedule calculated from your submission deadline with buffer weeks and word targets.',        path: '/workflow/writing-planner' },
-  { id: 6, name: 'Defense Simulator',  desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.', path: '/workflow/defense-simulator' },
+  { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
+  { id: 2, name: 'Chapter Architect',  desc: 'Generated a complete five-chapter breakdown with section headings, key literature, and a visual literature map.',        path: '/app' },
+  { id: 3, name: 'Methodology Advisor',desc: 'Selected research design, sampling strategy, and data approach — all justified for Chapter 3.',                          path: '/app' },
+  { id: 4, name: 'Writing Planner',    desc: 'Get a week-by-week writing schedule calculated from your submission deadline with buffer weeks and word targets.',        path: '/app' },
+  { id: 5, name: 'Project Reviewer',   desc: 'Upload your draft chapters for AI-powered feedback on structure, argument, and academic writing quality.',               path: '/app' },
+  { id: 6, name: 'Defense Prep',       desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.', path: '/app' },
 ]
 
 function buildSteps(stepsCompleted, activeStepId) {
