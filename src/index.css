@@ -7777,4 +7777,72 @@ body {
   }
 }
 
+/* ── pr-btn-skip — ghost "Skip" button below upload zone ──────── */
+.pr-btn-skip {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--color-text-secondary, rgba(13,27,42,0.6));
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm, 0.75rem);
+  font-weight: 500;
+  border: 1.5px solid var(--color-border, rgba(13,27,42,0.1));
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast),
+              background var(--transition-fast);
+}
+.pr-btn-skip:hover {
+  color: var(--color-blue-primary, #0066FF);
+  border-color: var(--color-blue-primary, #0066FF);
+  background: var(--color-blue-glow, rgba(0,102,255,0.05));
+}
+
+/* ── sidebar__back-dashboard — bottom ghost nav button ────────── */
+.sidebar__back-dashboard {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  padding: 10px 16px;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.sidebar__back-dashboard:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── sidebar__bonus-btn — bonus feature button (Supervisor Email) */
+.sidebar__bonus-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 8px;
+  padding: 10px 16px;
+  background: rgba(0,102,255,0.08);
+  color: rgba(255,255,255,0.75);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(0,102,255,0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.sidebar__bonus-btn:hover {
+  background: rgba(0,102,255,0.15);
+  border-color: rgba(0,102,255,0.45);
+  color: #fff;
+}
+
 

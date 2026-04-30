@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import { showToast } from '../../components/Toast'
 
 const UPLOAD_D =
   'M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-42.34-77.66a8,8,0,0,1-11.32,11.32L136,139.31V184a8,8,0,0,1-16,0V139.31l-10.34,10.35a8,8,0,0,1-11.32-11.32l24-24a8,8,0,0,1,11.32,0Z'
@@ -10,7 +11,7 @@ const CHIP_D =
 
 const MAX_BYTES = 4 * 1024 * 1024
 
-// ── File extractors (exact vanilla logic) ──────────────────────────────────────
+// ── File extractors ────────────────────────────────────────────────────────────
 
 function extractTXT(file) {
   return new Promise((resolve, reject) => {
@@ -50,45 +51,147 @@ function extractPDF(file) {
   })
 }
 
-function extractDOCX(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const buffer = e.target.result
-      const bytes = new Uint8Array(buffer)
-      let rawText = ''
-      try {
-        rawText = new TextDecoder('utf-8', { fatal: false }).decode(bytes)
-      } catch {
-        for (let i = 0; i < Math.min(bytes.length, 200000); i++) {
-          rawText += String.fromCharCode(bytes[i])
+// Parses ZIP structure of a DOCX and returns the decompressed word/document.xml text.
+async function extractDocumentXmlFromZip(buffer) {
+  const bytes = new Uint8Array(buffer)
+  const view  = new DataView(buffer)
+  let   offset = 0
+
+  while (offset + 30 <= bytes.length) {
+    if (view.getUint32(offset, true) !== 0x504B0304) break
+
+    const flags       = view.getUint16(offset + 6,  true)
+    const compression = view.getUint16(offset + 8,  true)
+    const cmpSize     = view.getUint32(offset + 18, true)
+    const fileNameLen = view.getUint16(offset + 26, true)
+    const extraLen    = view.getUint16(offset + 28, true)
+    const fileName    = new TextDecoder().decode(bytes.slice(offset + 30, offset + 30 + fileNameLen))
+    const dataStart   = offset + 30 + fileNameLen + extraLen
+
+    // Bit 3 = data descriptor present; compressed size is unreliable — abort ZIP parse
+    if (flags & 0x0008) return null
+
+    if (fileName === 'word/document.xml') {
+      const data = bytes.slice(dataStart, dataStart + cmpSize)
+
+      if (compression === 0) {
+        return new TextDecoder('utf-8', { fatal: false }).decode(data)
+      }
+
+      if (compression === 8 && typeof DecompressionStream !== 'undefined') {
+        try {
+          const ds     = new DecompressionStream('deflate-raw')
+          const writer = ds.writable.getWriter()
+          writer.write(data)
+          writer.close()
+          const chunks = []
+          const rdr    = ds.readable.getReader()
+          for (;;) {
+            const { done, value } = await rdr.read()
+            if (done) break
+            chunks.push(value)
+          }
+          const total = chunks.reduce((s, c) => s + c.length, 0)
+          const out   = new Uint8Array(total)
+          let pos = 0
+          for (const c of chunks) { out.set(c, pos); pos += c.length }
+          return new TextDecoder('utf-8', { fatal: false }).decode(out)
+        } catch (e) {
+          console.warn('[FYPro] DEFLATE decompress error:', e.message)
+          return null
         }
       }
 
-      const wTMatches = rawText.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || []
-      const extracted = wTMatches
-        .map(m => m.replace(/<[^>]+>/g, ''))
-        .filter(s => s.trim().length > 0)
-        .join(' ')
+      console.warn('[FYPro] Unsupported ZIP compression method:', compression)
+      return null
+    }
 
-      if (extracted.length >= 100) {
-        resolve({ text: extracted })
-        return
+    offset = dataStart + cmpSize
+  }
+
+  return null
+}
+
+function extractDOCX(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const buffer = e.target.result
+
+        // Primary: parse ZIP and decompress word/document.xml
+        let xmlText = null
+        try {
+          xmlText = await extractDocumentXmlFromZip(buffer)
+        } catch (zipErr) {
+          console.warn('[FYPro] ZIP parse error:', zipErr.message)
+        }
+
+        if (xmlText) {
+          const wTMatches = xmlText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
+          const extracted = wTMatches
+            .map(m => m.replace(/<[^>]+>/g, ''))
+            .filter(s => s.trim().length > 0)
+            .join(' ')
+
+          console.log('[FYPro] DOCX extracted text length:', extracted.length)
+
+          if (extracted.length >= 100) {
+            resolve({ text: extracted })
+            return
+          }
+
+          // w:t extraction too short — strip all XML tags from the parsed XML
+          const strippedXml = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+          console.log('[FYPro] DOCX XML-stripped length:', strippedXml.length)
+          if (strippedXml.length >= 100) {
+            resolve({ text: strippedXml })
+            return
+          }
+        }
+
+        // Fallback: raw byte decode + w:t search + XML strip
+        const bytes = new Uint8Array(buffer)
+        let rawText = ''
+        try {
+          rawText = new TextDecoder('utf-8', { fatal: false }).decode(bytes)
+        } catch {
+          for (let i = 0; i < Math.min(bytes.length, 200000); i++) {
+            rawText += String.fromCharCode(bytes[i])
+          }
+        }
+
+        const wTMatches2 = rawText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
+        const extracted2 = wTMatches2
+          .map(m => m.replace(/<[^>]+>/g, ''))
+          .filter(s => s.trim().length > 0)
+          .join(' ')
+
+        console.log('[FYPro] DOCX raw w:t extracted length:', extracted2.length)
+
+        if (extracted2.length >= 100) {
+          resolve({ text: extracted2 })
+          return
+        }
+
+        // eslint-disable-next-line no-control-regex
+        const printable = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+          .replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s+/g, ' ').trim()
+
+        console.log('[FYPro] DOCX printable fallback length:', printable.length)
+
+        if (printable.length >= 100) {
+          resolve({ text: '[Extracted from Word file — some formatting may be missing]\n\n' + printable })
+          return
+        }
+
+        reject(new Error(
+          'Could not extract text from this Word file (it may be encrypted or compressed). ' +
+          'Please save it as a PDF or .txt file and upload again.'
+        ))
+      } catch (err) {
+        reject(err)
       }
-
-      const stripped = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-      // eslint-disable-next-line no-control-regex
-      const printable = stripped.replace(/[^\x20-\x7E-ɏ\n]/g, ' ').replace(/\s+/g, ' ').trim()
-
-      if (printable.length >= 100) {
-        resolve({ text: '[Extracted from Word file — some formatting may be missing]\n\n' + printable })
-        return
-      }
-
-      reject(new Error(
-        'Could not extract text from this Word file (it may be compressed). ' +
-        'Please save it as a PDF or .txt file and upload again.'
-      ))
     }
     reader.onerror = () => reject(new Error('Could not read the Word file. Please try again.'))
     reader.readAsArrayBuffer(file)
@@ -280,6 +383,13 @@ export default function ProjectReviewer() {
         reviewData,
       },
     })
+    showToast('Project reviewed ✓')
+  }
+
+  // ── Skip handler ───────────────────────────────────────────────────────────
+
+  function handleSkip() {
+    completeStep(4)
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -367,6 +477,14 @@ export default function ProjectReviewer() {
         >
           Review My Project
         </button>
+
+        <button
+          id="pr-btn-skip"
+          className="pr-btn-skip"
+          onClick={handleSkip}
+        >
+          Skip &mdash; Proceed to Defence
+        </button>
       </div>
 
       {/* ── Loading Section ─────────────────────────────────────── */}
@@ -380,7 +498,7 @@ export default function ProjectReviewer() {
           <div className="skeleton-bar" style={{ width: '90%' }} />
           <div className="skeleton-bar" style={{ width: '60%' }} />
         </div>
-        <p className="tv-loading-text">Reviewing your project…</p>
+        <p className="tv-loading-text">Reviewing your project&hellip;</p>
         <p className="pr-loading-subtext">FYPro is verifying relevance and assessing academic quality</p>
       </div>
 

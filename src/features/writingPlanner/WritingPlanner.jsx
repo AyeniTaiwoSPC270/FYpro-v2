@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { buildWritingPlan, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import { showToast } from '../../components/Toast'
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -91,6 +92,7 @@ export default function WritingPlanner() {
   function handleConfirm() {
     if (!data) return
     completeStep(3, { writingPlan: data, submissionDeadline: dateValue })
+    showToast('Writing plan created ✓')
   }
 
   const today = new Date()

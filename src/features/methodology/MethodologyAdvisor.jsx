@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import { showToast } from '../../components/Toast'
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
@@ -69,6 +70,7 @@ export default function MethodologyAdvisor() {
       chosenMethodology: selectedMethodology,
       stepsCompleted: updatedStepsCompleted,
     })
+    showToast('Methodology confirmed ✓')
     setConfirmDone(true)
     setDiVisible(true)
     // Scroll DI card into view once it mounts

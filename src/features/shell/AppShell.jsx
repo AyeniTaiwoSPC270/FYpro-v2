@@ -7,6 +7,7 @@ import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
 import WritingPlanner from '../writingPlanner/WritingPlanner'
 import ProjectReviewer from '../projectReviewer/ProjectReviewer'
 import DefensePrep from '../defensePrep/DefensePrep'
+import SupervisorEmail from '../supervisorEmail/SupervisorEmail'
 
 const STEPS = [
   'Topic Validator',
@@ -51,7 +52,8 @@ export default function AppShell() {
     if (!isOnboarded) navigate('/start', { replace: true })
   }, []) // eslint-disable-line
 
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen]           = useState(false)
+  const [showSupervisorEmail, setShowSupervisorEmail] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)')
@@ -137,7 +139,7 @@ export default function AppShell() {
                     isLocked    ? 'step-list__item--locked'     : '',
                   ].filter(Boolean).join(' ')}
                   style={isAccessible ? { cursor: 'pointer' } : undefined}
-                  onClick={isAccessible ? () => navigateStep(i) : undefined}
+                  onClick={isAccessible ? () => { setShowSupervisorEmail(false); navigateStep(i) } : undefined}
                   title={isAccessible ? `Go to ${name}` : undefined}
                 >
                   <div className="step-list__badge">
@@ -147,7 +149,9 @@ export default function AppShell() {
                       </svg>
                     ) : String(i + 1)}
                   </div>
-                  <span className="step-list__name">{name}</span>
+                  <span className="step-list__name">
+                    {name}{i === 4 ? ' (optional)' : ''}
+                  </span>
                   {(isLocked || isCompleted) && (
                     <span className="step-list__icon">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill={isCompleted ? '#0066FF' : 'currentColor'} aria-hidden="true">
@@ -161,7 +165,25 @@ export default function AppShell() {
           </ul>
         </nav>
 
-        <div id="sidebar-bonus" className="sidebar__bonus" />
+        {/* Bonus feature — Supervisor Email — appears after all 6 steps complete */}
+        {state.stepsCompleted.every(Boolean) && (
+          <div id="sidebar-bonus" className="sidebar__bonus" style={{ marginTop: 8 }}>
+            <button
+              className="sidebar__bonus-btn"
+              onClick={() => setShowSupervisorEmail(v => !v)}
+            >
+              ✉ Supervisor Email
+            </button>
+          </div>
+        )}
+
+        {/* Back to Dashboard */}
+        <button
+          className="sidebar__back-dashboard"
+          onClick={() => navigate('/dashboard')}
+        >
+          ← Dashboard
+        </button>
 
       </aside>
 
@@ -204,9 +226,13 @@ export default function AppShell() {
           </div>
         </div>
 
-        {/* Current step */}
+        {/* Current step or bonus feature */}
         <div className="app-content__scroll">
-          <CurrentStep />
+          {showSupervisorEmail ? (
+            <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
+          ) : (
+            <CurrentStep />
+          )}
         </div>
 
       </main>

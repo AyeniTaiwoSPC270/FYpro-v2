@@ -12,6 +12,7 @@ import {
   buildThreeExaminerFollowUpPrompt,
 } from '../../services/prompts.js'
 import { useApp } from '../../context/AppContext'
+import { showToast } from '../../components/Toast'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -295,7 +296,7 @@ export default function DefensePrep() {
   const uploadedReview = state.uploadedProject?.reviewData
 
   // ── card state ────────────────────────────────────────────────────────────
-  const [section, setSection]             = useState(state.redFlags ? 'flags' : 'input')
+  const [section, setSection]             = useState(state.defenseSummary ? 'summary' : (state.redFlags ? 'flags' : 'input'))
   const [redFlags, setRedFlags]           = useState(state.redFlags || null)
   const [visibleFlags, setVisibleFlags]   = useState(state.redFlags ? state.redFlags.map((_, i) => i) : [])
   const [buttonsVisible, setButtonsVisible] = useState(!!state.redFlags)
@@ -313,7 +314,7 @@ export default function DefensePrep() {
   const [displayQuestionCount, setDisplayQuestionCount] = useState(0)
   const [endEnabled, setEndEnabled]           = useState(false)
   const [overlayPhase, setOverlayPhase]       = useState('chat') // 'chat' | 'summary'
-  const [summaryData, setSummaryData]         = useState(null)
+  const [summaryData, setSummaryData]         = useState(state.defenseSummary || null)
   const [exitModalOpen, setExitModalOpen]     = useState(false)
   const [micActive, setMicActive]             = useState(false)
 
@@ -692,6 +693,7 @@ export default function DefensePrep() {
       const newCompleted = [...state.stepsCompleted]
       newCompleted[5] = true
       set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
+      showToast('Defence session complete ✓')
 
       setVerdictLoading(false)
       setSummaryData(data)
@@ -711,6 +713,7 @@ export default function DefensePrep() {
   // ── close & revise ────────────────────────────────────────────────────────
 
   function closeDefenseOverlay() {
+    const closingFromSummary = overlayPhase === 'summary'
     stopAudio()
     if (micActiveRef.current && recognitionRef.current) {
       recognitionRef.current.abort()
@@ -724,6 +727,7 @@ export default function DefensePrep() {
     setInputValue('')
     setMicActive(false)
     setVerdictLoading(false)
+    if (closingFromSummary) setSection('summary')
   }
 
   function handleGoBackAndRevise() {
@@ -733,12 +737,18 @@ export default function DefensePrep() {
       defenseDisplayHistory: [],
       defenseQuestionCount:  0,
       defenseStarted:        false,
+      defenseSummary:        null,
     })
     setRedFlags(null)
     setVisibleFlags([])
     setButtonsVisible(false)
     setScanError(null)
+    setSummaryData(null)
     setSection('input')
+  }
+
+  function handleCloseSummary() {
+    setSection(redFlags ? 'flags' : 'input')
   }
 
   // ── keyboard shortcut ─────────────────────────────────────────────────────
@@ -866,6 +876,16 @@ export default function DefensePrep() {
           <button className="fy-back-btn" onClick={() => navigateStep(4)}>
             ← Back to Project Reviewer
           </button>
+        </div>
+
+        {/* Persisted summary section — shown on remount if defenseSummary exists */}
+        <div
+          id="dp-persisted-summary-section"
+          className={section === 'summary' ? 'dp-section--visible' : 'dp-section--hidden'}
+        >
+          {summaryData && (
+            <SummaryCard data={summaryData} onClose={handleCloseSummary} />
+          )}
         </div>
       </div>
 

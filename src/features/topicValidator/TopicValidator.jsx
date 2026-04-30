@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import { showToast } from '../../components/Toast'
 
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
@@ -117,6 +118,7 @@ export default function TopicValidator() {
 
     // completeStep saves to localStorage via context, advances currentStep to 1
     completeStep(0, { validatedTopic: finalTopic })
+    showToast('Topic validated ✓')
   }
 
   // ── Select alternative ────────────────────────────────────────────────────
