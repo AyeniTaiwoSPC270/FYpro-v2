@@ -93,7 +93,7 @@ export default function AppShell() {
       <aside className={`sidebar${sidebarOpen ? ' is-open' : ''}`} id="app-sidebar">
 
         <div className="sidebar__brand">
-          <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+          <img src="/fypro-logo.png" alt="FYPro" height="24" style={{ objectFit: 'contain' }} />
         </div>
 
         {/* Student context card */}
