@@ -982,9 +982,9 @@ export default function DefensePrep() {
                             borderRadius: '12px',
                             border: micActive
                               ? '1.5px solid rgba(220,38,38,0.6)'
-                              : '1.5px solid rgba(255,255,255,0.2)',
-                            background: micActive ? 'rgba(220,38,38,0.2)' : 'transparent',
-                            color: micActive ? '#F87171' : 'rgba(255,255,255,0.6)',
+                              : '1.5px solid var(--border-subtle)',
+                            background: micActive ? 'rgba(220,38,38,0.2)' : 'var(--header-btn-bg)',
+                            color: micActive ? '#F87171' : 'var(--text-secondary)',
                             cursor: 'pointer',
                             flexShrink: 0,
                             transition: 'all 0.2s ease',

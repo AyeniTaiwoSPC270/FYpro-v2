@@ -121,12 +121,12 @@ function SettingsNavbar({ initials, name }) {
       className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0 relative"
       style={{
         background: 'var(--bg-sidebar)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        borderBottom: '1px solid var(--border-subtle)',
       }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
         <ShieldIcon size={26} />
-        <span className="font-serif text-[1.35rem] text-white leading-none">
+        <span className="font-serif text-[1.35rem] leading-none" style={{ color: 'var(--text-primary)' }}>
           FY<span style={{ color: '#0066FF' }}>Pro</span>
         </span>
       </Link>
@@ -138,7 +138,7 @@ function SettingsNavbar({ initials, name }) {
           aria-label="Notifications"
           onClick={() => showToast('No new notifications')}
           className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
         >
           <BellIcon />
           <span
@@ -155,7 +155,7 @@ function SettingsNavbar({ initials, name }) {
             aria-expanded={open}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl cursor-pointer transition-all duration-200"
             style={{
-              background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
+              background: open ? 'var(--border-subtle)' : 'transparent',
               border: '1px solid transparent',
             }}
           >
@@ -186,14 +186,14 @@ function SettingsNavbar({ initials, name }) {
                 className="absolute right-0 mt-2 w-52 rounded-xl overflow-hidden"
                 style={{
                   background: 'var(--bg-card)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                  border: '1px solid var(--dropdown-border)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
                   top: '100%',
                 }}
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
-                  <div className="font-sans text-[0.8rem] font-semibold text-white truncate">{name}</div>
-                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">Free Plan</div>
+                  <div className="font-sans text-[0.8rem] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
+                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>Free Plan</div>
                 </div>
 
                 <div className="py-1.5">
@@ -255,7 +255,7 @@ function SettingsNavbar({ initials, name }) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="font-mono text-xs font-semibold uppercase tracking-wider mb-6" style={{ color: 'rgba(148,163,184,0.8)' }}>
+    <div className="font-mono text-xs font-semibold uppercase tracking-wider mb-6" style={{ color: 'var(--text-muted)' }}>
       {children}
     </div>
   )
@@ -289,8 +289,8 @@ function ToggleRow({ title, desc, checked, onChange }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex-1 min-w-0">
-        <div className="font-sans text-sm font-medium text-white">{title}</div>
-        <div className="font-sans text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</div>
+        <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{title}</div>
+        <div className="font-sans text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</div>
       </div>
       <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={title} />
     </div>
@@ -360,7 +360,8 @@ function PasswordInput({ label, name, value, onChange, showStrength = false }) {
           onChange={onChange}
           autoComplete={name === 'current' ? 'current-password' : 'new-password'}
           placeholder="••••••••"
-          className="w-full rounded-xl px-4 py-3 pr-11 font-sans text-[0.875rem] text-white outline-none transition-all duration-200 placeholder:text-slate-600"
+          className="w-full rounded-xl px-4 py-3 pr-11 font-sans text-[0.875rem] outline-none transition-all duration-200 placeholder:text-slate-600"
+          style={{ color: 'var(--text-primary)' }}
           style={{
             background: 'var(--bg-input)',
             border: '1px solid var(--border-color)',
@@ -455,8 +456,8 @@ export default function Settings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className="font-serif text-3xl text-white leading-none">Settings</h1>
-          <p className="font-sans text-sm text-slate-400 mt-1">
+          <h1 className="font-serif text-3xl leading-none" style={{ color: 'var(--text-primary)' }}>Settings</h1>
+          <p className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Manage your account preferences and security.
           </p>
         </motion.div>
@@ -550,8 +551,8 @@ export default function Settings() {
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <div className="font-sans text-sm font-medium text-white">Theme</div>
-              <div className="font-sans text-xs text-slate-500 mt-0.5">
+              <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Theme</div>
+              <div className="font-sans text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {theme === 'dark' ? 'Dark mode is active' : 'Light mode is active'}
               </div>
             </div>
@@ -596,7 +597,7 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <GoogleIcon />
-              <span className="font-sans text-sm font-medium text-white">Google</span>
+              <span className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Google</span>
             </div>
 
             {googleConnected ? (
@@ -647,8 +648,8 @@ export default function Settings() {
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
-              <div className="font-sans text-sm font-medium text-white">Sign out of all devices</div>
-              <div className="font-sans text-xs text-slate-500 mt-1 leading-relaxed">
+              <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Sign out of all devices</div>
+              <div className="font-sans text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 This will sign you out of FYPro on every device you're logged in to.
               </div>
             </div>
@@ -659,8 +660,8 @@ export default function Settings() {
               className="flex-shrink-0 font-sans text-sm px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 border-0"
               style={{
                 background: 'transparent',
-                border: '1px solid #334155',
-                color: '#94A3B8',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
               }}
             >
               Sign Out Everywhere

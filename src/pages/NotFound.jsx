@@ -59,7 +59,7 @@ export default function NotFound() {
       <nav
         style={{
           padding: '20px 32px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
         }}
@@ -296,7 +296,7 @@ export default function NotFound() {
             style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: '0.75rem',
-              color: '#334155',
+              color: 'var(--text-muted)',
               marginTop: '48px',
             }}
           >

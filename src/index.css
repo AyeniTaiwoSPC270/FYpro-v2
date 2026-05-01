@@ -7644,6 +7644,16 @@ html, body {
   --accent-hover:        #3B82F6;
   --card-shadow:         0 0 0 transparent;
   --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px);
+  /* Component-specific tokens */
+  --header-btn-bg:       rgba(255,255,255,0.04);
+  --header-btn-border:   rgba(255,255,255,0.1);
+  --badge-inactive-bg:   rgba(255,255,255,0.07);
+  --badge-inactive-border: rgba(255,255,255,0.12);
+  --badge-locked-text:   rgba(255,255,255,0.25);
+  --bg-green-mid:        #0B1E10;
+  --sidebar-gradient-end: #050A13;
+  --dropdown-border:     rgba(255,255,255,0.1);
+  --dropdown-divider:    rgba(255,255,255,0.07);
 }
 
 /* ── Light mode ─────────────────────────────────────────────── */
@@ -7652,7 +7662,7 @@ html, body {
   --bg-base:    #F8FAFC;
   --bg-card:    #FFFFFF;
   --bg-input:   #F1F5F9;
-  --bg-sidebar: #F8FAFC;
+  --bg-sidebar: #EEF2F8;
   --border-color:        #E2E8F0;
   --border-subtle:       rgba(0,0,0,0.08);
   --text-primary:        #0F172A;
@@ -7662,6 +7672,16 @@ html, body {
   --accent-hover:        #1D4ED8;
   --card-shadow:         0 1px 3px rgba(0,0,0,0.08);
   --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px);
+  /* Component-specific tokens */
+  --header-btn-bg:       rgba(0,0,0,0.05);
+  --header-btn-border:   #E2E8F0;
+  --badge-inactive-bg:   rgba(0,0,0,0.06);
+  --badge-inactive-border: #E2E8F0;
+  --badge-locked-text:   #94A3B8;
+  --bg-green-mid:        rgba(22,163,74,0.06);
+  --sidebar-gradient-end: #E4EBF5;
+  --dropdown-border:     #E2E8F0;
+  --dropdown-divider:    #E2E8F0;
 }
 
 /* ── html/body background inherits from theme ───────────────── */
@@ -7846,3 +7866,157 @@ body {
 }
 
 
+/* ============================================================
+   LIGHT MODE — COMPREHENSIVE COMPONENT OVERRIDES
+   ============================================================ */
+
+/* ── Sidebar (AppShell) ──────────────────────────────────────── */
+[data-theme="light"] .sidebar,
+.light .sidebar {
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%);
+}
+[data-theme="light"] .sidebar__context-card,
+.light .sidebar__context-card {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid rgba(0,102,255,0.45);
+}
+[data-theme="light"] .context-card__item,
+.light .context-card__item {
+  color: var(--text-secondary);
+}
+[data-theme="light"] .context-card__item--university,
+.light .context-card__item--university {
+  color: var(--text-primary);
+}
+[data-theme="light"] .context-card__item--topic,
+.light .context-card__item--topic {
+  color: var(--text-muted);
+}
+[data-theme="light"] .step-list__badge,
+.light .step-list__badge {
+  background: rgba(0,0,0,0.06);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+[data-theme="light"] .step-list__name,
+.light .step-list__name {
+  color: var(--text-muted);
+}
+[data-theme="light"] .step-list__item--current .step-list__name,
+.light .step-list__item--current .step-list__name {
+  color: var(--text-primary);
+}
+[data-theme="light"] .step-list__item--completed .step-list__name,
+.light .step-list__item--completed .step-list__name {
+  color: var(--text-secondary);
+}
+[data-theme="light"] .sidebar__wordmark,
+.light .sidebar__wordmark {
+  color: var(--text-primary);
+}
+[data-theme="light"] .sidebar__back-dashboard,
+.light .sidebar__back-dashboard {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+[data-theme="light"] .sidebar__back-dashboard:hover,
+.light .sidebar__back-dashboard:hover {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: rgba(0,0,0,0.04);
+}
+[data-theme="light"] .sidebar__bonus-btn,
+.light .sidebar__bonus-btn {
+  color: #2563EB;
+  background: rgba(0,102,255,0.07);
+  border-color: rgba(0,102,255,0.3);
+}
+[data-theme="light"] .sidebar__bonus-btn:hover,
+.light .sidebar__bonus-btn:hover {
+  color: #1D4ED8;
+  background: rgba(0,102,255,0.12);
+  border-color: rgba(0,102,255,0.4);
+}
+[data-theme="light"] .step-list__item--current,
+.light .step-list__item--current {
+  background: rgba(0,102,255,0.08);
+}
+
+/* ── Step Navigator (AppShell) ───────────────────────────────── */
+[data-theme="light"] .step-navigator,
+.light .step-navigator {
+  background: rgba(248,250,252,0.97);
+  border-bottom-color: var(--border-color);
+}
+[data-theme="light"] .nav-connector,
+.light .nav-connector {
+  background: rgba(0,0,0,0.1);
+}
+
+/* ── Toast notifications ─────────────────────────────────────── */
+[data-theme="light"] .fy-toast,
+.light .fy-toast {
+  background: rgba(255,255,255,0.97);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* ── Tailwind class overrides for light mode ─────────────────── */
+
+/* border opacity variants */
+[data-theme="light"] .border-slate-800\/80,
+[data-theme="light"] .border-slate-800\/60,
+[data-theme="light"] .border-slate-800\/40,
+.light .border-slate-800\/80,
+.light .border-slate-800\/60,
+.light .border-slate-800\/40 {
+  border-color: var(--border-color) !important;
+}
+
+/* bg variants */
+[data-theme="light"] .bg-slate-700,
+.light .bg-slate-700 {
+  background-color: var(--bg-input) !important;
+}
+[data-theme="light"] .bg-slate-700\/70,
+.light .bg-slate-700\/70 {
+  background-color: var(--border-color) !important;
+}
+
+/* text variants */
+[data-theme="light"] .text-slate-700,
+.light .text-slate-700 {
+  color: var(--text-secondary) !important;
+}
+
+/* placeholder override */
+[data-theme="light"] .placeholder-slate-600::placeholder,
+.light .placeholder-slate-600::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* hover:bg-white/5 → near-invisible on white, switch to dark tint */
+[data-theme="light"] .hover\:bg-white\/5:hover,
+.light .hover\:bg-white\/5:hover {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+/* border-t / border-b with slate-800 opacity in dropdowns */
+[data-theme="light"] .border-slate-800,
+.light .border-slate-800 {
+  border-color: var(--border-color) !important;
+}
+
+/* bg-white/5 static (not hover) */
+[data-theme="light"] .bg-white\/5,
+.light .bg-white\/5 {
+  background-color: rgba(0,0,0,0.04) !important;
+}
+
+/* bg-white/6 and similar */
+[data-theme="light"] .bg-white\/6,
+.light .bg-white\/6 {
+  background-color: rgba(0,0,0,0.04) !important;
+}

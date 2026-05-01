@@ -73,13 +73,13 @@ function ProfileNavbar({ initials, name }) {
       className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0 relative"
       style={{
         background: 'var(--bg-sidebar)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        borderBottom: '1px solid var(--border-subtle)',
       }}
     >
       {/* Logo */}
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
         <ShieldIcon size={26} />
-        <span className="font-serif text-[1.35rem] text-white leading-none">
+        <span className="font-serif text-[1.35rem] leading-none" style={{ color: 'var(--text-primary)' }}>
           FY<span style={{ color: '#0066FF' }}>Pro</span>
         </span>
       </Link>
@@ -93,7 +93,7 @@ function ProfileNavbar({ initials, name }) {
           aria-label="Notifications"
           onClick={() => showToast('No new notifications')}
           className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
         >
           <BellIcon />
           <span
@@ -111,7 +111,7 @@ function ProfileNavbar({ initials, name }) {
             aria-expanded={open}
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl cursor-pointer transition-all duration-200"
             style={{
-              background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
+              background: open ? 'var(--border-subtle)' : 'transparent',
               border: '1px solid transparent',
             }}
           >
@@ -142,14 +142,14 @@ function ProfileNavbar({ initials, name }) {
                 className="absolute right-0 mt-2 w-52 rounded-xl overflow-hidden"
                 style={{
                   background: 'var(--bg-card)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                  border: '1px solid var(--dropdown-border)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
                   top: '100%',
                 }}
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
-                  <div className="font-sans text-[0.8rem] font-semibold text-white truncate">{name}</div>
-                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">Free Plan</div>
+                  <div className="font-sans text-[0.8rem] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
+                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>Free Plan</div>
                 </div>
 
                 <div className="py-1.5">
@@ -206,7 +206,7 @@ function SectionLabel({ children, danger = false }) {
   return (
     <div
       className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] mb-6"
-      style={{ color: danger ? '#F87171' : 'rgba(148,163,184,0.8)' }}
+      style={{ color: danger ? '#F87171' : 'var(--text-muted)' }}
     >
       {children}
     </div>
@@ -230,7 +230,7 @@ function FormField({ label, hint, children }) {
 }
 
 const inputCls =
-  'w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-white font-sans text-[0.875rem] outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-600'
+  'w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 font-sans text-[0.875rem] outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-600'
 
 // ─── Profile Page ─────────────────────────────────────────────────────────────
 
@@ -321,8 +321,8 @@ export default function Profile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className="font-serif text-3xl text-white leading-none">Your Profile</h1>
-          <p className="font-sans text-sm text-slate-400 mt-1">
+          <h1 className="font-serif text-3xl leading-none" style={{ color: 'var(--text-primary)' }}>Your Profile</h1>
+          <p className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Manage your personal information and account details.
           </p>
         </motion.div>
@@ -363,9 +363,9 @@ export default function Profile() {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="font-sans text-xl font-semibold text-white leading-tight">{form.name}</div>
-            <div className="font-sans text-sm text-slate-400 mt-1">{form.email}</div>
-            <div className="font-mono text-xs text-slate-500 mt-2">Member since April 2026</div>
+            <div className="font-sans text-xl font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{form.name}</div>
+            <div className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{form.email}</div>
+            <div className="font-mono text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Member since April 2026</div>
             <div className="flex items-center flex-wrap gap-3 mt-3">
               <span
                 className="font-mono text-xs font-semibold px-3 py-1 rounded-full inline-block"
@@ -497,8 +497,8 @@ export default function Profile() {
                 className="flex-1 rounded-xl p-4"
                 style={{ background: 'var(--bg-input)' }}
               >
-                <div className="font-sans text-2xl font-bold text-white leading-none">{value}</div>
-                <div className="font-mono text-xs text-slate-500 uppercase tracking-wider mt-1.5">{label}</div>
+                <div className="font-sans text-2xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{value}</div>
+                <div className="font-mono text-xs uppercase tracking-wider mt-1.5" style={{ color: 'var(--text-muted)' }}>{label}</div>
               </div>
             ))}
           </div>
@@ -535,8 +535,8 @@ export default function Profile() {
               }`}
             >
               <div className="flex-1 min-w-0">
-                <div className="font-sans text-sm font-medium text-white">{item.title}</div>
-                <div className="font-sans text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</div>
+                <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</div>
+                <div className="font-sans text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.desc}</div>
               </div>
               <motion.button
                 whileHover={{ background: 'rgba(239,68,68,0.1)' }}

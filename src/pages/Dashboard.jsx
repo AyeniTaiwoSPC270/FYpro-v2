@@ -223,7 +223,7 @@ function NewSessionModal({ onClose, onConfirm }) {
           <button
             onClick={onClose}
             className="flex-1 rounded-xl px-6 py-2 font-sans text-sm font-medium text-slate-400 hover:border-slate-500 transition-colors duration-150"
-            style={{ border: '1px solid #334155' }}
+            style={{ border: '1px solid var(--border-color)' }}
           >
             Cancel
           </button>
@@ -248,7 +248,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
       style={{
         width: 260,
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, var(--bg-sidebar) 0%, #050A13 100%)',
+        background: 'linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%)',
       }}
     >
       {/* Logo */}
@@ -303,7 +303,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
                   isActive
                     ? { background: '#0066FF' }
                     : !isCompleted
-                    ? { background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)' }
+                    ? { background: 'var(--badge-inactive-bg)', border: '1.5px solid var(--badge-inactive-border)' }
                     : {}
                 }
               >
@@ -365,7 +365,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
         className="mx-3.5 mb-6 p-4 rounded-xl"
         style={{
           background: 'var(--bg-card)',
-          border: '1px solid rgba(255,255,255,0.07)',
+          border: '1px solid var(--border-subtle)',
           borderLeft: '3px solid rgba(0,102,255,0.5)',
         }}
       >
@@ -380,7 +380,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
         </div>
         <div
           className="inline-block font-mono text-[0.58rem] text-slate-600 px-2 py-[2px] rounded-full"
-          style={{ background: 'rgba(255,255,255,0.06)' }}
+          style={{ background: 'var(--badge-inactive-bg)' }}
         >
           {STUDENT.level}
         </div>
@@ -471,8 +471,8 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
           className="db-header__icon-btn relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--header-btn-bg)',
+            border: '1px solid var(--header-btn-border)',
           }}
         >
           <BellIcon />
@@ -495,8 +495,8 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           onClick={toggleTheme}
           className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--header-btn-bg)',
+            border: '1px solid var(--header-btn-border)',
           }}
         >
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
@@ -510,8 +510,8 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           onClick={() => navigate('/settings')}
           className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'var(--header-btn-bg)',
+            border: '1px solid var(--header-btn-border)',
           }}
         >
           <GearIcon />
@@ -546,8 +546,8 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
                 style={{
                   top: '100%',
                   background: 'var(--bg-card)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                  border: '1px solid var(--dropdown-border)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
                 }}
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
@@ -672,7 +672,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         }}
         className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col justify-between gap-[18px] transition-shadow duration-200"
         style={{
-          background: 'linear-gradient(145deg, var(--bg-card) 0%, #0B1E10 60%, var(--bg-input) 100%)',
+          background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-green-mid) 60%, var(--bg-input) 100%)',
           borderLeft: '4px solid #16A34A',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
@@ -811,7 +811,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
         </div>
         <span
           className="font-mono text-[0.65rem] text-slate-600 px-3 py-1 rounded-full border border-slate-800"
-          style={{ background: 'rgba(255,255,255,0.03)' }}
+          style={{ background: 'var(--badge-inactive-bg)' }}
         >
           {STUDENT.stepsCompleted} / {STUDENT.totalSteps}
         </span>
@@ -854,12 +854,12 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                     border: isActive
                       ? '2px solid rgba(0,102,255,0.35)'
                       : isLocked
-                      ? '1px solid #334155'
+                      ? '1px solid var(--border-color)'
                       : 'none',
                     color:
                       isCompleted || isActive
                         ? '#fff'
-                        : 'rgba(255,255,255,0.25)',
+                        : 'var(--badge-locked-text)',
                   }}
                 >
                   {isCompleted ? (
@@ -885,7 +885,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                     style={{
                       background: isCompleted
                         ? 'linear-gradient(to bottom, #16A34A, rgba(22,163,74,0.25))'
-                        : 'rgba(255,255,255,0.07)',
+                        : 'var(--border-subtle)',
                       transformOrigin: 'top',
                     }}
                   />
@@ -1077,7 +1077,7 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
                 }`}
                 style={{
                   background: action.cardBg,
-                  border: `1px solid ${isLockedAction ? '#334155' : action.border}`,
+                  border: `1px solid ${isLockedAction ? 'var(--border-color)' : action.border}`,
                   opacity: isLockedAction ? 0.6 : 1,
                 }}
               >
