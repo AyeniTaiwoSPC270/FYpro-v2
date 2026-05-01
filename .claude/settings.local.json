@@ -24,7 +24,10 @@
       "Read(//c/Users/FEYISAYO ATINUKE/Downloads/FYpro/**)",
       "Bash(python *)",
       "Bash(curl *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node --input-type=module)",
+      "Bash(git revert *)",
+      "Bash(grep -v \"//\")"
     ]
   }
 }
