@@ -253,10 +253,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-800/60 px-[22px] py-[26px]">
-        <ShieldIcon size={28} />
-        <span className="font-serif text-[1.45rem] text-white leading-none">
-          FY<span style={{ color: '#0066FF' }}>Pro</span>
-        </span>
+        <img src="/fypro-logo.png" alt="FYPro" height="28" style={{ objectFit: 'contain' }} />
       </div>
 
       {/* Navigation label */}

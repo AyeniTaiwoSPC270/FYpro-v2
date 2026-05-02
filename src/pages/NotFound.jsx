@@ -77,17 +77,7 @@ export default function NotFound() {
           }}
           aria-label="FYPro home"
         >
-          <ShieldIcon style={{ width: '28px', height: '28px' }} />
-          <span
-            style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: '1.25rem',
-              color: '#ffffff',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            FYPro
-          </span>
+          <img src="/fypro-logo.png" alt="FYPro" height="36" style={{ objectFit: 'contain' }} />
         </button>
       </nav>
 

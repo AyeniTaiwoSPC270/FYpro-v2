@@ -510,8 +510,7 @@ function HeroMockup() {
         {/* Sidebar */}
         <div className="hidden md:block border-r border-white/5 py-5 bg-black/20">
           <div className="flex items-center gap-2 px-5 pb-4 border-b border-white/5 mb-3">
-            <ShieldIcon size={20} />
-            <span className="font-serif text-[0.9rem] text-white"><span>FY</span><span style={{ color: '#0066FF' }}>Pro</span></span>
+            <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
           </div>
           {steps.map(({ label, done, active }) => (
             <div key={label} className={`flex items-center gap-2 px-5 py-[9px] text-[0.72rem] font-medium border-l-2 ${active ? 'text-white bg-[rgba(0,102,255,0.12)] border-blue-brand' : done ? 'text-[rgba(22,163,74,0.8)] border-transparent' : 'text-white/40 border-transparent'}`}>
@@ -1106,8 +1105,7 @@ function Footer() {
               transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
               className="flex items-center gap-[9px] mb-3"
             >
-              <ShieldIcon size={26} />
-              <span className="font-serif text-[1.4rem] text-white"><span>FY</span><span style={{ color: '#0066FF' }}>Pro</span></span>
+              <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
             </motion.div>
             <p className="text-[0.82rem] text-white/65 leading-[1.65]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
           </div>

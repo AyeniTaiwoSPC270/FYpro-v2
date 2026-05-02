@@ -125,10 +125,7 @@ function SettingsNavbar({ initials, name }) {
       }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-        <ShieldIcon size={26} />
-        <span className="font-serif text-[1.35rem] leading-none" style={{ color: 'var(--text-primary)' }}>
-          FY<span style={{ color: '#0066FF' }}>Pro</span>
-        </span>
+        <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
       </Link>
 
       <div className="flex items-center gap-2.5">
