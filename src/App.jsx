@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import VerifyEmail from './pages/VerifyEmail'
 import PaymentSuccess from './pages/PaymentSuccess'
 import About from './pages/About'
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
 
