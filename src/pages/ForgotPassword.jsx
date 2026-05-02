@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -22,6 +22,21 @@ function ShieldLogo() {
   )
 }
 
+// ─── Animation variants ───────────────────────────────────────────────────────
+
+const fieldVariant = {
+  hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1, y: 0, filter: 'blur(0px)',
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
+const formStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.3 } },
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ForgotPassword() {
@@ -34,75 +49,121 @@ export default function ForgotPassword() {
       style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
           backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
-        {/* Logo + heading */}
-        <div className="flex justify-center mb-4">
+        {/* Floating logo */}
+        <motion.div
+          className="flex justify-center mb-4"
+          animate={{ y: [0, -7, 0] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <ShieldLogo />
-        </div>
-        <h1 className="text-2xl font-bold text-white text-center mt-1">Reset your password</h1>
-        <p className="text-sm text-slate-400 text-center mt-1 mb-8">
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-2xl font-bold text-white text-center mt-1"
+        >
+          Reset your password
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="text-sm text-slate-400 text-center mt-1 mb-8"
+        >
           Enter your email and we&apos;ll send you a reset link.
-        </p>
+        </motion.p>
 
-        {sent ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-xl border border-green-900/60 bg-green-950/40 px-5 py-4 text-center mb-6"
-          >
-            <p className="text-green-400 text-sm font-semibold mb-1">Check your inbox</p>
-            <p className="text-slate-400 text-xs">If an account exists for {email}, a reset link is on its way.</p>
-          </motion.div>
-        ) : (
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(e) => { e.preventDefault(); setSent(true) }}
-            noValidate
-          >
-            <div className="flex flex-col gap-1">
-              <label htmlFor="reset-email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Email Address
-              </label>
-              <input
-                id="reset-email"
-                type="email"
-                placeholder="you@university.edu.ng"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
-              />
-            </div>
-
-            <motion.button
-              type="submit"
-              whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
+        <AnimatePresence mode="wait">
+          {sent ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.94, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-xl border border-green-900/60 bg-green-950/40 px-5 py-4 text-center mb-6"
             >
-              Send Reset Link
-            </motion.button>
-          </form>
-        )}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 220, damping: 14 }}
+                className="flex justify-center mb-2"
+              >
+                <div className="w-10 h-10 rounded-full bg-green-900/40 border border-green-700/50 flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              </motion.div>
+              <p className="text-green-400 text-sm font-semibold mb-1">Check your inbox</p>
+              <p className="text-slate-400 text-xs">
+                If an account exists for {email}, a reset link is on its way.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.form
+              key="form"
+              className="flex flex-col gap-4"
+              onSubmit={(e) => { e.preventDefault(); setSent(true) }}
+              noValidate
+              variants={formStagger}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, y: -8 }}
+            >
+              <motion.div variants={fieldVariant} className="flex flex-col gap-1">
+                <label htmlFor="reset-email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Email Address
+                </label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  placeholder="you@university.edu.ng"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+                />
+              </motion.div>
+
+              <motion.button
+                variants={fieldVariant}
+                type="submit"
+                whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
+              >
+                Send Reset Link
+              </motion.button>
+            </motion.form>
+          )}
+        </AnimatePresence>
 
         {/* Back link */}
-        <div className="text-center mt-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.4 }}
+          className="text-center mt-6"
+        >
           <Link
             to="/login"
             className="text-slate-400 hover:text-blue-400 text-sm transition-colors"
           >
             ← Back to login
           </Link>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   )

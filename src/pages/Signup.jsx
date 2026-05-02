@@ -1,46 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { showToast } from '../components/Toast'
-
-function ConsentCheckbox({ agreed, onChange }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="flex items-start gap-3 cursor-pointer" htmlFor="consent">
-        <div className="relative flex-shrink-0 mt-0.5">
-          <input
-            type="checkbox"
-            id="consent"
-            checked={agreed}
-            onChange={onChange}
-            className="sr-only"
-          />
-          <div
-            className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
-              agreed ? 'bg-blue-600 border-blue-600' : 'bg-[var(--bg-input)] border-slate-700'
-            }`}
-          >
-            {agreed && (
-              <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
-                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </div>
-        </div>
-        <span className="text-sm text-slate-400 leading-snug">
-          I agree to FYPro&apos;s{' '}
-          <Link to="/terms" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Terms of Service
-          </Link>
-          {' '}and{' '}
-          <Link to="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Privacy Policy
-          </Link>
-        </span>
-      </label>
-    </div>
-  )
-}
 import { motion } from 'framer-motion'
+import { showToast } from '../components/Toast'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -138,6 +99,50 @@ function TextInput({ label, id, type = 'text', placeholder, value, onChange }) {
   )
 }
 
+function ConsentCheckbox({ agreed, onChange }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="flex items-start gap-3 cursor-pointer" htmlFor="consent">
+        <div className="relative flex-shrink-0 mt-0.5">
+          <input
+            type="checkbox"
+            id="consent"
+            checked={agreed}
+            onChange={onChange}
+            className="sr-only"
+          />
+          <motion.div
+            animate={{ backgroundColor: agreed ? '#2563EB' : 'var(--bg-input)', borderColor: agreed ? '#2563EB' : 'rgb(51,65,85)' }}
+            transition={{ duration: 0.2 }}
+            className="w-4 h-4 rounded flex items-center justify-center border"
+          >
+            {agreed && (
+              <motion.svg
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2, type: 'spring', stiffness: 260, damping: 18 }}
+                width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true"
+              >
+                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </motion.svg>
+            )}
+          </motion.div>
+        </div>
+        <span className="text-sm text-slate-400 leading-snug">
+          I agree to FYPro&apos;s{' '}
+          <Link to="/terms" className="text-blue-400 hover:text-blue-300 transition-colors">
+            Terms of Service
+          </Link>
+          {' '}and{' '}
+          <Link to="/privacy" className="text-blue-400 hover:text-blue-300 transition-colors">
+            Privacy Policy
+          </Link>
+        </span>
+      </label>
+    </div>
+  )
+}
+
 function OrDivider() {
   return (
     <div className="flex items-center gap-3 my-2">
@@ -146,6 +151,21 @@ function OrDivider() {
       <div className="flex-1 h-px bg-slate-700/70" />
     </div>
   )
+}
+
+// ─── Animation variants ───────────────────────────────────────────────────────
+
+const formStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.28 } },
+}
+
+const fieldVariant = {
+  hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1, y: 0, filter: 'blur(0px)',
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+  },
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -164,24 +184,43 @@ export default function Signup() {
       style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
           backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
-        {/* Logo + heading */}
-        <div className="flex justify-center mb-4">
+        {/* Floating logo */}
+        <motion.div
+          className="flex justify-center mb-4"
+          animate={{ y: [0, -7, 0] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <ShieldLogo />
-        </div>
-        <h1 className="text-2xl font-bold text-white text-center mt-1">Create your account</h1>
-        <p className="text-sm text-slate-400 text-center mt-1 mb-8">Your FYP journey starts here.</p>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-2xl font-bold text-white text-center mt-1"
+        >
+          Create your account
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="text-sm text-slate-400 text-center mt-1 mb-8"
+        >
+          Your FYP journey starts here.
+        </motion.p>
 
         {/* Form */}
-        <form
+        <motion.form
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault()
@@ -189,58 +228,82 @@ export default function Signup() {
             navigate('/verify-email', { state: { email: form.email } })
           }}
           noValidate
+          variants={formStagger}
+          initial="hidden"
+          animate="visible"
         >
-          <TextInput
-            label="Full Name"
-            id="signup-name"
-            placeholder="e.g. Adaeze Okonkwo"
-            value={form.name}
-            onChange={set('name')}
-          />
-          <TextInput
-            label="Email Address"
-            id="signup-email"
-            type="email"
-            placeholder="you@university.edu.ng"
-            value={form.email}
-            onChange={set('email')}
-          />
-          <TextInput
-            label="University"
-            id="signup-university"
-            placeholder="e.g. University of Lagos"
-            value={form.university}
-            onChange={set('university')}
-          />
-          <PasswordInput
-            label="Password"
-            id="signup-password"
-            placeholder="••••••••"
-            value={form.password}
-            onChange={set('password')}
-          />
-          <PasswordInput
-            label="Confirm Password"
-            id="signup-confirm"
-            placeholder="••••••••"
-            value={form.confirm}
-            onChange={set('confirm')}
-          />
+          <motion.div variants={fieldVariant}>
+            <TextInput
+              label="Full Name"
+              id="signup-name"
+              placeholder="e.g. Adaeze Okonkwo"
+              value={form.name}
+              onChange={set('name')}
+            />
+          </motion.div>
 
-          <ConsentCheckbox
-            agreed={agreed}
-            onChange={(e) => { setAgreed(e.target.checked); if (e.target.checked) setConsentError(false) }}
-          />
-          {consentError && (
-            <p className="text-red-400 text-xs mt-1">
-              Please agree to the Terms of Service and Privacy Policy to continue.
-            </p>
-          )}
+          <motion.div variants={fieldVariant}>
+            <TextInput
+              label="Email Address"
+              id="signup-email"
+              type="email"
+              placeholder="you@university.edu.ng"
+              value={form.email}
+              onChange={set('email')}
+            />
+          </motion.div>
+
+          <motion.div variants={fieldVariant}>
+            <TextInput
+              label="University"
+              id="signup-university"
+              placeholder="e.g. University of Lagos"
+              value={form.university}
+              onChange={set('university')}
+            />
+          </motion.div>
+
+          <motion.div variants={fieldVariant}>
+            <PasswordInput
+              label="Password"
+              id="signup-password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={set('password')}
+            />
+          </motion.div>
+
+          <motion.div variants={fieldVariant}>
+            <PasswordInput
+              label="Confirm Password"
+              id="signup-confirm"
+              placeholder="••••••••"
+              value={form.confirm}
+              onChange={set('confirm')}
+            />
+          </motion.div>
+
+          <motion.div variants={fieldVariant}>
+            <ConsentCheckbox
+              agreed={agreed}
+              onChange={(e) => { setAgreed(e.target.checked); if (e.target.checked) setConsentError(false) }}
+            />
+            {consentError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-400 text-xs mt-1"
+              >
+                Please agree to the Terms of Service and Privacy Policy to continue.
+              </motion.p>
+            )}
+          </motion.div>
 
           <motion.button
+            variants={fieldVariant}
             type="submit"
             disabled={!agreed}
-            whileHover={agreed ? { y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' } : {}}
+            whileHover={agreed ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
             whileTap={agreed ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
             className={`mt-2 w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${
@@ -249,32 +312,36 @@ export default function Signup() {
           >
             Create Account
           </motion.button>
-        </form>
+        </motion.form>
 
-        <OrDivider />
-
-        {/* Google */}
-        <motion.button
-          type="button"
-          whileHover={{ borderColor: 'rgba(100,116,139,0.65)' }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
-            showToast('Google sign-in coming soon')
-          }}
-          className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.85, duration: 0.4 }}
         >
-          <GoogleIcon />
-          Continue with Google
-        </motion.button>
+          <OrDivider />
 
-        {/* Footer link */}
-        <p className="text-slate-400 text-sm text-center mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Log in
-          </Link>
-        </p>
+          <motion.button
+            type="button"
+            whileHover={{ borderColor: 'rgba(100,116,139,0.65)', y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
+              showToast('Google sign-in coming soon')
+            }}
+            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </motion.button>
+
+          <p className="text-slate-400 text-sm text-center mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
+              Log in
+            </Link>
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   )

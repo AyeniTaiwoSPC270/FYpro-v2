@@ -91,6 +91,21 @@ function OrDivider() {
   )
 }
 
+// ─── Animation variants ───────────────────────────────────────────────────────
+
+const formStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } },
+}
+
+const fieldVariant = {
+  hidden: { opacity: 0, y: 10, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1, y: 0, filter: 'blur(0px)',
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Login() {
@@ -105,29 +120,51 @@ export default function Login() {
       style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 18 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
         style={{
           backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',
         }}
       >
-        {/* Logo + heading */}
-        <div className="flex justify-center mb-4">
+        {/* Floating logo */}
+        <motion.div
+          className="flex justify-center mb-4"
+          animate={{ y: [0, -7, 0] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+        >
           <ShieldLogo />
-        </div>
-        <h1 className="text-2xl font-bold text-white text-center mt-1">Welcome back</h1>
-        <p className="text-sm text-slate-400 text-center mt-1 mb-8">Continue your FYP journey.</p>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ delay: 0.18, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-2xl font-bold text-white text-center mt-1"
+        >
+          Welcome back
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="text-sm text-slate-400 text-center mt-1 mb-8"
+        >
+          Continue your FYP journey.
+        </motion.p>
 
         {/* Form */}
-        <form
+        <motion.form
           className="flex flex-col gap-4"
           onSubmit={(e) => { e.preventDefault(); navigate('/dashboard') }}
           noValidate
+          variants={formStagger}
+          initial="hidden"
+          animate="visible"
         >
-          <div className="flex flex-col gap-1">
+          <motion.div variants={fieldVariant} className="flex flex-col gap-1">
             <label htmlFor="login-email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Email Address
             </label>
@@ -139,9 +176,9 @@ export default function Login() {
               onChange={set('email')}
               className="bg-[var(--bg-input)] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
             />
-          </div>
+          </motion.div>
 
-          <div>
+          <motion.div variants={fieldVariant}>
             <PasswordInput
               label="Password"
               id="login-password"
@@ -155,43 +192,50 @@ export default function Login() {
             >
               Forgot password?
             </Link>
-          </div>
+          </motion.div>
 
           <motion.button
+            variants={fieldVariant}
             type="submit"
-            whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
+            whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.15 }}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
           >
             Sign In
           </motion.button>
-        </form>
+        </motion.form>
 
-        <OrDivider />
-
-        {/* Google */}
-        <motion.button
-          type="button"
-          whileHover={{ borderColor: 'rgba(100,116,139,0.65)' }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
-            showToast('Google sign-in coming soon')
-          }}
-          className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.65, duration: 0.4 }}
         >
-          <GoogleIcon />
-          Continue with Google
-        </motion.button>
+          <OrDivider />
 
-        {/* Footer link */}
-        <p className="text-slate-400 text-sm text-center mt-6">
-          Don&apos;t have an account?{' '}
-          <Link to="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Sign up
-          </Link>
-        </p>
+          {/* Google */}
+          <motion.button
+            type="button"
+            whileHover={{ borderColor: 'rgba(100,116,139,0.65)', y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
+              showToast('Google sign-in coming soon')
+            }}
+            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </motion.button>
+
+          {/* Footer link */}
+          <p className="text-slate-400 text-sm text-center mt-6">
+            Don&apos;t have an account?{' '}
+            <Link to="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
+              Sign up
+            </Link>
+          </p>
+        </motion.div>
       </motion.div>
     </div>
   )
