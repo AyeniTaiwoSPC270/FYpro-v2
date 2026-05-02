@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { buildChapters, generateAbstract, generateLiteratureMap, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import { useProjectState } from '../../hooks/useProjectState'
 
 const CHEVRON_PATH = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
@@ -133,6 +134,7 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
 
 export default function ChapterArchitect() {
   const { state, studentContext, completeStep, navigateStep } = useApp()
+  const { saveStep } = useProjectState()
 
   const restored = Boolean(state.stepsCompleted[1] && state.chapterStructure)
 
@@ -334,11 +336,9 @@ export default function ChapterArchitect() {
   function handleConfirm() {
     if (!data) return
     const wc = parseInt(wordCount, 10) || 0
-    completeStep(1, {
-      chapterStructure: { ...data, chapters },
-      structureType,
-      totalWordCount: wc,
-    })
+    const structure = { ...data, chapters }
+    completeStep(1, { chapterStructure: structure, structureType, totalWordCount: wc })
+    saveStep('chapter_architect', structure)
     showToast('Chapter structure confirmed ✓')
   }
 
@@ -369,6 +369,7 @@ export default function ChapterArchitect() {
           setTimeout(() => setAgVisible(prev => [...prev, i]), i * 350)
         )
         agTimers.current = timers
+        saveStep('abstract_generator', agResult)
       })
       .catch(err => {
         setAgSection('input')
@@ -418,6 +419,7 @@ export default function ChapterArchitect() {
         }
         setLmData(lmResult)
         setLmSection('result')
+        saveStep('literature_map', lmResult)
       })
       .catch(err => {
         setLmSection('input')

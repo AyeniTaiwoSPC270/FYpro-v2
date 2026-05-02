@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
+import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/LandingPage'
 import Pricing from './pages/Pricing'
@@ -27,6 +28,7 @@ export default function App() {
     <ThemeProvider>
     <AppProvider>
       <BrowserRouter>
+        <ProjectStateProvider>
         <ToastProvider />
         <Routes>
           {/* Public marketing */}
@@ -61,6 +63,7 @@ export default function App() {
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ProjectStateProvider>
       </BrowserRouter>
     </AppProvider>
     </ThemeProvider>

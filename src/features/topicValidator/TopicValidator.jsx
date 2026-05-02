@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import { useProjectState } from '../../hooks/useProjectState'
 
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
+  const { saveStep } = useProjectState()
 
   // If already completed, restore straight to result section
   const restored = Boolean(state.stepsCompleted[0] && state.topicValidation)
@@ -116,8 +118,10 @@ export default function TopicValidator() {
 
     if (!finalTopic) return
 
-    // completeStep saves to localStorage via context, advances currentStep to 1
+    // Update AppContext + localStorage cache
     completeStep(0, { validatedTopic: finalTopic })
+    // Persist to Supabase (fire-and-forget; errors handled inside saveStep)
+    saveStep('topic_validator', { ...data, refined_topic: finalTopic }, topic.trim())
     showToast('Topic validated ✓')
   }
 

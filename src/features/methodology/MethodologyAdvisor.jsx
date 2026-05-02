@@ -2,9 +2,11 @@ import { useState, useRef } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import { useProjectState } from '../../hooks/useProjectState'
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
+  const { saveStep } = useProjectState()
 
   // ── MA state — seed from persisted context on remount ─────────────────────
   const [maSection, setMaSection]                     = useState(state.methodology ? 'result' : 'input')
@@ -70,6 +72,7 @@ export default function MethodologyAdvisor() {
       chosenMethodology: selectedMethodology,
       stepsCompleted: updatedStepsCompleted,
     })
+    saveStep('methodology_advisor', { ...maData, chosen_methodology: selectedMethodology })
     showToast('Methodology confirmed ✓')
     setConfirmDone(true)
     setDiVisible(true)
@@ -93,6 +96,7 @@ export default function MethodologyAdvisor() {
         buildPlainText(data)
         setDiData(data)
         setDiSection('result')
+        saveStep('instrument_builder', data)
       })
       .catch(err => {
         setDiSection('input')

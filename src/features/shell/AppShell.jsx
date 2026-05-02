@@ -1,6 +1,10 @@
 import { useEffect, useState, Fragment } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import { useProjectState } from '../../hooks/useProjectState'
+import OfflineBanner from '../../components/OfflineBanner'
+import AnonymousMigrationModal from '../../components/AnonymousMigrationModal'
 import TopicValidator from '../topicValidator/TopicValidator'
 import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
@@ -46,6 +50,7 @@ const LOCK_PATH  = 'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a
 export default function AppShell() {
   const navigate = useNavigate()
   const { state, navigateStep, isOnboarded } = useApp()
+  const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration } = useProjectState()
 
   // Redirect to onboarding if the student hasn't completed it
   useEffect(() => {
@@ -67,8 +72,36 @@ export default function AppShell() {
 
   const CurrentStep = STEP_COMPONENTS[state.currentStep] ?? STEP_COMPONENTS[0]
 
+  // Show a minimal loading veil while Supabase state hydrates (first paint only)
+  if (isLoading) {
+    return (
+      <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="skeleton-loader" style={{ width: 320 }}>
+          <div className="skeleton-bar" style={{ width: '100%' }} />
+          <div className="skeleton-bar" style={{ width: '75%' }} />
+          <div className="skeleton-bar" style={{ width: '55%' }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }}>
+
+      {/* ── Offline / sync indicator ────────────────────────────────────────── */}
+      <OfflineBanner />
+
+      {/* ── Anonymous session migration modal ───────────────────────────────── */}
+      <AnimatePresence>
+        {showMigrationModal && (
+          <AnonymousMigrationModal
+            onBringOver={confirmMigration}
+            onStartFresh={() => { localStorage.removeItem('fypro_session'); dismissMigrationModal() }}
+          />
+        )}
+      </AnimatePresence>
+
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
       {/* ── Mobile sidebar overlay ──────────────────────────────────────────── */}
       <div
@@ -223,6 +256,7 @@ export default function AppShell() {
         </div>
 
       </main>
+      </div>{/* end flex row wrapper */}
     </div>
   )
 }

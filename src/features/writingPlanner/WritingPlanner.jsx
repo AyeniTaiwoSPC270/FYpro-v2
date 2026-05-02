@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { buildWritingPlan, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import { useProjectState } from '../../hooks/useProjectState'
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -17,6 +18,7 @@ function computeUrgency(dateStr) {
 
 export default function WritingPlanner() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
+  const { saveStep } = useProjectState()
 
   const [section, setSection]       = useState(state.writingPlan ? 'result' : 'input')
   const [data, setData]             = useState(state.writingPlan || null)
@@ -92,6 +94,7 @@ export default function WritingPlanner() {
   function handleConfirm() {
     if (!data) return
     completeStep(3, { writingPlan: data, submissionDeadline: dateValue })
+    saveStep('writing_planner', { ...data, submission_deadline: dateValue }, dateValue)
     showToast('Writing plan created ✓')
   }
 
