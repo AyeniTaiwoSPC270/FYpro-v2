@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { UNIVERSITIES, getFaculties, getDepartments } from '../data/universities'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '../lib/supabase'
 import { updateUserProfile } from '../lib/supabase-client'
 
 
@@ -90,14 +89,14 @@ export default function SplashOnboarding() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!canSubmit) return
-    set({ university, faculty, department, level, roughTopic: topic.trim() })
 
-    // Persist profile fields to users table if logged in
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      updateUserProfile({ faculty, department, level }).catch(() => {})
+    try {
+      await updateUserProfile({ faculty, department, level })
+    } catch (err) {
+      console.error('[onboarding] Supabase profile update failed:', err)
     }
 
+    set({ university, faculty, department, level, roughTopic: topic.trim() })
     navigate('/app')
   }
 

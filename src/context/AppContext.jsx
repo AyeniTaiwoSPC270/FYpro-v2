@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
 
 const AppContext = createContext(null)
 
@@ -74,6 +75,30 @@ export function AppProvider({ children }) {
       // Storage full — silent fail
     }
   }, [state])
+
+  // Hydrate faculty/department/level from Supabase on mount — falls back to localStorage values if null
+  useEffect(() => {
+    async function hydrateFromSupabase() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('faculty, department, level')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile) return
+
+      setState(prev => ({
+        ...prev,
+        faculty:    profile.faculty    ?? prev.faculty,
+        department: profile.department ?? prev.department,
+        level:      profile.level      ?? prev.level,
+      }))
+    }
+    hydrateFromSupabase()
+  }, [])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   function set(partial) {
