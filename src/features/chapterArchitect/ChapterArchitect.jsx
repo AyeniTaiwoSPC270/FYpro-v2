@@ -295,6 +295,7 @@ export default function ChapterArchitect() {
         resetCompanions()
         setSection('result')
         setBtnDisabled(false)
+        saveStep('chapter_architect', result)
       })
       .catch(err => {
         setSection('input')
@@ -322,6 +323,7 @@ export default function ChapterArchitect() {
         setEditDrafts({})
         resetCompanions()
         setSection('result')
+        saveStep('chapter_architect', result)
       })
       .catch(err => {
         setSection('result')

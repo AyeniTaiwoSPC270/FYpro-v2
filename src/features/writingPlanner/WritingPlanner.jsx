@@ -78,6 +78,7 @@ export default function WritingPlanner() {
         setData(result)
         setSection('result')
         setBtnDisabled(false)
+        saveStep('writing_planner', { ...result, submission_deadline: dateValue }, dateValue)
       })
       .catch(err => {
         setSection('input')

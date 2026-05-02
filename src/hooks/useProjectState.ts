@@ -185,10 +185,12 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
     load()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      setIsLoading(true)
-      setProjectId(null)
-      load()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setIsLoading(true)
+        setProjectId(null)
+        load()
+      }
     })
 
     return () => {

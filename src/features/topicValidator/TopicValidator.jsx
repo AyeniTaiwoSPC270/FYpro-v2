@@ -80,6 +80,7 @@ export default function TopicValidator() {
         setData(result)
         setSection('result')
         setBtnDisabled(false)
+        saveStep('topic_validator', result, trimmed)
       })
       .catch(err => {
         setSection('input')

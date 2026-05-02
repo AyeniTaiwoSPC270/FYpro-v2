@@ -363,6 +363,7 @@ export default function ProjectReviewer() {
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
+      saveStep('project_reviewer', data)
     } catch (err) {
       setIsProcessing(false)
       setSection('input')

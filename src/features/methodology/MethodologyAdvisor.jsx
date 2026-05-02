@@ -39,6 +39,7 @@ export default function MethodologyAdvisor() {
         setMaData(data)
         setMaSection('result')
         setMaBtnDisabled(false)
+        saveStep('methodology_advisor', data)
       })
       .catch(err => {
         console.log('[FYPro] full error object:', err)
