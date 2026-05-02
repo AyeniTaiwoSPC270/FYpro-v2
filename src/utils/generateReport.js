@@ -117,7 +117,20 @@ function verdictBadge(doc, y, text, rgb) {
 
 // ── Main export ─────────────────────────────────────────────────────────────
 
-export function downloadProgressReport(state) {
+export async function downloadProgressReport(state) {
+  const logoImg = await new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d').drawImage(img, 0, 0)
+      resolve({ dataUrl: canvas.toDataURL('image/png'), nw: img.naturalWidth, nh: img.naturalHeight })
+    }
+    img.onerror = reject
+    img.src = '/fypro-logo.png'
+  })
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   let y = 0
 
@@ -127,13 +140,10 @@ export function downloadProgressReport(state) {
   c(doc, 'fill', BLUE)
   doc.rect(0, 46, W, 2, 'F')
 
-  // FYPro logotype
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(22)
-  c(doc, 'text', WHITE)
-  doc.text('FY', ML, 22)
-  c(doc, 'text', [100, 160, 255])
-  doc.text('Pro', ML + doc.getTextWidth('FY'), 22)
+  // FYPro logo image
+  const logoH = 9
+  const logoW = (logoImg.nw / logoImg.nh) * logoH
+  doc.addImage(logoImg.dataUrl, 'PNG', ML, 13, logoW, logoH)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8.5)
