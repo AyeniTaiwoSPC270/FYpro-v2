@@ -77,7 +77,7 @@ export default function NotFound() {
           }}
           aria-label="FYPro home"
         >
-          <img src="/fypro-logo.png" alt="FYPro" height="36" style={{ objectFit: 'contain' }} />
+          <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
         </button>
       </nav>
 
