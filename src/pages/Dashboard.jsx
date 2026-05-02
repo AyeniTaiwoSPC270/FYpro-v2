@@ -253,7 +253,7 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-800/60 px-[22px] py-[26px]">
-        <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
       </div>
 
       {/* Navigation label */}

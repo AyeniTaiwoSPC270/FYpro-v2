@@ -75,7 +75,7 @@ export default function NotFound() {
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: 0 }}
           aria-label="FYPro home"
         >
-          <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
         </button>
       </motion.nav>
 

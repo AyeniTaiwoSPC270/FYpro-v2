@@ -125,7 +125,7 @@ function SettingsNavbar({ initials, name }) {
       }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-        <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
       </Link>
 
       <div className="flex items-center gap-2.5">

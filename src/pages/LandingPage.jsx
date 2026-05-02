@@ -1105,7 +1105,7 @@ function Footer() {
               transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
               className="flex items-center gap-[9px] mb-3"
             >
-              <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+              <img src="/fypro-logo.png" alt="FYPro" className="h-6 w-auto" />
             </motion.div>
             <p className="text-[0.82rem] text-white/65 leading-[1.65]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
           </div>
