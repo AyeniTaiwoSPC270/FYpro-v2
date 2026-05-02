@@ -27,7 +27,9 @@
       "Bash(npx tsc *)",
       "Bash(node --input-type=module)",
       "Bash(git revert *)",
-      "Bash(grep -v \"//\")"
+      "Bash(grep -v \"//\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

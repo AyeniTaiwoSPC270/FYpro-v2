@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
+import { supabase } from '../lib/supabase'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -170,13 +171,79 @@ const fieldVariant = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+function mapSupabaseError(error) {
+  const msg = error?.message ?? ''
+  if (msg.includes('Password should be at least') || msg.toLowerCase().includes('weak password')) {
+    return 'Password must be at least 8 characters'
+  }
+  if (
+    msg.toLowerCase().includes('user already registered') ||
+    msg.toLowerCase().includes('already exists') ||
+    msg.toLowerCase().includes('email address is already')
+  ) {
+    return 'An account with this email already exists'
+  }
+  if (
+    msg.toLowerCase().includes('network') ||
+    msg.toLowerCase().includes('fetch') ||
+    msg.toLowerCase().includes('failed to fetch')
+  ) {
+    return 'Connection failed. Check your internet and try again.'
+  }
+  return msg || 'Something went wrong. Please try again.'
+}
+
 export default function Signup() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', email: '', university: '', password: '', confirm: '' })
   const [agreed, setAgreed] = useState(false)
   const [consentError, setConsentError] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setAuthError('')
+
+    if (!agreed) { setConsentError(true); return }
+
+    if (form.password.length < 8) {
+      setAuthError('Password must be at least 8 characters')
+      return
+    }
+
+    if (form.password !== form.confirm) {
+      setAuthError('Passwords do not match')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.name,
+            university: form.university,
+          },
+        },
+      })
+
+      if (error) {
+        setAuthError(mapSupabaseError(error))
+      } else {
+        setSuccess(true)
+      }
+    } catch (err) {
+      setAuthError('Connection failed. Check your internet and try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div
@@ -219,14 +286,23 @@ export default function Signup() {
           Your FYP journey starts here.
         </motion.p>
 
+        {success ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-xl border border-green-700/50 bg-green-900/20 px-5 py-4 text-center"
+          >
+            <p className="text-green-400 font-semibold text-sm">Check your email to verify your account</p>
+            <p className="text-slate-400 text-xs mt-1">We sent a link to <span className="text-white">{form.email}</span></p>
+          </motion.div>
+        ) : (
+
+        <>
         {/* Form */}
         <motion.form
           className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (!agreed) { setConsentError(true); return }
-            navigate('/verify-email', { state: { email: form.email } })
-          }}
+          onSubmit={handleSubmit}
           noValidate
           variants={formStagger}
           initial="hidden"
@@ -299,20 +375,32 @@ export default function Signup() {
             )}
           </motion.div>
 
+          {authError && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-400 text-xs text-center"
+            >
+              {authError}
+            </motion.p>
+          )}
+
           <motion.button
             variants={fieldVariant}
             type="submit"
-            disabled={!agreed}
-            whileHover={agreed ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
-            whileTap={agreed ? { scale: 0.98 } : {}}
+            disabled={!agreed || loading}
+            whileHover={agreed && !loading ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+            whileTap={agreed && !loading ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
             className={`mt-2 w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${
-              agreed ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'
+              agreed && !loading ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'
             }`}
           >
-            Create Account
+            {loading ? 'Creating account…' : 'Create Account'}
           </motion.button>
         </motion.form>
+        </>
+        )}
 
         <motion.div
           initial={{ opacity: 0 }}
