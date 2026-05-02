@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
+import { supabase } from '../lib/supabase'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -111,8 +112,32 @@ const fieldVariant = {
 export default function Login() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
+  const [loading, setLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setAuthError('')
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      })
+      if (error) {
+        // Generic message — never reveal whether the email exists
+        setAuthError('Invalid email or password')
+      } else {
+        navigate('/dashboard')
+      }
+    } catch {
+      setAuthError('Invalid email or password')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div
@@ -158,7 +183,7 @@ export default function Login() {
         {/* Form */}
         <motion.form
           className="flex flex-col gap-4"
-          onSubmit={(e) => { e.preventDefault(); navigate('/dashboard') }}
+          onSubmit={handleSubmit}
           noValidate
           variants={formStagger}
           initial="hidden"
@@ -194,15 +219,26 @@ export default function Login() {
             </Link>
           </motion.div>
 
+          {authError && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-400 text-xs text-center"
+            >
+              {authError}
+            </motion.p>
+          )}
+
           <motion.button
             variants={fieldVariant}
             type="submit"
-            whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' }}
-            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            whileHover={!loading ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+            whileTap={!loading ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
+            className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
           >
-            Sign In
+            {loading ? 'Signing in…' : 'Sign In'}
           </motion.button>
         </motion.form>
 

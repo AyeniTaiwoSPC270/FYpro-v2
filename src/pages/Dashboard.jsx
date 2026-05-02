@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { downloadProgressReport } from '../utils/generateReport'
+import { supabase } from '../lib/supabase'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -398,6 +399,14 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef(null)
 
+  async function handleLogout() {
+    setAvatarOpen(false)
+    await supabase.auth.signOut()
+    localStorage.clear()
+    sessionStorage.clear()
+    navigate('/')
+  }
+
   // FIX 3 — notifications state: dot only shows when there are unread notifications
   const [notifications, setNotifications] = useState([]) // eslint-disable-line no-unused-vars
 
@@ -566,6 +575,13 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
                   >
                     <span className="font-sans text-[0.82rem] text-slate-300">Settings</span>
                   </Link>
+                  <div className="mx-3 my-1 h-px" style={{ background: 'var(--border-color)' }} />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 w-full text-left hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-red-400">Sign out</span>
+                  </button>
                 </div>
               </motion.div>
             )}

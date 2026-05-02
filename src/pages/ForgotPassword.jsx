@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -42,6 +43,23 @@ const formStagger = {
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      // Fire reset email — swallow all errors so we never reveal if email is registered
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+    } catch {
+      // intentionally swallowed
+    } finally {
+      setLoading(false)
+      setSent(true)
+    }
+  }
 
   return (
     <div
@@ -115,7 +133,7 @@ export default function ForgotPassword() {
             <motion.form
               key="form"
               className="flex flex-col gap-4"
-              onSubmit={(e) => { e.preventDefault(); setSent(true) }}
+              onSubmit={handleSubmit}
               noValidate
               variants={formStagger}
               initial="hidden"
@@ -139,12 +157,13 @@ export default function ForgotPassword() {
               <motion.button
                 variants={fieldVariant}
                 type="submit"
-                whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' }}
-                whileTap={{ scale: 0.98 }}
+                disabled={loading}
+                whileHover={!loading ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+                whileTap={!loading ? { scale: 0.98 } : {}}
                 transition={{ duration: 0.15 }}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200"
+                className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
               >
-                Send Reset Link
+                {loading ? 'Sending…' : 'Send Reset Link'}
               </motion.button>
             </motion.form>
           )}
