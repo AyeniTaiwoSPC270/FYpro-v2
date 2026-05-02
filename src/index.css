@@ -6817,8 +6817,8 @@ html, body {
 
 /* ── 2. Skeleton loading bars ───────────────────────────────── */
 @keyframes fy-shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .fy-skeleton-loader {
@@ -6834,24 +6834,24 @@ html, body {
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    rgba(13, 27, 42, 0.07) 0%,
-    rgba(13, 27, 42, 0.14) 40%,
-    rgba(13, 27, 42, 0.07) 100%
+    var(--skeleton-base) 25%,
+    var(--skeleton-shimmer) 50%,
+    var(--skeleton-base) 75%
   );
   background-size: 200% 100%;
-  animation: fy-shimmer 1.6s ease-in-out infinite;
+  animation: fy-shimmer 1.5s infinite;
 }
 
-/* Defense prep has a dark card — invert skeleton colors */
+/* Defense prep has a dark card — always use dark skeleton colors */
 .dp-loading-section .fy-skeleton-bar {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.13) 40%,
-    rgba(255, 255, 255, 0.06) 100%
+    #1E293B 25%,
+    #2D3F5A 50%,
+    #1E293B 75%
   );
   background-size: 200% 100%;
-  animation: fy-shimmer 1.6s ease-in-out infinite;
+  animation: fy-shimmer 1.5s infinite;
 }
 
 /* ── 3. Toast notifications ─────────────────────────────────── */
@@ -7076,24 +7076,24 @@ html, body {
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    rgba(13, 27, 42, 0.07) 0%,
-    rgba(13, 27, 42, 0.14) 40%,
-    rgba(13, 27, 42, 0.07) 100%
+    var(--skeleton-base) 25%,
+    var(--skeleton-shimmer) 50%,
+    var(--skeleton-base) 75%
   );
   background-size: 200% 100%;
-  animation: fy-shimmer 1.6s ease-in-out infinite;
+  animation: fy-shimmer 1.5s infinite;
 }
 
-/* Dark variant used in defence prep verdict overlay */
+/* Dark variant used in defence prep verdict overlay — always dark */
 .skeleton-loader--dark .skeleton-bar {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.13) 40%,
-    rgba(255, 255, 255, 0.06) 100%
+    #1E293B 25%,
+    #2D3F5A 50%,
+    #1E293B 75%
   );
   background-size: 200% 100%;
-  animation: fy-shimmer 1.6s ease-in-out infinite;
+  animation: fy-shimmer 1.5s infinite;
 }
 
 /* ── MA bento cell helpers & dark shell overrides ────────────── */
@@ -7654,6 +7654,8 @@ html, body {
   --sidebar-gradient-end: #050A13;
   --dropdown-border:     rgba(255,255,255,0.1);
   --dropdown-divider:    rgba(255,255,255,0.07);
+  --skeleton-base:       #1E293B;
+  --skeleton-shimmer:    #2D3F5A;
 }
 
 /* ── Light mode ─────────────────────────────────────────────── */
@@ -7682,6 +7684,8 @@ html, body {
   --sidebar-gradient-end: #E4EBF5;
   --dropdown-border:     #E2E8F0;
   --dropdown-divider:    #E2E8F0;
+  --skeleton-base:       #E2E8F0;
+  --skeleton-shimmer:    #CBD5E1;
 }
 
 /* ── html/body background inherits from theme ───────────────── */
