@@ -1,5 +1,21 @@
 import { supabaseAdmin } from '../_lib/supabase-admin.js';
 
+const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+async function readCacheHits() {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return 0;
+  try {
+    const res  = await fetch(`${UPSTASH_URL}/get/stats:cache_hits`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+    const json = await res.json();
+    return parseInt(json.result || '0', 10);
+  } catch {
+    return 0;
+  }
+}
+
 const handler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -14,7 +30,7 @@ const handler = async (req, res) => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const cap = parseFloat(process.env.DAILY_CAP_USD || '10');
 
-    const [usageRes, paymentsRes, signupsTodayRes, signupsWeekRes] = await Promise.all([
+    const [usageRes, paymentsRes, signupsTodayRes, signupsWeekRes, cacheHits] = await Promise.all([
       supabaseAdmin
         .from('daily_usage')
         .select('total_cost_usd, request_count, total_tokens_in, total_tokens_out')
@@ -36,6 +52,8 @@ const handler = async (req, res) => {
         .from('users')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', weekAgo),
+
+      readCacheHits(),
     ]);
 
     const usage = usageRes.data;
@@ -59,6 +77,9 @@ const handler = async (req, res) => {
       signups: {
         count_today:     signupsTodayRes.count || 0,
         count_this_week: signupsWeekRes.count  || 0,
+      },
+      cache: {
+        hits_total: cacheHits,
       },
     });
   } catch (err) {

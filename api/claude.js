@@ -3,6 +3,14 @@
 
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
+import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
+
+const TTL_BY_STEP = {
+  'topic-validator':     86400,
+  'chapter-architect':   86400,
+  'methodology-advisor': 43200,
+  'writing-planner':     21600,
+};
 
 const handler = async (req, res) => {
   // Log every incoming request so Vercel's function logs show exactly what arrived.
@@ -41,8 +49,22 @@ const handler = async (req, res) => {
       system,
       messages,
       max_tokens = 2000,
-      model = 'claude-sonnet-4-6'
+      model = 'claude-sonnet-4-6',
+      step,
     } = req.body || {};
+
+    const prefix      = step || 'general';
+    const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
+    const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
+    const cacheKey    = buildCacheKey(prefix, system ?? '', userPrompt);
+    const ttl         = TTL_BY_STEP[prefix] ?? 21600;
+
+    const cached = await getCached(cacheKey);
+    if (cached) {
+      console.log('[claude] cache HIT for step:', prefix);
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cached);
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -59,6 +81,11 @@ const handler = async (req, res) => {
     console.log('[claude] Anthropic responded with status:', response.status);
     if (data.usage) {
       trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    }
+
+    res.setHeader('X-Cache', 'MISS');
+    if (response.ok) {
+      setCached(cacheKey, data, ttl); // fire and forget — do not await
     }
     return res.status(response.status).json(data);
   } catch (err) {
