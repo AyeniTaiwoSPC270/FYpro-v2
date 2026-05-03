@@ -29,7 +29,13 @@
       "Bash(git revert *)",
       "Bash(grep -v \"//\")",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\scripts\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"done\")",
+      "Bash(ls api/)",
+      "Bash(ls .vercel/)"
     ]
   }
 }
