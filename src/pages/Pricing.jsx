@@ -393,11 +393,12 @@ function usePaystackCheckout() {
 
   const handlePay = useCallback(async (tier) => {
     setPayError(null)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { data: authData, error: authError } = await supabase.auth.getUser()
+    if (authError || !authData?.user) {
       navigate('/login?returnUrl=/pricing')
       return
     }
+    const user = authData.user
 
     setPaying(tier)
     try {
