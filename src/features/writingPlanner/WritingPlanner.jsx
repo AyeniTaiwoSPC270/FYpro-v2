@@ -198,7 +198,7 @@ export default function WritingPlanner() {
             </div>
 
             <div id="wp-timeline" className="wp-timeline">
-              {(data.weeks || []).map((week, i) => (
+              {(isFree ? (data.weeks || []).slice(0, 4) : (data.weeks || [])).map((week, i) => (
                 <WeekNode key={i} week={week} />
               ))}
             </div>
