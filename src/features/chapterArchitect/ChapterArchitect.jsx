@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { buildChapters, generateAbstract, generateLiteratureMap, handleApiError } from '../../services/api'
-import { recordStepRun } from '../../hooks/useRunLimit'
+import { checkAndRecord } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -136,6 +137,8 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
 export default function ChapterArchitect() {
   const { state, studentContext, completeStep, navigateStep } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
+  const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
 
   const restored = Boolean(state.stepsCompleted[1] && state.chapterStructure)
 
@@ -282,11 +285,14 @@ export default function ChapterArchitect() {
       return
     }
     setError(null)
+
+    const allowed = checkAndRecord('chapter_architect', features)
+    if (!allowed) return
+
     setBtnDisabled(true)
-    recordStepRun('chapter_architect')
     setSection('loading')
 
-    buildChapters(studentContext, state.validatedTopic, structureType, wc)
+    buildChapters(studentContext, state.validatedTopic, structureType, wc, features)
       .then(result => {
         setData(result)
         setChapters(result.chapters || [])
@@ -579,8 +585,8 @@ export default function ChapterArchitect() {
 
       </div>
 
-      {/* ── Abstract Generator companion card ───────────────────────────────── */}
-      {showCompanions && (
+      {/* ── Abstract Generator companion card — student_pack only ─────────── */}
+      {showCompanions && hasPaid && (
         <div className="ag-card" id="ag-card">
 
           {agSection === 'input' && (
@@ -644,8 +650,8 @@ export default function ChapterArchitect() {
         </div>
       )}
 
-      {/* ── Literature Map companion card ───────────────────────────────────── */}
-      {showCompanions && (
+      {/* ── Literature Map companion card — student_pack only ──────────────── */}
+      {showCompanions && hasPaid && (
         <div className="lm-card" id="lm-card">
 
           {lmSection === 'input' && (

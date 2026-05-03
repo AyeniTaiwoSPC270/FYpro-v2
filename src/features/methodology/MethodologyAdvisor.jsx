@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
-import { recordStepRun } from '../../hooks/useRunLimit'
+import { checkAndRecord } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -8,6 +9,8 @@ import { useProjectState } from '../../hooks/useProjectState'
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
+  const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
 
   // ── MA state — seed from persisted context on remount ─────────────────────
   const [maSection, setMaSection]                     = useState(state.methodology ? 'result' : 'input')
@@ -32,11 +35,14 @@ export default function MethodologyAdvisor() {
 
   function handleAnalyse() {
     setMaError(null)
+
+    const allowed = checkAndRecord('methodology_advisor', features)
+    if (!allowed) return
+
     setMaBtnDisabled(true)
-    recordStepRun('methodology_advisor')
     setMaSection('loading')
 
-    adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure)
+    adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure, features)
       .then(data => {
         setMaData(data)
         setMaSection('result')
@@ -354,8 +360,8 @@ export default function MethodologyAdvisor() {
 
       </div>
 
-      {/* ── Data Collection Instrument Builder card ─────────────────────────── */}
-      {diVisible && (
+      {/* ── Data Collection Instrument Builder card — student_pack only ──────── */}
+      {diVisible && hasPaid && (
         <div className="di-card" id="di-card" ref={diCardRef}>
 
           {/* DI Input section */}

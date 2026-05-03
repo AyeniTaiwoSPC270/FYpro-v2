@@ -51,7 +51,17 @@ const LOCK_PATH  = 'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a
 
 const FREE_STEP_KEYS = ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner']
 
-function RunLimitBanner({ onUpgrade }) {
+const STEP_LIMIT_MESSAGES = {
+  topic_validator:     "You've used your 3 free topic validations.",
+  chapter_architect:   "You've used your 1 free chapter outline.",
+  methodology_advisor: "You've used your 1 free methodology analysis.",
+  writing_planner:     "You've used your 1 free writing plan.",
+  project_reviewer:    "You've used your 10 Project Reviewer submissions.",
+  defense_simulator:   "You've used your 5 Defense Simulator sessions.",
+}
+
+function RunLimitBanner({ stepKey, onUpgrade }) {
+  const msg = STEP_LIMIT_MESSAGES[stepKey] || "You've used your free runs for this step."
   return (
     <div style={{
       display: 'flex',
@@ -72,7 +82,7 @@ function RunLimitBanner({ onUpgrade }) {
         margin: 0,
         lineHeight: 1.5,
       }}>
-        You've used your free runs for this step. Upgrade to Student Pack for unlimited access.
+        {msg} Upgrade to Student Pack for unlimited access.
       </p>
       <button
         onClick={onUpgrade}
@@ -251,8 +261,8 @@ export default function AppShell() {
           </ul>
         </nav>
 
-        {/* Bonus feature — Supervisor Email — appears after all 6 steps complete */}
-        {state.stepsCompleted.every(Boolean) && (
+        {/* Bonus feature — Supervisor Email — paid users only, after all 6 steps complete */}
+        {state.stepsCompleted.every(Boolean) && (features.includes('student_pack') || features.includes('defense_pack')) && (
           <div id="sidebar-bonus" className="sidebar__bonus" style={{ marginTop: 8 }}>
             <button
               className="sidebar__bonus-btn"
@@ -327,7 +337,7 @@ export default function AppShell() {
           ) : (
             <>
               {currentStepKey && isOverLimit(currentStepKey) && (
-                <RunLimitBanner onUpgrade={() => navigate('/pricing')} />
+                <RunLimitBanner stepKey={currentStepKey} onUpgrade={() => navigate('/pricing')} />
               )}
               <CurrentStep />
             </>

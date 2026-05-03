@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { recordStepRun } from '../../hooks/useRunLimit'
+import { checkAndRecord } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { buildWritingPlan, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -20,6 +21,8 @@ function computeUrgency(dateStr) {
 export default function WritingPlanner() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
+  const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
 
   const [section, setSection]       = useState(state.writingPlan ? 'result' : 'input')
   const [data, setData]             = useState(state.writingPlan || null)
@@ -69,13 +72,15 @@ export default function WritingPlanner() {
       return
     }
 
+    const allowed = checkAndRecord('writing_planner', features)
+    if (!allowed) return
+
     setBtnDisabled(true)
-    recordStepRun('writing_planner')
     setSection('loading')
 
     const currentDate = new Date().toISOString().slice(0, 10)
 
-    buildWritingPlan(studentContext, dateValue, currentDate)
+    buildWritingPlan(studentContext, dateValue, currentDate, features)
       .then(result => {
         setData(result)
         setSection('result')
@@ -197,6 +202,22 @@ export default function WritingPlanner() {
                 <WeekNode key={i} week={week} />
               ))}
             </div>
+
+            {isFree && (
+              <p style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: '0.8125rem',
+                color: 'rgba(13, 27, 42, 0.55)',
+                background: '#FFFBEB',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                margin: '12px 0',
+                lineHeight: 1.5,
+              }}>
+                Free plan shows 4 weeks. Upgrade to Student Pack for your full semester plan.
+              </p>
+            )}
 
             <button
               id="btn-confirm-plan"

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError } from '../../services/api'
-import { recordStepRun } from '../../hooks/useRunLimit'
+import { checkAndRecord } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -8,6 +9,7 @@ import { useProjectState } from '../../hooks/useProjectState'
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
 
   // If already completed, restore straight to result section
   const restored = Boolean(state.stepsCompleted[0] && state.topicValidation)
@@ -70,9 +72,12 @@ export default function TopicValidator() {
     }
 
     setError(null)
+
+    const allowed = checkAndRecord('topic_validator', features)
+    if (!allowed) return
+
     set({ roughTopic: trimmed })
     setBtnDisabled(true)
-    recordStepRun('topic_validator')
     setSection('loading')
 
     validateTopic(studentContext, trimmed)

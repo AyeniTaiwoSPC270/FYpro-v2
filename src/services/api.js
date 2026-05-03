@@ -237,9 +237,13 @@ export async function validateTopic(studentCtx, roughTopic) {
 }
 
 // ── Step 2: Chapter Architect ────────────────────────────────────────────────
-export async function buildChapters(studentCtx, validatedTopic, structureType, totalWordCount) {
+export async function buildChapters(studentCtx, validatedTopic, structureType, totalWordCount, features = []) {
+  const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
+  const system = isFree
+    ? CHAPTER_ARCHITECT_SYSTEM + '\n\nProvide a basic chapter outline only. List chapter titles and one sentence per chapter. Do not provide detailed breakdowns, subsections, or content guidance.'
+    : CHAPTER_ARCHITECT_SYSTEM;
   return callClaude(
-    CHAPTER_ARCHITECT_SYSTEM,
+    system,
     [{ role: 'user', content: buildChapterArchitectPrompt(studentCtx, structureType, totalWordCount) }],
     3000
   );
@@ -262,9 +266,13 @@ export async function generateLiteratureMap(studentCtx, validatedTopic, chapterS
 }
 
 // ── Step 3: Methodology Advisor ──────────────────────────────────────────────
-export async function adviseMethodology(studentCtx, validatedTopic, chapterStructure) {
+export async function adviseMethodology(studentCtx, validatedTopic, chapterStructure, features = []) {
+  const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
+  const system = isFree
+    ? METHODOLOGY_ADVISOR_SYSTEM + '\n\nProvide a methodology recommendation only. State which methodology is most suitable and give one paragraph of reasoning. Do not include the defense_answer_template field in your JSON response — omit it entirely.'
+    : METHODOLOGY_ADVISOR_SYSTEM;
   return callClaude(
-    METHODOLOGY_ADVISOR_SYSTEM,
+    system,
     [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }],
     4000
   );
@@ -281,11 +289,16 @@ export async function buildInstrument(studentCtx, validatedTopic, chosenMethodol
 }
 
 // ── Step 4: Writing Planner ──────────────────────────────────────────────────
-export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate) {
-  return callClaude(
+export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate, features = []) {
+  const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
+  const result = await callClaude(
     WRITING_PLANNER_SYSTEM,
     [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
   );
+  if (isFree && Array.isArray(result.weeks)) {
+    result.weeks = result.weeks.slice(0, 4);
+  }
+  return result;
 }
 
 // ── Document Relevance Pre-Check ─────────────────────────────────────────────
