@@ -276,13 +276,14 @@ export default function Profile() {
   async function handleDeleteProjects() {
     if (!window.confirm('Delete all project data? This cannot be undone.')) return
 
+    clearState()
+
     try {
       await resetProject()
     } catch (err) {
       console.error('[Profile] Supabase delete failed', err)
     }
 
-    clearState()
     showToast('All projects deleted')
     navigate('/dashboard')
   }
