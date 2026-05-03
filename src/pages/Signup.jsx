@@ -222,7 +222,7 @@ export default function Signup() {
 
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
@@ -236,6 +236,13 @@ export default function Signup() {
       if (error) {
         setAuthError(mapSupabaseError(error))
       } else {
+        if (data?.user?.id && form.name) {
+          await supabase.from('users').update({ full_name: form.name }).eq('id', data.user.id)
+        }
+        // TODO: persist university to users table once a university_name column is added to public.users
+        if (form.university) {
+          localStorage.setItem('university', form.university)
+        }
         setSuccess(true)
       }
     } catch (err) {

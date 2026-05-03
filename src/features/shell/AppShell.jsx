@@ -52,9 +52,17 @@ export default function AppShell() {
   const { state, navigateStep, isOnboarded } = useApp()
   const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration } = useProjectState()
 
-  // Redirect to onboarding if the student hasn't completed it
+  // On hard refresh, always send authenticated users to the dashboard.
+  // On intentional navigation (type 'navigate'), stay in the shell.
   useEffect(() => {
-    if (!isOnboarded) navigate('/start', { replace: true })
+    if (!isOnboarded) {
+      navigate('/start', { replace: true })
+      return
+    }
+    const navEntry = performance.getEntriesByType('navigation')[0]
+    if (navEntry?.type === 'reload') {
+      navigate('/dashboard', { replace: true })
+    }
   }, []) // eslint-disable-line
 
   const [sidebarOpen, setSidebarOpen]           = useState(false)
