@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -379,6 +379,18 @@ function usePaystackCheckout() {
   const [paying, setPaying] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const [payError, setPayError] = useState(null)
+  const pollingIntervalRef = useRef(null)
+
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => stopPolling()
+  }, [stopPolling])
 
   const loadScript = useCallback(() => {
     if (document.getElementById('paystack-inline-js')) return Promise.resolve()
@@ -423,6 +435,7 @@ function usePaystackCheckout() {
         currency: 'NGN',
         onSuccess: async (transaction) => {
           console.log('Paystack onSuccess fired', transaction)
+          stopPolling()
           setVerifying(true)
           try {
             const vRes = await fetch('/api/verify-payment', {
@@ -447,6 +460,7 @@ function usePaystackCheckout() {
         },
         onClose: () => {
           console.log('onClose fired, pendingReference:', pendingReference)
+          stopPolling()
           if (pendingReference) {
             fetch('/api/verify-payment', {
               method: 'POST',
@@ -466,12 +480,26 @@ function usePaystackCheckout() {
         },
       })
       handler.openIframe()
+
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const pollRes = await fetch(`/api/check-payment-status?reference=${pendingReference}`)
+          const pollData = await pollRes.json()
+          if (pollData.status === 'success') {
+            stopPolling()
+            navigate(`/payment-success?reference=${pendingReference}`)
+          }
+        } catch {
+          // keep polling
+        }
+      }, 3000)
+
     } catch (err) {
       setPayError(err.message)
     } finally {
       setPaying(null)
     }
-  }, [navigate, loadScript])
+  }, [navigate, loadScript, stopPolling])
 
   return { handlePay, paying, verifying, payError }
 }
