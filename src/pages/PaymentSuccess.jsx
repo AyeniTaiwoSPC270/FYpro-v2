@@ -51,6 +51,7 @@ export default function PaymentSuccess() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const reference = searchParams.get('reference') || 'Unknown'
+  const [tier, setTier] = useState(null)
   const [showConfetti, setShowConfetti] = useState(true)
   const [verifying, setVerifying] = useState(true)
 
@@ -63,7 +64,9 @@ export default function PaymentSuccess() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reference }),
         })
+        const data = await res.json()
         if (!res.ok) throw new Error('failed')
+        if (!cancelled) setTier(data.tier)
       } catch {
         if (!cancelled) navigate('/pricing?error=payment_failed', { replace: true })
         return
@@ -232,8 +235,8 @@ export default function PaymentSuccess() {
               }}
             >
               {[
-                { label: 'Plan',      value: 'Student Plan',     type: 'white' },
-                { label: 'Amount',    value: '₦2,000',           type: 'white' },
+                { label: 'Plan',      value: tier === 'defense_pack' ? 'Defense Plan' : 'Student Plan', type: 'white' },
+                { label: 'Amount',    value: tier === 'defense_pack' ? '₦3,500' : '₦2,000',           type: 'white' },
                 { label: 'Reference', value: reference,           type: 'mono'  },
                 { label: 'Date',      value: today,              type: 'slate' },
                 { label: 'Status',    value: 'Confirmed',        type: 'badge', noBorder: true },
