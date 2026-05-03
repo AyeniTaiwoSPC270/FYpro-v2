@@ -88,8 +88,12 @@ async function grantEntitlement(userId, tier, amountKobo) {
     .eq('user_id', userId)
     .single();
 
-  const features = new Set(current?.paid_features || []);
-  let defensePacks = current?.defense_packs_remaining || 0;
+  const currentFeatures = Array.isArray(current?.paid_features) ? current.paid_features : [];
+  const currentDefensePacks = typeof current?.defense_packs_remaining === 'number' ? current.defense_packs_remaining : 0;
+  const currentTotal = typeof current?.total_lifetime_paid_ngn === 'number' ? current.total_lifetime_paid_ngn : 0;
+
+  const features = new Set(currentFeatures);
+  let defensePacks = currentDefensePacks;
 
   if (tier === 'student_pack') features.add('student_pack');
   if (tier === 'defense_pack') {
@@ -103,7 +107,7 @@ async function grantEntitlement(userId, tier, amountKobo) {
     .update({
       paid_features: Array.from(features),
       defense_packs_remaining: defensePacks,
-      total_lifetime_paid_ngn: (current?.total_lifetime_paid_ngn || 0) + Math.floor(amountKobo / 100),
+      total_lifetime_paid_ngn: currentTotal + Math.floor(amountKobo / 100),
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId);
