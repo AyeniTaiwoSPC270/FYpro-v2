@@ -58,15 +58,22 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
   }
 
   // 6. Mark payment success — .eq('status', 'pending') is the race-condition guard:
-  // if two concurrent calls both pass the idempotency check, only one matches 'pending'.
-  await supabaseAdmin
+  // if two concurrent calls both pass the idempotency check above, only one UPDATE
+  // will match 'pending'; the loser gets back an empty array and must not credit.
+  const { data: updated } = await supabaseAdmin
     .from('payments')
     .update({
       status: 'success',
       webhook_verified_at: new Date().toISOString(),
     })
     .eq('paystack_reference', reference)
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .select('id');
+
+  if (!updated || updated.length === 0) {
+    console.log('[creditUser] lost race — already processed by concurrent call', { reference, source });
+    return { status: 'already_processed', reference };
+  }
 
   // 7. Grant entitlement
   await grantEntitlement(payment.user_id, payment.tier, payment.amount_kobo);
