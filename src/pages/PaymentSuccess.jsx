@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const CONFETTI_COLORS = [
@@ -49,7 +49,30 @@ const rowVariant = {
 
 export default function PaymentSuccess() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const reference = searchParams.get('reference') || 'Unknown'
   const [showConfetti, setShowConfetti] = useState(true)
+  const [verifying, setVerifying] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function verifyPayment() {
+      try {
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference }),
+        })
+        if (!res.ok) throw new Error('failed')
+      } catch {
+        if (!cancelled) navigate('/pricing?error=payment_failed', { replace: true })
+        return
+      }
+      if (!cancelled) setVerifying(false)
+    }
+    verifyPayment()
+    return () => { cancelled = true }
+  }, [reference, navigate])
 
   useEffect(() => {
     const t = setTimeout(() => setShowConfetti(false), 2600)
@@ -57,6 +80,27 @@ export default function PaymentSuccess() {
   }, [])
 
   const today = formatDate(new Date())
+
+  if (verifying) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-base)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{
+          width: 40, height: 40,
+          border: '3px solid var(--border-color)',
+          borderTopColor: '#3B82F6',
+          borderRadius: '50%',
+          animation: 'spin 0.7s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -190,7 +234,7 @@ export default function PaymentSuccess() {
               {[
                 { label: 'Plan',      value: 'Student Plan',     type: 'white' },
                 { label: 'Amount',    value: '₦2,000',           type: 'white' },
-                { label: 'Reference', value: 'FYP-2026-XXXXXX',  type: 'mono'  },
+                { label: 'Reference', value: reference,           type: 'mono'  },
                 { label: 'Date',      value: today,              type: 'slate' },
                 { label: 'Status',    value: 'Confirmed',        type: 'badge', noBorder: true },
               ].map((row, i) => (
