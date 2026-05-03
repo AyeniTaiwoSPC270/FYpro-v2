@@ -181,6 +181,22 @@ export async function deleteProject(projectId: string, userId: string): Promise<
     .eq('user_id', userId)
 }
 
+export async function deleteAllUserData(userId: string): Promise<void> {
+  const { error: stepsError } = await supabase
+    .from('project_steps')
+    .delete()
+    .eq('user_id', userId)
+
+  if (stepsError) console.error('[resetProject] delete failed', stepsError)
+
+  const { error: projectsError } = await supabase
+    .from('projects')
+    .delete()
+    .eq('user_id', userId)
+
+  if (projectsError) console.error('[resetProject] delete failed', projectsError)
+}
+
 // ─── Profile update ──────────────────────────────────────────────────────────
 
 export async function updateUserProfile(

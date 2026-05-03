@@ -17,7 +17,7 @@ import {
   createProject,
   saveStep as supabaseSaveStep,
   updateProject,
-  deleteProject,
+  deleteAllUserData,
   Project,
 } from '../lib/supabase-client'
 import { enqueue, getStatus } from '../lib/sync-queue'
@@ -260,9 +260,13 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   }, [projectId, ensureProject])
 
   async function resetProject() {
-    if (projectId) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) await deleteProject(projectId, user.id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      try {
+        await deleteAllUserData(user.id)
+      } catch (err) {
+        console.error('[resetProject] delete failed', err)
+      }
     }
     setProjectId(null)
     if (channelRef.current) {
