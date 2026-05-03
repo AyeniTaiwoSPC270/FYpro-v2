@@ -17,6 +17,7 @@ import {
   createProject,
   saveStep as supabaseSaveStep,
   updateProject,
+  deleteProject,
   Project,
 } from '../lib/supabase-client'
 import { enqueue, getStatus } from '../lib/sync-queue'
@@ -80,6 +81,7 @@ interface ProjectStateValue {
   confirmMigration: () => void
   saveStep: (stepType: string, resultJson: Record<string, unknown>, inputSummary?: string) => Promise<void>
   ensureProject: () => Promise<string | null>
+  resetProject: () => Promise<void>
 }
 
 const ProjectStateContext = createContext<ProjectStateValue | null>(null)
@@ -257,6 +259,18 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     }
   }, [projectId, ensureProject])
 
+  async function resetProject() {
+    if (projectId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await deleteProject(projectId, user.id)
+    }
+    setProjectId(null)
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+  }
+
   function dismissMigrationModal() {
     setShowMigrationModal(false)
   }
@@ -314,6 +328,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     confirmMigration,
     saveStep,
     ensureProject,
+    resetProject,
   }
 
   return React.createElement(ProjectStateContext.Provider, { value }, children)

@@ -165,6 +165,22 @@ export async function saveStep(
   }
 }
 
+// ─── Project delete ──────────────────────────────────────────────────────────
+
+export async function deleteProject(projectId: string, userId: string): Promise<void> {
+  await supabase
+    .from('project_steps')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('user_id', userId)
+
+  await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+    .eq('user_id', userId)
+}
+
 // ─── Profile update ──────────────────────────────────────────────────────────
 
 export async function updateUserProfile(
