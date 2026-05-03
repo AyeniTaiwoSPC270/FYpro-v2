@@ -444,22 +444,23 @@ function usePaystackCheckout() {
         onCancel: () => {
           console.log('Payment cancelled')
         },
-        onClose: async () => {
+        onClose: () => {
           console.log('Paystack modal closed')
           if (currentReference) {
-            try {
-              const res = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: currentReference })
-              })
-              const data = await res.json()
+            fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reference: currentReference })
+            })
+            .then(res => res.json())
+            .then(data => {
               if (data.status === 'success') {
                 navigate('/payment-success')
               }
-            } catch (e) {
-              // silent - webhook will handle it
-            }
+            })
+            .catch(() => {
+              // silent - webhook handles it
+            })
           }
         },
       })
