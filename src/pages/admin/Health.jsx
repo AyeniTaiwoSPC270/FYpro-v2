@@ -86,6 +86,17 @@ export default function AdminHealth() {
           <tr><td style={labelStyle}>This week</td><td style={tdStyle}>{signups.count_this_week}</td></tr>
         </tbody>
       </table>
-    </div>
+
+      <h2 style={{ marginBottom: 12 }}>Cache</h2>
+      <table style={tableStyle}>
+        <tbody>
+          <tr><td style={labelStyle}>Total hits (all time)</td><td style={tdStyle}>{data.cache?.hits_total ?? 0}</td></tr>
+        </tbody>
+      </table>
+    </div> 
+    
+    
+
+    
   )
 }

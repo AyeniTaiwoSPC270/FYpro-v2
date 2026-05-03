@@ -35,7 +35,10 @@
       "Bash(Out-Null)",
       "Bash(Write-Output \"done\")",
       "Bash(ls api/)",
-      "Bash(ls .vercel/)"
+      "Bash(ls .vercel/)",
+      "Bash(git -C \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" diff)",
+      "Bash(git *)"
     ]
   }
 }
