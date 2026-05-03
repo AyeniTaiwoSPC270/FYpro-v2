@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -372,7 +374,71 @@ const DEFENSE_FEATURES = [
   { type: 'included', label: 'Project Reset' },
 ]
 
+function usePaystackCheckout() {
+  const navigate = useNavigate()
+  const [paying, setPaying] = useState(null)
+  const [payError, setPayError] = useState(null)
+
+  const loadScript = useCallback(() => {
+    if (document.getElementById('paystack-inline-js')) return Promise.resolve()
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.id = 'paystack-inline-js'
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.onload = resolve
+      script.onerror = () => reject(new Error('Failed to load Paystack script'))
+      document.head.appendChild(script)
+    })
+  }, [])
+
+  const handlePay = useCallback(async (tier) => {
+    setPayError(null)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      navigate('/login?returnUrl=/pricing')
+      return
+    }
+
+    setPaying(tier)
+    try {
+      await loadScript()
+
+      const res = await fetch('/api/initiate-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier, userId: user.id, email: user.email }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to initiate payment')
+
+      const handler = window.PaystackPop.setup({
+        key: data.publicKey,
+        email: user.email,
+        amount: data.amount_kobo,
+        ref: data.reference,
+        currency: 'NGN',
+        onSuccess: (transaction) => {
+          console.log('Payment success', transaction)
+          // verify-payment comes Day 24
+        },
+        onCancel: () => {
+          console.log('Payment cancelled')
+        },
+      })
+      handler.openIframe()
+    } catch (err) {
+      setPayError(err.message)
+    } finally {
+      setPaying(null)
+    }
+  }, [navigate, loadScript])
+
+  return { handlePay, paying, payError }
+}
+
 function PricingCards() {
+  const { handlePay, paying, payError } = usePaystackCheckout()
+
   return (
     <section>
       <div className="max-w-6xl mx-auto px-6">
@@ -430,12 +496,13 @@ function PricingCards() {
                     <FeatureItem key={i} {...f} />
                   ))}
                 </ul>
-                <a
-                  href="/signup"
-                  className="mt-8 flex items-center justify-center w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(59,130,246,0.4)] font-sans text-sm no-underline"
+                <button
+                  onClick={() => handlePay('student_pack')}
+                  disabled={paying === 'student_pack'}
+                  className="mt-8 flex items-center justify-center w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(59,130,246,0.4)] font-sans text-sm border-0 cursor-pointer"
                 >
-                  Get Student Plan
-                </a>
+                  {paying === 'student_pack' ? 'Opening…' : 'Get Student Plan — ₦2,000'}
+                </button>
               </motion.div>
             </div>
           </Reveal>
@@ -457,16 +524,20 @@ function PricingCards() {
                   <FeatureItem key={i} {...f} />
                 ))}
               </ul>
-              <a
-                href="/signup"
-                className="mt-8 flex items-center justify-center w-full py-3 border border-slate-700 hover:border-blue-500 hover:text-blue-400 text-slate-400 rounded-xl transition-all duration-200 font-sans font-semibold text-sm no-underline"
+              <button
+                onClick={() => handlePay('defense_pack')}
+                disabled={paying === 'defense_pack'}
+                className="mt-8 flex items-center justify-center w-full py-3 border border-slate-700 hover:border-blue-500 hover:text-blue-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-400 rounded-xl transition-all duration-200 font-sans font-semibold text-sm bg-transparent cursor-pointer"
               >
-                Get Defense Plan
-              </a>
+                {paying === 'defense_pack' ? 'Opening…' : 'Get Defense Plan — ₦3,500'}
+              </button>
             </motion.div>
           </Reveal>
 
         </div>
+        {payError && (
+          <p className="mt-4 text-center text-red-400 text-sm font-sans">{payError}</p>
+        )}
       </div>
     </section>
   )
