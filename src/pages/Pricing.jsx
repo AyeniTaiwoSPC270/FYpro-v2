@@ -401,6 +401,7 @@ function usePaystackCheckout() {
     }
     const user = authData.user
 
+    let pendingReference = null
     setPaying(tier)
     try {
       await loadScript()
@@ -412,7 +413,7 @@ function usePaystackCheckout() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to initiate payment')
-      const currentReference = data.reference
+      pendingReference = data.reference
 
       const handler = window.PaystackPop.setup({
         key: data.publicKey,
@@ -445,12 +446,12 @@ function usePaystackCheckout() {
           console.log('Payment cancelled')
         },
         onClose: () => {
-          console.log('Paystack modal closed')
-          if (currentReference) {
+          console.log('onClose fired, pendingReference:', pendingReference)
+          if (pendingReference) {
             fetch('/api/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ reference: currentReference })
+              body: JSON.stringify({ reference: pendingReference })
             })
             .then(res => res.json())
             .then(data => {
