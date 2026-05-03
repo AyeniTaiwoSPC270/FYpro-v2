@@ -634,7 +634,8 @@ Return ONLY this exact JSON structure:
         "Specific search string 1 — paste-ready for Google Scholar",
         "Specific search string 2",
         "Specific search string 3"
-      ]
+      ],
+      "paper_indices": [1, 3]
     }
   ],
   "source_types": [
@@ -650,6 +651,7 @@ Return ONLY this exact JSON structure:
 RULES:
 - thematic_areas: exactly 4 to 6 objects
 - Each search_terms array: exactly 3 to 5 strings
+- Each paper_indices array: integers (1-based) referencing the real papers provided — only include indices for papers actually belonging to that theme
 - source_types: exactly 3 to 5 objects
 - synthesis_guide: one single string, 100–140 words, topic-specific
 

@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase';
 
 const ENDPOINT                  = '/api/claude';
 const TOPIC_VALIDATOR_ENDPOINT  = '/api/topic-validator';
+const LITERATURE_MAP_ENDPOINT   = '/api/literature-map';
 const DEFENSE_ENDPOINT          = '/api/defense-claude';
 const REVIEWER_ENDPOINT         = '/api/project-reviewer';
 
@@ -102,6 +103,56 @@ async function callTopicValidator(system, messages, topic) {
 
   const raw = await res.json();
   console.log('[FYPro] topic-validator raw response:', JSON.stringify(raw));
+  const text = raw?.content?.[0]?.text ?? '';
+
+  let parsed;
+  try {
+    const cleaned   = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+  } catch {
+    const err = new Error('JSON parse failed');
+    err.code = 'JSON_PARSE';
+    err.raw  = text;
+    throw err;
+  }
+
+  return parsed;
+}
+
+// Calls /api/literature-map — passes topic for real-paper fetching; handles no_papers_found
+async function callLiteratureMap(system, messages, topic) {
+  const res = await fetch(LITERATURE_MAP_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ system, messages, max_tokens: 3000, topic }),
+  });
+
+  if (res.status === 422) {
+    const errData = await res.json();
+    const err = new Error(errData.message || 'No papers found for this topic.');
+    err.code = 'NO_PAPERS';
+    throw err;
+  }
+  if (res.status === 429) {
+    const err = new Error('Rate limited');
+    err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 504) {
+    const err = new Error('Gateway timeout');
+    err.code = 'GATEWAY_TIMEOUT';
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'HTTP_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  const raw = await res.json();
+  console.log('[FYPro] literature-map raw response:', JSON.stringify(raw));
   const text = raw?.content?.[0]?.text ?? '';
 
   let parsed;
@@ -305,9 +356,10 @@ export async function generateAbstract(studentCtx, validatedTopic, chapterStruct
 
 // ── Step 2 companion: Literature Map ─────────────────────────────────────────
 export async function generateLiteratureMap(studentCtx, validatedTopic, chapterStructure) {
-  return callClaude(
+  return callLiteratureMap(
     LITERATURE_MAP_SYSTEM,
-    [{ role: 'user', content: buildLiteratureMapPrompt(studentCtx, chapterStructure) }]
+    [{ role: 'user', content: buildLiteratureMapPrompt(studentCtx, chapterStructure) }],
+    validatedTopic
   );
 }
 
@@ -443,6 +495,10 @@ export async function generateEmail(studentCtx, validatedTopic, chapterStructure
 // ── Error handler (call from components) ─────────────────────────────────────
 // Returns true if error was handled, false if caller should do fallback
 export function handleApiError(err, showError) {
+  if (err.code === 'NO_PAPERS') {
+    showError(err.message);
+    return true;
+  }
   if (err.code === 'FORBIDDEN') {
     showError('This feature requires a paid upgrade. Please visit the Pricing page to unlock it.');
     return true;

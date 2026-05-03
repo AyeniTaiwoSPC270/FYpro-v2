@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { buildChapters, generateAbstract, generateLiteratureMap, handleApiError } from '../../services/api'
+import { buildChapters, generateAbstract, handleApiError } from '../../services/api'
 import { checkAndRecord } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
+import LiteratureMap from '../literatureMap/LiteratureMap'
 
 const CHEVRON_PATH = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
@@ -168,21 +169,9 @@ export default function ChapterArchitect() {
   const [agVisible, setAgVisible]         = useState([])
   const agTimers = useRef([])
 
-  // ── Literature Map state ──────────────────────────────────────────────────
-  const [lmSection, setLmSection]         = useState('input')
-  const [lmData, setLmData]               = useState(null)
-  const [lmBtnDisabled, setLmBtnDisabled] = useState(false)
-  const [lmError, setLmError]             = useState(null)
-  const [lmCopied, setLmCopied]           = useState(false)
-  const [copiedChip, setCopiedChip]       = useState(null)
-  const chipTimers = useRef({})
-
   // Cleanup timers on unmount
   useEffect(() => {
-    return () => {
-      agTimers.current.forEach(clearTimeout)
-      Object.values(chipTimers.current).forEach(clearTimeout)
-    }
+    return () => { agTimers.current.forEach(clearTimeout) }
   }, [])
 
   // After editing starts/stops, adjust maxHeight so animation stays smooth
@@ -269,10 +258,6 @@ export default function ChapterArchitect() {
     setAgVisible([])
     setAgError(null)
     setAgBtnDisabled(false)
-    setLmSection('input')
-    setLmData(null)
-    setLmError(null)
-    setLmBtnDisabled(false)
   }
 
   // ── Generate chapters ─────────────────────────────────────────────────────
@@ -406,66 +391,6 @@ export default function ChapterArchitect() {
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).catch(() => {})
     setAgCopied(true)
     setTimeout(() => setAgCopied(false), 1800)
-  }
-
-  // ── Literature Map ────────────────────────────────────────────────────────
-
-  function handleGenerateLiteratureMap() {
-    setLmBtnDisabled(true)
-    setLmError(null)
-    setLmSection('loading')
-
-    const chaps = chapters.length ? chapters : (data?.chapters || [])
-
-    generateLiteratureMap(studentContext, state.validatedTopic, chaps)
-      .then(result => {
-        // Normalize: Claude sometimes wraps the response under a key like "literature_map"
-        let lmResult = result
-        if (!Array.isArray(lmResult?.thematic_areas)) {
-          const unwrapped = Object.values(lmResult || {}).find(
-            v => v && typeof v === 'object' && Array.isArray(v.thematic_areas)
-          )
-          if (unwrapped) lmResult = unwrapped
-        }
-        setLmData(lmResult)
-        setLmSection('result')
-        saveStep('literature_map', lmResult)
-      })
-      .catch(err => {
-        setLmSection('input')
-        if (!handleApiError(err, msg => {
-          setLmError(msg)
-          if (!msg) setLmBtnDisabled(false)
-        })) {
-          setLmBtnDisabled(false)
-          setLmError('Something went wrong generating the literature map. Please try again.')
-        }
-      })
-  }
-
-  function copyChip(term) {
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(term).catch(() => {})
-    setCopiedChip(term)
-    if (chipTimers.current[term]) clearTimeout(chipTimers.current[term])
-    chipTimers.current[term] = setTimeout(() => setCopiedChip(null), 1400)
-  }
-
-  function copyLiteratureMap() {
-    if (!lmData) return
-    const lines = ['LITERATURE MAP', '', 'THEMATIC AREAS']
-    ;(lmData.thematic_areas || []).forEach((area, i) => {
-      lines.push('', `${i + 1}. ${area.theme || ''}`)
-      ;(area.search_terms || []).forEach(t => lines.push(`   • ${t}`))
-    })
-    lines.push('', 'RECOMMENDED SOURCES')
-    ;(lmData.source_types || []).forEach(st => {
-      lines.push('', `${st.type || ''} — ${st.rationale || ''}`, `Access: ${st.access || ''}`)
-    })
-    lines.push('', 'SYNTHESIS GUIDE', lmData.synthesis_guide || '')
-    const text = lines.join('\n')
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).catch(() => {})
-    setLmCopied(true)
-    setTimeout(() => setLmCopied(false), 1800)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -652,100 +577,7 @@ export default function ChapterArchitect() {
 
       {/* ── Literature Map companion card — student_pack only ──────────────── */}
       {showCompanions && hasPaid && (
-        <div className="lm-card" id="lm-card">
-
-          {lmSection === 'input' && (
-            <div id="lm-input-section" className="lm-input-section tv-section--visible">
-              <p className="lm-step-label">Literature Map</p>
-              <span className="lm-companion-badge">Companion Card</span>
-              <p className="lm-description" style={lmError ? { color: '#DC2626' } : {}}>
-                {lmError
-                  ? lmError
-                  : 'FYPro will map the intellectual territory of your topic — thematic areas with ' +
-                    'targeted search terms, the most useful source types for your field, and a ' +
-                    'synthesis guide explaining how to build an argument across papers, not just summarise them.'}
-              </p>
-              <button
-                id="lm-btn-generate"
-                className="lm-btn-generate"
-                onClick={handleGenerateLiteratureMap}
-                disabled={lmBtnDisabled}
-              >
-                Generate Literature Map
-              </button>
-            </div>
-          )}
-
-          {lmSection === 'loading' && (
-            <div id="lm-loading-section" className="lm-loading-section tv-section--visible">
-              <div className="skeleton-loader">
-                <div className="skeleton-bar" style={{ width: '100%' }} />
-                <div className="skeleton-bar" style={{ width: '75%' }} />
-                <div className="skeleton-bar" style={{ width: '90%' }} />
-                <div className="skeleton-bar" style={{ width: '60%' }} />
-              </div>
-              <p className="tv-loading-text">Mapping your literature…</p>
-            </div>
-          )}
-
-          {lmSection === 'result' && lmData && (
-            <div id="lm-result-section" className="lm-result-section tv-section--visible">
-
-              <p className="lm-section-heading">Thematic Areas</p>
-              <div id="lm-themes-list" className="lm-themes-list">
-                {(lmData.thematic_areas || []).map((area, idx) => (
-                  <div key={idx} className="lm-theme-card">
-                    <span className="lm-theme-num-bg" aria-hidden="true">
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-                    <p className="lm-theme-name">{area.theme || ''}</p>
-                    <div className="lm-chips">
-                      {(area.search_terms || []).map((term, ti) => (
-                        <button
-                          key={ti}
-                          className={`lm-search-chip${copiedChip === term ? ' lm-search-chip--copied' : ''}`}
-                          title="Click to copy"
-                          onClick={() => copyChip(term)}
-                        >
-                          {term}
-                          <span className="lm-chip-icon" aria-hidden="true">&#x2398;</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <p className="lm-section-heading lm-section-heading--spaced">Recommended Sources</p>
-              <div id="lm-sources-list" className="lm-sources-list">
-                {(lmData.source_types || []).map((st, idx) => (
-                  <div key={idx} className="lm-source-row">
-                    <p className="lm-source-type">{st.type || ''}</p>
-                    <p className="lm-source-rationale">{st.rationale || ''}</p>
-                    <p className="lm-source-access">
-                      <span className="lm-access-label">Access:</span> {st.access || ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <p className="lm-section-heading lm-section-heading--spaced">Synthesis Guide</p>
-              <div id="lm-synthesis-block" className="lm-synthesis-block">
-                <p className="lm-synthesis-text">{lmData.synthesis_guide || ''}</p>
-              </div>
-
-              <button
-                id="lm-btn-copy"
-                className={`lm-btn-copy${lmCopied ? ' lm-btn-copy--copied' : ''}`}
-                onClick={copyLiteratureMap}
-              >
-                {lmCopied ? 'Copied to clipboard' : 'Copy Literature Map'}
-              </button>
-
-            </div>
-          )}
-
-        </div>
+        <LiteratureMap chapters={chapters} />
       )}
     </>
   )
