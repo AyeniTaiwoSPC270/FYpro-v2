@@ -53,6 +53,7 @@ export default function AppShell() {
   const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration } = useProjectState()
 
   useEffect(() => {
+    if (isLoading) return
     if (!isOnboarded) {
       navigate('/start', { replace: true })
       return
@@ -63,7 +64,7 @@ export default function AppShell() {
     } else if (!document.referrer.includes('/app')) {
       navigate('/dashboard', { replace: true })
     }
-  }, []) // eslint-disable-line
+  }, [isLoading]) // eslint-disable-line
 
   const [sidebarOpen, setSidebarOpen]           = useState(false)
   const [showSupervisorEmail, setShowSupervisorEmail] = useState(false)

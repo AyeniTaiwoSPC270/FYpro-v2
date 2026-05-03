@@ -144,9 +144,7 @@ export function AppProvider({ children }) {
     state.chapterStructure,
   ])
 
-  const isOnboarded = Boolean(
-    state.university && state.faculty && state.department && state.level && state.roughTopic
-  )
+  const isOnboarded = Boolean(state.faculty && state.department)
 
   return (
     <AppContext.Provider value={{
