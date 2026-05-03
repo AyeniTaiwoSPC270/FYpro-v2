@@ -420,6 +420,7 @@ function usePaystackCheckout() {
         ref: data.reference,
         currency: 'NGN',
         onSuccess: async (transaction) => {
+          console.log('Paystack onSuccess fired', transaction)
           setVerifying(true)
           try {
             const vRes = await fetch('/api/verify-payment', {
@@ -441,6 +442,9 @@ function usePaystackCheckout() {
         },
         onCancel: () => {
           console.log('Payment cancelled')
+        },
+        onClose: () => {
+          console.log('Paystack modal closed')
         },
       })
       handler.openIframe()
