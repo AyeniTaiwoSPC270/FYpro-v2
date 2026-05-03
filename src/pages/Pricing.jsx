@@ -429,7 +429,7 @@ function usePaystackCheckout() {
             })
             const vData = await vRes.json()
             if (vRes.ok && vData.status === 'success') {
-              navigate('/dashboard?payment=success')
+              navigate('/payment-success')
             } else {
               setPayError('Payment received but verification failed. Please contact support.')
             }
