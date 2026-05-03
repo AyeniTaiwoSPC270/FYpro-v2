@@ -18,7 +18,7 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
   // 2. Idempotency: already fully processed
   if (payment.status === 'success' && payment.webhook_verified_at) {
     console.log('[creditUser] already processed', { reference, source });
-    return { status: 'already_processed', reference };
+    return { status: 'already_processed', reference, tier: payment.tier };
   }
 
   // 3. Paystack status must be 'success'
@@ -72,7 +72,7 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
 
   if (!updated || updated.length === 0) {
     console.log('[creditUser] lost race — already processed by concurrent call', { reference, source });
-    return { status: 'already_processed', reference };
+    return { status: 'already_processed', reference, tier: payment.tier };
   }
 
   // 7. Grant entitlement
