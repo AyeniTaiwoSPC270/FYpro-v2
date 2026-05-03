@@ -726,7 +726,7 @@ function DashStatCards({ STUDENT, STEPS }) {
         <motion.button
           whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.38)' }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => navigate('/app')}
+          onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
           className="inline-flex items-center gap-2 px-[22px] py-[11px] bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans text-[0.82rem] font-semibold cursor-pointer self-start transition-all duration-200 relative z-10"
         >
           Continue <ArrowRightIcon />
@@ -962,7 +962,7 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                         : '0 4px 14px rgba(0,0,0,0.35)',
                     }}
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => { navigateStep(step.id - 1); navigate('/app') }}
+                    onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(step.id - 1); navigate('/app') }}
                     className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
                       isActive
                         ? 'bg-green-600 hover:bg-green-500 text-white border-0'
@@ -1082,7 +1082,7 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
                     : action.onClickKey === 'download'
                     ? onDownloadReport
                     : action.path
-                    ? () => navigate(action.path)
+                    ? () => { if (action.path === '/app') sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined
                 }
                 className={`relative flex flex-col items-start gap-4 p-6 rounded-2xl text-left transition-all duration-200 w-full ${
