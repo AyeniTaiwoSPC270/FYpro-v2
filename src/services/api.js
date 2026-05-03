@@ -58,9 +58,12 @@ async function callClaude(system, messages, maxTokens = 2000) {
 
   let parsed;
   try {
-    const stripped = text.replace(/```json|```/g, '').trim();
-    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+    const cleaned = text
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
   } catch {
     const err = new Error('JSON parse failed');
     err.code = 'JSON_PARSE';
@@ -262,7 +265,8 @@ export async function generateLiteratureMap(studentCtx, validatedTopic, chapterS
 export async function adviseMethodology(studentCtx, validatedTopic, chapterStructure) {
   return callClaude(
     METHODOLOGY_ADVISOR_SYSTEM,
-    [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }]
+    [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }],
+    4000
   );
 }
 

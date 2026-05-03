@@ -134,7 +134,7 @@ For instruments, you must name specific tools and explain where a student at a N
 
 The Defense Answer must be a complete word-for-word script — not bullet points. The student should be able to read it, memorise it, and deliver it in their defense.
 
-CRITICAL: Return ONLY valid JSON. No prose. No markdown.
+CRITICAL: Return ONLY valid JSON. No prose. No markdown. Respond with ONLY a valid JSON object. No markdown, no backticks, no preamble, no explanation outside the JSON.
 `.trim();
 
 export function buildMethodologyAdvisorPrompt(student) {
