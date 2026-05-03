@@ -2,6 +2,7 @@
 // Server-side enforcement: frontend gating alone is not enough.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
+import { rateLimitCheck } from './_lib/rate-limit.js';
 
 const handler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,6 +11,9 @@ const handler = async (req, res) => {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 20, prefix: 'reviewer' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   // 1. Extract JWT from Authorization header
   const authHeader = req.headers.authorization || '';

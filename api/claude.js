@@ -1,8 +1,8 @@
 // FYPro — Vercel Serverless Function
 // Proxies requests to Anthropic API. The API key never touches the browser.
 
-// Explicitly enable Vercel's built-in JSON body parser and raise the size limit.
-// Prompts can be several KB — 1 mb is well above what we need.
+import { rateLimitCheck } from './_lib/rate-limit.js';
+
 const handler = async (req, res) => {
   // Log every incoming request so Vercel's function logs show exactly what arrived.
   // This is the first thing we do — before any early returns — so the log fires even
@@ -16,6 +16,9 @@ const handler = async (req, res) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
