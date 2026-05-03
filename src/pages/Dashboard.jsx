@@ -402,7 +402,9 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   async function handleLogout() {
     setAvatarOpen(false)
     await supabase.auth.signOut()
+    const cachedOnboarded = localStorage.getItem('isOnboarded')
     localStorage.clear()
+    if (cachedOnboarded) localStorage.setItem('isOnboarded', cachedOnboarded)
     sessionStorage.clear()
     navigate('/')
   }

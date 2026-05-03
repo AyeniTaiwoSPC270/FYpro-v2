@@ -90,6 +90,12 @@ export function AppProvider({ children }) {
 
       if (!profile) return
 
+      if (profile.faculty && profile.department) {
+        localStorage.setItem('isOnboarded', 'true')
+      } else {
+        localStorage.removeItem('isOnboarded')
+      }
+
       setState(prev => ({
         ...prev,
         faculty:    profile.faculty    ?? prev.faculty,
@@ -144,7 +150,7 @@ export function AppProvider({ children }) {
     state.chapterStructure,
   ])
 
-  const isOnboarded = Boolean(state.faculty && state.department)
+  const isOnboarded = localStorage.getItem('isOnboarded') === 'true' || Boolean(state.faculty && state.department)
 
   return (
     <AppContext.Provider value={{
