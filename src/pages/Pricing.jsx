@@ -377,6 +377,7 @@ const DEFENSE_FEATURES = [
 function usePaystackCheckout() {
   const navigate = useNavigate()
   const [paying, setPaying] = useState(null)
+  const [verifying, setVerifying] = useState(false)
   const [payError, setPayError] = useState(null)
 
   const loadScript = useCallback(() => {
@@ -418,9 +419,25 @@ function usePaystackCheckout() {
         amount: data.amount_kobo,
         ref: data.reference,
         currency: 'NGN',
-        onSuccess: (transaction) => {
-          console.log('Payment success', transaction)
-          // verify-payment comes Day 24
+        onSuccess: async (transaction) => {
+          setVerifying(true)
+          try {
+            const vRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reference: transaction.reference }),
+            })
+            const vData = await vRes.json()
+            if (vRes.ok && vData.status === 'success') {
+              navigate('/dashboard?payment=success')
+            } else {
+              setPayError('Payment received but verification failed. Please contact support.')
+            }
+          } catch {
+            setPayError('Payment received but verification failed. Please contact support.')
+          } finally {
+            setVerifying(false)
+          }
         },
         onCancel: () => {
           console.log('Payment cancelled')
@@ -434,7 +451,7 @@ function usePaystackCheckout() {
     }
   }, [navigate, loadScript])
 
-  return { handlePay, paying, payError }
+  return { handlePay, paying, verifying, payError }
 }
 
 function PricingCards() {
