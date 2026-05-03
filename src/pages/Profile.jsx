@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { showToast } from '../components/Toast'
+import { usePaidFeatures } from '../hooks/usePaidFeatures'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,8 @@ const BellIcon = () => (
 function ProfileNavbar({ initials, name }) {
   const navigate = useNavigate()
   const { clearState } = useApp()
+  const { features } = usePaidFeatures()
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -146,7 +149,7 @@ function ProfileNavbar({ initials, name }) {
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
                   <div className="font-sans text-[0.8rem] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
-                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>Free Plan</div>
+                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>{planLabel}</div>
                 </div>
 
                 <div className="py-1.5">
@@ -234,6 +237,8 @@ const inputCls =
 export default function Profile() {
   const { state, set, clearState } = useApp()
   const navigate = useNavigate()
+  const { features } = usePaidFeatures()
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
 
   const completedCount = state.stepsCompleted.filter(Boolean).length
 
@@ -372,7 +377,7 @@ export default function Profile() {
                   border: '1px solid rgba(59,130,246,0.3)',
                 }}
               >
-                Free Plan
+                {planLabel}
               </span>
               <Link
                 to="/pricing"

@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { downloadProgressReport } from '../utils/generateReport'
 import { supabase } from '../lib/supabase'
+import { usePaidFeatures } from '../hooks/usePaidFeatures'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -396,6 +397,9 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = STUDENT.name.split(' ')[0]
 
+  const { features } = usePaidFeatures()
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
+
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef(null)
 
@@ -560,7 +564,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
                   <div className="font-sans text-[0.8rem] font-semibold text-white truncate">{STUDENT.name}</div>
-                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">Free Plan</div>
+                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">{planLabel}</div>
                 </div>
                 <div className="py-1.5">
                   <Link

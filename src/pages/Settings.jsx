@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
+import { usePaidFeatures } from '../hooks/usePaidFeatures'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,8 @@ const MoonIcon = () => (
 function SettingsNavbar({ initials, name }) {
   const navigate = useNavigate()
   const { clearState } = useApp()
+  const { features } = usePaidFeatures()
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -190,7 +193,7 @@ function SettingsNavbar({ initials, name }) {
               >
                 <div className="px-4 py-3 border-b border-slate-800/80">
                   <div className="font-sans text-[0.8rem] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
-                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>Free Plan</div>
+                  <div className="font-mono text-[0.65rem] mt-0.5" style={{ color: 'var(--text-muted)' }}>{planLabel}</div>
                 </div>
 
                 <div className="py-1.5">
