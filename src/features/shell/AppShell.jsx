@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import OfflineBanner from '../../components/OfflineBanner'
 import AnonymousMigrationModal from '../../components/AnonymousMigrationModal'
+import PaidFeatureGate from '../../components/PaidFeatureGate'
 import TopicValidator from '../topicValidator/TopicValidator'
 import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
@@ -259,6 +260,10 @@ export default function AppShell() {
         <div className="app-content__scroll">
           {showSupervisorEmail ? (
             <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
+          ) : (state.currentStep === 4 || state.currentStep === 5) ? (
+            <PaidFeatureGate feature="defense_pack">
+              <CurrentStep />
+            </PaidFeatureGate>
           ) : (
             <CurrentStep />
           )}

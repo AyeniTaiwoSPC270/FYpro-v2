@@ -15,8 +15,16 @@ import {
   buildDocumentRelevanceCheckPrompt, DOCUMENT_RELEVANCE_CHECK_SYSTEM,
   buildDocumentRelevanceCheckPDFPrompt,
 } from './prompts.js';
+import { supabase } from '../lib/supabase';
 
-const ENDPOINT = '/api/claude';
+const ENDPOINT         = '/api/claude';
+const DEFENSE_ENDPOINT = '/api/defense-claude';
+const REVIEWER_ENDPOINT = '/api/project-reviewer';
+
+async function getAccessToken() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
 
 async function callClaude(system, messages, maxTokens = 2000) {
   const res = await fetch(ENDPOINT, {
@@ -71,6 +79,118 @@ async function callClaudeRaw(system, messages, maxTokens = 2000) {
     body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
   });
 
+  if (res.status === 429) {
+    const err = new Error('Rate limited');
+    err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 504) {
+    const err = new Error('Gateway timeout');
+    err.code = 'GATEWAY_TIMEOUT';
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'HTTP_ERROR';
+    throw err;
+  }
+
+  const raw = await res.json();
+  const text = raw?.content?.[0]?.text ?? '';
+
+  let parsed;
+  try {
+    const stripped = text.replace(/```json|```/g, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+  } catch {
+    const err = new Error('JSON parse failed');
+    err.code = 'JSON_PARSE';
+    err.raw = text;
+    throw err;
+  }
+
+  return { parsed, rawText: text };
+}
+
+// Auth-aware variant — attaches user JWT so server can verify entitlement
+async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+  });
+
+  if (res.status === 401) {
+    const err = new Error('Not authenticated');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+  if (res.status === 403) {
+    const err = new Error('Feature not unlocked');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+  if (res.status === 429) {
+    const err = new Error('Rate limited');
+    err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 504) {
+    const err = new Error('Gateway timeout');
+    err.code = 'GATEWAY_TIMEOUT';
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'HTTP_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  const raw = await res.json();
+  const text = raw?.content?.[0]?.text ?? '';
+
+  let parsed;
+  try {
+    const stripped = text.replace(/```json|```/g, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+  } catch {
+    const err = new Error('JSON parse failed');
+    err.code = 'JSON_PARSE';
+    err.raw = text;
+    throw err;
+  }
+
+  return parsed;
+}
+
+async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000) {
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+  });
+
+  if (res.status === 401) {
+    const err = new Error('Not authenticated');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+  if (res.status === 403) {
+    const err = new Error('Feature not unlocked');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
   if (res.status === 429) {
     const err = new Error('Rate limited');
     err.code = 'RATE_LIMIT';
@@ -166,7 +286,8 @@ export async function buildWritingPlan(studentCtx, submissionDeadline, currentDa
 
 // ── Document Relevance Pre-Check ─────────────────────────────────────────────
 export async function checkDocumentRelevance(studentCtx, extractedText) {
-  return callClaude(
+  return callClaudeAuth(
+    REVIEWER_ENDPOINT,
     DOCUMENT_RELEVANCE_CHECK_SYSTEM,
     [{ role: 'user', content: buildDocumentRelevanceCheckPrompt(studentCtx, extractedText) }],
     200
@@ -178,7 +299,8 @@ export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaTyp
     { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
     { type: 'text', text: buildDocumentRelevanceCheckPDFPrompt(studentCtx) },
   ];
-  return callClaude(
+  return callClaudeAuth(
+    REVIEWER_ENDPOINT,
     DOCUMENT_RELEVANCE_CHECK_SYSTEM,
     [{ role: 'user', content: userContent }],
     200
@@ -187,7 +309,8 @@ export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaTyp
 
 // ── Step 5: Project Reviewer (text) ─────────────────────────────────────────
 export async function reviewProject(studentCtx, validatedTopic, extractedText) {
-  return callClaude(
+  return callClaudeAuth(
+    REVIEWER_ENDPOINT,
     PROJECT_REVIEWER_SYSTEM,
     [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }]
   );
@@ -199,7 +322,8 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
     { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
     { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
   ];
-  return callClaude(
+  return callClaudeAuth(
+    REVIEWER_ENDPOINT,
     PROJECT_REVIEWER_SYSTEM,
     [{ role: 'user', content: userContent }]
   );
@@ -207,7 +331,8 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
 
 // ── Step 6: Red Flag Detector ────────────────────────────────────────────────
 export async function detectRedFlags(studentCtx, validatedTopic, methodology, chapterStructure) {
-  return callClaude(
+  return callClaudeAuth(
+    DEFENSE_ENDPOINT,
     RED_FLAG_DETECTOR_SYSTEM,
     [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology) }]
   );
@@ -216,7 +341,8 @@ export async function detectRedFlags(studentCtx, validatedTopic, methodology, ch
 // ── Step 6: Three-Examiner Panel — first question ────────────────────────────
 export async function panelFirstQuestion(studentCtx, redFlags, uploadedReview) {
   const system = buildThreeExaminerPanelSystem(studentCtx, redFlags, uploadedReview);
-  const { parsed, rawText } = await callClaudeRaw(
+  const { parsed, rawText } = await callClaudeAuthRaw(
+    DEFENSE_ENDPOINT,
     system,
     [{ role: 'user', content: THREE_EXAMINER_FIRST_QUESTION_PROMPT }],
     2000
@@ -230,7 +356,7 @@ export async function panelFollowUp(system, apiMessages, studentAnswer) {
     ...apiMessages,
     { role: 'user', content: buildThreeExaminerFollowUpPrompt(studentAnswer) },
   ];
-  const { parsed, rawText } = await callClaudeRaw(system, messages, 2000);
+  const { parsed, rawText } = await callClaudeAuthRaw(DEFENSE_ENDPOINT, system, messages, 2000);
   return { parsed, rawText };
 }
 
@@ -240,7 +366,7 @@ export async function panelSummary(system, apiMessages) {
     ...apiMessages,
     { role: 'user', content: THREE_EXAMINER_SUMMARY_PROMPT },
   ];
-  return callClaude(system, messages, 2000);
+  return callClaudeAuth(DEFENSE_ENDPOINT, system, messages, 2000);
 }
 
 // ── Bonus: Supervisor Email ──────────────────────────────────────────────────
@@ -254,6 +380,14 @@ export async function generateEmail(studentCtx, validatedTopic, chapterStructure
 // ── Error handler (call from components) ─────────────────────────────────────
 // Returns true if error was handled, false if caller should do fallback
 export function handleApiError(err, showError) {
+  if (err.code === 'FORBIDDEN') {
+    showError('This feature requires a paid upgrade. Please visit the Pricing page to unlock it.');
+    return true;
+  }
+  if (err.code === 'UNAUTHORIZED') {
+    showError('Your session has expired. Please sign in again.');
+    return true;
+  }
   if (err.code === 'RATE_LIMIT') {
     let secs = 30;
     showError(`Rate limited. Retrying in ${secs}s…`);
