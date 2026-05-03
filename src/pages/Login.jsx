@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
@@ -111,6 +111,7 @@ const fieldVariant = {
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [authError, setAuthError] = useState('')
@@ -130,7 +131,8 @@ export default function Login() {
         // Generic message — never reveal whether the email exists
         setAuthError('Invalid email or password')
       } else {
-        navigate('/dashboard')
+        const returnUrl = searchParams.get('returnUrl')
+        navigate(returnUrl?.startsWith('/') ? returnUrl : '/dashboard', { replace: true })
       }
     } catch {
       setAuthError('Invalid email or password')
