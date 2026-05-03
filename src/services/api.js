@@ -17,9 +17,10 @@ import {
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
 
-const ENDPOINT         = '/api/claude';
-const DEFENSE_ENDPOINT = '/api/defense-claude';
-const REVIEWER_ENDPOINT = '/api/project-reviewer';
+const ENDPOINT                  = '/api/claude';
+const TOPIC_VALIDATOR_ENDPOINT  = '/api/topic-validator';
+const DEFENSE_ENDPOINT          = '/api/defense-claude';
+const REVIEWER_ENDPOINT         = '/api/project-reviewer';
 
 async function getAccessToken() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -68,6 +69,50 @@ async function callClaude(system, messages, maxTokens = 2000) {
     const err = new Error('JSON parse failed');
     err.code = 'JSON_PARSE';
     err.raw = text;
+    throw err;
+  }
+
+  return parsed;
+}
+
+// Calls /api/topic-validator — same contract as callClaude but passes raw topic for paper fetching
+async function callTopicValidator(system, messages, topic) {
+  const res = await fetch(TOPIC_VALIDATOR_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, messages, max_tokens: 2000, topic }),
+  });
+
+  if (res.status === 429) {
+    const err = new Error('Rate limited');
+    err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 504) {
+    const err = new Error('Gateway timeout');
+    err.code = 'GATEWAY_TIMEOUT';
+    throw err;
+  }
+  if (!res.ok) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.code = 'HTTP_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  const raw = await res.json();
+  console.log('[FYPro] topic-validator raw response:', JSON.stringify(raw));
+  const text = raw?.content?.[0]?.text ?? '';
+
+  let parsed;
+  try {
+    const cleaned   = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+  } catch {
+    const err = new Error('JSON parse failed');
+    err.code = 'JSON_PARSE';
+    err.raw  = text;
     throw err;
   }
 
@@ -230,9 +275,10 @@ async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000) {
 
 // ── Step 1: Topic Validator ──────────────────────────────────────────────────
 export async function validateTopic(studentCtx, roughTopic) {
-  return callClaude(
+  return callTopicValidator(
     TOPIC_VALIDATOR_SYSTEM,
-    [{ role: 'user', content: buildTopicValidatorPrompt(studentCtx, roughTopic) }]
+    [{ role: 'user', content: buildTopicValidatorPrompt(studentCtx, roughTopic) }],
+    roughTopic
   );
 }
 

@@ -212,6 +212,31 @@ export default function TopicValidator() {
 
             <hr className="tv-divider" />
 
+            {data.papers && data.papers.length > 0 && (
+              <div className="tv-papers-section">
+                <p className="tv-papers-heading">Related Research Found</p>
+                <div className="tv-papers-list">
+                  {data.papers.map((paper, i) => (
+                    <div key={i} className="tv-paper-item">
+                      <p className="tv-paper-title">{paper.title}</p>
+                      <p className="tv-paper-meta">
+                        {paper.authors?.[0] && <span className="tv-paper-author">{paper.authors[0]}</span>}
+                        {paper.year && <span className="tv-paper-year"> · {paper.year}</span>}
+                        {paper.citationCount > 0 && (
+                          <span className="tv-paper-citations"> · {paper.citationCount} citations</span>
+                        )}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {data.sparse_literature && (
+                  <p className="tv-papers-sparse-note">
+                    Limited published research found — this may indicate a research gap or niche area.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="tv-refined-block">
               <p className="tv-refined-label">Refined Topic</p>
 

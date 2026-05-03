@@ -920,6 +920,62 @@ html, body {
 }
 
 
+/* ── Real papers section ─────────────────────────────────── */
+.tv-papers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tv-papers-heading {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tv-papers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-paper-item {
+  background: rgba(13,27,42,0.03);
+  border: 1px solid rgba(13,27,42,0.07);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tv-paper-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #0D1B2A;
+  line-height: 1.45;
+}
+.tv-paper-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(13,27,42,0.45);
+  line-height: 1.4;
+}
+.tv-paper-author  { color: rgba(13,27,42,0.55); }
+.tv-paper-year    { color: rgba(13,27,42,0.40); }
+.tv-paper-citations { color: #0066FF; opacity: 0.75; }
+.tv-papers-sparse-note {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: #92400E;
+  background: #FFFBEB;
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+
 /* ============================================================
    Chapter Architect — Step 2
    ============================================================ */
