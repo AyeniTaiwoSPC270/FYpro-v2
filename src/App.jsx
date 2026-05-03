@@ -22,6 +22,7 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
 import AppShell from './features/shell/AppShell'
+import AdminHealth from './pages/admin/Health'
 
 export default function App() {
   return (
@@ -59,6 +60,9 @@ export default function App() {
 
           {/* Settings */}
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+          {/* Admin */}
+          <Route path="/admin/health" element={<AdminHealth />} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />

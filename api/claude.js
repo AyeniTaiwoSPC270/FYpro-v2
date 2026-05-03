@@ -2,6 +2,7 @@
 // Proxies requests to Anthropic API. The API key never touches the browser.
 
 import { rateLimitCheck } from './_lib/rate-limit.js';
+import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 
 const handler = async (req, res) => {
   // Log every incoming request so Vercel's function logs show exactly what arrived.
@@ -19,6 +20,11 @@ const handler = async (req, res) => {
 
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  const cap = await checkDailyCap();
+  if (!cap.allowed) {
+    return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -51,6 +57,9 @@ const handler = async (req, res) => {
 
     const data = await response.json();
     console.log('[claude] Anthropic responded with status:', response.status);
+    if (data.usage) {
+      trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[claude] error:', err.message);

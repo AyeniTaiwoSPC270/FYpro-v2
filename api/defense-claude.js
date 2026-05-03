@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
+import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 
 const handler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,7 +49,13 @@ const handler = async (req, res) => {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 
-  // 4. Proxy to Anthropic — identical to /api/claude from here
+  // 4. Check daily spend cap before proxying
+  const cap = await checkDailyCap();
+  if (!cap.allowed) {
+    return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
+  }
+
+  // 5. Proxy to Anthropic — identical to /api/claude from here
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.error('[defense-claude] ANTHROPIC_API_KEY is not set');
@@ -76,6 +83,9 @@ const handler = async (req, res) => {
 
     const data = await response.json();
     console.log('[defense-claude] Anthropic responded with status:', response.status);
+    if (data.usage) {
+      trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[defense-claude] error:', err.message);
