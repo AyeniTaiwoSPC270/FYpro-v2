@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
+import { recordStepRun } from '../../hooks/useRunLimit'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -32,6 +33,7 @@ export default function MethodologyAdvisor() {
   function handleAnalyse() {
     setMaError(null)
     setMaBtnDisabled(true)
+    recordStepRun('methodology_advisor')
     setMaSection('loading')
 
     adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure)

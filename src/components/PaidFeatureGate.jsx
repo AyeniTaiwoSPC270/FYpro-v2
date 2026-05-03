@@ -2,25 +2,41 @@ import { useNavigate } from 'react-router-dom'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 
 const FEATURE_META = {
+  student_pack: {
+    label: 'Student Pack',
+    description:
+      'Unlock the full FYPro workflow including Project Reviewer, ' +
+      'Literature Map, Instrument Builder, and more.',
+    price: '₦2,000',
+    buttonText: 'Unlock Student Pack',
+  },
   defense_pack: {
     label: 'Defense Pack',
     description:
       'Project Reviewer and Defence Simulator are part of the Defense Pack. ' +
       'Get your project graded by AI and walk into your viva prepared.',
     price: '₦3,500',
-    tier: 'defense_pack',
+    buttonText: 'Unlock Defense Pack',
   },
+}
+
+function hasAccess(requiredPack, hasPaidFeature) {
+  if (requiredPack === 'student_pack') {
+    return hasPaidFeature('student_pack') || hasPaidFeature('defense_pack')
+  }
+  return hasPaidFeature(requiredPack)
 }
 
 const LOCK_PATH =
   'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
-function UpgradeCard({ feature }) {
+function UpgradeCard({ requiredPack }) {
   const navigate = useNavigate()
-  const meta = FEATURE_META[feature] ?? {
-    label: feature,
+  const meta = FEATURE_META[requiredPack] ?? {
+    label: requiredPack,
     description: 'This feature requires a paid upgrade.',
     price: '₦3,500',
+    buttonText: 'Unlock Now',
   }
 
   return (
@@ -139,7 +155,7 @@ function UpgradeCard({ feature }) {
             e.currentTarget.style.boxShadow = 'none'
           }}
         >
-          Unlock Now
+          {meta.buttonText}
         </button>
       </div>
 
@@ -174,13 +190,13 @@ function Spinner() {
   )
 }
 
-export default function PaidFeatureGate({ feature, children, fallback }) {
+export default function PaidFeatureGate({ requiredPack, children, fallback }) {
   const { hasPaidFeature, loading } = usePaidFeatures()
 
   if (loading) return <Spinner />
 
-  if (!hasPaidFeature(feature)) {
-    return fallback ?? <UpgradeCard feature={feature} />
+  if (!hasAccess(requiredPack, hasPaidFeature)) {
+    return fallback ?? <UpgradeCard requiredPack={requiredPack} />
   }
 
   return children

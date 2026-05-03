@@ -6,6 +6,8 @@ import { useProjectState } from '../../hooks/useProjectState'
 import OfflineBanner from '../../components/OfflineBanner'
 import AnonymousMigrationModal from '../../components/AnonymousMigrationModal'
 import PaidFeatureGate from '../../components/PaidFeatureGate'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
+import { useRunLimit } from '../../hooks/useRunLimit'
 import TopicValidator from '../topicValidator/TopicValidator'
 import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
 import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
@@ -47,6 +49,55 @@ const STEP_COMPONENTS = [
 const CHECK_PATH = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
 const LOCK_PATH  = 'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
+const FREE_STEP_KEYS = ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner']
+
+function RunLimitBanner({ onUpgrade }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '16px',
+      background: '#FFFBEB',
+      border: '1px solid rgba(245, 158, 11, 0.3)',
+      borderLeft: '4px solid #F59E0B',
+      borderRadius: '12px',
+      padding: '14px 20px',
+      marginBottom: '16px',
+    }}>
+      <p style={{
+        fontFamily: "'Poppins', sans-serif",
+        fontSize: '0.875rem',
+        color: '#0D1B2A',
+        margin: 0,
+        lineHeight: 1.5,
+      }}>
+        You've used your free runs for this step. Upgrade to Student Pack for unlimited access.
+      </p>
+      <button
+        onClick={onUpgrade}
+        style={{
+          flexShrink: 0,
+          padding: '8px 16px',
+          background: '#16A34A',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '8px',
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: 600,
+          fontSize: '0.8125rem',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          transition: 'background 0.2s ease',
+        }}
+        onMouseOver={e => { e.currentTarget.style.background = '#15803d' }}
+        onMouseOut={e => { e.currentTarget.style.background = '#16A34A' }}
+      >
+        Upgrade for ₦2,000
+      </button>
+    </div>
+  )
+}
 
 export default function AppShell() {
   const navigate = useNavigate()
@@ -66,6 +117,11 @@ export default function AppShell() {
       navigate('/dashboard', { replace: true })
     }
   }, [isLoading]) // eslint-disable-line
+
+  const { features } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features)
+
+  const currentStepKey = FREE_STEP_KEYS[state.currentStep]
 
   const [sidebarOpen, setSidebarOpen]           = useState(false)
   const [showSupervisorEmail, setShowSupervisorEmail] = useState(false)
@@ -260,12 +316,21 @@ export default function AppShell() {
         <div className="app-content__scroll">
           {showSupervisorEmail ? (
             <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
-          ) : (state.currentStep === 4 || state.currentStep === 5) ? (
-            <PaidFeatureGate feature="defense_pack">
+          ) : state.currentStep === 4 ? (
+            <PaidFeatureGate requiredPack="student_pack">
+              <CurrentStep />
+            </PaidFeatureGate>
+          ) : state.currentStep === 5 ? (
+            <PaidFeatureGate requiredPack="defense_pack">
               <CurrentStep />
             </PaidFeatureGate>
           ) : (
-            <CurrentStep />
+            <>
+              {currentStepKey && isOverLimit(currentStepKey) && (
+                <RunLimitBanner onUpgrade={() => navigate('/pricing')} />
+              )}
+              <CurrentStep />
+            </>
           )}
         </div>
 

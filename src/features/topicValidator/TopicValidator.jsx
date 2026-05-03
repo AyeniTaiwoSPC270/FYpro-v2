@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError } from '../../services/api'
+import { recordStepRun } from '../../hooks/useRunLimit'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -71,6 +72,7 @@ export default function TopicValidator() {
     setError(null)
     set({ roughTopic: trimmed })
     setBtnDisabled(true)
+    recordStepRun('topic_validator')
     setSection('loading')
 
     validateTopic(studentContext, trimmed)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { recordStepRun } from '../../hooks/useRunLimit'
 import { buildWritingPlan, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -69,6 +70,7 @@ export default function WritingPlanner() {
     }
 
     setBtnDisabled(true)
+    recordStepRun('writing_planner')
     setSection('loading')
 
     const currentDate = new Date().toISOString().slice(0, 10)

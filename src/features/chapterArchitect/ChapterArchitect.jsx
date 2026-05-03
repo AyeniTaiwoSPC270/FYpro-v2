@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { buildChapters, generateAbstract, generateLiteratureMap, handleApiError } from '../../services/api'
+import { recordStepRun } from '../../hooks/useRunLimit'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -282,6 +283,7 @@ export default function ChapterArchitect() {
     }
     setError(null)
     setBtnDisabled(true)
+    recordStepRun('chapter_architect')
     setSection('loading')
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc)
