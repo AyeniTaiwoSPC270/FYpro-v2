@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
+import { supabase } from '../lib/supabase'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -271,19 +272,28 @@ export default function Profile() {
     showToast('Changes saved')
   }
 
-  function handleDeleteProjects() {
+  async function handleDeleteProjects() {
     if (!window.confirm('Delete all project data? This cannot be undone.')) return
-    set({
-      roughTopic: '', topicValidation: null, validatedTopic: '',
-      chapterStructure: null, methodology: null, chosenMethodology: '',
-      writingPlan: null, uploadedProject: null, redFlags: null,
-      defenseStarted: false, defenseApiMessages: [], defenseDisplayHistory: [],
-      defenseSummary: null, defenseQuestionCount: 0,
-      stepsCompleted: [false, false, false, false, false, false], currentStep: 0,
-      stepResults: {},
-    })
+
+    // Clear React state + localStorage
+    clearState()
+
+    // Delete from Supabase
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('project_steps')
+          .delete()
+          .eq('user_id', user.id)
+      }
+    } catch (err) {
+      console.error('[Profile] Supabase delete failed', err)
+    }
+
     console.log('[Profile] All project data deleted')
     showToast('All projects deleted')
+    navigate('/dashboard')
   }
 
   function handleDeleteAccount() {
