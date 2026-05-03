@@ -431,8 +431,8 @@ function usePaystackCheckout() {
               body: JSON.stringify({ reference: transaction.reference }),
             })
             const vData = await vRes.json()
-            if (vRes.ok && vData.status === 'success') {
-              navigate('/payment-success')
+            if (vRes.ok && (vData.status === 'success' || vData.status === 'already_processed')) {
+              navigate(`/payment-success?reference=${transaction.reference}`)
             } else {
               setPayError('Payment received but verification failed. Please contact support.')
             }
@@ -455,8 +455,8 @@ function usePaystackCheckout() {
             })
             .then(res => res.json())
             .then(data => {
-              if (data.status === 'success') {
-                navigate('/payment-success')
+              if (data.status === 'success' || data.status === 'already_processed') {
+                navigate(`/payment-success?reference=${pendingReference}`)
               }
             })
             .catch(() => {
