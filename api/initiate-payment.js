@@ -10,39 +10,44 @@ function generateReference(userId) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { tier, userId, email } = req.body || {};
-
-  if (!tier || !userId || !email) {
-    return res.status(400).json({ error: 'Missing required fields: tier, userId, email' });
-  }
-
-  let amountKobo;
   try {
-    amountKobo = expectedAmountKobo(tier);
-  } catch {
-    return res.status(400).json({ error: `Unknown tier: ${tier}` });
-  }
+    const { tier, userId, email } = req.body || {};
 
-  const reference = generateReference(userId);
+    if (!tier || !userId || !email) {
+      return res.status(400).json({ error: 'Missing required fields: tier, userId, email' });
+    }
 
-  const { error: insertError } = await supabaseAdmin
-    .from('payments')
-    .insert({
-      user_id: userId,
-      tier,
+    let amountKobo;
+    try {
+      amountKobo = expectedAmountKobo(tier);
+    } catch {
+      return res.status(400).json({ error: `Unknown tier: ${tier}` });
+    }
+
+    const reference = generateReference(userId);
+
+    const { error: insertError } = await supabaseAdmin
+      .from('payments')
+      .insert({
+        user_id: userId,
+        tier,
+        amount_kobo: amountKobo,
+        paystack_reference: reference,
+        status: 'pending',
+      });
+
+    if (insertError) {
+      console.error('[initiate-payment] insert failed', insertError.message);
+      return res.status(500).json({ error: 'Failed to create payment record' });
+    }
+
+    return res.status(200).json({
+      reference,
       amount_kobo: amountKobo,
-      paystack_reference: reference,
-      status: 'pending',
+      publicKey: process.env.PAYSTACK_PUBLIC_KEY,
     });
-
-  if (insertError) {
-    console.error('[initiate-payment] insert failed', insertError.message);
-    return res.status(500).json({ error: 'Failed to create payment record' });
+  } catch (err) {
+    console.error('[initiate-payment] error:', err);
+    return res.status(500).json({ error: err.message });
   }
-
-  return res.status(200).json({
-    reference,
-    amount_kobo: amountKobo,
-    publicKey: process.env.PAYSTACK_PUBLIC_KEY,
-  });
 }
