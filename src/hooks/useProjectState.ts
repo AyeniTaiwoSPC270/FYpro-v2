@@ -95,6 +95,9 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const [showMigrationModal, setShowMigrationModal] = useState(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const stateRef = useRef(state)
+  // True after the first load() completes — used to skip the initial SIGNED_IN
+  // emission that Supabase fires synchronously when subscribing to onAuthStateChange.
+  const initializedRef = useRef(false)
 
   useEffect(() => { stateRef.current = state }, [state])
 
@@ -181,13 +184,21 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('[useProjectState] load error:', err)
       } finally {
-        if (!cancelled) setIsLoading(false)
+        if (!cancelled) {
+          setIsLoading(false)
+          initializedRef.current = true
+        }
       }
     }
 
     load()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Skip the SIGNED_IN that Supabase emits immediately on subscription setup
+      // (it fires even before our async load() resolves). We only want to react
+      // to genuine sign-in / sign-out transitions after initialization.
+      if (!initializedRef.current) return
+
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         setIsLoading(true)
         setProjectId(null)
