@@ -13,7 +13,7 @@ export default function AdminHealth() {
   useEffect(() => {
     if (!isAdmin) return
     setFetching(true)
-    fetch('/api/admin/health')
+    fetch('/api/admin?action=health')
       .then(r => r.json())
       .then(d => { if (d.error) throw new Error(d.error); setData(d) })
       .catch(e => setError(e.message))

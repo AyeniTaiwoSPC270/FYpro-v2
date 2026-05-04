@@ -418,7 +418,7 @@ function usePaystackCheckout() {
     try {
       await loadScript()
 
-      const res = await fetch('/api/initiate-payment', {
+      const res = await fetch('/api/payments?action=initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier, userId: user.id, email: user.email }),
@@ -438,7 +438,7 @@ function usePaystackCheckout() {
           stopPolling()
           setVerifying(true)
           try {
-            const vRes = await fetch('/api/verify-payment', {
+            const vRes = await fetch('/api/payments?action=verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ reference: transaction.reference }),
@@ -462,7 +462,7 @@ function usePaystackCheckout() {
           console.log('onClose fired, pendingReference:', pendingReference)
           stopPolling()
           if (pendingReference) {
-            fetch('/api/verify-payment', {
+            fetch('/api/payments?action=verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ reference: pendingReference })
@@ -483,7 +483,7 @@ function usePaystackCheckout() {
 
       pollingIntervalRef.current = setInterval(async () => {
         try {
-          const pollRes = await fetch(`/api/check-payment-status?reference=${pendingReference}`)
+          const pollRes = await fetch(`/api/payments?action=check-status&reference=${pendingReference}`)
           const pollData = await pollRes.json()
           if (pollData.status === 'success') {
             stopPolling()

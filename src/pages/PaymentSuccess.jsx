@@ -59,7 +59,7 @@ export default function PaymentSuccess() {
     let cancelled = false
     async function verifyPayment() {
       try {
-        const res = await fetch('/api/verify-payment', {
+        const res = await fetch('/api/payments?action=verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reference }),
