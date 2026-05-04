@@ -6,9 +6,9 @@
 
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
-  methodologist:  'YGoleLoJg5Y6OkKrTexX',
-  subjectExpert:  'dwX6ydOD1vkI5xiHj677',
-  devilsAdvocate: 'quN8ZSreVm3LJ24tiFFX'
+  methodologist:   'YGoleLoJg5Y6OkKrTexX',
+  subjectExpert:   'dwX6ydOD1vkI5xiHj677',
+  externalExaminer: 'quN8ZSreVm3LJ24tiFFX'
 };
 
 /**
@@ -16,15 +16,15 @@ const VOICE_IDS = {
  * one of the three internal keys used in VOICE_IDS.
  * Matches on substrings so minor name variations are handled gracefully.
  *
- * @param {string} examiner — e.g. "The Devil's Advocate"
- * @returns {string} 'methodologist' | 'subjectExpert' | 'devilsAdvocate'
+ * @param {string} examiner — e.g. "The External Examiner"
+ * @returns {string} 'methodologist' | 'subjectExpert' | 'externalExaminer'
  */
 function resolveVoiceKey(examiner) {
   if (!examiner) return 'methodologist';
   var n = examiner.toLowerCase();
   if (n.indexOf('methodologist') !== -1) return 'methodologist';
   if (n.indexOf('subject') !== -1)       return 'subjectExpert';
-  if (n.indexOf('devil') !== -1)         return 'devilsAdvocate';
+  if (n.indexOf('external') !== -1)      return 'externalExaminer';
   return 'methodologist'; // safe default so the function never crashes
 }
 

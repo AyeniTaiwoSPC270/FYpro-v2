@@ -488,8 +488,8 @@ function HeroMockup() {
       asking: false,
     },
     {
-      av: 'DA', avCls: 'bg-[rgba(22,163,74,0.2)] border-[1.5px] border-[rgba(22,163,74,0.5)]',
-      name: "The Devil's Advocate", role: 'SUPERVISOR · DEPT. REP',
+      av: 'EE', avCls: 'bg-[rgba(22,163,74,0.2)] border-[1.5px] border-[rgba(22,163,74,0.5)]',
+      name: "The External Examiner", role: 'EXT. UNIVERSITY · PANEL',
       q: '"If your supervisor had never seen this project before today, what is the one thing they would reject immediately?"',
       asking: false,
     },
@@ -529,7 +529,7 @@ function HeroMockup() {
           {/* Examiners — individual reveal */}
           <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
             {examiners.map(({ av, avCls, name, role, q, asking }, i) => {
-              const cardKeys = ['methodologist', 'subject-expert', 'devil-advocate']
+              const cardKeys = ['methodologist', 'subject-expert', 'external-examiner']
               const cardRefs = [card1Ref, card2Ref, card3Ref]
               const cardVisibles = [card1Visible, card2Visible, card3Visible]
               const cardKey = cardKeys[i]

@@ -21,7 +21,7 @@ function examinerNameToClass(name) {
   const n = name.toLowerCase()
   if (n.includes('methodologist')) return 'dp-examiner-label--methodologist'
   if (n.includes('subject'))       return 'dp-examiner-label--subject-expert'
-  if (n.includes('devil'))         return 'dp-examiner-label--devils-advocate'
+  if (n.includes('external'))      return 'dp-examiner-label--external-examiner'
   return ''
 }
 
@@ -30,14 +30,14 @@ function examinerNameToSlug(name) {
   const n = name.toLowerCase()
   if (n.includes('methodologist')) return 'methodologist'
   if (n.includes('subject'))       return 'subject-expert'
-  if (n.includes('devil'))         return 'devils-advocate'
+  if (n.includes('external'))      return 'external-examiner'
   return ''
 }
 
 function resolveExaminerVoice(name) {
   const n = (name || '').toLowerCase()
   if (n.includes('subject')) return { rate: 1.0,  pitch: 1.1  }
-  if (n.includes('devil'))   return { rate: 1.15, pitch: 0.95 }
+  if (n.includes('external')) return { rate: 1.15, pitch: 0.95 }
   return                            { rate: 0.9,  pitch: 0.85 }
 }
 
@@ -428,10 +428,10 @@ export default function DefensePrep() {
     const enVoices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'))
     if (enVoices.length >= 3) {
       if (n.includes('subject'))    utt.voice = enVoices[1]
-      else if (n.includes('devil')) utt.voice = enVoices[enVoices.length - 1]
+      else if (n.includes('external')) utt.voice = enVoices[enVoices.length - 1]
       else                          utt.voice = enVoices[0]
     } else if (enVoices.length === 2) {
-      if (n.includes('subject') || n.includes('devil')) utt.voice = enVoices[1]
+      if (n.includes('subject') || n.includes('external')) utt.voice = enVoices[1]
       else                                               utt.voice = enVoices[0]
     }
 

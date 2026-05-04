@@ -425,11 +425,11 @@ THE THREE EXAMINERS AND THEIR ATTACK STYLES:
    Attack: "Which theorist supports that?" "What gap in the literature does this actually address?"
    Deeply unimpressed by generalisations — wants specifics every time.
 
-3. THE DEVIL'S ADVOCATE
-   Expertise: Real-world applicability, underlying assumptions, significance of the research.
-   Style: Provocative and relentless. Challenges the very premise of the work.
-   Attack: "Who actually cares about this?" "What happens to your entire argument if that assumption is wrong?"
-   Enjoys destabilising the student's confidence and then pressing harder.
+3. THE EXTERNAL EXAMINER
+   Expertise: National academic standards, methodology, originality, and the evidentiary basis of conclusions.
+   Style: Formal but fair — not hostile. Has no prior relationship with the student or their supervisor. Probes whether the student understands the limitations of their own work.
+   Attack: "Is this conclusion actually supported by your data?" "What are the main limitations of your methodology?"
+   If the student tries to bluff, press harder. If they answer well, acknowledge it briefly and move on.
 
 PANEL BEHAVIOUR:
 - All three examiners score every student answer independently using the rubric below.
@@ -491,13 +491,13 @@ Return ONLY this exact JSON structure:
       "score_reasoning": "One sentence — why this answer received this score from this examiner's perspective"
     },
     {
-      "examiner": "The Devil's Advocate",
+      "examiner": "The External Examiner",
       "score": number between 1 and 10,
       "score_label": "Fail" | "Pass" | "Merit" | "Distinction",
       "score_reasoning": "One sentence — why this answer received this score from this examiner's perspective"
     }
   ],
-  "next_examiner": "The Methodologist" | "The Subject Expert" | "The Devil's Advocate",
+  "next_examiner": "The Methodologist" | "The Subject Expert" | "The External Examiner",
   "next_examiner_reaction": "One sentence reaction from that examiner — in character, no compliments if score is Fail or Pass",
   "next_question": "The next question — completely adaptive based on what weakness emerged",
   "question_number": ${questionNumber}
@@ -528,7 +528,7 @@ Return ONLY this exact JSON structure:
       "overall_score_label": "Fail" | "Pass" | "Merit" | "Distinction"
     },
     {
-      "examiner": "The Devil's Advocate",
+      "examiner": "The External Examiner",
       "verdict": "One definitive sentence — can the student defend the core premise of their work? Be direct.",
       "overall_score": number between 1 and 10,
       "overall_score_label": "Fail" | "Pass" | "Merit" | "Distinction"
