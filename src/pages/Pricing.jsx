@@ -379,6 +379,7 @@ function usePaystackCheckout() {
   const [paying, setPaying] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const [payError, setPayError] = useState(null)
+  const [blockInfo, setBlockInfo] = useState(null)
   const pollingIntervalRef = useRef(null)
 
   const stopPolling = useCallback(() => {
@@ -406,12 +407,40 @@ function usePaystackCheckout() {
 
   const handlePay = useCallback(async (tier) => {
     setPayError(null)
+    setBlockInfo(null)
     const { data: authData, error: authError } = await supabase.auth.getUser()
     if (authError || !authData?.user) {
       navigate('/login?returnUrl=/pricing')
       return
     }
     const user = authData.user
+
+    // Check current plan before opening Paystack
+    const { data: entitlements } = await supabase
+      .from('user_entitlements')
+      .select('paid_features')
+      .eq('user_id', user.id)
+      .single()
+
+    const currentFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : []
+    const hasDefense = currentFeatures.includes('defense_pack')
+    const hasStudent = currentFeatures.includes('student_pack')
+
+    if (hasDefense) {
+      setBlockInfo({
+        tier,
+        message: "You're already on the Defense Plan for this project. Start a new project to continue your research journey.",
+      })
+      return
+    }
+
+    if (hasStudent && tier === 'student_pack') {
+      setBlockInfo({
+        tier: 'student_pack',
+        message: "You're already on the Student Plan. Upgrade to Defense Plan to unlock the Defense Simulator.",
+      })
+      return
+    }
 
     let pendingReference = null
     setPaying(tier)
@@ -501,11 +530,39 @@ function usePaystackCheckout() {
     }
   }, [navigate, loadScript, stopPolling])
 
-  return { handlePay, paying, verifying, payError }
+  return { handlePay, paying, verifying, payError, blockInfo, setBlockInfo }
+}
+
+function BlockAlert({ message, onDismiss }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2 }}
+      className="mt-3 flex items-start gap-3 rounded-xl px-4 py-3"
+      style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.28)' }}
+    >
+      <svg className="flex-shrink-0 mt-[1px]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      <p className="font-sans text-[0.78rem] text-amber-300 leading-[1.5] flex-1">{message}</p>
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="flex-shrink-0 text-amber-500 hover:text-amber-300 bg-transparent border-0 cursor-pointer p-0 leading-none mt-[1px]"
+        style={{ fontSize: '1rem', lineHeight: 1 }}
+      >
+        ×
+      </button>
+    </motion.div>
+  )
 }
 
 function PricingCards() {
-  const { handlePay, paying, payError } = usePaystackCheckout()
+  const { handlePay, paying, payError, blockInfo, setBlockInfo } = usePaystackCheckout()
 
   return (
     <section>
@@ -571,6 +628,11 @@ function PricingCards() {
                 >
                   {paying === 'student_pack' ? 'Opening…' : 'Get Student Plan — ₦2,000'}
                 </button>
+                <AnimatePresence>
+                  {blockInfo?.tier === 'student_pack' && (
+                    <BlockAlert message={blockInfo.message} onDismiss={() => setBlockInfo(null)} />
+                  )}
+                </AnimatePresence>
               </motion.div>
             </div>
           </Reveal>
@@ -599,6 +661,11 @@ function PricingCards() {
               >
                 {paying === 'defense_pack' ? 'Opening…' : 'Get Defense Plan — ₦3,500'}
               </button>
+              <AnimatePresence>
+                {blockInfo?.tier === 'defense_pack' && (
+                  <BlockAlert message={blockInfo.message} onDismiss={() => setBlockInfo(null)} />
+                )}
+              </AnimatePresence>
             </motion.div>
           </Reveal>
 

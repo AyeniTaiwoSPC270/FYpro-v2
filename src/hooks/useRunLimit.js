@@ -36,7 +36,7 @@ function getRunCounts() {
   }
 }
 
-function resolveLimit(stepKey, features) {
+export function resolveLimit(stepKey, features) {
   const hasStudent = Array.isArray(features) && features.includes('student_pack')
   const hasDefense = Array.isArray(features) && features.includes('defense_pack')
 
@@ -121,5 +121,5 @@ export function useRunLimit(features) {
     return Math.max(0, limit - (runCounts[stepKey] ?? 0))
   }
 
-  return { isOverLimit, getRemainingRuns }
+  return { isOverLimit, getRemainingRuns, runCounts }
 }
