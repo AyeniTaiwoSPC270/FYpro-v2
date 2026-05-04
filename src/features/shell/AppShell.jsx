@@ -120,6 +120,14 @@ export default function AppShell() {
       navigate('/start', { replace: true })
       return
     }
+
+    // Detect hard refresh (F5 / Ctrl+R). The Navigation Timing API reports
+    // type === 'reload' for refreshes, vs 'navigate' for normal page loads.
+    // On reload the user is already on /app — never redirect them to /dashboard.
+    const navEntry = performance.getEntriesByType('navigation')[0]
+    const isReload = navEntry?.type === 'reload'
+    if (isReload) return
+
     const flag = sessionStorage.getItem('intentional_app_entry')
     if (flag) {
       sessionStorage.removeItem('intentional_app_entry')

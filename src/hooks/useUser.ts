@@ -8,10 +8,26 @@ interface UseUserReturn {
   loading: boolean
 }
 
+// Synchronously checks if Supabase has stored a session in localStorage.
+// Supabase key format: sb-<project-ref>-auth-token
+// If the key exists we must wait for getSession() before deciding to redirect.
+// If it's absent we know immediately there's no session — skip the loading phase.
+function hasStoredSession(): boolean {
+  try {
+    return Object.keys(localStorage).some(
+      k => k.startsWith('sb-') && k.endsWith('-auth-token')
+    )
+  } catch {
+    return false
+  }
+}
+
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Start loading only when a session token exists in localStorage.
+  // This prevents a spinner + redirect flash on first visit or after logout.
+  const [loading, setLoading] = useState(hasStoredSession)
 
   useEffect(() => {
     // Restore session on mount — sets loading false exactly once.
