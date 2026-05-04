@@ -532,7 +532,7 @@ export default function DefensePrep() {
 
   async function startRedFlagScan() {
     setScanError(null)
-    const allowed = checkAndRecord('red_flag_detector', features)
+    const allowed = await checkAndRecord('red_flag_detector', features)
     if (!allowed) return
     setIsScanning(true)
     setSection('loading')
@@ -562,8 +562,8 @@ export default function DefensePrep() {
 
   // ── enter defense mode ────────────────────────────────────────────────────
 
-  function enterDefenseMode() {
-    const allowed = checkAndRecord('defense_simulator', features)
+  async function enterDefenseMode() {
+    const allowed = await checkAndRecord('defense_simulator', features)
     if (!allowed) return
     defenseMessagesRef.current = []
     panelSystemRef.current     = null

@@ -408,8 +408,13 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
     setAvatarOpen(false)
     await supabase.auth.signOut()
     const cachedOnboarded = localStorage.getItem('isOnboarded')
+    const cachedRunCounts = localStorage.getItem('fypro_run_counts')
     localStorage.clear()
     if (cachedOnboarded) localStorage.setItem('isOnboarded', cachedOnboarded)
+    // Preserve run counts — Supabase is the source of truth, but keeping them
+    // in localStorage avoids a blank usage bar on the next login before the
+    // Supabase fetch completes.
+    if (cachedRunCounts) localStorage.setItem('fypro_run_counts', cachedRunCounts)
     sessionStorage.clear()
     navigate('/')
   }

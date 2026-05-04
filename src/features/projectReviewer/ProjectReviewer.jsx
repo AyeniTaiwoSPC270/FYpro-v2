@@ -335,7 +335,7 @@ export default function ProjectReviewer() {
   async function handleReview() {
     if (isProcessing || !selectedFile) return
     setError(null)
-    const allowed = checkAndRecord('project_reviewer', features)
+    const allowed = await checkAndRecord('project_reviewer', features)
     if (!allowed) return
     setIsProcessing(true)
     setSection('loading')

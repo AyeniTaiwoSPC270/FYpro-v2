@@ -67,6 +67,7 @@ export function resolveLimit(stepKey, features) {
       .eq('user_id', session.user.id)
       .single()
       .then(({ data, error }) => {
+        console.log('Supabase run_counts on SIGNED_IN:', data?.run_counts, error?.message)
         if (error || !data?.run_counts) return
         const local  = getRunCounts()
         const remote = data.run_counts
@@ -80,19 +81,17 @@ export function resolveLimit(stepKey, features) {
   })
 })()
 
-// Fire-and-forget — localStorage already updated, this is best-effort sync.
-function syncRunCountsToSupabase(updatedCounts) {
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (!session?.user?.id) return
-    supabase
-      .from('user_entitlements')
-      .update({ run_counts: updatedCounts })
-      .eq('user_id', session.user.id)
-      .then(() => {})
-  })
+async function syncRunCountsToSupabase(updatedCounts) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user?.id) return
+  const { error } = await supabase
+    .from('user_entitlements')
+    .update({ run_counts: updatedCounts })
+    .eq('user_id', session.user.id)
+  console.log('Supabase run_counts write:', error ? `ERROR: ${error.message}` : 'OK', updatedCounts)
 }
 
-export function checkAndRecord(stepKey, features) {
+export async function checkAndRecord(stepKey, features) {
   const limit = resolveLimit(stepKey, features)
   if (limit === null) return true
 
@@ -103,7 +102,7 @@ export function checkAndRecord(stepKey, features) {
   counts[stepKey] = current + 1
   localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
   window.dispatchEvent(new Event('fypro_run_counts_updated'))
-  syncRunCountsToSupabase(counts)
+  await syncRunCountsToSupabase(counts)
   return true
 }
 
@@ -129,6 +128,7 @@ export function useRunLimit(features) {
         .eq('user_id', session.user.id)
         .single()
         .then(({ data, error }) => {
+          console.log('Supabase run_counts on mount:', data?.run_counts, error?.message)
           if (error || !data?.run_counts) return
           const local  = getRunCounts()
           const remote = data.run_counts

@@ -39,9 +39,9 @@ export default function LiteratureMap({ chapters }) {
     return () => clearTimeout(loadingTimerRef.current)
   }, [section])
 
-  function handleGenerate() {
+  async function handleGenerate() {
     setError(null)
-    const allowed = checkAndRecord('literature_map', features)
+    const allowed = await checkAndRecord('literature_map', features)
     if (!allowed) return
     setBtnDisabled(true)
     setSection('loading')

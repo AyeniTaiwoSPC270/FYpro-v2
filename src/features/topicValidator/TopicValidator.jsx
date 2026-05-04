@@ -81,7 +81,7 @@ export default function TopicValidator() {
   }, [data])
 
   // ── Validate ──────────────────────────────────────────────────────────────
-  function handleValidate() {
+  async function handleValidate() {
     const trimmed = topic.trim()
     if (!trimmed || trimmed.length < 5) {
       setShaking(true)
@@ -91,7 +91,7 @@ export default function TopicValidator() {
 
     setError(null)
 
-    const allowed = checkAndRecord('topic_validator', features)
+    const allowed = await checkAndRecord('topic_validator', features)
     if (!allowed) return
 
     set({ roughTopic: trimmed })

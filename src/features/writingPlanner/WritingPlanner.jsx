@@ -61,7 +61,7 @@ export default function WritingPlanner() {
     }
   }
 
-  function handleGenerate() {
+  async function handleGenerate() {
     setError(null)
     if (!dateValue) return
 
@@ -74,7 +74,7 @@ export default function WritingPlanner() {
       return
     }
 
-    const allowed = checkAndRecord('writing_planner', features)
+    const allowed = await checkAndRecord('writing_planner', features)
     if (!allowed) return
 
     setBtnDisabled(true)

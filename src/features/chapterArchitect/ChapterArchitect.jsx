@@ -295,7 +295,7 @@ export default function ChapterArchitect() {
 
   // ── Generate chapters ─────────────────────────────────────────────────────
 
-  function handleGenerate() {
+  async function handleGenerate() {
     const wc = parseInt(wordCount, 10)
     if (!wc || wc < 5000) {
       setWordCountShaking(true)
@@ -304,7 +304,7 @@ export default function ChapterArchitect() {
     }
     setError(null)
 
-    const allowed = checkAndRecord('chapter_architect', features)
+    const allowed = await checkAndRecord('chapter_architect', features)
     if (!allowed) return
 
     setBtnDisabled(true)

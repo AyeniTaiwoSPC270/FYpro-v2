@@ -66,10 +66,10 @@ export default function MethodologyAdvisor() {
 
   // ── MA handlers ────────────────────────────────────────────────────────────
 
-  function handleAnalyse() {
+  async function handleAnalyse() {
     setMaError(null)
 
-    const allowed = checkAndRecord('methodology_advisor', features)
+    const allowed = await checkAndRecord('methodology_advisor', features)
     if (!allowed) return
 
     setMaBtnDisabled(true)
@@ -128,9 +128,9 @@ export default function MethodologyAdvisor() {
 
   // ── DI handlers ────────────────────────────────────────────────────────────
 
-  function handleGenerateInstrument() {
+  async function handleGenerateInstrument() {
     setDiError(null)
-    const allowed = checkAndRecord('instrument_builder', features)
+    const allowed = await checkAndRecord('instrument_builder', features)
     if (!allowed) return
     setDiGenBtnDisabled(true)
     setDiSection('loading')
