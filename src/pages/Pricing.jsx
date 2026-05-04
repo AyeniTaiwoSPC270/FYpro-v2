@@ -355,11 +355,14 @@ const FREE_FEATURES = [
 ]
 
 const STUDENT_FEATURES = [
-  { type: 'check', label: 'Topic Validator' },
-  { type: 'check', label: 'Chapter Architect' },
-  { type: 'check', label: 'Methodology Advisor' },
-  { type: 'check', label: 'Writing Planner' },
-  { type: 'check', label: 'Project Reviewer' },
+  { type: 'check', label: 'Topic Validator (20 runs)' },
+  { type: 'check', label: 'Chapter Architect (10 runs)' },
+  { type: 'check', label: 'Methodology Advisor (10 runs)' },
+  { type: 'check', label: 'Writing Planner (5 runs)' },
+  { type: 'check', label: 'Literature Map (10 runs)' },
+  { type: 'check', label: 'Abstract Generator (10 runs)' },
+  { type: 'check', label: 'Instrument Builder (10 runs)' },
+  { type: 'check', label: 'Project Reviewer (10 runs)' },
   { type: 'cross', label: 'Defense Simulator' },
   { type: 'addon', label: 'Project Reset', addon: '— ₦1,500 add-on' },
 ]

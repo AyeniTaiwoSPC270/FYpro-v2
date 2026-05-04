@@ -16,8 +16,14 @@ const FREE_LIMITS = {
 }
 
 const STUDENT_LIMITS = {
-  topic_validator:  20,
-  project_reviewer: 10,
+  topic_validator:     20,
+  chapter_architect:   10,
+  methodology_advisor: 10,
+  writing_planner:      5,
+  literature_map:      10,
+  abstract_generator:  10,
+  instrument_builder:  10,
+  project_reviewer:    10,
 }
 
 const DEFENSE_LIMITS = {

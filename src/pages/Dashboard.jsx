@@ -1226,14 +1226,17 @@ const USAGE_FEATURE_LABELS = {
   chapter_architect:   'Chapter Architect',
   methodology_advisor: 'Methodology Advisor',
   writing_planner:     'Writing Planner',
+  literature_map:      'Literature Map',
+  abstract_generator:  'Abstract Generator',
+  instrument_builder:  'Instrument Builder',
   project_reviewer:    'Project Reviewer',
   defense_simulator:   'Defense Simulator',
 }
 
 const PLAN_FEATURES = {
   free:    ['topic_validator', 'chapter_architect', 'methodology_advisor'],
-  student: ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner', 'project_reviewer'],
-  defense: ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner', 'project_reviewer', 'defense_simulator'],
+  student: ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner', 'literature_map', 'abstract_generator', 'instrument_builder', 'project_reviewer'],
+  defense: ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner', 'literature_map', 'abstract_generator', 'instrument_builder', 'project_reviewer', 'defense_simulator'],
 }
 
 function usageBarColor(pct) {
@@ -1288,8 +1291,6 @@ function UsageBar({ used, limit }) {
 
 function DashUsageSection({ features, runCounts, loading }) {
   const [sectionRef, sectionVisible] = useReveal()
-
-  if (loading) return null
 
   const isDefense = features.includes('defense_pack')
   const isStudent = !isDefense && features.includes('student_pack')
