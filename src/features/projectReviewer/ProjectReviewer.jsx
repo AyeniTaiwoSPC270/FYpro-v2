@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError } from '../../services/api'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -216,6 +218,9 @@ function stripScoreRange(raw) {
 export default function ProjectReviewer() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features)
+  const overLimit = isOverLimit('project_reviewer')
 
   const savedData = state.uploadedProject?.reviewData
   const [section, setSection]         = useState(savedData ? 'result' : 'input')
@@ -230,7 +235,22 @@ export default function ProjectReviewer() {
   const [visibleWeaknesses, setVisibleWeaknesses] = useState([])
   const [visibleQuestions, setVisibleQuestions]   = useState([])
 
-  const fileInputRef = useRef(null)
+  const fileInputRef    = useRef(null)
+  const loadingTimerRef = useRef(null)
+
+  // Safety timeout: force-stop loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setIsProcessing(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
 
   // Trigger stagger-in whenever the result section becomes visible
   useEffect(() => {
@@ -314,8 +334,10 @@ export default function ProjectReviewer() {
 
   async function handleReview() {
     if (isProcessing || !selectedFile) return
-    setIsProcessing(true)
     setError(null)
+    const allowed = checkAndRecord('project_reviewer', features)
+    if (!allowed) return
+    setIsProcessing(true)
     setSection('loading')
 
     let result
@@ -472,11 +494,17 @@ export default function ProjectReviewer() {
         <button
           id="pr-btn-review"
           className="pr-btn-review"
-          disabled={!selectedFile || isProcessing}
+          disabled={!selectedFile || isProcessing || overLimit}
           onClick={handleReview}
+          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           Review My Project
         </button>
+        {overLimit && (
+          <p className="pr-error-text tv-section--visible" style={{ marginTop: 8 }}>
+            You've reached your limit for this feature. Start a new project or upgrade your plan.
+          </p>
+        )}
 
         <button
           id="pr-btn-skip"

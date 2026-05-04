@@ -846,7 +846,7 @@ function FeaturesSection() {
 
 const STEPS = [
   { num: '01', title: 'Topic Validator', desc: 'Enter your rough idea. Get a researchability verdict, a feasibility score against your department and level, and a refined topic statement ready to show your supervisor.' },
-  { num: '02', title: 'Chapter Architect + Literature Map', desc: 'Generate a complete five-chapter breakdown with section headings, key scholars to engage, and a visual literature map linking your theoretical framework to your research questions.' },
+  { num: '02', title: 'Chapter Architect', desc: 'Generate a complete five-chapter breakdown with section headings, key scholars to engage, and a visual literature map linking your theoretical framework to your research questions.' },
   { num: '03', title: 'Methodology Advisor', desc: 'Select the right research design, sampling strategy, and data approach for your topic. Quantitative, qualitative, or mixed methods — each choice justified and ready to write into Chapter 3.' },
   { num: '04', title: 'Writing Planner', desc: 'Get a personalised week-by-week writing schedule calculated from your submission deadline. Buffer weeks, milestone checkpoints, and a chapter-by-chapter word target — all built in.' },
   { num: '05', title: 'Project Reviewer', desc: 'Submit any chapter for structured AI feedback on argument flow, citation gaps, and examiner-facing weaknesses. The independent review your supervisor may never give you — before it is too late to act on it.' },

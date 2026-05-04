@@ -11,6 +11,8 @@ import {
   THREE_EXAMINER_FIRST_QUESTION_PROMPT,
   buildThreeExaminerFollowUpPrompt,
 } from '../../services/prompts.js'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 
@@ -292,6 +294,10 @@ const MIC_SVG = (
 
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
+  const { features } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features)
+  const rfOverLimit = isOverLimit('red_flag_detector')
+  const dsOverLimit = isOverLimit('defense_simulator')
 
   const uploadedReview = state.uploadedProject?.reviewData
 
@@ -333,7 +339,22 @@ export default function DefensePrep() {
   const textareaRef           = useRef(null)
   const submitHandlerRef      = useRef(null)
 
-  const voiceSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const voiceSupported    = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const loadingTimerRef   = useRef(null)
+
+  // Safety timeout: force-stop red-flag scan loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setIsScanning(false)
+        setScanError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
   const ttsSupported   = !!window.speechSynthesis
 
   // ── effects ───────────────────────────────────────────────────────────────
@@ -511,6 +532,8 @@ export default function DefensePrep() {
 
   async function startRedFlagScan() {
     setScanError(null)
+    const allowed = checkAndRecord('red_flag_detector', features)
+    if (!allowed) return
     setIsScanning(true)
     setSection('loading')
 
@@ -540,6 +563,8 @@ export default function DefensePrep() {
   // ── enter defense mode ────────────────────────────────────────────────────
 
   function enterDefenseMode() {
+    const allowed = checkAndRecord('defense_simulator', features)
+    if (!allowed) return
     defenseMessagesRef.current = []
     panelSystemRef.current     = null
     questionCountRef.current   = 0
@@ -819,11 +844,17 @@ export default function DefensePrep() {
           <button
             id="dp-start-scan"
             className="dp-btn-start-scan"
-            disabled={isScanning}
+            disabled={isScanning || rfOverLimit}
             onClick={startRedFlagScan}
+            style={rfOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Scan for Red Flags
           </button>
+          {rfOverLimit && (
+            <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
+              You've reached your limit for this feature. Start a new project or upgrade your plan.
+            </p>
+          )}
         </div>
 
         {/* Loading section */}
@@ -863,9 +894,16 @@ export default function DefensePrep() {
             id="dp-btn-enter-defense"
             className="dp-btn-enter-defense"
             onClick={enterDefenseMode}
+            disabled={dsOverLimit}
+            style={dsOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Enter Defence Mode
           </button>
+          {dsOverLimit && (
+            <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
+              You've reached your limit for this feature. Start a new project or upgrade your plan.
+            </p>
+          )}
           <button
             id="dp-btn-go-back"
             className="dp-btn-go-back"

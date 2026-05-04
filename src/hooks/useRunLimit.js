@@ -55,6 +55,31 @@ export function resolveLimit(stepKey, features) {
   return FREE_LIMITS[stepKey] ?? null
 }
 
+// Module-level singleton: merge Supabase run_counts into localStorage on SIGNED_IN.
+// Runs once when the module loads. On SIGNED_OUT, intentionally does nothing —
+// localStorage run_counts must persist so re-login restores the correct counts.
+;(function setupSignedInSync() {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event !== 'SIGNED_IN' || !session?.user?.id) return
+    supabase
+      .from('user_entitlements')
+      .select('run_counts')
+      .eq('user_id', session.user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data?.run_counts) return
+        const local  = getRunCounts()
+        const remote = data.run_counts
+        const merged = { ...remote }
+        for (const k of Object.keys(local)) {
+          merged[k] = Math.max(local[k] || 0, merged[k] || 0)
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+        window.dispatchEvent(new Event('fypro_run_counts_updated'))
+      })
+  })
+})()
+
 // Fire-and-forget — localStorage already updated, this is best-effort sync.
 function syncRunCountsToSupabase(updatedCounts) {
   supabase.auth.getSession().then(({ data: { session } }) => {

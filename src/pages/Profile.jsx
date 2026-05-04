@@ -5,6 +5,8 @@ import { useApp } from '../context/AppContext'
 import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
+import { useUser } from '../hooks/useUser'
+import { supabase } from '../lib/supabase'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -240,36 +242,64 @@ export default function Profile() {
   const navigate = useNavigate()
   const { features } = usePaidFeatures()
   const { resetProject } = useProjectState()
+  const { user } = useUser()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
 
   const completedCount = state.stepsCompleted.filter(Boolean).length
 
   const [form, setForm] = useState({
-    name:       'Taiwo Ayeni',
-    email:      'taiwo@example.com',
-    university: state.university  || 'University of Lagos',
-    faculty:    state.faculty     || 'Faculty of Engineering',
-    department: state.department  || 'Metallurgical & Materials Engineering',
-    level:      state.level       || '200',
+    name:       '',
+    email:      '',
+    university: state.university  || '',
+    faculty:    state.faculty     || '',
+    department: state.department  || '',
+    level:      state.level       || '',
   })
+  const [avatarUrl, setAvatarUrl] = useState(null)
+
+  // Hydrate name + email from Supabase auth user when it resolves
+  useEffect(() => {
+    if (!user) return
+    setForm(prev => ({
+      ...prev,
+      name:  user.user_metadata?.full_name || '',
+      email: user.email || '',
+    }))
+    setAvatarUrl(user.user_metadata?.avatar_url || null)
+  }, [user])
 
   const initials = form.name
-    .split(' ')
-    .map((w) => w[0] ?? '')
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+    ? form.name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+    : form.email ? form.email[0].toUpperCase() : '?'
+
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : ''
 
   const photoInputRef = useRef(null)
 
   function handleChangePhoto() {
     photoInputRef.current?.click()
-    console.log('[TODO] Photo upload — requires file storage backend')
   }
 
-  function handleSaveChanges() {
+  async function handleFileUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    const ext  = file.name.split('.').pop()
+    const path = `${user.id}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    if (uploadError) { showToast('Photo upload failed'); return }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+    await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
+    setAvatarUrl(publicUrl)
+    showToast('Photo updated')
+  }
+
+  async function handleSaveChanges() {
     set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
-    console.log('[Profile] Saved:', form)
+    if (form.name) {
+      await supabase.auth.updateUser({ data: { full_name: form.name } })
+    }
     showToast('Changes saved')
   }
 
@@ -342,13 +372,16 @@ export default function Profile() {
           {/* Avatar */}
           <div className="flex flex-col items-center flex-shrink-0">
             <div
-              className="w-20 h-20 rounded-full flex items-center justify-center"
+              className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden"
               style={{
                 background: 'rgba(59,130,246,0.2)',
                 border: '2px solid #3B82F6',
               }}
             >
-              <span className="font-serif text-2xl text-blue-400 leading-none">{initials}</span>
+              {avatarUrl
+                ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                : <span className="font-serif text-2xl text-blue-400 leading-none">{initials}</span>
+              }
             </div>
             <button
               onClick={handleChangePhoto}
@@ -361,7 +394,7 @@ export default function Profile() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => console.log('[TODO] Upload file:', e.target.files[0]?.name)}
+              onChange={handleFileUpload}
             />
           </div>
 
@@ -369,7 +402,9 @@ export default function Profile() {
           <div className="flex-1 min-w-0">
             <div className="font-sans text-xl font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{form.name}</div>
             <div className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{form.email}</div>
-            <div className="font-mono text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Member since April 2026</div>
+            {memberSince && (
+              <div className="font-mono text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Member since {memberSince}</div>
+            )}
             <div className="flex items-center flex-wrap gap-3 mt-3">
               <span
                 className="font-mono text-xs font-semibold px-3 py-1 rounded-full inline-block"

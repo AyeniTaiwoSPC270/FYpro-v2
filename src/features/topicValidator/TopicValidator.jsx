@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError } from '../../services/api'
-import { checkAndRecord } from '../../hooks/useRunLimit'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -27,8 +27,26 @@ export default function TopicValidator() {
   )
   const [typewriterActive, setTypewriterActive] = useState(false)
 
-  const twIntervalRef = useRef(null)
-  const animateRef    = useRef(false)  // true only after a fresh API response
+  const { isOverLimit } = useRunLimit(features)
+  const overLimit = isOverLimit('topic_validator')
+
+  const twIntervalRef   = useRef(null)
+  const animateRef      = useRef(false)  // true only after a fresh API response
+  const loadingTimerRef = useRef(null)
+
+  // Safety timeout: force-stop loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setBtnDisabled(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
 
   // ── Typewriter effect ─────────────────────────────────────────────────────
   // Skipped on restore — full text shown immediately.
@@ -184,10 +202,16 @@ export default function TopicValidator() {
           id="btn-validate"
           className="tv-btn-validate"
           onClick={handleValidate}
-          disabled={btnDisabled}
+          disabled={btnDisabled || overLimit}
+          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           Validate Topic
         </button>
+        {overLimit && (
+          <p className="tv-error-text" style={{ marginTop: 8 }}>
+            You've reached your limit for this feature. Start a new project or upgrade your plan.
+          </p>
+        )}
       </div>
 
       {/* ── Loading section ─────────────────────────────────────────────────── */}

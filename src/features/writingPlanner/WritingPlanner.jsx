@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { checkAndRecord } from '../../hooks/useRunLimit'
+import { useState, useEffect, useRef } from 'react'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { buildWritingPlan, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
@@ -23,6 +23,8 @@ export default function WritingPlanner() {
   const { saveStep } = useProjectState()
   const { features } = usePaidFeatures()
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
+  const { isOverLimit } = useRunLimit(features)
+  const overLimit = isOverLimit('writing_planner')
 
   const [section, setSection]       = useState(state.writingPlan ? 'result' : 'input')
   const [data, setData]             = useState(state.writingPlan || null)
@@ -106,9 +108,25 @@ export default function WritingPlanner() {
     showToast('Writing plan created ✓')
   }
 
+  const loadingTimerRef = useRef(null)
+
+  // Safety timeout: force-stop loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setBtnDisabled(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
+
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  const generateEnabled = !btnDisabled && !!urgency
+  const generateEnabled = !btnDisabled && !!urgency && !overLimit
 
   return (
     <div className="wp-card" id="wp-card">
@@ -154,9 +172,15 @@ export default function WritingPlanner() {
           className="wp-btn-generate"
           onClick={handleGenerate}
           disabled={!generateEnabled}
+          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           Generate Writing Plan
         </button>
+        {overLimit && (
+          <p className="wp-error-text" style={{ marginTop: 8 }}>
+            You've reached your limit for this feature. Start a new project or upgrade your plan.
+          </p>
+        )}
       </div>
 
       {/* Loading section */}

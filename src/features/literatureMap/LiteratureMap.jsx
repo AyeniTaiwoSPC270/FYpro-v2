@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { generateLiteratureMap, handleApiError } from '../../services/api'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 
 export default function LiteratureMap({ chapters }) {
   const { state, studentContext } = useApp()
   const { saveStep } = useProjectState()
+  const { features } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features)
+  const overLimit = isOverLimit('literature_map')
 
   const [section, setSection]         = useState('input')
   const [data, setData]               = useState(null)
@@ -13,15 +18,32 @@ export default function LiteratureMap({ chapters }) {
   const [error, setError]             = useState(null)
   const [copied, setCopied]           = useState(false)
   const [copiedChip, setCopiedChip]   = useState(null)
-  const chipTimers = useRef({})
+  const chipTimers      = useRef({})
+  const loadingTimerRef = useRef(null)
 
   useEffect(() => {
     return () => { Object.values(chipTimers.current).forEach(clearTimeout) }
   }, [])
 
+  // Safety timeout: force-stop loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setBtnDisabled(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
+
   function handleGenerate() {
-    setBtnDisabled(true)
     setError(null)
+    const allowed = checkAndRecord('literature_map', features)
+    if (!allowed) return
+    setBtnDisabled(true)
     setSection('loading')
 
     const chaps = chapters?.length ? chapters : []
@@ -99,10 +121,16 @@ export default function LiteratureMap({ chapters }) {
             id="lm-btn-generate"
             className="lm-btn-generate"
             onClick={handleGenerate}
-            disabled={btnDisabled}
+            disabled={btnDisabled || overLimit}
+            style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Generate Literature Map
           </button>
+          {overLimit && (
+            <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
+              You've reached your limit for this feature. Start a new project or upgrade your plan.
+            </p>
+          )}
         </div>
       )}
 

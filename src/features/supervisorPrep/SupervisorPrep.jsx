@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { prepareSupervisorMeeting, handleApiError } from '../../services/api'
 
@@ -23,6 +23,22 @@ export default function SupervisorPrep() {
   const [questions,    setQuestions]    = useState([])
   const [error,        setError]        = useState(null)
   const [btnDisabled,  setBtnDisabled]  = useState(false)
+
+  const loadingTimerRef = useRef(null)
+
+  // Safety timeout: force-stop loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setBtnDisabled(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
 
   function handleSubmit() {
     if (!stage) {

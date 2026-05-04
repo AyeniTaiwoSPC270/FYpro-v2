@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { buildChapters, generateAbstract, handleApiError } from '../../services/api'
-import { checkAndRecord } from '../../hooks/useRunLimit'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -140,6 +140,9 @@ export default function ChapterArchitect() {
   const { saveStep } = useProjectState()
   const { features } = usePaidFeatures()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
+  const { isOverLimit } = useRunLimit(features)
+  const overLimit   = isOverLimit('chapter_architect')
+  const agOverLimit = isOverLimit('abstract_generator')
 
   const restored = Boolean(state.stepsCompleted[1] && state.chapterStructure)
 
@@ -167,12 +170,42 @@ export default function ChapterArchitect() {
   const [agError, setAgError]             = useState(null)
   const [agCopied, setAgCopied]           = useState(false)
   const [agVisible, setAgVisible]         = useState([])
-  const agTimers = useRef([])
+  const agTimers        = useRef([])
+  const loadingTimerRef = useRef(null)
+  const agLoadingTimerRef = useRef(null)
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => { agTimers.current.forEach(clearTimeout) }
   }, [])
+
+  // Safety timeout: force-stop main loading after 30s
+  useEffect(() => {
+    if (section === 'loading') {
+      loadingTimerRef.current = setTimeout(() => {
+        setSection('input')
+        setBtnDisabled(false)
+        setError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(loadingTimerRef.current)
+    }
+    return () => clearTimeout(loadingTimerRef.current)
+  }, [section])
+
+  // Safety timeout: force-stop abstract generator loading after 30s
+  useEffect(() => {
+    if (agSection === 'loading') {
+      agLoadingTimerRef.current = setTimeout(() => {
+        setAgSection('input')
+        setAgBtnDisabled(false)
+        setAgError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(agLoadingTimerRef.current)
+    }
+    return () => clearTimeout(agLoadingTimerRef.current)
+  }, [agSection])
 
   // After editing starts/stops, adjust maxHeight so animation stays smooth
   useEffect(() => {
@@ -456,10 +489,16 @@ export default function ChapterArchitect() {
             id="btn-generate"
             className="ca-btn-generate"
             onClick={handleGenerate}
-            disabled={btnDisabled}
+            disabled={btnDisabled || overLimit}
+            style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Generate Chapters
           </button>
+          {overLimit && (
+            <p className="ca-error-text" style={{ marginTop: 8 }}>
+              You've reached your limit for this feature. Start a new project or upgrade your plan.
+            </p>
+          )}
         </div>
 
         {/* Loading section */}
@@ -529,10 +568,16 @@ export default function ChapterArchitect() {
                 id="ag-btn-generate"
                 className="ag-btn-generate"
                 onClick={handleGenerateAbstract}
-                disabled={agBtnDisabled}
+                disabled={agBtnDisabled || agOverLimit}
+                style={agOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
               >
                 Generate Abstract
               </button>
+              {agOverLimit && (
+                <p className="ca-error-text" style={{ marginTop: 8 }}>
+                  You've reached your limit for this feature. Start a new project or upgrade your plan.
+                </p>
+              )}
             </div>
           )}
 

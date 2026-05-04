@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
-import { checkAndRecord } from '../../hooks/useRunLimit'
+import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -11,6 +11,9 @@ export default function MethodologyAdvisor() {
   const { saveStep } = useProjectState()
   const { features } = usePaidFeatures()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
+  const { isOverLimit } = useRunLimit(features)
+  const maOverLimit = isOverLimit('methodology_advisor')
+  const diOverLimit = isOverLimit('instrument_builder')
 
   // ── MA state — seed from persisted context on remount ─────────────────────
   const [maSection, setMaSection]                     = useState(state.methodology ? 'result' : 'input')
@@ -29,7 +32,37 @@ export default function MethodologyAdvisor() {
   const [diGenBtnDisabled, setDiGenBtnDisabled] = useState(false)
   const [instrumentCopied, setInstrumentCopied] = useState(false)
   const instrumentTextRef = useRef('')
-  const diCardRef = useRef(null)
+  const diCardRef         = useRef(null)
+  const maLoadingTimerRef = useRef(null)
+  const diLoadingTimerRef = useRef(null)
+
+  // Safety timeout: force-stop MA loading after 30s
+  useEffect(() => {
+    if (maSection === 'loading') {
+      maLoadingTimerRef.current = setTimeout(() => {
+        setMaSection('input')
+        setMaBtnDisabled(false)
+        setMaError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(maLoadingTimerRef.current)
+    }
+    return () => clearTimeout(maLoadingTimerRef.current)
+  }, [maSection])
+
+  // Safety timeout: force-stop DI loading after 30s
+  useEffect(() => {
+    if (diSection === 'loading') {
+      diLoadingTimerRef.current = setTimeout(() => {
+        setDiSection('input')
+        setDiGenBtnDisabled(false)
+        setDiError('Request timed out. Please check your connection and try again.')
+      }, 30000)
+    } else {
+      clearTimeout(diLoadingTimerRef.current)
+    }
+    return () => clearTimeout(diLoadingTimerRef.current)
+  }, [diSection])
 
   // ── MA handlers ────────────────────────────────────────────────────────────
 
@@ -97,6 +130,8 @@ export default function MethodologyAdvisor() {
 
   function handleGenerateInstrument() {
     setDiError(null)
+    const allowed = checkAndRecord('instrument_builder', features)
+    if (!allowed) return
     setDiGenBtnDisabled(true)
     setDiSection('loading')
 
@@ -206,10 +241,16 @@ export default function MethodologyAdvisor() {
             id="btn-analyse"
             className="ma-btn-analyse"
             onClick={handleAnalyse}
-            disabled={maBtnDisabled}
+            disabled={maBtnDisabled || maOverLimit}
+            style={maOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
             Analyse Methodology
           </button>
+          {maOverLimit && (
+            <p className="ma-error-text" style={{ marginTop: 8 }}>
+              You've reached your limit for this feature. Start a new project or upgrade your plan.
+            </p>
+          )}
         </div>
 
         {/* Loading section */}
@@ -380,10 +421,16 @@ export default function MethodologyAdvisor() {
               id="btn-generate-instrument"
               className="di-btn-generate"
               onClick={handleGenerateInstrument}
-              disabled={diGenBtnDisabled}
+              disabled={diGenBtnDisabled || diOverLimit}
+              style={diOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
             >
               Generate Instrument
             </button>
+            {diOverLimit && (
+              <p className="di-error-text" style={{ marginTop: 8 }}>
+                You've reached your limit for this feature. Start a new project or upgrade your plan.
+              </p>
+            )}
           </div>
 
           {/* DI Loading section */}
