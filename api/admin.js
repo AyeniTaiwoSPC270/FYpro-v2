@@ -123,10 +123,213 @@ async function handleAlertCheck(req, res) {
   }
 }
 
+// action: "dashboard" — comprehensive admin analytics
+async function handleDashboard(req, res) {
+  // Server-side admin gate: verify JWT and check email
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
+    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' });
+    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const now  = Date.now();
+    const MS7  = 7  * 24 * 60 * 60 * 1000;
+    const MS30 = 30 * 24 * 60 * 60 * 1000;
+    const MS3  =  3 * 24 * 60 * 60 * 1000;
+
+    const today           = new Date(now).toISOString().slice(0, 10);
+    const todayStart      = `${today}T00:00:00.000Z`;
+    const weekAgoISO      = new Date(now - MS7).toISOString();
+    const threeDaysAgoISO = new Date(now - MS3).toISOString();
+
+    const [authRes, paymentsRes, projectsRes] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+      supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
+      supabaseAdmin.from('projects').select('user_id, created_at, run_counts'),
+    ]);
+
+    const authUsers = authRes.data?.users   || [];
+    const payments  = paymentsRes.data      || [];
+    const projects  = projectsRes.data      || [];
+
+    // ── Overview ──────────────────────────────────────────────────
+    const totalUsers     = authUsers.length;
+    const activeToday    = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
+    const activeThisWeek = authUsers.filter(u => u.last_sign_in_at >= weekAgoISO).length;
+
+    const paidByUser = {};
+    let   totalRevNgn = 0;
+    for (const p of payments) {
+      const ngn = Math.round((p.amount_kobo || 0) / 100);
+      totalRevNgn += ngn;
+      if (!paidByUser[p.user_id]) paidByUser[p.user_id] = { totalNgn: 0, tiers: [] };
+      paidByUser[p.user_id].totalNgn += ngn;
+      paidByUser[p.user_id].tiers.push(p.tier);
+    }
+
+    const paidUserIds    = new Set(Object.keys(paidByUser));
+    const totalPaid      = paidUserIds.size;
+    const conversionRate = totalUsers > 0 ? ((totalPaid / totalUsers) * 100).toFixed(1) : '0.0';
+
+    const projCountByUser = {};
+    for (const p of projects) {
+      projCountByUser[p.user_id] = (projCountByUser[p.user_id] || 0) + 1;
+    }
+
+    // ── Users Table ───────────────────────────────────────────────
+    const users = authUsers.map(u => {
+      const paid      = paidByUser[u.id];
+      const projCount = projCountByUser[u.id] || 0;
+      const lastActive = u.last_sign_in_at;
+
+      let plan = 'Free';
+      if (paid) {
+        plan = paid.tiers.includes('defense_pack') ? 'Defense' : 'Student';
+      }
+
+      let status = 'never_used';
+      if (projCount > 0 && lastActive) {
+        const daysSince = (now - new Date(lastActive).getTime()) / 86400000;
+        if      (daysSince <= 7)  status = 'active';
+        else if (daysSince <= 30) status = 'inactive';
+        else                      status = 'churned';
+      }
+
+      return {
+        id:            u.id,
+        email:         u.email || '',
+        signup_date:   u.created_at,
+        last_active:   lastActive || null,
+        plan,
+        project_count: projCount,
+        status,
+        paid_amount:   paid?.totalNgn || 0,
+      };
+    });
+
+    // ── Revenue Chart (last 30 days) ──────────────────────────────
+    const revByDay = {};
+    for (let i = 29; i >= 0; i--) {
+      revByDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
+    }
+    for (const p of payments) {
+      const day = p.created_at?.slice(0, 10);
+      if (day && day in revByDay) revByDay[day] += Math.round((p.amount_kobo || 0) / 100);
+    }
+    const revenueChart = Object.entries(revByDay).map(([date, amount]) => ({ date, amount }));
+
+    // ── Signups Chart (last 30 days) ──────────────────────────────
+    const sigByDay = {};
+    for (let i = 29; i >= 0; i--) {
+      sigByDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
+    }
+    for (const u of authUsers) {
+      const day = u.created_at?.slice(0, 10);
+      if (day && day in sigByDay) sigByDay[day]++;
+    }
+    const signupsChart = Object.entries(sigByDay).map(([date, count]) => ({ date, count }));
+
+    // ── Feature Usage ─────────────────────────────────────────────
+    const FEATURE_KEYS = [
+      'topic_validator', 'chapter_architect', 'methodology_advisor',
+      'writing_planner', 'literature_map', 'abstract_generator',
+      'instrument_builder', 'project_reviewer', 'defense_simulator',
+      'supervisor_meeting_prep',
+    ];
+    const featureTotals = Object.fromEntries(FEATURE_KEYS.map(k => [k, 0]));
+    for (const proj of projects) {
+      const rc = proj.run_counts;
+      if (rc && typeof rc === 'object') {
+        for (const k of FEATURE_KEYS) featureTotals[k] += (rc[k] || 0);
+      }
+    }
+    const featureUsage = FEATURE_KEYS
+      .map(k => ({ feature: k, count: featureTotals[k] }))
+      .sort((a, b) => b.count - a.count);
+
+    // ── Drop-off Funnel ───────────────────────────────────────────
+    const FUNNEL_STEPS = [
+      'topic_validator', 'chapter_architect', 'methodology_advisor',
+      'writing_planner', 'defense_simulator',
+    ];
+    const stepUsers = Object.fromEntries(FUNNEL_STEPS.map(s => [s, new Set()]));
+    for (const proj of projects) {
+      const rc = proj.run_counts;
+      if (rc && typeof rc === 'object') {
+        for (const s of FUNNEL_STEPS) {
+          if ((rc[s] || 0) > 0) stepUsers[s].add(proj.user_id);
+        }
+      }
+    }
+    const funnel = FUNNEL_STEPS.map((step, i) => {
+      const count      = stepUsers[step].size;
+      const prevCount  = i > 0 ? stepUsers[FUNNEL_STEPS[i - 1]].size : count;
+      const dropoffPct = prevCount > 0 ? (((prevCount - count) / prevCount) * 100).toFixed(1) : '0.0';
+      const pctOfTotal = totalUsers > 0 ? ((count / totalUsers) * 100).toFixed(1) : '0.0';
+      return { step, count, dropoff_pct: dropoffPct, pct_of_total: pctOfTotal };
+    });
+
+    // ── Never Converted ───────────────────────────────────────────
+    const neverConverted = authUsers
+      .filter(u =>
+        u.created_at < threeDaysAgoISO &&
+        !paidUserIds.has(u.id) &&
+        (projCountByUser[u.id] || 0) > 0
+      )
+      .map(u => {
+        const stepsUsed = new Set();
+        for (const proj of projects.filter(p => p.user_id === u.id)) {
+          const rc = proj.run_counts;
+          if (rc && typeof rc === 'object') {
+            for (const k of FEATURE_KEYS) {
+              if ((rc[k] || 0) > 0) stepsUsed.add(k);
+            }
+          }
+        }
+        return {
+          id:              u.id,
+          email:           u.email || '',
+          signup_date:     u.created_at,
+          last_active:     u.last_sign_in_at || null,
+          steps_completed: stepsUsed.size,
+        };
+      });
+
+    return res.status(200).json({
+      overview: {
+        total_users:       totalUsers,
+        active_today:      activeToday,
+        active_this_week:  activeThisWeek,
+        total_paid:        totalPaid,
+        total_revenue_ngn: totalRevNgn,
+        conversion_rate:   conversionRate,
+      },
+      users,
+      revenue_chart:   revenueChart,
+      signups_chart:   signupsChart,
+      feature_usage:   featureUsage,
+      funnel,
+      never_converted: neverConverted,
+    });
+
+  } catch (err) {
+    console.error('[admin/dashboard] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -135,8 +338,9 @@ export default async function handler(req, res) {
 
   const action = req.query.action;
 
-  if (action === 'health')       return handleHealth(req, res);
-  if (action === 'alert-check')  return handleAlertCheck(req, res);
+  if (action === 'health')      return handleHealth(req, res);
+  if (action === 'alert-check') return handleAlertCheck(req, res);
+  if (action === 'dashboard')   return handleDashboard(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
