@@ -1,8 +1,62 @@
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
+import nodemailer from 'nodemailer';
 
 if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Missing env var: PAYSTACK_SECRET_KEY');
+
+const PLAN_DISPLAY_NAMES = {
+  student_pack:  'Student Pack',
+  defense_pack:  'Defense Pack',
+  project_reset: 'Project Reset',
+};
+
+async function sendReceiptEmail(toEmail, plan, amount, reference) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD
+    }
+  });
+
+  const planDisplay = PLAN_DISPLAY_NAMES[plan] || plan;
+
+  await transporter.sendMail({
+    from: '"FYPro" <team.fypro@gmail.com>',
+    to: toEmail,
+    subject: `Your FYPro receipt — ${planDisplay}`,
+    html: `
+<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+  <div style="background-color: #0f172a; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+    <img src="https://f-ypro-v2.vercel.app/fypro-logo.png" alt="FYPro" style="height: 40px;" />
+  </div>
+  <div style="padding: 32px 24px;">
+    <h2 style="color: #1a1a2e; font-size: 24px; margin-bottom: 8px;">Payment confirmed</h2>
+    <p style="color: #555; font-size: 15px;">Your project journey just got serious.</p>
+    <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+      <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;"><strong>Plan:</strong> ${planDisplay}</p>
+      <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;"><strong>Amount paid:</strong> ₦${amount}</p>
+      <p style="margin: 0; color: #333; font-size: 14px;"><strong>Reference:</strong> ${reference}</p>
+    </div>
+    <p style="color: #333; font-size: 15px;">You now have full access. Log in to continue:</p>
+    <a href="https://f-ypro-v2.vercel.app/dashboard"
+       style="display: inline-block; background-color: #2563eb; color: white;
+              padding: 14px 28px; border-radius: 8px; text-decoration: none;
+              font-size: 16px; font-weight: bold; margin: 24px 0;">
+      Go to my dashboard
+    </a>
+    <p style="color: #999; font-size: 13px; margin-top: 32px;">
+      Keep this email as your receipt.<br>
+      Questions? Reply to this email.<br>
+      — The FYPro Team · fypro.vercel.app
+    </p>
+  </div>
+</div>`
+  });
+}
 
 function generateReference(userId) {
   const ts   = Date.now();
@@ -109,6 +163,33 @@ async function handleVerify(req, res) {
       paystackCurrency:   paystackData.currency,
       source:             'verify',
     });
+
+    if (result.status === 'success') {
+      try {
+        const { data: payment } = await supabaseAdmin
+          .from('payments')
+          .select('user_id, amount_kobo, tier')
+          .eq('paystack_reference', reference)
+          .single();
+
+        if (payment) {
+          const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('email')
+            .eq('id', payment.user_id)
+            .single();
+
+          if (user?.email) {
+            const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
+            const amountNGN = payment.amount_kobo / 100;
+            await sendReceiptEmail(user.email, planName, amountNGN, reference);
+          }
+        }
+      } catch (emailErr) {
+        console.error('[payments/verify] receipt email failed', { reference, message: emailErr.message });
+      }
+    }
+
     return res.status(200).json({ status: result.status, tier: result.tier });
   } catch (err) {
     if (err.code === 'KNOWN_REJECTION') {
