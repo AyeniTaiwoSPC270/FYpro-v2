@@ -66,7 +66,11 @@ export default function PaymentSuccess() {
         })
         const data = await res.json()
         if (!res.ok) throw new Error('failed')
-        if (!cancelled) setTier(data.tier)
+        if (!cancelled) {
+          setTier(data.tier)
+          // Invalidate entitlement cache so usePaidFeatures re-fetches on next mount.
+          window.dispatchEvent(new Event('fypro_entitlements_updated'))
+        }
       } catch {
         if (!cancelled) navigate('/pricing?error=payment_failed', { replace: true })
         return

@@ -92,7 +92,9 @@ export function recordStepRun(stepKey) {
 export function useRunLimit(features) {
   const [runCounts, setRunCounts] = useState(getRunCounts)
 
-  // Sync from Supabase on mount — Supabase wins on conflict.
+  // Sync from Supabase on mount — merge, taking the higher count for each key.
+  // Supabase must NOT overwrite localStorage unconditionally: the user may have
+  // run a feature moments ago whose syncRunCountsToSupabase hasn't committed yet.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user?.id) return
@@ -103,8 +105,14 @@ export function useRunLimit(features) {
         .single()
         .then(({ data, error }) => {
           if (error || !data?.run_counts) return
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data.run_counts))
-          setRunCounts(data.run_counts)
+          const local  = getRunCounts()
+          const remote = data.run_counts
+          const merged = { ...remote }
+          for (const k of Object.keys(local)) {
+            merged[k] = Math.max(local[k] || 0, merged[k] || 0)
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+          setRunCounts(merged)
         })
     })
   }, [])

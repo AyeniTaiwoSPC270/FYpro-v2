@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useUser } from '../../hooks/useUser'
 import {
   LineChart, Line, BarChart, Bar,
@@ -173,12 +173,16 @@ function Th({ children, sortKey, active, dir, onSort }) {
   )
 }
 
+const AUTO_REFRESH_MS = 5 * 60 * 1000  // 5 minutes
+
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
   const { user, session, loading } = useUser()
-  const [data, setData]         = useState(null)
-  const [error, setError]       = useState(null)
-  const [fetching, setFetching] = useState(false)
+  const [data, setData]           = useState(null)
+  const [error, setError]         = useState(null)
+  const [fetching, setFetching]   = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const timerRef = useRef(null)
 
   // User table state
   const [search, setSearch]   = useState('')
@@ -189,17 +193,26 @@ export default function AdminHealth() {
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
   const isAdmin    = !!adminEmail && user?.email === adminEmail
 
-  useEffect(() => {
-    if (!isAdmin || !session) return
+  const loadData = useCallback(() => {
+    if (!session?.access_token) return
     setFetching(true)
+    setError(null)
     fetch('/api/admin?action=dashboard', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setData(d) })
+      .then(d => { if (d.error) throw new Error(d.error); setData(d); setLastUpdated(new Date()) })
       .catch(e => setError(e.message))
       .finally(() => setFetching(false))
-  }, [isAdmin, session])
+  }, [session?.access_token])
+
+  // Initial fetch + auto-refresh every 5 minutes while tab is open.
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    loadData()
+    timerRef.current = setInterval(loadData, AUTO_REFRESH_MS)
+    return () => clearInterval(timerRef.current)
+  }, [isAdmin, session, loadData])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -228,11 +241,11 @@ export default function AdminHealth() {
 
   // ── Guard states ────────────────────────────────────────────────
   const shell = { minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }
-  if (loading)  return <div style={shell}>Loading…</div>
-  if (!isAdmin) return <div style={{ ...shell, color: RED }}>Access denied.</div>
-  if (fetching) return <div style={shell}>Fetching dashboard data…</div>
-  if (error)    return <div style={{ ...shell, color: RED }}>Error: {error}</div>
-  if (!data)    return null
+  if (loading)             return <div style={shell}>Loading…</div>
+  if (!isAdmin)            return <div style={{ ...shell, color: RED }}>Access denied.</div>
+  if (fetching && !data)   return <div style={shell}>Fetching dashboard data…</div>
+  if (error && !data)      return <div style={{ ...shell, color: RED }}>Error: {error}</div>
+  if (!data)               return null
 
   const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted } = data
   const maxFeature = feature_usage?.[0]?.count || 1
@@ -255,13 +268,37 @@ export default function AdminHealth() {
     <div style={{ minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 36 }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, margin: 0 }}>
-          FYPro Admin — Analytics
-        </h1>
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: MUTED, marginTop: 8 }}>
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, margin: 0 }}>
+            FYPro Admin — Analytics
+          </h1>
+          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: MUTED, marginTop: 8, marginBottom: 0 }}>
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+            {lastUpdated && (
+              <span style={{ marginLeft: 16, color: 'rgba(255,255,255,0.3)' }}>
+                · Last updated {lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            )}
+          </p>
+        </div>
+        <button
+          onClick={loadData}
+          disabled={fetching}
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: 13, fontWeight: 600,
+            color: fetching ? MUTED : WHITE,
+            background: fetching ? 'rgba(255,255,255,0.05)' : BLUE,
+            border: `1px solid ${fetching ? BORDER : BLUE}`,
+            borderRadius: 8, padding: '10px 20px',
+            cursor: fetching ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s ease',
+            flexShrink: 0,
+          }}
+        >
+          {fetching ? 'Refreshing…' : '↻ Refresh'}
+        </button>
       </div>
 
       {/* ── SECTION 1: Overview Cards ─────────────────────────────── */}
