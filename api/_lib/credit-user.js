@@ -82,11 +82,12 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
 }
 
 async function grantEntitlement(userId, tier, amountKobo) {
+  // maybeSingle instead of single — avoids error when entitlements row doesn't exist yet
   const { data: current } = await supabaseAdmin
     .from('user_entitlements')
     .select('paid_features, defense_packs_remaining, total_lifetime_paid_ngn')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   const currentFeatures = Array.isArray(current?.paid_features) ? current.paid_features : [];
   const currentDefensePacks = typeof current?.defense_packs_remaining === 'number' ? current.defense_packs_remaining : 0;
@@ -102,13 +103,14 @@ async function grantEntitlement(userId, tier, amountKobo) {
   }
   if (tier === 'project_reset') features.add('project_reset');
 
+  // upsert so a missing row is created rather than silently skipped
   await supabaseAdmin
     .from('user_entitlements')
-    .update({
+    .upsert({
+      user_id: userId,
       paid_features: Array.from(features),
       defense_packs_remaining: defensePacks,
       total_lifetime_paid_ngn: currentTotal + Math.floor(amountKobo / 100),
       updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+    }, { onConflict: 'user_id' });
 }

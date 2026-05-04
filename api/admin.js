@@ -150,15 +150,26 @@ async function handleDashboard(req, res) {
     const weekAgoISO      = new Date(now - MS7).toISOString();
     const threeDaysAgoISO = new Date(now - MS3).toISOString();
 
-    const [authRes, paymentsRes, projectsRes] = await Promise.all([
+    // run_counts live in user_entitlements, not projects — fetch both
+    const [authRes, paymentsRes, projectsRes, entitlementsRes] = await Promise.all([
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
-      supabaseAdmin.from('projects').select('user_id, created_at, run_counts'),
+      supabaseAdmin.from('projects').select('user_id, created_at'),
+      supabaseAdmin.from('user_entitlements').select('user_id, run_counts'),
     ]);
 
-    const authUsers = authRes.data?.users   || [];
-    const payments  = paymentsRes.data      || [];
-    const projects  = projectsRes.data      || [];
+    const authUsers    = authRes.data?.users || [];
+    const payments     = paymentsRes.data    || [];
+    const projects     = projectsRes.data    || [];
+    const entitlements = entitlementsRes.data || [];
+
+    // build userId → run_counts map from entitlements
+    const runCountsByUser = {};
+    for (const ent of entitlements) {
+      if (ent.run_counts && typeof ent.run_counts === 'object') {
+        runCountsByUser[ent.user_id] = ent.run_counts;
+      }
+    }
 
     // ── Overview ──────────────────────────────────────────────────
     const totalUsers     = authUsers.length;
@@ -237,7 +248,7 @@ async function handleDashboard(req, res) {
     }
     const signupsChart = Object.entries(sigByDay).map(([date, count]) => ({ date, count }));
 
-    // ── Feature Usage ─────────────────────────────────────────────
+    // ── Feature Usage — read from user_entitlements.run_counts ────
     const FEATURE_KEYS = [
       'topic_validator', 'chapter_architect', 'methodology_advisor',
       'writing_planner', 'literature_map', 'abstract_generator',
@@ -245,11 +256,8 @@ async function handleDashboard(req, res) {
       'supervisor_meeting_prep',
     ];
     const featureTotals = Object.fromEntries(FEATURE_KEYS.map(k => [k, 0]));
-    for (const proj of projects) {
-      const rc = proj.run_counts;
-      if (rc && typeof rc === 'object') {
-        for (const k of FEATURE_KEYS) featureTotals[k] += (rc[k] || 0);
-      }
+    for (const rc of Object.values(runCountsByUser)) {
+      for (const k of FEATURE_KEYS) featureTotals[k] += (rc[k] || 0);
     }
     const featureUsage = FEATURE_KEYS
       .map(k => ({ feature: k, count: featureTotals[k] }))
@@ -261,12 +269,9 @@ async function handleDashboard(req, res) {
       'writing_planner', 'defense_simulator',
     ];
     const stepUsers = Object.fromEntries(FUNNEL_STEPS.map(s => [s, new Set()]));
-    for (const proj of projects) {
-      const rc = proj.run_counts;
-      if (rc && typeof rc === 'object') {
-        for (const s of FUNNEL_STEPS) {
-          if ((rc[s] || 0) > 0) stepUsers[s].add(proj.user_id);
-        }
+    for (const [userId, rc] of Object.entries(runCountsByUser)) {
+      for (const s of FUNNEL_STEPS) {
+        if ((rc[s] || 0) > 0) stepUsers[s].add(userId);
       }
     }
     const funnel = FUNNEL_STEPS.map((step, i) => {
@@ -285,21 +290,14 @@ async function handleDashboard(req, res) {
         (projCountByUser[u.id] || 0) > 0
       )
       .map(u => {
-        const stepsUsed = new Set();
-        for (const proj of projects.filter(p => p.user_id === u.id)) {
-          const rc = proj.run_counts;
-          if (rc && typeof rc === 'object') {
-            for (const k of FEATURE_KEYS) {
-              if ((rc[k] || 0) > 0) stepsUsed.add(k);
-            }
-          }
-        }
+        const rc = runCountsByUser[u.id] || {};
+        const stepsUsed = FEATURE_KEYS.filter(k => (rc[k] || 0) > 0);
         return {
           id:              u.id,
           email:           u.email || '',
           signup_date:     u.created_at,
           last_active:     u.last_sign_in_at || null,
-          steps_completed: stepsUsed.size,
+          steps_completed: stepsUsed.length,
         };
       });
 
@@ -326,6 +324,75 @@ async function handleDashboard(req, res) {
   }
 }
 
+// Shared admin JWT gate — returns the caller user or sends a 401/403 response.
+// Returns null when it has already sent a response (caller must return immediately).
+async function verifyAdmin(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) { res.status(401).json({ error: 'Unauthorized' }); return null; }
+  try {
+    const { data: { user: caller }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !caller) { res.status(401).json({ error: 'Unauthorized' }); return null; }
+    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+      res.status(403).json({ error: 'Forbidden' }); return null;
+    }
+    return caller;
+  } catch {
+    res.status(401).json({ error: 'Unauthorized' }); return null;
+  }
+}
+
+// action: "delete-user"
+// SQL required (run once):
+//   -- no extra migration needed; deletes cascade via FK if set, otherwise manual
+async function handleDeleteUser(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    await supabaseAdmin.from('project_steps').delete().eq('user_id', userId);
+    await supabaseAdmin.from('defense_sessions').delete().eq('user_id', userId);
+    await supabaseAdmin.from('projects').delete().eq('user_id', userId);
+    await supabaseAdmin.from('user_entitlements').delete().eq('user_id', userId);
+    await supabaseAdmin.from('users').delete().eq('id', userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/delete-user]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "ban-user"
+// SQL required (run once in Supabase SQL Editor):
+//   ALTER TABLE user_entitlements
+//   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
+async function handleBanUser(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('user_entitlements')
+      .upsert({
+        user_id: userId,
+        banned_until: '2099-01-01T00:00:00.000Z',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/ban-user]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -338,9 +405,11 @@ export default async function handler(req, res) {
 
   const action = req.query.action;
 
-  if (action === 'health')      return handleHealth(req, res);
-  if (action === 'alert-check') return handleAlertCheck(req, res);
-  if (action === 'dashboard')   return handleDashboard(req, res);
+  if (action === 'health')       return handleHealth(req, res);
+  if (action === 'alert-check')  return handleAlertCheck(req, res);
+  if (action === 'dashboard')    return handleDashboard(req, res);
+  if (action === 'delete-user')  return handleDeleteUser(req, res);
+  if (action === 'ban-user')     return handleBanUser(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }

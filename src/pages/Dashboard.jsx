@@ -373,16 +373,16 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
           Active Project
         </div>
         <div className="font-sans text-[0.74rem] font-semibold text-white mb-[3px] leading-[1.3]">
-          {STUDENT.university}
+          {STUDENT.university || '—'}
         </div>
         <div className="font-sans text-[0.68rem] text-slate-500 mb-1.5">
-          {STUDENT.department}
+          {STUDENT.department || '—'}
         </div>
         <div
           className="inline-block font-mono text-[0.58rem] text-slate-600 px-2 py-[2px] rounded-full"
           style={{ background: 'var(--badge-inactive-bg)' }}
         >
-          {STUDENT.level}
+          {STUDENT.level || '—'}
         </div>
       </div>
     </aside>
@@ -396,7 +396,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const { theme, toggleTheme } = useTheme()
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const firstName = STUDENT.name.split(' ')[0]
+  const firstName = STUDENT.name ? STUDENT.name.split(' ')[0] : 'there'
 
   const { features } = usePaidFeatures()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
@@ -454,7 +454,9 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           {greeting}, {firstName}
         </div>
         <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
-          {STUDENT.stepsCompleted} steps done — Step {STUDENT.currentStepId} is waiting.
+          {STUDENT.stepsCompleted > 0
+            ? `${STUDENT.stepsCompleted} step${STUDENT.stepsCompleted === 1 ? '' : 's'} done — Step ${STUDENT.currentStepId} is waiting.`
+            : 'Your research journey is ready to begin.'}
         </div>
       </div>
 
@@ -771,9 +773,9 @@ function DashStatCards({ STUDENT, STEPS }) {
         </div>
 
         {[
-          { label: 'University', value: STUDENT.university },
-          { label: 'Department', value: STUDENT.department },
-          { label: 'Academic Level', value: STUDENT.level },
+          { label: 'University', value: STUDENT.university || '—' },
+          { label: 'Department', value: STUDENT.department || '—' },
+          { label: 'Academic Level', value: STUDENT.level || '—' },
         ].map(({ label, value }) => (
           <div key={label}>
             <div className="font-sans text-[0.62rem] font-medium uppercase tracking-[0.07em] text-slate-600 mb-[3px]">
@@ -1434,17 +1436,17 @@ export default function Dashboard() {
   // FIX 4 — allComplete: all 6 steps must be done to unlock Defense/Report cards
   const allComplete = state.stepsCompleted.every(Boolean)
 
-  // FIX 1 + FIX 2 — derive name and initials from state.name
+  // FIX 1 + FIX 2 — derive name and initials from state.name (hydrated from Supabase users.full_name)
   const fullName = state.name || ''
   const initials = fullName
     ? fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'ST'
 
   const STUDENT = {
-    name:           fullName || 'Student',
+    name:           fullName,
     initials,
-    university:     state.university  || 'University',
-    department:     state.department  || 'Department',
+    university:     state.university  || '',
+    department:     state.department  || '',
     level:          state.level       || '',
     stepsCompleted: completedCount,
     totalSteps:     6,
@@ -1489,15 +1491,64 @@ export default function Dashboard() {
             backgroundSize: '28px 28px',
           }}
         >
-          <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
-          <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
-          <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} />
-          <DashQuickActions
-            STEPS={STEPS}
-            allComplete={allComplete}
-            showToastMessage={showToastMessage}
-            onDownloadReport={() => downloadProgressReport(state)}
-          />
+          {completedCount === 0 ? (
+            /* FIX 1 — New user welcome state */
+            <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-lg text-center"
+              >
+                <motion.div
+                  animate={{ y: [0, -9, 0] }}
+                  transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                  className="flex justify-center mb-7"
+                >
+                  <ShieldIcon size={72} color="#0066FF" />
+                </motion.div>
+
+                <h1 className="font-serif text-white mb-3" style={{ fontSize: '2rem', lineHeight: 1.2 }}>
+                  Welcome{STUDENT.name ? `, ${STUDENT.name.split(' ')[0]}` : ''}!
+                </h1>
+                <p className="font-sans text-slate-400 mb-8 leading-relaxed" style={{ fontSize: '0.92rem', maxWidth: '38ch', margin: '0 auto 32px' }}>
+                  Your research companion is ready. Start by validating your topic — it only takes a minute and stops you wasting weeks on an unresearchable idea.
+                </p>
+
+                <motion.button
+                  whileHover={{ y: -2, boxShadow: '0 0 28px rgba(22,163,74,0.45)' }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    sessionStorage.setItem('intentional_app_entry', 'true')
+                    navigate('/app')
+                  }}
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans font-semibold cursor-pointer transition-all duration-200"
+                  style={{ fontSize: '0.95rem' }}
+                >
+                  <PlusIcon /> Create New Project
+                </motion.button>
+
+                {(STUDENT.university || STUDENT.department) && (
+                  <p className="font-mono text-slate-600 mt-7" style={{ fontSize: '0.68rem' }}>
+                    {[STUDENT.university, STUDENT.department, STUDENT.level ? `Level ${STUDENT.level}` : ''].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </motion.div>
+            </div>
+          ) : (
+            /* Returning user — full dashboard */
+            <>
+              <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
+              <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
+              <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} />
+              <DashQuickActions
+                STEPS={STEPS}
+                allComplete={allComplete}
+                showToastMessage={showToastMessage}
+                onDownloadReport={() => downloadProgressReport(state)}
+              />
+            </>
+          )}
         </main>
       </div>
 

@@ -189,6 +189,7 @@ export default function AdminHealth() {
   const [sortKey, setSortKey] = useState('signup_date')
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage]       = useState(0)
+  const [actionState, setActionState] = useState({}) // { userId: 'pending' | 'banned' | 'deleted' | 'error' }
 
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
   const isAdmin    = !!adminEmail && user?.email === adminEmail
@@ -237,6 +238,43 @@ export default function AdminHealth() {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('desc') }
     setPage(0)
+  }
+
+  async function handleDeleteUser(userId, email) {
+    if (!window.confirm(`Permanently delete user ${email}? This cannot be undone.`)) return
+    setActionState(s => ({ ...s, [userId]: 'pending' }))
+    try {
+      const res = await fetch('/api/admin?action=delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setData(prev => ({ ...prev, users: prev.users.filter(u => u.id !== userId) }))
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+    } catch (err) {
+      setActionState(s => ({ ...s, [userId]: 'error' }))
+      window.alert('Delete failed: ' + err.message)
+    }
+  }
+
+  async function handleBanUser(userId, email) {
+    if (!window.confirm(`Ban user ${email}? They will be denied access until 2099.`)) return
+    setActionState(s => ({ ...s, [userId]: 'pending' }))
+    try {
+      const res = await fetch('/api/admin?action=ban-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setActionState(s => ({ ...s, [userId]: 'banned' }))
+    } catch (err) {
+      setActionState(s => ({ ...s, [userId]: 'error' }))
+      window.alert('Ban failed: ' + err.message)
+    }
   }
 
   // ── Guard states ────────────────────────────────────────────────
@@ -328,7 +366,7 @@ export default function AdminHealth() {
         />
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 780 }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 920 }}>
             <thead>
               <tr>
                 {[
@@ -344,24 +382,70 @@ export default function AdminHealth() {
                     {label}
                   </Th>
                 ))}
+                <th style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: 11, fontWeight: 600,
+                  color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  padding: '10px 12px', textAlign: 'left', background: SURFACE,
+                }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {pageRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ ...td, textAlign: 'center', color: MUTED }}>No users found.</td>
+                  <td colSpan={8} style={{ ...td, textAlign: 'center', color: MUTED }}>No users found.</td>
                 </tr>
-              ) : pageRows.map((u, i) => (
-                <tr key={u.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                  <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email || '—'}</td>
-                  <td style={td}>{fmtDate(u.signup_date)}</td>
-                  <td style={td}>{fmtDate(u.last_active)}</td>
-                  <td style={td}><PlanBadge plan={u.plan} /></td>
-                  <td style={{ ...tdMono, textAlign: 'center' }}>{u.project_count}</td>
-                  <td style={td}><StatusBadge status={u.status} /></td>
-                  <td style={tdMono}>{u.paid_amount > 0 ? `₦${u.paid_amount.toLocaleString()}` : '—'}</td>
-                </tr>
-              ))}
+              ) : pageRows.map((u, i) => {
+                const aState = actionState[u.id]
+                const isPending = aState === 'pending'
+                return (
+                  <tr key={u.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                    <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email || '—'}</td>
+                    <td style={td}>{fmtDate(u.signup_date)}</td>
+                    <td style={td}>{fmtDate(u.last_active)}</td>
+                    <td style={td}><PlanBadge plan={u.plan} /></td>
+                    <td style={{ ...tdMono, textAlign: 'center' }}>{u.project_count}</td>
+                    <td style={td}><StatusBadge status={u.status} /></td>
+                    <td style={tdMono}>{u.paid_amount > 0 ? `₦${u.paid_amount.toLocaleString()}` : '—'}</td>
+                    <td style={{ ...td, padding: '6px 12px' }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          disabled={isPending || aState === 'banned'}
+                          onClick={() => handleBanUser(u.id, u.email)}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: aState === 'banned' ? MUTED : AMBER,
+                            background: 'transparent',
+                            border: `1px solid ${aState === 'banned' ? BORDER : AMBER + '55'}`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: isPending || aState === 'banned' ? 'not-allowed' : 'pointer',
+                            opacity: isPending ? 0.5 : 1,
+                          }}
+                        >
+                          {aState === 'banned' ? 'Banned' : 'Ban'}
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => handleDeleteUser(u.id, u.email)}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: RED,
+                            background: 'transparent',
+                            border: `1px solid ${RED}55`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: isPending ? 'not-allowed' : 'pointer',
+                            opacity: isPending ? 0.5 : 1,
+                          }}
+                        >
+                          {aState === 'error' ? 'Retry' : 'Delete'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -72,6 +72,7 @@ export async function loadUserState(): Promise<UserState> {
     supabase
       .from('projects')
       .select('*')
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -87,6 +88,7 @@ export async function loadUserState(): Promise<UserState> {
       .from('project_steps')
       .select('*')
       .eq('project_id', project.id)
+      .eq('user_id', user.id)
     steps = (data as ProjectStep[]) ?? []
   }
 

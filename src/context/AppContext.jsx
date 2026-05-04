@@ -5,6 +5,7 @@ const AppContext = createContext(null)
 
 const DEFAULT_STATE = {
   // Onboarding
+  name:              '',
   university:        '',
   faculty:           '',
   department:        '',
@@ -84,7 +85,7 @@ export function AppProvider({ children }) {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('faculty, department, level')
+        .select('full_name, faculty, department, level')
         .eq('id', user.id)
         .single()
 
@@ -98,6 +99,7 @@ export function AppProvider({ children }) {
 
       setState(prev => ({
         ...prev,
+        name:       profile.full_name  ?? prev.name,
         faculty:    profile.faculty    ?? prev.faculty,
         department: profile.department ?? prev.department,
         level:      profile.level      ?? prev.level,
