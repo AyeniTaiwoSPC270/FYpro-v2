@@ -95,9 +95,10 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const [showMigrationModal, setShowMigrationModal] = useState(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const stateRef = useRef(state)
-  // True after the first load() completes — used to skip the initial SIGNED_IN
-  // emission that Supabase fires synchronously when subscribing to onAuthStateChange.
   const initializedRef = useRef(false)
+  // Tracks the user ID that was loaded. SIGNED_IN events with the same ID are
+  // token-refresh noise (tab return); a different/new ID is a genuine new session.
+  const loadedUserIdRef = useRef<string | null>(null)
 
   useEffect(() => { stateRef.current = state }, [state])
 
@@ -131,7 +132,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     async function load() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setIsLoading(false); return }
+        if (!user) { loadedUserIdRef.current = null; setIsLoading(false); return }
+        loadedUserIdRef.current = user.id
 
         const userState = await loadUserState()
         if (cancelled) return
@@ -193,13 +195,27 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
     load()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // Skip the SIGNED_IN that Supabase emits immediately on subscription setup
-      // (it fires even before our async load() resolves). We only want to react
-      // to genuine sign-in / sign-out transitions after initialization.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Skip events that fire during the initial load (e.g. Supabase emits SIGNED_IN
+      // synchronously on subscription setup before our async load() finishes).
       if (!initializedRef.current) return
 
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT') {
+        loadedUserIdRef.current = null
+        setIsLoading(true)
+        setProjectId(null)
+        load()
+        return
+      }
+
+      if (event === 'SIGNED_IN') {
+        const incomingId = session?.user?.id ?? null
+        if (incomingId === loadedUserIdRef.current) {
+          // Same user — this is a token refresh firing SIGNED_IN on tab return.
+          // Do nothing: state is already loaded, no skeleton needed.
+          return
+        }
+        // Different (or previously null) user ID — genuine new session after logout.
         setIsLoading(true)
         setProjectId(null)
         load()
