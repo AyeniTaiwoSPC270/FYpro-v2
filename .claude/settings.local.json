@@ -38,7 +38,13 @@
       "Bash(ls .vercel/)",
       "Bash(git -C \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" status)",
       "Bash(git -C \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\" diff)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\_lib\\\\papers.js\")",
+      "Bash(Measure-Object -Line)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\_lib\\\\papers.js\"\\).Count; \\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\topic-validator.js\"\\).Count)",
+      "Bash(node --input-type=module --no-warnings)",
+      "Bash(Get-ChildItem *)"
     ]
   }
 }

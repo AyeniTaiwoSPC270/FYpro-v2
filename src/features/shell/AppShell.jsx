@@ -261,6 +261,18 @@ export default function AppShell() {
           </ul>
         </nav>
 
+        {/* Supervisor Meeting Prep — available after Writing Planner (step 3) is done */}
+        {state.stepsCompleted[3] && (
+          <div className="sidebar__bonus" style={{ marginTop: 8 }}>
+            <button
+              className="sidebar__bonus-btn"
+              onClick={() => navigate('/supervisor-prep')}
+            >
+              📋 Meeting Prep
+            </button>
+          </div>
+        )}
+
         {/* Bonus feature — Supervisor Email — paid users only, after all 6 steps complete */}
         {state.stepsCompleted.every(Boolean) && (features.includes('student_pack') || features.includes('defense_pack')) && (
           <div id="sidebar-bonus" className="sidebar__bonus" style={{ marginTop: 8 }}>

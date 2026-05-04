@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Fragment } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useApp } from '../context/AppContext'
@@ -792,7 +792,7 @@ function DashStatCards({ STUDENT, STEPS }) {
 
 function DashProgressJourney({ STEPS, STUDENT }) {
   const navigate = useNavigate()
-  const { navigateStep } = useApp()
+  const { navigateStep, state } = useApp()
 
   // FIX 6 — scroll reveal: section + each step card individually
   const [sectionRef, sectionVisible] = useReveal()
@@ -846,141 +846,190 @@ function DashProgressJourney({ STEPS, STUDENT }) {
           const [stepRef, stepVisible] = stepReveals[i] || [null, true]
 
           return (
-            <div
-              key={step.id}
-              ref={stepRef}
-              style={revealStyle(stepVisible)}
-              className="flex gap-5"
-            >
-              {/* Timeline column */}
-              <div className="flex flex-col items-center w-11 flex-shrink-0">
-                {/* FIX 7 — Badge: locked steps use bg-slate-800 border-slate-700 */}
-                <motion.div
-                  whileHover={!isLocked ? { scale: 1.14 } : {}}
-                  transition={{ duration: 0.2 }}
-                  className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 relative z-10 font-mono text-[0.75rem] font-bold transition-all duration-300"
-                  style={{
-                    background: isCompleted
-                      ? '#16A34A'
-                      : isActive
-                      ? '#0066FF'
-                      : 'var(--border-color)',
-                    boxShadow: isActive
-                      ? '0 0 22px rgba(0,102,255,0.32)'
-                      : isCompleted
-                      ? '0 0 22px rgba(22,163,74,0.45)'
-                      : 'none',
-                    border: isActive
-                      ? '2px solid rgba(0,102,255,0.35)'
-                      : isLocked
-                      ? '1px solid var(--border-color)'
-                      : 'none',
-                    color:
-                      isCompleted || isActive
-                        ? '#fff'
-                        : 'var(--badge-locked-text)',
-                  }}
-                >
-                  {isCompleted ? (
-                    <CheckIcon size={15} />
-                  ) : isLocked ? (
-                    <LockIcon size={12} />
-                  ) : (
-                    step.id
-                  )}
-                </motion.div>
-
-                {/* Connector */}
-                {!isLast && (
+            <Fragment key={step.id}>
+              <div
+                ref={stepRef}
+                style={revealStyle(stepVisible)}
+                className="flex gap-5"
+              >
+                {/* Timeline column */}
+                <div className="flex flex-col items-center w-11 flex-shrink-0">
+                  {/* FIX 7 — Badge: locked steps use bg-slate-800 border-slate-700 */}
                   <motion.div
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{
-                      delay: 0.55 + i * 0.12,
-                      duration: 0.45,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                    className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]"
+                    whileHover={!isLocked ? { scale: 1.14 } : {}}
+                    transition={{ duration: 0.2 }}
+                    className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 relative z-10 font-mono text-[0.75rem] font-bold transition-all duration-300"
                     style={{
                       background: isCompleted
-                        ? 'linear-gradient(to bottom, #16A34A, rgba(22,163,74,0.25))'
-                        : 'var(--border-subtle)',
-                      transformOrigin: 'top',
+                        ? '#16A34A'
+                        : isActive
+                        ? '#0066FF'
+                        : 'var(--border-color)',
+                      boxShadow: isActive
+                        ? '0 0 22px rgba(0,102,255,0.32)'
+                        : isCompleted
+                        ? '0 0 22px rgba(22,163,74,0.45)'
+                        : 'none',
+                      border: isActive
+                        ? '2px solid rgba(0,102,255,0.35)'
+                        : isLocked
+                        ? '1px solid var(--border-color)'
+                        : 'none',
+                      color:
+                        isCompleted || isActive
+                          ? '#fff'
+                          : 'var(--badge-locked-text)',
                     }}
-                  />
-                )}
-              </div>
-
-              {/* Content */}
-              <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-[26px]'}`}>
-                {/* FIX 7 — Name + lock icon next to name for locked steps */}
-                <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
-                  <span
-                    className={`font-sans text-[0.92rem] font-semibold ${
-                      isLocked ? 'text-slate-600' : 'text-white'
-                    }`}
                   >
-                    {step.name}
-                  </span>
+                    {isCompleted ? (
+                      <CheckIcon size={15} />
+                    ) : isLocked ? (
+                      <LockIcon size={12} />
+                    ) : (
+                      step.id
+                    )}
+                  </motion.div>
 
-                  {/* FIX 7 — Lock icon visible next to step name when locked */}
-                  {isLocked && (
-                    <span className="text-slate-700">
-                      <LockIcon size={13} />
-                    </span>
+                  {/* Connector */}
+                  {!isLast && (
+                    <motion.div
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{
+                        delay: 0.55 + i * 0.12,
+                        duration: 0.45,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]"
+                      style={{
+                        background: isCompleted
+                          ? 'linear-gradient(to bottom, #16A34A, rgba(22,163,74,0.25))'
+                          : 'var(--border-subtle)',
+                        transformOrigin: 'top',
+                      }}
+                    />
                   )}
-
-                  {isActive ? (
-                    <motion.span
-                      animate={{ opacity: [1, 0.55, 1] }}
-                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                      className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-blue-400"
-                      style={{ background: 'rgba(0,102,255,0.12)' }}
-                    >
-                      In Progress
-                    </motion.span>
-                  ) : !isLocked ? (
-                    <span
-                      className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400"
-                      style={{ background: 'rgba(22,163,74,0.12)' }}
-                    >
-                      Completed
-                    </span>
-                  ) : null}
                 </div>
 
-                {/* FIX 7 — Description: text-slate-700 for locked, text-slate-500 otherwise */}
-                <p
-                  className={`font-sans text-[0.77rem] leading-[1.62] max-w-[58ch] ${
-                    isLocked ? 'text-slate-700 mb-0' : 'text-slate-500 mb-[14px]'
-                  }`}
-                >
-                  {step.desc}
-                </p>
+                {/* Content */}
+                <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-[26px]'}`}>
+                  {/* FIX 7 — Name + lock icon next to name for locked steps */}
+                  <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
+                    <span
+                      className={`font-sans text-[0.92rem] font-semibold ${
+                        isLocked ? 'text-slate-600' : 'text-white'
+                      }`}
+                    >
+                      {step.name}
+                    </span>
 
-                {/* Action button — only for non-locked steps */}
-                {!isLocked && (
-                  <motion.button
-                    whileHover={{
-                      y: -1,
-                      boxShadow: isActive
-                        ? '0 0 18px rgba(22,163,74,0.32)'
-                        : '0 4px 14px rgba(0,0,0,0.35)',
-                    }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(step.id - 1); navigate('/app') }}
-                    className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
-                      isActive
-                        ? 'bg-green-600 hover:bg-green-500 text-white border-0'
-                        : 'bg-transparent text-slate-400 hover:text-blue-400 border border-slate-700 hover:border-blue-500/60'
+                    {/* FIX 7 — Lock icon visible next to step name when locked */}
+                    {isLocked && (
+                      <span className="text-slate-700">
+                        <LockIcon size={13} />
+                      </span>
+                    )}
+
+                    {isActive ? (
+                      <motion.span
+                        animate={{ opacity: [1, 0.55, 1] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                        className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-blue-400"
+                        style={{ background: 'rgba(0,102,255,0.12)' }}
+                      >
+                        In Progress
+                      </motion.span>
+                    ) : !isLocked ? (
+                      <span
+                        className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400"
+                        style={{ background: 'rgba(22,163,74,0.12)' }}
+                      >
+                        Completed
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* FIX 7 — Description: text-slate-700 for locked, text-slate-500 otherwise */}
+                  <p
+                    className={`font-sans text-[0.77rem] leading-[1.62] max-w-[58ch] ${
+                      isLocked ? 'text-slate-700 mb-0' : 'text-slate-500 mb-[14px]'
                     }`}
                   >
-                    {isActive ? 'Continue' : 'Review'}
-                    <ArrowRightIcon size={12} />
-                  </motion.button>
-                )}
+                    {step.desc}
+                  </p>
+
+                  {/* Action button — only for non-locked steps */}
+                  {!isLocked && (
+                    <motion.button
+                      whileHover={{
+                        y: -1,
+                        boxShadow: isActive
+                          ? '0 0 18px rgba(22,163,74,0.32)'
+                          : '0 4px 14px rgba(0,0,0,0.35)',
+                      }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(step.id - 1); navigate('/app') }}
+                      className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
+                        isActive
+                          ? 'bg-green-600 hover:bg-green-500 text-white border-0'
+                          : 'bg-transparent text-slate-400 hover:text-blue-400 border border-slate-700 hover:border-blue-500/60'
+                      }`}
+                    >
+                      {isActive ? 'Continue' : 'Review'}
+                      <ArrowRightIcon size={12} />
+                    </motion.button>
+                  )}
+                </div>
               </div>
-            </div>
+
+              {/* Supervisor Meeting Prep bonus card — shown after Writing Planner completes */}
+              {i === 3 && state.stepsCompleted[3] && (
+                <div className="flex gap-5">
+                  <div className="flex flex-col items-center w-11 flex-shrink-0">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 font-mono text-[0.8rem] font-bold"
+                      style={{
+                        background: 'rgba(245,158,11,0.1)',
+                        border: '1.5px solid rgba(245,158,11,0.3)',
+                        color: '#F59E0B',
+                      }}
+                    >
+                      +
+                    </div>
+                    <div
+                      className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]"
+                      style={{ background: 'rgba(245,158,11,0.15)' }}
+                    />
+                  </div>
+                  <div className="flex-1 pb-[26px]">
+                    <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
+                      <span className="font-sans text-[0.92rem] font-semibold text-white">
+                        Supervisor Meeting Prep
+                      </span>
+                      <span
+                        className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full"
+                        style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+                      >
+                        Bonus Tool
+                      </span>
+                    </div>
+                    <p className="font-sans text-[0.77rem] leading-[1.62] text-slate-500 mb-[14px] max-w-[58ch]">
+                      Generate 8 specific questions to ask your supervisor at your next meeting — tailored to your project stage and blockers.
+                    </p>
+                    <motion.button
+                      whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => navigate('/supervisor-prep')}
+                      className="inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 bg-transparent border"
+                      style={{ color: '#F59E0B', borderColor: 'rgba(245,158,11,0.35)' }}
+                    >
+                      Prep for Meeting
+                      <ArrowRightIcon size={12} />
+                    </motion.button>
+                  </div>
+                </div>
+              )}
+            </Fragment>
           )
         })}
       </div>

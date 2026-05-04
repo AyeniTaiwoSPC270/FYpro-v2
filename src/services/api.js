@@ -484,6 +484,35 @@ export async function panelSummary(system, apiMessages) {
   return callClaudeAuth(DEFENSE_ENDPOINT, system, messages, 2000);
 }
 
+// ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────
+export async function prepareSupervisorMeeting(stage, lastFeedback, stuckOn) {
+  const res = await fetch('/api/supervisor-prep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage, lastFeedback: lastFeedback || '', stuckOn: stuckOn || '' }),
+  });
+
+  if (res.status === 429) {
+    const err = new Error('Rate limited');
+    err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 504) {
+    const err = new Error('Gateway timeout');
+    err.code = 'GATEWAY_TIMEOUT';
+    throw err;
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const err  = new Error(body.error || `HTTP ${res.status}`);
+    err.code   = 'HTTP_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  return res.json(); // { questions: string[] }
+}
+
 // ── Bonus: Supervisor Email ──────────────────────────────────────────────────
 export async function generateEmail(studentCtx, validatedTopic, chapterStructure, methodology) {
   return callClaude(

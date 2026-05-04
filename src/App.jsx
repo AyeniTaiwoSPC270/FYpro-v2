@@ -22,6 +22,7 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
 import AppShell from './features/shell/AppShell'
+import SupervisorPrep from './features/supervisorPrep/SupervisorPrep'
 import AdminHealth from './pages/admin/Health'
 
 export default function App() {
@@ -51,6 +52,9 @@ export default function App() {
 
           {/* Main app */}
           <Route path="/app" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
+
+          {/* Supervisor Meeting Prep */}
+          <Route path="/supervisor-prep" element={<ProtectedRoute><SupervisorPrep /></ProtectedRoute>} />
 
           {/* Dashboard */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
