@@ -156,19 +156,6 @@ export default function AppShell() {
 
   const CurrentStep = STEP_COMPONENTS[state.currentStep] ?? STEP_COMPONENTS[0]
 
-  // Show a minimal loading veil while Supabase state hydrates (first paint only)
-  if (isLoading) {
-    return (
-      <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="skeleton-loader" style={{ width: 320 }}>
-          <div className="skeleton-bar" style={{ width: '100%' }} />
-          <div className="skeleton-bar" style={{ width: '75%' }} />
-          <div className="skeleton-bar" style={{ width: '55%' }} />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }}>
 

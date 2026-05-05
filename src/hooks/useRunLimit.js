@@ -96,12 +96,15 @@ async function syncRunCountsToSupabase(updatedCounts) {
 
 export async function checkAndRecord(stepKey, features) {
   const limit = resolveLimit(stepKey, features)
-  if (limit === null) return true
 
   const counts = getRunCounts()
   const current = counts[stepKey] ?? 0
-  if (current >= limit) return false
 
+  // Gate: deny if at limit (null = unlimited, always allowed)
+  if (limit !== null && current >= limit) return false
+
+  // Always record the run so admin analytics and cross-device restore work
+  // regardless of whether this step has a finite limit or is unlimited.
   counts[stepKey] = current + 1
   localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
   window.dispatchEvent(new Event('fypro_run_counts_updated'))
@@ -114,6 +117,7 @@ export function recordStepRun(stepKey) {
   counts[stepKey] = (counts[stepKey] ?? 0) + 1
   localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
   window.dispatchEvent(new Event('fypro_run_counts_updated'))
+  syncRunCountsToSupabase(counts).catch(() => {})
 }
 
 export function useRunLimit(features) {

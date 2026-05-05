@@ -352,11 +352,19 @@ async function handleDeleteUser(req, res) {
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    // Delete child records first (FK order), then parent rows, then auth user.
     await supabaseAdmin.from('project_steps').delete().eq('user_id', userId);
     await supabaseAdmin.from('defense_sessions').delete().eq('user_id', userId);
+    // payments references projects — delete before projects
+    try {
+      await supabaseAdmin.from('payments').delete().eq('user_id', userId);
+    } catch {
+      // payments table may not exist in all environments — non-fatal
+    }
     await supabaseAdmin.from('projects').delete().eq('user_id', userId);
     await supabaseAdmin.from('user_entitlements').delete().eq('user_id', userId);
     await supabaseAdmin.from('users').delete().eq('id', userId);
+    // deleteUser removes the auth record and all user_metadata with it.
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
     return res.status(200).json({ ok: true });

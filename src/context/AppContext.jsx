@@ -77,7 +77,9 @@ export function AppProvider({ children }) {
     }
   }, [state])
 
-  // Hydrate faculty/department/level from Supabase on mount — falls back to localStorage values if null
+  // Hydrate faculty/department/level from Supabase on mount.
+  // Checks user_metadata.onboarding_completed FIRST (works on new devices / incognito)
+  // then falls back to checking profile columns.
   useEffect(() => {
     async function hydrateFromSupabase() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -91,7 +93,8 @@ export function AppProvider({ children }) {
 
       if (!profile) return
 
-      if (profile.faculty && profile.department) {
+      const metaOnboarded = user.user_metadata?.onboarding_completed === true
+      if (metaOnboarded || (profile.faculty && profile.department)) {
         localStorage.setItem('isOnboarded', 'true')
       } else {
         localStorage.removeItem('isOnboarded')
