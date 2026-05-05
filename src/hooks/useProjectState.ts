@@ -156,18 +156,19 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           subscribeToProject(userState.project.id)
         }
 
-        if (userState.steps.length > 0) {
-          const completed = [false, false, false, false, false, false]
-          for (const step of userState.steps) {
-            const key = STEP_TO_STATE[step.step_type]
-            if (key) hydration[key] = step.result_json
-            const idx = STEP_TO_IDX[step.step_type]
-            if (idx !== undefined) completed[idx] = true
-          }
-          hydration.stepsCompleted = completed
-          const last = completed.lastIndexOf(true)
-          if (last !== -1) hydration.currentStep = Math.min(last + 1, 5)
+        // Always derive stepsCompleted from Supabase for authenticated users —
+        // prevents stale localStorage values bleeding through on refresh.
+        // Non-sequential completion (e.g. skipping Project Reviewer) is valid.
+        const completed = [false, false, false, false, false, false]
+        for (const step of userState.steps) {
+          const key = STEP_TO_STATE[step.step_type]
+          if (key) hydration[key] = step.result_json
+          const idx = STEP_TO_IDX[step.step_type]
+          if (idx !== undefined) completed[idx] = true
         }
+        hydration.stepsCompleted = completed
+        const last = completed.lastIndexOf(true)
+        hydration.currentStep = last !== -1 ? Math.min(last + 1, 5) : 0
 
         if (Object.keys(hydration).length > 0) set(hydration)
 

@@ -58,6 +58,7 @@ function StatusBadge({ status }) {
     inactive:   { color: AMBER, label: 'Inactive' },
     churned:    { color: RED,   label: 'Churned' },
     never_used: { color: null,  label: 'Never used' },
+    banned:     { color: RED,   label: 'Banned' },
   }
   const { color, label } = map[status] || map.never_used
   return (
@@ -271,6 +272,11 @@ export default function AdminHealth() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setActionState(s => ({ ...s, [userId]: 'banned' }))
+      // Update local user row so StatusBadge shows "Banned" immediately
+      setData(prev => ({
+        ...prev,
+        users: prev.users.map(u => u.id === userId ? { ...u, status: 'banned' } : u),
+      }))
     } catch (err) {
       setActionState(s => ({ ...s, [userId]: 'error' }))
       window.alert('Ban failed: ' + err.message)

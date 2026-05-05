@@ -155,7 +155,7 @@ async function handleDashboard(req, res) {
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
-      supabaseAdmin.from('user_entitlements').select('user_id, run_counts'),
+      supabaseAdmin.from('user_entitlements').select('user_id, run_counts').not('run_counts', 'is', null),
     ]);
 
     const authUsers    = authRes.data?.users || [];

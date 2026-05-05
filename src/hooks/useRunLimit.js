@@ -84,10 +84,13 @@ export function resolveLimit(stepKey, features) {
 async function syncRunCountsToSupabase(updatedCounts) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user?.id) return
+  // upsert so free users without an existing user_entitlements row still persist counts
   const { error } = await supabase
     .from('user_entitlements')
-    .update({ run_counts: updatedCounts })
-    .eq('user_id', session.user.id)
+    .upsert(
+      { user_id: session.user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    )
   console.log('Supabase run_counts write:', error ? `ERROR: ${error.message}` : 'OK', updatedCounts)
 }
 
