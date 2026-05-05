@@ -1,9 +1,11 @@
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Missing env var: PAYSTACK_SECRET_KEY');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const PLAN_DISPLAY_NAMES = {
   student_pack:  'Student Pack',
@@ -12,20 +14,10 @@ const PLAN_DISPLAY_NAMES = {
 };
 
 async function sendReceiptEmail(toEmail, plan, amount, reference) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD
-    }
-  });
-
   const planDisplay = PLAN_DISPLAY_NAMES[plan] || plan;
 
-  await transporter.sendMail({
-    from: '"FYPro" <team.fypro@gmail.com>',
+  await resend.emails.send({
+    from: 'FYPro <hello@fypro.com.ng>',
     to: toEmail,
     subject: `Your FYPro receipt — ${planDisplay}`,
     html: `
