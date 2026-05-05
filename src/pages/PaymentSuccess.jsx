@@ -371,7 +371,7 @@ export default function PaymentSuccess() {
               }}
             >
               Need help? Contact us at&nbsp;
-              <span style={{ color: '#475569' }}>support@fypro.app</span>
+              <span style={{ color: '#475569' }}>hello@fypro.com.ng</span>
             </motion.p>
           </motion.div>
         </motion.div>

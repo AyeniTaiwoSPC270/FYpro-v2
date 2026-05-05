@@ -507,15 +507,17 @@ export default function ChapterArchitect() {
         </div>
 
         {/* Loading section */}
-        <div id="ca-loading-section" className={`ca-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}>
-          <div className="skeleton-loader">
-            <div className="skeleton-bar" style={{ width: '100%' }} />
-            <div className="skeleton-bar" style={{ width: '75%' }} />
-            <div className="skeleton-bar" style={{ width: '90%' }} />
-            <div className="skeleton-bar" style={{ width: '60%' }} />
+        {section === 'loading' && hasSubmitted && (
+          <div id="ca-loading-section" className="ca-loading-section tv-section--visible">
+            <div className="skeleton-loader">
+              <div className="skeleton-bar" style={{ width: '100%' }} />
+              <div className="skeleton-bar" style={{ width: '75%' }} />
+              <div className="skeleton-bar" style={{ width: '90%' }} />
+              <div className="skeleton-bar" style={{ width: '60%' }} />
+            </div>
+            <p className="tv-loading-text">Mapping your chapters…</p>
           </div>
-          <p className="tv-loading-text">Mapping your chapters…</p>
-        </div>
+        )}
 
         {/* Result section */}
         <div id="ca-result-section" className={`ca-result-section ${section === 'result' ? 'tv-section--visible' : 'tv-section--hidden'}`}>

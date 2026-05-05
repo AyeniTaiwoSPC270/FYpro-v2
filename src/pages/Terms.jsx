@@ -189,7 +189,7 @@ const SECTIONS = [
   {
     heading: '5. Payments and Refunds',
     paras: [
-      'All payments are processed securely by Paystack. Prices are displayed in Nigerian Naira (₦). All purchases are per-project and non-recurring. We offer a 7-day refund policy — if FYPro does not help you make meaningful progress within 7 days of payment, contact us at support@fypro.app for a full refund.',
+      'All payments are processed securely by Paystack. Prices are displayed in Nigerian Naira (₦). All purchases are per-project and non-recurring. We offer a 7-day refund policy — if FYPro does not help you make meaningful progress within 7 days of payment, contact us at hello@fypro.com.ng for a full refund.',
     ],
   },
   {
@@ -201,29 +201,35 @@ const SECTIONS = [
   {
     heading: '7. Intellectual Property',
     paras: [
-      'FYPro and its original content are owned by Taiwo Ayeni. The research content you create using FYPro belongs to you. You grant FYPro a limited licence to process your content solely to provide the service.',
+      'FYPro and its content, features, and functionality are owned by Taiwo Ayeni and are protected by Nigerian and international copyright laws. You may not copy, reproduce, or distribute any part of FYPro without written permission.',
     ],
   },
   {
     heading: '8. Limitation of Liability',
     paras: [
-      'FYPro is provided as-is. We are not liable for any academic outcomes, examination results, or decisions made based on FYPro\'s guidance. Use FYPro as a supplement to, not a replacement for, your own academic judgment and your supervisor\'s guidance.',
+      'FYPro is provided as-is without warranties of any kind. We are not liable for any academic outcomes, supervisor decisions, or examination results. FYPro is a thinking partner — final academic responsibility remains with you.',
     ],
   },
   {
-    heading: '9. Termination',
+    heading: '9. Changes to Terms',
+    paras: [
+      'We may update these terms from time to time. We will notify you by email if changes are significant. Continued use of FYPro after changes constitutes acceptance of the updated terms.',
+    ],
+  },
+  {
+    heading: '10. Termination',
     paras: [
       'We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time from your profile settings.',
     ],
   },
   {
-    heading: '10. Governing Law',
+    heading: '11. Governing Law',
     paras: [
       'These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes shall be subject to the jurisdiction of Nigerian courts.',
     ],
   },
   {
-    heading: '11. Contact',
+    heading: '12. Contact',
     paras: [
       'For questions about these terms: legal@fypro.app',
     ],

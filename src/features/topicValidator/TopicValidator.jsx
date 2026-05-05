@@ -217,15 +217,17 @@ export default function TopicValidator() {
       </div>
 
       {/* ── Loading section ─────────────────────────────────────────────────── */}
-      <div id="tv-loading-section" className={`tv-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}>
-        <div className="skeleton-loader">
-          <div className="skeleton-bar" style={{ width: '100%' }} />
-          <div className="skeleton-bar" style={{ width: '75%' }} />
-          <div className="skeleton-bar" style={{ width: '90%' }} />
-          <div className="skeleton-bar" style={{ width: '60%' }} />
+      {section === 'loading' && hasSubmitted && (
+        <div id="tv-loading-section" className="tv-loading-section tv-section--visible">
+          <div className="skeleton-loader">
+            <div className="skeleton-bar" style={{ width: '100%' }} />
+            <div className="skeleton-bar" style={{ width: '75%' }} />
+            <div className="skeleton-bar" style={{ width: '90%' }} />
+            <div className="skeleton-bar" style={{ width: '60%' }} />
+          </div>
+          <p className="tv-loading-text">Analysing your topic…</p>
         </div>
-        <p className="tv-loading-text">Analysing your topic…</p>
-      </div>
+      )}
 
       {/* ── Result section ──────────────────────────────────────────────────── */}
       <div id="tv-result-section" className={`tv-result-section ${section === 'result' ? 'tv-section--visible' : 'tv-section--hidden'}`}>

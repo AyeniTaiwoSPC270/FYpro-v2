@@ -863,19 +863,18 @@ export default function DefensePrep() {
         </div>
 
         {/* Loading section */}
-        <div
-          id="dp-loading-section"
-          className={`dp-loading-section ${section === 'loading' && hasSubmitted ? 'dp-section--visible' : 'dp-section--hidden'}`}
-        >
-          <div className="skeleton-loader">
-            <div className="skeleton-bar" style={{ width: '100%' }} />
-            <div className="skeleton-bar" style={{ width: '75%' }} />
-            <div className="skeleton-bar" style={{ width: '90%' }} />
-            <div className="skeleton-bar" style={{ width: '60%' }} />
+        {section === 'loading' && hasSubmitted && (
+          <div id="dp-loading-section" className="dp-loading-section dp-section--visible">
+            <div className="skeleton-loader">
+              <div className="skeleton-bar" style={{ width: '100%' }} />
+              <div className="skeleton-bar" style={{ width: '75%' }} />
+              <div className="skeleton-bar" style={{ width: '90%' }} />
+              <div className="skeleton-bar" style={{ width: '60%' }} />
+            </div>
+            <p className="dp-step-label">Step 6: Defence Prep</p>
+            <p className="dp-scan-subtext">Scanning your project for vulnerabilities…</p>
           </div>
-          <p className="dp-step-label">Step 6: Defence Prep</p>
-          <p className="dp-scan-subtext">Scanning your project for vulnerabilities…</p>
-        </div>
+        )}
 
         {/* Flags section */}
         <div

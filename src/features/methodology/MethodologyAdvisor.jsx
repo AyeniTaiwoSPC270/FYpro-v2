@@ -258,18 +258,17 @@ export default function MethodologyAdvisor() {
         </div>
 
         {/* Loading section */}
-        <div
-          id="ma-loading-section"
-          className={`ma-loading-section ${maSection === 'loading' && maHasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
-        >
-          <div className="skeleton-loader">
-            <div className="skeleton-bar" style={{ width: '100%' }} />
-            <div className="skeleton-bar" style={{ width: '75%' }} />
-            <div className="skeleton-bar" style={{ width: '90%' }} />
-            <div className="skeleton-bar" style={{ width: '60%' }} />
+        {maSection === 'loading' && maHasSubmitted && (
+          <div id="ma-loading-section" className="ma-loading-section tv-section--visible">
+            <div className="skeleton-loader">
+              <div className="skeleton-bar" style={{ width: '100%' }} />
+              <div className="skeleton-bar" style={{ width: '75%' }} />
+              <div className="skeleton-bar" style={{ width: '90%' }} />
+              <div className="skeleton-bar" style={{ width: '60%' }} />
+            </div>
+            <p className="tv-loading-text">Weighing your methodology options…</p>
           </div>
-          <p className="tv-loading-text">Weighing your methodology options…</p>
-        </div>
+        )}
 
         {/* Result section */}
         <div
@@ -438,18 +437,17 @@ export default function MethodologyAdvisor() {
           </div>
 
           {/* DI Loading section */}
-          <div
-            id="di-loading-section"
-            className={`di-loading-section ${diSection === 'loading' && diHasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
-          >
-            <div className="skeleton-loader">
-              <div className="skeleton-bar" style={{ width: '100%' }} />
-              <div className="skeleton-bar" style={{ width: '75%' }} />
-              <div className="skeleton-bar" style={{ width: '90%' }} />
-              <div className="skeleton-bar" style={{ width: '60%' }} />
+          {diSection === 'loading' && diHasSubmitted && (
+            <div id="di-loading-section" className="di-loading-section tv-section--visible">
+              <div className="skeleton-loader">
+                <div className="skeleton-bar" style={{ width: '100%' }} />
+                <div className="skeleton-bar" style={{ width: '75%' }} />
+                <div className="skeleton-bar" style={{ width: '90%' }} />
+                <div className="skeleton-bar" style={{ width: '60%' }} />
+              </div>
+              <p className="tv-loading-text">Drafting your research instrument…</p>
             </div>
-            <p className="tv-loading-text">Drafting your research instrument…</p>
-          </div>
+          )}
 
           {/* DI Result section */}
           <div

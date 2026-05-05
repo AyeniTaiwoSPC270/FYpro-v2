@@ -423,7 +423,7 @@ export default function Contact() {
               <InfoCard
                 icon={<EnvelopeIcon />}
                 title="Email us"
-                value="support@fypro.app"
+                value="hello@fypro.com.ng"
                 note="We reply within 24 hours"
               />
             </Reveal>

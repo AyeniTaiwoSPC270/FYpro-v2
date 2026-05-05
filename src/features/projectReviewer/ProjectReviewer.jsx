@@ -519,19 +519,18 @@ export default function ProjectReviewer() {
       </div>
 
       {/* ── Loading Section ─────────────────────────────────────── */}
-      <div
-        id="pr-loading-section"
-        className={`pr-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
-      >
-        <div className="skeleton-loader">
-          <div className="skeleton-bar" style={{ width: '100%' }} />
-          <div className="skeleton-bar" style={{ width: '75%' }} />
-          <div className="skeleton-bar" style={{ width: '90%' }} />
-          <div className="skeleton-bar" style={{ width: '60%' }} />
+      {section === 'loading' && hasSubmitted && (
+        <div id="pr-loading-section" className="pr-loading-section tv-section--visible">
+          <div className="skeleton-loader">
+            <div className="skeleton-bar" style={{ width: '100%' }} />
+            <div className="skeleton-bar" style={{ width: '75%' }} />
+            <div className="skeleton-bar" style={{ width: '90%' }} />
+            <div className="skeleton-bar" style={{ width: '60%' }} />
+          </div>
+          <p className="tv-loading-text">Reviewing your project&hellip;</p>
+          <p className="pr-loading-subtext">FYPro is verifying relevance and assessing academic quality</p>
         </div>
-        <p className="tv-loading-text">Reviewing your project&hellip;</p>
-        <p className="pr-loading-subtext">FYPro is verifying relevance and assessing academic quality</p>
-      </div>
+      )}
 
       {/* ── Result Section ──────────────────────────────────────── */}
       <div

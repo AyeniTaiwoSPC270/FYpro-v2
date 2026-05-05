@@ -279,7 +279,7 @@ export default function NotFound() {
             }}
           >
             If you think this is a mistake, please contact us at{' '}
-            <span style={{ color: '#475569' }}>support@fypro.app</span>
+            <span style={{ color: '#475569' }}>hello@fypro.com.ng</span>
           </motion.p>
         </motion.div>
       </div>

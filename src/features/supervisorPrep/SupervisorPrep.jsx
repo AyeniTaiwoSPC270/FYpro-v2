@@ -16,6 +16,7 @@ const STAGES = [
 export default function SupervisorPrep() {
   const navigate = useNavigate()
 
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section,      setSection]      = useState('input')
   const [stage,        setStage]        = useState('')
   const [lastFeedback, setLastFeedback] = useState('')
@@ -47,6 +48,7 @@ export default function SupervisorPrep() {
     }
     setError(null)
     setBtnDisabled(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     prepareSupervisorMeeting(stage, lastFeedback.trim(), stuckOn.trim())
@@ -155,7 +157,7 @@ export default function SupervisorPrep() {
           </>
         )}
 
-        {section === 'loading' && (
+        {section === 'loading' && hasSubmitted && (
           <div className="sp-loading-section">
             <div className="skeleton-loader">
               <div className="skeleton-bar" style={{ width: '100%' }} />

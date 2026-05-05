@@ -890,7 +890,7 @@ function BottomCTA() {
         </Reveal>
         <Reveal delay={0.07}>
           <p className="font-sans text-slate-400 mt-3 max-w-lg mx-auto leading-relaxed">
-            Join thousands of Nigerian final year students who used FYPro to survive their FYP.
+            Join Nigerian final year students who refuse to walk into their defense unprepared.
           </p>
         </Reveal>
         <Reveal delay={0.13}>
