@@ -8,11 +8,13 @@ import { supabase } from '../lib/supabase'
 //   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useUser()
-  const [banState, setBanState] = useState('idle') // 'idle' | 'checking' | 'ok' | 'banned'
+  const [banned, setBanned] = useState(false)
 
+  // Ban check is a best-effort background check — it runs after children are
+  // already shown. This avoids a null → children flicker on every page transition.
+  // If the check fails (network error), the user is allowed access.
   useEffect(() => {
-    if (!user?.id) { setBanState('ok'); return }
-    setBanState('checking')
+    if (!user?.id) return
     supabase
       .from('user_entitlements')
       .select('banned_until')
@@ -21,19 +23,19 @@ export default function ProtectedRoute({ children }) {
       .then(({ data }) => {
         if (data?.banned_until && new Date(data.banned_until) > new Date()) {
           supabase.auth.signOut()
-          setBanState('banned')
-        } else {
-          setBanState('ok')
+          setBanned(true)
         }
       })
-      .catch(() => setBanState('ok')) // network error — allow access, ban is best-effort
+      .catch(() => {})
   }, [user?.id])
 
-  if (loading || banState === 'idle' || banState === 'checking') return null
+  // Hold render only while Supabase is confirming the session token.
+  // Once loading is false, we know whether user exists — act immediately.
+  if (loading) return null
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (banState === 'banned') {
+  if (banned) {
     return (
       <div style={{
         minHeight: '100vh',

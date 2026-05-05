@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
 import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
+import RouteProgressBar from './components/RouteProgressBar'
 import LandingPage from './pages/LandingPage'
 import Pricing from './pages/Pricing'
 import SplashOnboarding from './pages/SplashOnboarding'
@@ -31,6 +32,7 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <ProjectStateProvider>
+        <RouteProgressBar />
         <ToastProvider />
         <Routes>
           {/* Public marketing */}

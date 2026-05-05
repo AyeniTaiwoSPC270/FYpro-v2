@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
 import { useUser } from './useUser'
+import { getCachedEntitlements, invalidateCachedEntitlements } from '../lib/entitlements-cache'
 
 export function usePaidFeatures() {
   const { user, loading: userLoading } = useUser()
@@ -14,16 +14,16 @@ export function usePaidFeatures() {
       return
     }
     setLoading(true)
-    const { data, error } = await supabase
-      .from('user_entitlements')
-      .select('paid_features')
-      .eq('user_id', userId)
-      .maybeSingle()
-    setFeatures(!error && data && Array.isArray(data.paid_features) ? data.paid_features : [])
+    try {
+      const data = await getCachedEntitlements(userId)
+      setFeatures(data?.paid_features ?? [])
+    } catch {
+      setFeatures([])
+    }
     setLoading(false)
   }, [])
 
-  // Fresh fetch whenever user is resolved — no localStorage caching of entitlements.
+  // Fresh fetch whenever user is resolved — cache absorbs repeat calls within TTL.
   useEffect(() => {
     if (userLoading) return
     fetchFeatures(user?.id ?? null)
@@ -31,7 +31,12 @@ export function usePaidFeatures() {
 
   // Re-fetch after payment success without a page reload.
   useEffect(() => {
-    const handler = () => { if (user?.id) fetchFeatures(user.id) }
+    const handler = () => {
+      if (user?.id) {
+        invalidateCachedEntitlements(user.id)
+        fetchFeatures(user.id)
+      }
+    }
     window.addEventListener('fypro_entitlements_updated', handler)
     return () => window.removeEventListener('fypro_entitlements_updated', handler)
   }, [user?.id, fetchFeatures])
@@ -44,6 +49,9 @@ export function usePaidFeatures() {
     hasPaidFeature,
     loading: loading || userLoading,
     features,
-    refetch: () => fetchFeatures(user?.id ?? null),
+    refetch: () => {
+      if (user?.id) invalidateCachedEntitlements(user.id)
+      return fetchFeatures(user?.id ?? null)
+    },
   }
 }

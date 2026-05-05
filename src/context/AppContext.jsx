@@ -82,8 +82,11 @@ export function AppProvider({ children }) {
   // then falls back to checking profile columns.
   useEffect(() => {
     async function hydrateFromSupabase() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      // getSession() reads from localStorage — no network round-trip.
+      // Token validity is verified separately by useUser via getUser().
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const user = session.user
 
       const { data: profile } = await supabase
         .from('users')

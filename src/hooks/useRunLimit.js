@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { getCachedEntitlements, invalidateCachedEntitlements } from '../lib/entitlements-cache'
 
 const FREE_LIMITS = {
   topic_validator:     3,
@@ -87,7 +88,7 @@ async function syncRunCountsToSupabase(updatedCounts) {
     return
   }
   // upsert so free users without an existing user_entitlements row still persist counts
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('user_entitlements')
     .upsert(
       { user_id: session.user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
@@ -96,6 +97,9 @@ async function syncRunCountsToSupabase(updatedCounts) {
     .select()
   if (error) {
     console.error('syncRunCounts FAILED:', error)
+  } else {
+    // Stale entry — next read will re-fetch paid_features + run_counts together
+    invalidateCachedEntitlements(session.user.id)
   }
 }
 
@@ -129,22 +133,22 @@ export function useRunLimit(features) {
   const [runCounts, setRunCounts] = useState(getRunCounts)
 
   // Sync from Supabase on mount — Supabase is source of truth.
-  // If Supabase has counts, use those directly and update localStorage.
-  // This ensures correct counts on any device after login.
+  // Uses the shared entitlements cache so usePaidFeatures and useRunLimit
+  // share one network call to user_entitlements instead of making two.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user?.id) return
-      supabase
-        .from('user_entitlements')
-        .select('run_counts')
-        .eq('user_id', session.user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data?.run_counts) return
-          const remote = data.run_counts
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))
-          setRunCounts(remote)
-        })
+      getCachedEntitlements(session.user.id).then((data) => {
+        if (!data?.run_counts) return
+        const remote = data.run_counts
+        const local = getRunCounts()
+        const merged = { ...remote }
+        for (const k of Object.keys(local)) {
+          merged[k] = Math.max(local[k] || 0, merged[k] || 0)
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+        setRunCounts(merged)
+      }).catch(() => {})
     })
   }, [])
 
