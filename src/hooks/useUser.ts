@@ -22,6 +22,21 @@ function hasStoredSession(): boolean {
   }
 }
 
+// Guard prevents duplicate redirects if the interval fires while a sign-out
+// is already in progress (e.g. slow network before page unloads).
+let signingOut = false
+
+// Called when getUser() returns an error or null — means the account was deleted
+// server-side while the tab was open. Signs out, wipes all local state, redirects.
+async function forceSignOut(): Promise<void> {
+  if (signingOut) return
+  signingOut = true
+  try { await supabase.auth.signOut() } catch { /* ignore — user may already be deleted */ }
+  localStorage.clear()
+  sessionStorage.clear()
+  window.location.replace('/login?session_expired=1')
+}
+
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -30,11 +45,21 @@ export function useUser(): UseUserReturn {
   const [loading, setLoading] = useState(hasStoredSession)
 
   useEffect(() => {
-    // Restore session on mount — sets loading false exactly once.
-    // stopAutoRefresh() in supabase.ts prevents any visibility/focus re-triggers.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
+    // On mount: restore session, then verify the user still exists server-side
+    // before trusting it. Covers the case where a deleted user refreshes the page.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const { data: { user: verified }, error } = await supabase.auth.getUser()
+        if (error || !verified) {
+          await forceSignOut()
+          return
+        }
+        setSession(session)
+        setUser(verified)
+      } else {
+        setSession(null)
+        setUser(null)
+      }
       setLoading(false)
     })
 
@@ -52,7 +77,21 @@ export function useUser(): UseUserReturn {
       setUser(session?.user ?? null)
     })
 
-    return () => subscription.unsubscribe()
+    // Periodic server-side validity check every 5 minutes.
+    // Catches the deleted-user-with-open-tab scenario without waiting for a page reload.
+    const intervalId = setInterval(async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (!currentSession) return
+      const { data: { user: verified }, error } = await supabase.auth.getUser()
+      if (error || !verified) {
+        await forceSignOut()
+      }
+    }, 5 * 60 * 1000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(intervalId)
+    }
   }, [])
 
   return { user, session, loading }
