@@ -19,7 +19,6 @@ export async function trackUsage(tokensIn, tokensOut, model) {
       (tokensOut || 0) * OUTPUT_COST_PER_TOKEN;
 
     await supabaseAdmin.rpc('increment_daily_usage', {
-      p_date:       todayDate(),
       p_tokens_in:  tokensIn  || 0,
       p_tokens_out: tokensOut || 0,
       p_cost_usd:   cost,
