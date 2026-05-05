@@ -144,24 +144,48 @@ async function handleDashboard(req, res) {
     const MS7  = 7  * 24 * 60 * 60 * 1000;
     const MS30 = 30 * 24 * 60 * 60 * 1000;
     const MS3  =  3 * 24 * 60 * 60 * 1000;
+    const cap  = parseFloat(process.env.DAILY_CAP_USD || '10');
 
     const today           = new Date(now).toISOString().slice(0, 10);
     const todayStart      = `${today}T00:00:00.000Z`;
+    const yesterday       = new Date(now - 86400000).toISOString().slice(0, 10);
+    const yesterdayStart  = `${yesterday}T00:00:00.000Z`;
     const weekAgoISO      = new Date(now - MS7).toISOString();
     const threeDaysAgoISO = new Date(now - MS3).toISOString();
 
     // run_counts live in user_entitlements, not projects — fetch both
-    const [authRes, paymentsRes, projectsRes, entitlementsRes] = await Promise.all([
+    const [authRes, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes] = await Promise.all([
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
       supabaseAdmin.from('user_entitlements').select('user_id, run_counts').not('run_counts', 'is', null),
+      supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
+      readCacheHits(),
+      supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).neq('status', 'success').gte('created_at', todayStart),
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', yesterdayStart).lt('created_at', todayStart),
     ]);
 
     const authUsers    = authRes.data?.users || [];
     const payments     = paymentsRes.data    || [];
     const projects     = projectsRes.data    || [];
     const entitlements = entitlementsRes.data || [];
+
+    const usageRow   = usageRes.data;
+    const spentUsd   = parseFloat(usageRow?.total_cost_usd || 0);
+    const dailySpend = {
+      spent_usd:     spentUsd,
+      cap_usd:       cap,
+      remaining_usd: parseFloat(Math.max(0, cap - spentUsd).toFixed(4)),
+      request_count: usageRow?.request_count || 0,
+    };
+    const cacheHitRate = {
+      hits_total:   cacheHits,
+      hit_rate_pct: (usageRow?.request_count || 0) > 0
+        ? parseFloat(((cacheHits / usageRow.request_count) * 100).toFixed(1))
+        : 0,
+    };
+    const failedPaymentsToday = failedPaymentsRes.count || 0;
+    const signupsYesterday    = signupsYesterdayRes.count || 0;
 
     // build userId → run_counts map from entitlements
     const runCountsByUser = {};
@@ -171,10 +195,23 @@ async function handleDashboard(req, res) {
       }
     }
 
+    // top 3 users by cumulative run count
+    const userEmailMap = {};
+    for (const u of authUsers) userEmailMap[u.id] = u.email || '';
+    const topActiveUsers = Object.entries(runCountsByUser)
+      .map(([userId, rc]) => {
+        const total    = Object.values(rc).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
+        const topEntry = Object.entries(rc).sort((a, b) => (b[1] || 0) - (a[1] || 0))[0];
+        return { email: userEmailMap[userId] || userId, total_runs: total, top_feature: topEntry?.[0] || null };
+      })
+      .sort((a, b) => b.total_runs - a.total_runs)
+      .slice(0, 3);
+
     // ── Overview ──────────────────────────────────────────────────
     const totalUsers     = authUsers.length;
     const activeToday    = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
     const activeThisWeek = authUsers.filter(u => u.last_sign_in_at >= weekAgoISO).length;
+    const signupsToday   = authUsers.filter(u => u.created_at >= todayStart).length;
 
     const paidByUser = {};
     let   totalRevNgn = 0;
@@ -309,13 +346,19 @@ async function handleDashboard(req, res) {
         total_paid:        totalPaid,
         total_revenue_ngn: totalRevNgn,
         conversion_rate:   conversionRate,
+        signups_today:     signupsToday,
       },
       users,
-      revenue_chart:   revenueChart,
-      signups_chart:   signupsChart,
-      feature_usage:   featureUsage,
+      revenue_chart:         revenueChart,
+      signups_chart:         signupsChart,
+      feature_usage:         featureUsage,
       funnel,
-      never_converted: neverConverted,
+      never_converted:       neverConverted,
+      daily_spend:           dailySpend,
+      cache_hit_rate:        cacheHitRate,
+      top_active_users:      topActiveUsers,
+      failed_payments_today: failedPaymentsToday,
+      signups_yesterday:     signupsYesterday,
     });
 
   } catch (err) {

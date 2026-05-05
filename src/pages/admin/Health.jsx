@@ -114,6 +114,64 @@ function OverviewCard({ label, value, sub, accent = BLUE }) {
   )
 }
 
+function SpendCard({ spend }) {
+  if (!spend) return null
+  const pct      = spend.cap_usd > 0 ? (spend.spent_usd / spend.cap_usd) * 100 : 0
+  const barColor = pct >= 80 ? RED : pct >= 50 ? AMBER : GREEN
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BORDER}`, borderTop: `3px solid ${barColor}`,
+      borderRadius: 12, padding: '20px 24px', flex: '1 1 200px', minWidth: 0,
+    }}>
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        API Spend Today
+      </div>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: WHITE, lineHeight: 1 }}>
+        ${spend.spent_usd.toFixed(2)}
+      </div>
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginTop: 4, marginBottom: 10 }}>
+        cap ${spend.cap_usd.toFixed(2)} · ${spend.remaining_usd.toFixed(2)} left
+      </div>
+      <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 999 }}>
+        <div style={{
+          height: 5, background: barColor, borderRadius: 999,
+          width: `${Math.min(100, pct)}%`, transition: 'width 0.5s ease',
+        }} />
+      </div>
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginTop: 5 }}>
+        {pct.toFixed(1)}% · {spend.request_count.toLocaleString()} req
+      </div>
+    </div>
+  )
+}
+
+function SignupsCompareCard({ today, yesterday }) {
+  const diff       = (today ?? 0) - (yesterday ?? 0)
+  const arrow      = diff > 0 ? '↑' : diff < 0 ? '↓' : '→'
+  const arrowColor = diff > 0 ? GREEN : diff < 0 ? RED : MUTED
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BORDER}`, borderTop: `3px solid ${BLUE}`,
+      borderRadius: 12, padding: '20px 24px', flex: '1 1 160px', minWidth: 0,
+    }}>
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        Signups
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: WHITE, lineHeight: 1 }}>
+          {today ?? 0}
+        </span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: arrowColor }}>
+          {arrow}
+        </span>
+      </div>
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginTop: 6 }}>
+        Today {today ?? 0} · Yesterday {yesterday ?? 0}
+      </div>
+    </div>
+  )
+}
+
 function SectionHeading({ title }) {
   return (
     <h2 style={{
@@ -291,7 +349,8 @@ export default function AdminHealth() {
   if (error && !data)      return <div style={{ ...shell, color: RED }}>Error: {error}</div>
   if (!data)               return null
 
-  const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted } = data
+  const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted,
+          daily_spend, cache_hit_rate, top_active_users, failed_payments_today, signups_yesterday } = data
   const maxFeature = feature_usage?.[0]?.count || 1
 
   // ── Shared inline styles ─────────────────────────────────────────
@@ -372,6 +431,25 @@ export default function AdminHealth() {
         <OverviewCard label="Paid Users"       value={overview.total_paid.toLocaleString()}          accent={AMBER} />
         <OverviewCard label="Total Revenue"    value={`₦${overview.total_revenue_ngn.toLocaleString()}`} accent={GREEN} />
         <OverviewCard label="Conversion Rate"  value={`${overview.conversion_rate}%`} sub="paid ÷ total" accent={BLUE}  />
+        <SpendCard spend={daily_spend} />
+        {cache_hit_rate && (
+          <OverviewCard
+            label="Cache Hit Rate"
+            value={`${cache_hit_rate.hit_rate_pct}%`}
+            sub={`${(cache_hit_rate.hits_total ?? 0).toLocaleString()} hits today`}
+            accent={BLUE}
+          />
+        )}
+        <OverviewCard
+          label="Failed Payments"
+          value={String(failed_payments_today ?? 0)}
+          sub="today (non-success)"
+          accent={(failed_payments_today ?? 0) > 0 ? RED : BLUE}
+        />
+        <SignupsCompareCard
+          today={overview.signups_today ?? 0}
+          yesterday={signups_yesterday ?? 0}
+        />
       </div>
 
       {/* ── SECTION 2: User Table ──────────────────────────────────── */}
@@ -491,6 +569,42 @@ export default function AdminHealth() {
           </div>
         )}
       </div>
+
+      {/* ── Most Active Today ─────────────────────────────────────── */}
+      {top_active_users && top_active_users.length > 0 && (
+        <>
+          <SectionHeading title="Most Active Today" />
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, marginTop: 0, marginBottom: 16 }}>
+              Top 3 users by cumulative run count across all features.
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr>
+                    {['Email', 'Total Runs', 'Top Feature'].map(h => (
+                      <th key={h} style={{
+                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
+                        color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
+                        padding: '10px 12px', textAlign: 'left', background: SURFACE,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {top_active_users.map((u, i) => (
+                    <tr key={u.email} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                      <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email}</td>
+                      <td style={tdMono}>{u.total_runs.toLocaleString()}</td>
+                      <td style={td}>{FEATURE_LABELS[u.top_feature] || u.top_feature || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── SECTION 3 & 4: Charts ──────────────────────────────────── */}
       <SectionHeading title="Revenue & Signups — Last 30 Days" />
