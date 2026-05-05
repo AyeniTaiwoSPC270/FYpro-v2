@@ -83,15 +83,23 @@ export function resolveLimit(stepKey, features) {
 
 async function syncRunCountsToSupabase(updatedCounts) {
   const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) return
+  if (!session?.user?.id) {
+    console.error('syncRunCounts: no session')
+    return
+  }
   // upsert so free users without an existing user_entitlements row still persist counts
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_entitlements')
     .upsert(
       { user_id: session.user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
-  console.log('Supabase run_counts write:', error ? `ERROR: ${error.message}` : 'OK', updatedCounts)
+    .select()
+  if (error) {
+    console.error('syncRunCounts FAILED:', error)
+  } else {
+    console.log('syncRunCounts SUCCESS:', data)
+  }
 }
 
 export async function checkAndRecord(stepKey, features) {
@@ -123,9 +131,9 @@ export function recordStepRun(stepKey) {
 export function useRunLimit(features) {
   const [runCounts, setRunCounts] = useState(getRunCounts)
 
-  // Sync from Supabase on mount — merge, taking the higher count for each key.
-  // Supabase must NOT overwrite localStorage unconditionally: the user may have
-  // run a feature moments ago whose syncRunCountsToSupabase hasn't committed yet.
+  // Sync from Supabase on mount — Supabase is source of truth.
+  // If Supabase has counts, use those directly and update localStorage.
+  // This ensures correct counts on any device after login.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session?.user?.id) return
@@ -137,14 +145,9 @@ export function useRunLimit(features) {
         .then(({ data, error }) => {
           console.log('Supabase run_counts on mount:', data?.run_counts, error?.message)
           if (error || !data?.run_counts) return
-          const local  = getRunCounts()
           const remote = data.run_counts
-          const merged = { ...remote }
-          for (const k of Object.keys(local)) {
-            merged[k] = Math.max(local[k] || 0, merged[k] || 0)
-          }
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
-          setRunCounts(merged)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))
+          setRunCounts(remote)
         })
     })
   }, [])
