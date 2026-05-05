@@ -31,7 +31,7 @@ async function sendReceiptEmail(toEmail, plan, amount, reference) {
     html: `
 <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
   <div style="background-color: #0f172a; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
-    <img src="https://f-ypro-v2.vercel.app/fypro-logo.png" alt="FYPro" style="height: 40px;" />
+    <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" style="height: 40px;" />
   </div>
   <div style="padding: 32px 24px;">
     <h2 style="color: #1a1a2e; font-size: 24px; margin-bottom: 8px;">Payment confirmed</h2>
@@ -42,7 +42,7 @@ async function sendReceiptEmail(toEmail, plan, amount, reference) {
       <p style="margin: 0; color: #333; font-size: 14px;"><strong>Reference:</strong> ${reference}</p>
     </div>
     <p style="color: #333; font-size: 15px;">You now have full access. Log in to continue:</p>
-    <a href="https://f-ypro-v2.vercel.app/dashboard"
+    <a href="https://fypro.com.ng/dashboard"
        style="display: inline-block; background-color: #2563eb; color: white;
               padding: 14px 28px; border-radius: 8px; text-decoration: none;
               font-size: 16px; font-weight: bold; margin: 24px 0;">
@@ -51,7 +51,7 @@ async function sendReceiptEmail(toEmail, plan, amount, reference) {
     <p style="color: #999; font-size: 13px; margin-top: 32px;">
       Keep this email as your receipt.<br>
       Questions? Reply to this email.<br>
-      — The FYPro Team · fypro.vercel.app
+      — The FYPro Team · fypro.com.ng
     </p>
   </div>
 </div>`
