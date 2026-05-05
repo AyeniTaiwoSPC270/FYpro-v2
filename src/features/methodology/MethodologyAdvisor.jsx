@@ -86,9 +86,6 @@ export default function MethodologyAdvisor() {
         saveStep('methodology_advisor', data)
       })
       .catch(err => {
-        console.log('[FYPro] full error object:', err)
-        console.log('[FYPro] error message:', err?.message)
-        console.log('[FYPro] error code:', err?.code)
         setMaSection('input')
         if (!handleApiError(err, msg => {
           setMaError(msg)

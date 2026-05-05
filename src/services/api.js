@@ -53,10 +53,7 @@ async function callClaude(system, messages, maxTokens = 2000) {
   }
 
   const raw = await res.json();
-  console.log('[FYPro] full raw response:', JSON.stringify(raw));
   const text = raw?.content?.[0]?.text ?? '';
-
-  console.log('[FYPro] raw API response:', text);
 
   let parsed;
   try {
@@ -102,7 +99,6 @@ async function callTopicValidator(system, messages, topic) {
   }
 
   const raw = await res.json();
-  console.log('[FYPro] topic-validator raw response:', JSON.stringify(raw));
   const text = raw?.content?.[0]?.text ?? '';
 
   let parsed;
@@ -152,7 +148,6 @@ async function callLiteratureMap(system, messages, topic) {
   }
 
   const raw = await res.json();
-  console.log('[FYPro] literature-map raw response:', JSON.stringify(raw));
   const text = raw?.content?.[0]?.text ?? '';
 
   let parsed;
@@ -378,7 +373,6 @@ export async function adviseMethodology(studentCtx, validatedTopic, chapterStruc
 
 // ── Step 3 inline: Instrument Builder ───────────────────────────────────────
 export async function buildInstrument(studentCtx, validatedTopic, chosenMethodology, chapterStructure) {
-  console.log('[buildInstrument] chosenMethodology:', chosenMethodology)
   return callClaude(
     INSTRUMENT_BUILDER_SYSTEM,
     [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, chosenMethodology) }],

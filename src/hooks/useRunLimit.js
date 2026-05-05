@@ -67,7 +67,6 @@ export function resolveLimit(stepKey, features) {
       .eq('user_id', session.user.id)
       .single()
       .then(({ data, error }) => {
-        console.log('Supabase run_counts on SIGNED_IN:', data?.run_counts, error?.message)
         if (error || !data?.run_counts) return
         const local  = getRunCounts()
         const remote = data.run_counts
@@ -97,8 +96,6 @@ async function syncRunCountsToSupabase(updatedCounts) {
     .select()
   if (error) {
     console.error('syncRunCounts FAILED:', error)
-  } else {
-    console.log('syncRunCounts SUCCESS:', data)
   }
 }
 
@@ -143,7 +140,6 @@ export function useRunLimit(features) {
         .eq('user_id', session.user.id)
         .single()
         .then(({ data, error }) => {
-          console.log('Supabase run_counts on mount:', data?.run_counts, error?.message)
           if (error || !data?.run_counts) return
           const remote = data.run_counts
           localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))

@@ -318,9 +318,31 @@ export default function Profile() {
     navigate('/dashboard')
   }
 
-  function handleDeleteAccount() {
+  async function handleDeleteAccount() {
     if (!window.confirm('Permanently delete your FYPro account? This cannot be undone.')) return
-    console.log('[TODO] Delete account — requires auth backend')
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      showToast('You must be signed in to delete your account', 'error')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin?action=self-delete', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        showToast(body.error || 'Account deletion failed. Please try again.', 'error')
+        return
+      }
+    } catch {
+      showToast('Account deletion failed. Please check your connection.', 'error')
+      return
+    }
+
+    await supabase.auth.signOut()
     clearState()
     navigate('/')
   }

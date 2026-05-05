@@ -137,8 +137,6 @@ function extractDOCX(file) {
             .filter(s => s.trim().length > 0)
             .join(' ')
 
-          console.log('[FYPro] DOCX extracted text length:', extracted.length)
-
           if (extracted.length >= 100) {
             resolve({ text: extracted })
             return
@@ -146,7 +144,6 @@ function extractDOCX(file) {
 
           // w:t extraction too short — strip all XML tags from the parsed XML
           const strippedXml = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-          console.log('[FYPro] DOCX XML-stripped length:', strippedXml.length)
           if (strippedXml.length >= 100) {
             resolve({ text: strippedXml })
             return
@@ -170,8 +167,6 @@ function extractDOCX(file) {
           .filter(s => s.trim().length > 0)
           .join(' ')
 
-        console.log('[FYPro] DOCX raw w:t extracted length:', extracted2.length)
-
         if (extracted2.length >= 100) {
           resolve({ text: extracted2 })
           return
@@ -180,8 +175,6 @@ function extractDOCX(file) {
         // eslint-disable-next-line no-control-regex
         const printable = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
           .replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s+/g, ' ').trim()
-
-        console.log('[FYPro] DOCX printable fallback length:', printable.length)
 
         if (printable.length >= 100) {
           resolve({ text: '[Extracted from Word file — some formatting may be missing]\n\n' + printable })

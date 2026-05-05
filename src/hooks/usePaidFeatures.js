@@ -18,7 +18,7 @@ export function usePaidFeatures() {
       .from('user_entitlements')
       .select('paid_features')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     setFeatures(!error && data && Array.isArray(data.paid_features) ? data.paid_features : [])
     setLoading(false)
   }, [])

@@ -466,7 +466,6 @@ function usePaystackCheckout() {
         ref: data.reference,
         currency: 'NGN',
         onSuccess: async (transaction) => {
-          console.log('Paystack onSuccess fired', transaction)
           stopPolling()
           setVerifying(true)
           try {
@@ -487,11 +486,8 @@ function usePaystackCheckout() {
             setVerifying(false)
           }
         },
-        onCancel: () => {
-          console.log('Payment cancelled')
-        },
+        onCancel: () => {},
         onClose: () => {
-          console.log('onClose fired, pendingReference:', pendingReference)
           stopPolling()
           if (pendingReference) {
             fetch('/api/payments?action=verify', {

@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
+import { supabase } from '../lib/supabase'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -411,7 +412,7 @@ export default function Settings() {
   const [notifs, setNotifs] = useState({ email: true, updates: true, defense: true })
   const [googleConnected, setGoogleConnected] = useState(false)
 
-  function handleUpdatePassword() {
+  async function handleUpdatePassword() {
     if (!passwords.current || !passwords.newPass || !passwords.confirm) {
       showToast('Please fill in all password fields', 'error')
       return
@@ -424,13 +425,17 @@ export default function Settings() {
       showToast("New passwords don't match", 'error')
       return
     }
-    console.log('[TODO] Update password — requires auth backend')
+    const { error } = await supabase.auth.updateUser({ password: passwords.newPass })
+    if (error) {
+      showToast(error.message || 'Password update failed. Please try again.', 'error')
+      return
+    }
     showToast('Password updated successfully')
     setPasswords({ current: '', newPass: '', confirm: '' })
   }
 
-  function handleSignOutEverywhere() {
-    console.log('[TODO] Sign out everywhere — single device in this demo')
+  async function handleSignOutEverywhere() {
+    await supabase.auth.signOut({ scope: 'global' })
     clearState()
     navigate('/')
   }

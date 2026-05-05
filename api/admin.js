@@ -18,6 +18,9 @@ async function readCacheHits() {
 
 // action: "health"
 async function handleHealth(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
   try {
     const today      = new Date().toISOString().slice(0, 10);
     const todayStart = `${today}T00:00:00.000Z`;
@@ -444,6 +447,42 @@ async function handleBanUser(req, res) {
   }
 }
 
+// action: "self-delete"
+// Called by the authenticated user to permanently delete their own account.
+// Verifies the user's own JWT — does NOT require ADMIN_EMAIL.
+async function handleSelfDelete(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  let userId;
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Unauthorized' });
+    userId = user.id;
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    await supabaseAdmin.from('project_steps').delete().eq('user_id', userId);
+    await supabaseAdmin.from('defense_sessions').delete().eq('user_id', userId);
+    try {
+      await supabaseAdmin.from('payments').delete().eq('user_id', userId);
+    } catch {
+      // non-fatal — payments table may not exist in all environments
+    }
+    await supabaseAdmin.from('projects').delete().eq('user_id', userId);
+    await supabaseAdmin.from('user_entitlements').delete().eq('user_id', userId);
+    await supabaseAdmin.from('users').delete().eq('id', userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/self-delete]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -461,6 +500,7 @@ export default async function handler(req, res) {
   if (action === 'dashboard')    return handleDashboard(req, res);
   if (action === 'delete-user')  return handleDeleteUser(req, res);
   if (action === 'ban-user')     return handleBanUser(req, res);
+  if (action === 'self-delete')  return handleSelfDelete(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
