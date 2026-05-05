@@ -34,6 +34,7 @@ const STEP_TO_STATE: Record<string, string> = {
   literature_map:      'literatureMap',
   abstract_generator:  'abstractData',
   project_reviewer:    'uploadedProject',
+  defense_prep:        'defenseSummary',
 }
 
 // Maps step_type → stepsCompleted[] index

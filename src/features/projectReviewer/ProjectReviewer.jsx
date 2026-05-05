@@ -223,6 +223,7 @@ export default function ProjectReviewer() {
   const overLimit = isOverLimit('project_reviewer')
 
   const savedData = state.uploadedProject?.reviewData
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section, setSection]         = useState(savedData ? 'result' : 'input')
   const [reviewData, setReviewData]   = useState(savedData || null)
   const [selectedFile, setSelectedFile] = useState(null)
@@ -338,6 +339,7 @@ export default function ProjectReviewer() {
     const allowed = await checkAndRecord('project_reviewer', features)
     if (!allowed) return
     setIsProcessing(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     let result
@@ -412,6 +414,7 @@ export default function ProjectReviewer() {
 
   function handleSkip() {
     completeStep(4)
+    saveStep('project_reviewer', { skipped: true })
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -518,7 +521,7 @@ export default function ProjectReviewer() {
       {/* ── Loading Section ─────────────────────────────────────── */}
       <div
         id="pr-loading-section"
-        className={`pr-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}
+        className={`pr-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
       >
         <div className="skeleton-loader">
           <div className="skeleton-bar" style={{ width: '100%' }} />

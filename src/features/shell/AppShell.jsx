@@ -152,7 +152,10 @@ export default function AppShell() {
   }, [])
 
   const completedCount     = state.stepsCompleted.filter(Boolean).length
-  const furthestAccessible = Math.min(completedCount, STEPS.length - 1)
+  const lastCompletedIdx   = state.stepsCompleted.lastIndexOf(true)
+  const furthestAccessible = lastCompletedIdx >= 0
+    ? Math.min(lastCompletedIdx + 1, STEPS.length - 1)
+    : 0
 
   const CurrentStep = STEP_COMPONENTS[state.currentStep] ?? STEP_COMPONENTS[0]
 

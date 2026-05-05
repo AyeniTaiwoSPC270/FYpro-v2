@@ -12,6 +12,7 @@ export default function LiteratureMap({ chapters }) {
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('literature_map')
 
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section, setSection]         = useState('input')
   const [data, setData]               = useState(null)
   const [btnDisabled, setBtnDisabled] = useState(false)
@@ -44,6 +45,7 @@ export default function LiteratureMap({ chapters }) {
     const allowed = await checkAndRecord('literature_map', features)
     if (!allowed) return
     setBtnDisabled(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     const chaps = chapters?.length ? chapters : []
@@ -134,7 +136,7 @@ export default function LiteratureMap({ chapters }) {
         </div>
       )}
 
-      {section === 'loading' && (
+      {section === 'loading' && hasSubmitted && (
         <div id="lm-loading-section" className="lm-loading-section tv-section--visible">
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />

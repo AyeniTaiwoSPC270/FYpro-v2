@@ -147,6 +147,8 @@ export default function ChapterArchitect() {
   const restored = Boolean(state.stepsCompleted[1] && state.chapterStructure)
 
   // ── Main card state ───────────────────────────────────────────────────────
+  const [hasSubmitted, setHasSubmitted]     = useState(false)
+  const [agHasSubmitted, setAgHasSubmitted] = useState(false)
   const [section, setSection]               = useState(restored ? 'result' : 'input')
   const [structureType, setStructureType]   = useState(state.structureType || 'standard-5')
   const [wordCount, setWordCount]           = useState(state.totalWordCount ? String(state.totalWordCount) : '')
@@ -308,6 +310,7 @@ export default function ChapterArchitect() {
     if (!allowed) return
 
     setBtnDisabled(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc, features)
@@ -338,6 +341,7 @@ export default function ChapterArchitect() {
   function handleRegenerate() {
     const wc = parseInt(wordCount, 10) || 0
     setResultError(null)
+    setHasSubmitted(true)
     setSection('loading')
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc)
@@ -375,6 +379,7 @@ export default function ChapterArchitect() {
   function handleGenerateAbstract() {
     setAgBtnDisabled(true)
     setAgError(null)
+    setAgHasSubmitted(true)
     setAgSection('loading')
 
     const chaps = chapters.length ? chapters : (data?.chapters || [])
@@ -502,7 +507,7 @@ export default function ChapterArchitect() {
         </div>
 
         {/* Loading section */}
-        <div id="ca-loading-section" className={`ca-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+        <div id="ca-loading-section" className={`ca-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}>
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />
             <div className="skeleton-bar" style={{ width: '75%' }} />
@@ -581,7 +586,7 @@ export default function ChapterArchitect() {
             </div>
           )}
 
-          {agSection === 'loading' && (
+          {agSection === 'loading' && agHasSubmitted && (
             <div id="ag-loading-section" className="ag-loading-section tv-section--visible">
               <div className="skeleton-loader">
                 <div className="skeleton-bar" style={{ width: '100%' }} />

@@ -16,6 +16,8 @@ export default function MethodologyAdvisor() {
   const diOverLimit = isOverLimit('instrument_builder')
 
   // ── MA state — seed from persisted context on remount ─────────────────────
+  const [maHasSubmitted, setMaHasSubmitted]           = useState(false)
+  const [diHasSubmitted, setDiHasSubmitted]           = useState(false)
   const [maSection, setMaSection]                     = useState(state.methodology ? 'result' : 'input')
   const [maData, setMaData]                           = useState(state.methodology || null)
   const [maError, setMaError]                         = useState(null)
@@ -73,6 +75,7 @@ export default function MethodologyAdvisor() {
     if (!allowed) return
 
     setMaBtnDisabled(true)
+    setMaHasSubmitted(true)
     setMaSection('loading')
 
     adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure, features)
@@ -133,6 +136,7 @@ export default function MethodologyAdvisor() {
     const allowed = await checkAndRecord('instrument_builder', features)
     if (!allowed) return
     setDiGenBtnDisabled(true)
+    setDiHasSubmitted(true)
     setDiSection('loading')
 
     buildInstrument(studentContext, state.validatedTopic, selectedMethodology, state.chapterStructure)
@@ -256,7 +260,7 @@ export default function MethodologyAdvisor() {
         {/* Loading section */}
         <div
           id="ma-loading-section"
-          className={`ma-loading-section ${maSection === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}
+          className={`ma-loading-section ${maSection === 'loading' && maHasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
         >
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />
@@ -436,7 +440,7 @@ export default function MethodologyAdvisor() {
           {/* DI Loading section */}
           <div
             id="di-loading-section"
-            className={`di-loading-section ${diSection === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}
+            className={`di-loading-section ${diSection === 'loading' && diHasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
           >
             <div className="skeleton-loader">
               <div className="skeleton-bar" style={{ width: '100%' }} />

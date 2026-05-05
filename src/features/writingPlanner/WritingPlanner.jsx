@@ -26,6 +26,7 @@ export default function WritingPlanner() {
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('writing_planner')
 
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section, setSection]       = useState(state.writingPlan ? 'result' : 'input')
   const [data, setData]             = useState(state.writingPlan || null)
   const [dateValue, setDateValue]   = useState(state.submissionDeadline || '')
@@ -78,6 +79,7 @@ export default function WritingPlanner() {
     if (!allowed) return
 
     setBtnDisabled(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     const currentDate = new Date().toISOString().slice(0, 10)
@@ -186,7 +188,7 @@ export default function WritingPlanner() {
       {/* Loading section */}
       <div
         id="wp-loading-section"
-        className={`wp-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}
+        className={`wp-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}
       >
         <div className="skeleton-loader">
           <div className="skeleton-bar" style={{ width: '100%' }} />

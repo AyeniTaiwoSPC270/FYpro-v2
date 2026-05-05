@@ -20,6 +20,7 @@ export default function TopicValidator() {
   const [btnDisabled, setBtnDisabled]   = useState(false)
   const [shaking, setShaking]           = useState(false)
   const [data, setData]                 = useState(restored ? state.topicValidation : null)
+  const [hasSubmitted, setHasSubmitted]  = useState(false)
   const [isEditing, setIsEditing]       = useState(false)
   const [editedTopic, setEditedTopic]   = useState('')
   const [displayText, setDisplayText]   = useState(
@@ -96,6 +97,7 @@ export default function TopicValidator() {
 
     set({ roughTopic: trimmed })
     setBtnDisabled(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     validateTopic(studentContext, trimmed)
@@ -215,7 +217,7 @@ export default function TopicValidator() {
       </div>
 
       {/* ── Loading section ─────────────────────────────────────────────────── */}
-      <div id="tv-loading-section" className={`tv-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+      <div id="tv-loading-section" className={`tv-loading-section ${section === 'loading' && hasSubmitted ? 'tv-section--visible' : 'tv-section--hidden'}`}>
         <div className="skeleton-loader">
           <div className="skeleton-bar" style={{ width: '100%' }} />
           <div className="skeleton-bar" style={{ width: '75%' }} />

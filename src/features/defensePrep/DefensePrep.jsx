@@ -15,6 +15,7 @@ import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import { useProjectState } from '../../hooks/useProjectState'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -294,6 +295,7 @@ const MIC_SVG = (
 
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
+  const { saveStep } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
   const rfOverLimit = isOverLimit('red_flag_detector')
@@ -302,6 +304,7 @@ export default function DefensePrep() {
   const uploadedReview = state.uploadedProject?.reviewData
 
   // ── card state ────────────────────────────────────────────────────────────
+  const [hasSubmitted, setHasSubmitted]   = useState(false)
   const [section, setSection]             = useState(state.defenseSummary ? 'summary' : (state.redFlags ? 'flags' : 'input'))
   const [redFlags, setRedFlags]           = useState(state.redFlags || null)
   const [visibleFlags, setVisibleFlags]   = useState(state.redFlags ? state.redFlags.map((_, i) => i) : [])
@@ -535,6 +538,7 @@ export default function DefensePrep() {
     const allowed = await checkAndRecord('red_flag_detector', features)
     if (!allowed) return
     setIsScanning(true)
+    setHasSubmitted(true)
     setSection('loading')
 
     const chapters    = state.chapterStructure?.chapters || []
@@ -718,6 +722,7 @@ export default function DefensePrep() {
       const newCompleted = [...state.stepsCompleted]
       newCompleted[5] = true
       set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
+      saveStep('defense_prep', data)
       showToast('Defence session complete ✓')
 
       setVerdictLoading(false)
@@ -860,7 +865,7 @@ export default function DefensePrep() {
         {/* Loading section */}
         <div
           id="dp-loading-section"
-          className={`dp-loading-section ${section === 'loading' ? 'dp-section--visible' : 'dp-section--hidden'}`}
+          className={`dp-loading-section ${section === 'loading' && hasSubmitted ? 'dp-section--visible' : 'dp-section--hidden'}`}
         >
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />

@@ -44,7 +44,8 @@
       "PowerShell(Get-Content *)",
       "PowerShell(\\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\_lib\\\\papers.js\"\\).Count; \\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\topic-validator.js\"\\).Count)",
       "Bash(node --input-type=module --no-warnings)",
-      "Bash(Get-ChildItem *)"
+      "Bash(Get-ChildItem *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('supabase:', p.dependencies['@supabase/supabase-js']\\)\")"
     ]
   }
 }
