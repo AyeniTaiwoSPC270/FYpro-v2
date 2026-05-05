@@ -326,23 +326,42 @@ export default function AdminHealth() {
             )}
           </p>
         </div>
-        <button
-          onClick={loadData}
-          disabled={fetching}
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: 13, fontWeight: 600,
-            color: fetching ? MUTED : WHITE,
-            background: fetching ? 'rgba(255,255,255,0.05)' : BLUE,
-            border: `1px solid ${fetching ? BORDER : BLUE}`,
-            borderRadius: 8, padding: '10px 20px',
-            cursor: fetching ? 'not-allowed' : 'pointer',
-            transition: 'background 0.15s ease',
-            flexShrink: 0,
-          }}
-        >
-          {fetching ? 'Refreshing…' : '↻ Refresh'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={loadData}
+            disabled={fetching}
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: 13, fontWeight: 600,
+              color: fetching ? MUTED : WHITE,
+              background: fetching ? 'rgba(255,255,255,0.05)' : BLUE,
+              border: `1px solid ${fetching ? BORDER : BLUE}`,
+              borderRadius: 8, padding: '10px 20px',
+              cursor: fetching ? 'not-allowed' : 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+          >
+            {fetching ? 'Refreshing…' : '↻ Refresh'}
+          </button>
+          <button
+            onClick={() => {
+              import('@sentry/react').then(Sentry => {
+                Sentry.captureException(new Error('Manual Sentry test from admin'))
+              })
+            }}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#7c3aed',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '12px',
+            }}
+          >
+            Test Sentry
+          </button>
+        </div>
       </div>
 
       {/* ── SECTION 1: Overview Cards ─────────────────────────────── */}
