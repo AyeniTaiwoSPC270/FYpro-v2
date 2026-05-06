@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 
@@ -154,7 +154,7 @@ function Reveal({ children, delay = 0, className, style }) {
     <motion.div
       initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      viewport={{ once: true, amount: 0.08 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
       className={className}
       style={style}
@@ -162,6 +162,62 @@ function Reveal({ children, delay = 0, className, style }) {
       {children}
     </motion.div>
   )
+}
+
+// ─── Word Reveal ──────────────────────────────────────────────────────────────
+
+function WordReveal({ text, staggerMs = 60, delay = 0 }) {
+  const words = text.split(' ')
+  return (
+    <span aria-label={text}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.35, delay: delay + i * (staggerMs / 1000), ease: 'easeOut' }}
+          className="inline-block"
+          style={{ marginRight: '0.28em' }}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
+// ─── Count Up ─────────────────────────────────────────────────────────────────
+
+function CountUp({ target }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true
+          const duration = 1400
+          const start = Date.now()
+          const tick = () => {
+            const elapsed = Date.now() - start
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            setCount(Math.round(eased * target))
+            if (progress < 1) requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }
+      },
+      { threshold: 0.3 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [target])
+
+  return <span ref={ref}>{count.toLocaleString()}</span>
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
@@ -216,7 +272,7 @@ export default function About() {
             </Reveal>
             <Reveal delay={0.05}>
               <h1 className="font-serif text-4xl md:text-5xl text-white mt-3">
-                Built by a student. For students.
+                <WordReveal text="Built by a student. For students." staggerMs={60} delay={0.05} />
               </h1>
             </Reveal>
             <Reveal delay={0.1}>
@@ -279,7 +335,7 @@ export default function About() {
           <Reveal>
             <div className="font-serif text-8xl text-blue-600/30 leading-none select-none" aria-hidden="true">&ldquo;</div>
             <blockquote className="font-serif text-2xl text-white leading-relaxed mt-2">
-              No Nigerian student should walk into their defense unprepared because they couldn&apos;t afford a good supervisor.
+              <WordReveal text="No Nigerian student should walk into their defense unprepared because they couldn't afford a good supervisor." staggerMs={40} />
             </blockquote>
             <cite className="not-italic block font-mono text-xs text-slate-500 uppercase tracking-widest mt-6">
               — Taiwo Ayeni, Founder
@@ -292,16 +348,16 @@ export default function About() {
           <Reveal>
             <div className="flex flex-col sm:flex-row gap-6">
               {[
-                { number: '500,000+', label: 'Nigerian final year students annually' },
-                { number: '6 Steps', label: 'From rough idea to defense-ready' },
-                { number: '₦0', label: 'To get started today' },
-              ].map(({ number, label }) => (
+                { display: <><CountUp target={500000} />+</>, label: 'Nigerian final year students annually' },
+                { display: <><CountUp target={6} />&nbsp;Steps</>, label: 'From rough idea to defense-ready' },
+                { display: <>₦0</>, label: 'To get started today' },
+              ].map(({ display, label }) => (
                 <div
                   key={label}
                   className="flex-1 rounded-2xl border border-[var(--border-color)] p-8 text-center"
                   style={{ background: 'var(--bg-card)' }}
                 >
-                  <div className="font-serif text-4xl text-white">{number}</div>
+                  <div className="font-serif text-4xl text-white">{display}</div>
                   <div className="font-sans text-slate-400 text-sm mt-2">{label}</div>
                 </div>
               ))}
@@ -346,14 +402,15 @@ export default function About() {
               },
             ].map(({ icon, title, body }) => (
               <Reveal key={title} delay={0.05} className="flex-1">
-                <div
+                <motion.div
                   className="rounded-2xl border border-[var(--border-color)] p-6 h-full"
                   style={{ background: 'var(--bg-card)' }}
+                  whileHover={{ y: -4, borderColor: 'rgba(0,102,255,0.3)', boxShadow: '0 8px 24px rgba(0,102,255,0.12)', transition: { duration: 0.2 } }}
                 >
                   {icon}
                   <div className="font-sans text-white font-semibold mt-4">{title}</div>
                   <p className="font-sans text-slate-400 text-sm mt-2 leading-relaxed">{body}</p>
-                </div>
+                </motion.div>
               </Reveal>
             ))}
           </div>

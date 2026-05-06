@@ -274,16 +274,36 @@ function XIcon() {
 
 function InfoCard({ icon, title, value, note }) {
   return (
-    <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6">
+    <motion.div
+      whileHover={{ y: -3, borderColor: 'rgba(0,102,255,0.35)', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', transition: { duration: 0.2 } }}
+      className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6 cursor-default"
+    >
       {icon}
       <div className="text-white font-semibold mt-3 font-sans">{title}</div>
       <div className="text-blue-400 text-sm mt-1 font-sans hover:text-blue-300 cursor-pointer transition-colors duration-150">{value}</div>
       <div className="text-slate-500 text-xs mt-1 font-sans">{note}</div>
-    </div>
+    </motion.div>
   )
 }
 
 // ─── Submit Button ────────────────────────────────────────────────────────────
+
+const CONTACT_KEYFRAMES = `
+  @keyframes shimmer-sweep {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+  .btn-shimmer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.15) 50%, transparent 80%);
+    transform: translateX(-100%);
+  }
+  .btn-shimmer:hover::before {
+    animation: shimmer-sweep 0.55s ease forwards;
+  }
+`
 
 function SubmitButton({ children }) {
   const { handleClick, rippleEls } = useRipple()
@@ -291,7 +311,7 @@ function SubmitButton({ children }) {
     <button
       type="submit"
       onClick={handleClick}
-      className="relative overflow-hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-4 transition-all duration-200 hover:-translate-y-0.5 font-sans text-sm mt-2 cursor-pointer border-0"
+      className="relative overflow-hidden btn-shimmer w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-4 transition-all duration-200 hover:-translate-y-0.5 font-sans text-sm mt-2 cursor-pointer border-0"
       onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(59,130,246,0.4)' }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = '' }}
     >
@@ -303,7 +323,13 @@ function SubmitButton({ children }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const INPUT_CLS = 'bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all font-sans text-sm'
+const INPUT_CLS = 'bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-white placeholder-slate-600 w-full focus:outline-none transition-all font-sans text-sm'
+
+const FIELD_FOCUS = {
+  style: { borderLeftColor: 'rgba(0,102,255,0.2)' },
+  onFocus: (e) => { e.target.style.borderLeftColor = 'rgba(0,102,255,0.8)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,102,255,0.15)' },
+  onBlur:  (e) => { e.target.style.borderLeftColor = 'rgba(0,102,255,0.2)'; e.target.style.boxShadow = 'none' },
+}
 const LABEL_CLS = 'block text-slate-400 text-sm font-medium mb-2 font-sans'
 
 export default function Contact() {
@@ -330,6 +356,7 @@ export default function Contact() {
       className="min-h-screen"
       style={{ background: 'var(--bg-base)' }}
     >
+      <style>{CONTACT_KEYFRAMES}</style>
       <Navbar />
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
@@ -371,6 +398,7 @@ export default function Contact() {
                     value={formData.name}
                     onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
                     required
+                    {...FIELD_FOCUS}
                   />
                 </div>
                 <div>
@@ -382,6 +410,7 @@ export default function Contact() {
                     value={formData.email}
                     onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
                     required
+                    {...FIELD_FOCUS}
                   />
                 </div>
                 <div>
@@ -390,7 +419,9 @@ export default function Contact() {
                     className={INPUT_CLS}
                     value={formData.subject}
                     onChange={e => setFormData(f => ({ ...f, subject: e.target.value }))}
-                    style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                    style={{ appearance: 'none', WebkitAppearance: 'none', borderLeftColor: 'rgba(0,102,255,0.2)' }}
+                    onFocus={FIELD_FOCUS.onFocus}
+                    onBlur={FIELD_FOCUS.onBlur}
                   >
                     <option value="General Question">General Question</option>
                     <option value="Bug Report">Bug Report</option>
@@ -406,10 +437,12 @@ export default function Contact() {
                     rows={6}
                     placeholder="Tell us how we can help..."
                     className={INPUT_CLS}
-                    style={{ minHeight: 140, resize: 'vertical' }}
+                    style={{ minHeight: 140, resize: 'vertical', borderLeftColor: 'rgba(0,102,255,0.2)' }}
                     value={formData.message}
                     onChange={e => setFormData(f => ({ ...f, message: e.target.value }))}
                     required
+                    onFocus={FIELD_FOCUS.onFocus}
+                    onBlur={FIELD_FOCUS.onBlur}
                   />
                 </div>
                 <SubmitButton>Send Message</SubmitButton>

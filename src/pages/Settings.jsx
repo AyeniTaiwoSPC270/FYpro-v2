@@ -256,9 +256,15 @@ function SettingsNavbar({ initials, name }) {
 
 function SectionLabel({ children }) {
   return (
-    <div className="font-mono text-xs font-semibold uppercase tracking-wider mb-6" style={{ color: 'var(--text-muted)' }}>
+    <motion.div
+      initial={{ opacity: 0, x: -14 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="font-mono text-xs font-semibold uppercase tracking-wider mb-6"
+      style={{ color: 'var(--text-muted)' }}
+    >
       {children}
-    </div>
+    </motion.div>
   )
 }
 
@@ -362,13 +368,14 @@ function PasswordInput({ label, name, value, onChange, showStrength = false }) {
           autoComplete={name === 'current' ? 'current-password' : 'new-password'}
           placeholder="••••••••"
           className="w-full rounded-xl px-4 py-3 pr-11 font-sans text-[0.875rem] outline-none transition-all duration-200 placeholder:text-slate-600"
-          style={{ color: 'var(--text-primary)' }}
           style={{
+            color: 'var(--text-primary)',
             background: 'var(--bg-input)',
             border: '1px solid var(--border-color)',
+            borderLeftColor: 'rgba(0,102,255,0.2)',
           }}
-          onFocus={(e) => { e.target.style.borderColor = '#3B82F6'; e.target.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.2)' }}
-          onBlur={(e)  => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
+          onFocus={(e) => { e.target.style.borderLeftColor = 'rgba(0,102,255,0.8)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,102,255,0.15)' }}
+          onBlur={(e)  => { e.target.style.borderLeftColor = 'rgba(0,102,255,0.2)'; e.target.style.boxShadow = 'none' }}
         />
         <button
           type="button"
@@ -565,26 +572,32 @@ export default function Settings() {
               className="flex items-center gap-1 p-1 rounded-xl"
               style={{ background: 'var(--bg-input)', border: '1px solid var(--border-color)' }}
             >
-              <button
+              <motion.button
                 onClick={() => theme !== 'dark' && toggleTheme()}
-                className="flex items-center gap-2 font-sans text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer border-0"
+                animate={theme === 'dark' ? { scale: 1.05, boxShadow: '0 0 14px rgba(37,99,235,0.45)' } : { scale: 1, boxShadow: 'none' }}
+                whileHover={theme !== 'dark' ? { scale: 1.02 } : {}}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 font-sans text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer border-0"
                 style={{
                   background: theme === 'dark' ? '#2563EB' : 'transparent',
                   color: theme === 'dark' ? '#fff' : 'var(--text-muted)',
                 }}
               >
                 <MoonIcon /> Dark
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => theme !== 'light' && toggleTheme()}
-                className="flex items-center gap-2 font-sans text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 cursor-pointer border-0"
+                animate={theme === 'light' ? { scale: 1.05, boxShadow: '0 0 14px rgba(37,99,235,0.45)' } : { scale: 1, boxShadow: 'none' }}
+                whileHover={theme !== 'light' ? { scale: 1.02 } : {}}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 font-sans text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer border-0"
                 style={{
                   background: theme === 'light' ? '#2563EB' : 'transparent',
                   color: theme === 'light' ? '#fff' : 'var(--text-muted)',
                 }}
               >
                 <SunIcon /> Light
-              </button>
+              </motion.button>
             </div>
           </div>
         </motion.div>

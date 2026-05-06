@@ -216,6 +216,98 @@ function SectionLabel({ children, danger = false }) {
   )
 }
 
+// ─── Keyframes ────────────────────────────────────────────────────────────────
+
+const PROFILE_KEYFRAMES = `
+  @keyframes shimmer-sweep {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+  .btn-shimmer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.15) 50%, transparent 80%);
+    transform: translateX(-100%);
+  }
+  .btn-shimmer:hover::before {
+    animation: shimmer-sweep 0.55s ease forwards;
+  }
+`
+
+// ─── Animated Input / Select ──────────────────────────────────────────────────
+
+function AnimatedInput({ className, style, ...props }) {
+  return (
+    <input
+      className={className}
+      style={{ borderLeftColor: 'rgba(0,102,255,0.2)', ...style }}
+      onFocus={(e) => {
+        e.target.style.borderLeftColor = 'rgba(0,102,255,0.8)'
+        e.target.style.boxShadow = '0 0 0 3px rgba(0,102,255,0.12)'
+      }}
+      onBlur={(e) => {
+        e.target.style.borderLeftColor = 'rgba(0,102,255,0.2)'
+        e.target.style.boxShadow = 'none'
+      }}
+      {...props}
+    />
+  )
+}
+
+function AnimatedSelect({ className, style, children, ...props }) {
+  return (
+    <select
+      className={className}
+      style={{ appearance: 'none', cursor: 'pointer', borderLeftColor: 'rgba(0,102,255,0.2)', ...style }}
+      onFocus={(e) => {
+        e.target.style.borderLeftColor = 'rgba(0,102,255,0.8)'
+        e.target.style.boxShadow = '0 0 0 3px rgba(0,102,255,0.12)'
+      }}
+      onBlur={(e) => {
+        e.target.style.borderLeftColor = 'rgba(0,102,255,0.2)'
+        e.target.style.boxShadow = 'none'
+      }}
+      {...props}
+    >
+      {children}
+    </select>
+  )
+}
+
+// ─── Count Up ─────────────────────────────────────────────────────────────────
+
+function CountUp({ target }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true
+          const duration = 900
+          const start = Date.now()
+          const tick = () => {
+            const elapsed = Date.now() - start
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            setCount(Math.round(eased * target))
+            if (progress < 1) requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }
+      },
+      { threshold: 0.5 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [target])
+
+  return <span ref={ref}>{count}</span>
+}
+
 // ─── Form Input ───────────────────────────────────────────────────────────────
 
 function FormField({ label, hint, children }) {
@@ -233,7 +325,7 @@ function FormField({ label, hint, children }) {
 }
 
 const inputCls =
-  'w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 font-sans text-[0.875rem] outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-600'
+  'w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-4 py-3 font-sans text-[0.875rem] outline-none transition-all duration-200 placeholder:text-slate-600'
 
 // ─── Profile Page ─────────────────────────────────────────────────────────────
 
@@ -367,6 +459,7 @@ export default function Profile() {
         backgroundSize: '28px 28px',
       }}
     >
+      <style>{PROFILE_KEYFRAMES}</style>
       <ProfileNavbar initials={initials} name={form.name} />
 
       <div className="max-w-3xl mx-auto px-6 py-12">
@@ -393,7 +486,10 @@ export default function Profile() {
         >
           {/* Avatar */}
           <div className="flex flex-col items-center flex-shrink-0">
-            <div
+            <motion.div
+              animate={{ scale: [1, 1.03, 1] }}
+              transition={{ duration: 0.7, delay: 0.4, ease: 'easeInOut', times: [0, 0.5, 1] }}
+              whileHover={{ boxShadow: '0 0 0 3px rgba(0,102,255,0.3)', transition: { duration: 0.2 } }}
               className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden"
               style={{
                 background: 'rgba(59,130,246,0.2)',
@@ -404,7 +500,7 @@ export default function Profile() {
                 ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
                 : <span className="font-serif text-2xl text-blue-400 leading-none">{initials}</span>
               }
-            </div>
+            </motion.div>
             <button
               onClick={handleChangePhoto}
               className="mt-2 font-sans text-xs text-blue-400 hover:text-blue-300 cursor-pointer transition-colors duration-150 bg-transparent border-0 p-0"
@@ -460,7 +556,7 @@ export default function Profile() {
 
           <div className="flex flex-col gap-5">
             <FormField label="Full Name">
-              <input
+              <AnimatedInput
                 className={inputCls}
                 type="text"
                 name="name"
@@ -471,7 +567,7 @@ export default function Profile() {
             </FormField>
 
             <FormField label="Email Address" hint="Email changes require verification">
-              <input
+              <AnimatedInput
                 className={inputCls}
                 type="email"
                 name="email"
@@ -482,7 +578,7 @@ export default function Profile() {
             </FormField>
 
             <FormField label="University">
-              <input
+              <AnimatedInput
                 className={inputCls}
                 type="text"
                 name="university"
@@ -492,7 +588,7 @@ export default function Profile() {
             </FormField>
 
             <FormField label="Faculty">
-              <input
+              <AnimatedInput
                 className={inputCls}
                 type="text"
                 name="faculty"
@@ -502,7 +598,7 @@ export default function Profile() {
             </FormField>
 
             <FormField label="Department">
-              <input
+              <AnimatedInput
                 className={inputCls}
                 type="text"
                 name="department"
@@ -512,25 +608,26 @@ export default function Profile() {
             </FormField>
 
             <FormField label="Level">
-              <select
+              <AnimatedSelect
                 className={inputCls}
                 name="level"
                 value={form.level}
                 onChange={handleChange}
-                style={{ appearance: 'none', cursor: 'pointer' }}
               >
                 {['100', '200', '300', '400', '500'].map((l) => (
                   <option key={l} value={l}>{l} Level</option>
                 ))}
-              </select>
+              </AnimatedSelect>
             </FormField>
 
             <motion.button
-              whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
               onClick={handleSaveChanges}
-              className="font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2"
+              className="relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2"
               style={{ background: '#2563EB', border: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}
             >
               Save Changes
             </motion.button>
@@ -549,16 +646,16 @@ export default function Profile() {
 
           <div className="flex gap-4">
             {[
-              { label: 'Projects Started', value: '1' },
-              { label: 'Steps Completed', value: `${completedCount} of 6` },
-              { label: 'Last Active',      value: 'Today' },
-            ].map(({ label, value }) => (
+              { label: 'Projects Started', display: <CountUp target={1} /> },
+              { label: 'Steps Completed',  display: <><CountUp target={completedCount} /><span className="text-base font-normal"> of 6</span></> },
+              { label: 'Last Active',       display: 'Today' },
+            ].map(({ label, display }) => (
               <div
                 key={label}
                 className="flex-1 rounded-xl p-4"
                 style={{ background: 'var(--bg-input)' }}
               >
-                <div className="font-sans text-2xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{value}</div>
+                <div className="font-sans text-2xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{display}</div>
                 <div className="font-mono text-xs uppercase tracking-wider mt-1.5" style={{ color: 'var(--text-muted)' }}>{label}</div>
               </div>
             ))}
@@ -600,7 +697,7 @@ export default function Profile() {
                 <div className="font-sans text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.desc}</div>
               </div>
               <motion.button
-                whileHover={{ background: 'rgba(239,68,68,0.1)' }}
+                whileHover={{ background: 'rgba(239,68,68,0.1)', boxShadow: '0 0 12px rgba(239,68,68,0.25)' }}
                 whileTap={{ scale: 0.97 }}
                 onClick={item.handler}
                 className="flex-shrink-0 font-sans text-sm text-red-400 rounded-xl px-4 py-2 cursor-pointer transition-all duration-200"

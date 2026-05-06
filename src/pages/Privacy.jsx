@@ -20,7 +20,7 @@ function Reveal({ children, delay = 0, className }) {
     <motion.div
       initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, margin: '0px 0px -32px 0px', amount: 0.12 }}
+      viewport={{ once: true, amount: 0.08 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
       className={className}
     >
