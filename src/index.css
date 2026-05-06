@@ -8992,6 +8992,108 @@ body {
   }
 }
 
+/* ─── DASHBOARD PREMIUM ANIMATIONS ───────────────────────────────────────────
+   Header slide-down · active step border pulse · completed glow
+   sidebar hover slide · usage bar glow · quick-action icon scale
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@keyframes db-slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes db-active-pulse {
+  0%, 100% { border-left-color: rgba(0,102,255,0.6); }
+  50%       { border-left-color: rgba(0,102,255,1.0); }
+}
+
+/* Header greeting — slides down from above */
+.db-header-enter {
+  animation: db-slide-down 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Journey step — active row pulsing left border */
+.db-step-active-row {
+  border-left: 2px solid rgba(0,102,255,0.6);
+  padding-left: 3px;
+  border-radius: 4px;
+  animation: db-active-pulse 2s ease-in-out infinite;
+}
+
+/* Journey step — completed row green glow */
+.db-step-completed-row {
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(22,163,74,0.15);
+}
+
+/* Sidebar item — hover background slides in from left via pseudo-element */
+.db-sidebar-item {
+  position: relative;
+  overflow: hidden;
+}
+.db-sidebar-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.035);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
+  pointer-events: none;
+  border-radius: inherit;
+}
+.db-sidebar-item:not([aria-disabled="true"]):hover::before {
+  transform: scaleX(1);
+}
+
+/* Sidebar active item — left border expands on mount */
+.db-sidebar-active {
+  background: rgba(0,102,255,0.08) !important;
+}
+.db-sidebar-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #0066FF;
+  border-radius: 0 2px 2px 0;
+  animation: db-border-expand 0.28s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes db-border-expand {
+  from { transform: scaleY(0); transform-origin: top; }
+  to   { transform: scaleY(1); transform-origin: top; }
+}
+
+/* Usage bar — near-limit red glow on the track */
+.db-bar-red-glow {
+  box-shadow: 0 0 8px rgba(239,68,68,0.25);
+}
+
+/* Quick action — icon scales on parent card hover */
+.db-quick-icon {
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.db-quick-card:hover .db-quick-icon {
+  transform: scale(1.1);
+}
+
+/* Accessibility — kill dashboard animations */
+@media (prefers-reduced-motion: reduce) {
+  .db-header-enter,
+  .db-step-active-row,
+  .db-sidebar-active::after {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .db-sidebar-item::before,
+  .db-quick-icon {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ─── LANDING PAGE PREMIUM ANIMATIONS ────────────────────────────────────────
    Hero word stagger · stat glow · step slide-from-left · pricing border pulse
    CTA gradient shift · button shimmer · testimonial star pop

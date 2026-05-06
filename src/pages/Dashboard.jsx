@@ -49,6 +49,12 @@ const revealStyle = (visible) => ({
   transition: 'opacity 0.5s ease, transform 0.5s ease',
 })
 
+const slideLeftStyle = (visible, delayMs = 0) => ({
+  opacity: visible ? 1 : 0,
+  transform: visible ? 'translateX(0)' : 'translateX(-28px)',
+  transition: `opacity 0.5s ease ${delayMs}ms, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${delayMs}ms`,
+})
+
 // ─── Inline SVG Icons ─────────────────────────────────────────────────────────
 
 const SHIELD_D =
@@ -149,6 +155,8 @@ function ProgressRing({ completed, total }) {
     progressValue,
     (v) => circumference - v * circumference
   )
+  const countedValue = useTransform(progressValue, (v) => Math.round(v * total))
+  const [displayCount, setDisplayCount] = useState(0)
 
   useEffect(() => {
     const anim = animate(progressValue, targetPct, {
@@ -157,6 +165,11 @@ function ProgressRing({ completed, total }) {
     })
     return () => anim.stop()
   }, [targetPct, progressValue])
+
+  useEffect(() => {
+    const unsubscribe = countedValue.on('change', setDisplayCount)
+    return unsubscribe
+  }, [countedValue])
 
   return (
     <div
@@ -192,12 +205,12 @@ function ProgressRing({ completed, total }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
-        <span
+        <motion.span
           className="font-mono font-bold leading-none text-white"
           style={{ fontSize: '1.9rem' }}
         >
-          {completed}
-        </span>
+          {displayCount}
+        </motion.span>
         <span
           className="font-mono text-slate-600 mt-[3px]"
           style={{ fontSize: '0.62rem' }}
@@ -284,10 +297,8 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
               role="button"
               tabIndex={isLocked ? -1 : 0}
               aria-disabled={isLocked}
-              className={`flex items-center gap-[11px] pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
-                isActive
-                  ? 'bg-blue-600/20 border-l-4 border-l-blue-500 pl-3'
-                  : 'border-l-4 border-l-transparent pl-3'
+              className={`db-sidebar-item flex items-center gap-[11px] pl-3 pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
+                isActive ? 'db-sidebar-active' : ''
               } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {/* Step badge */}
@@ -422,9 +433,6 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   // FIX 3 — notifications state: dot only shows when there are unread notifications
   const [notifications, setNotifications] = useState([]) // eslint-disable-line no-unused-vars
 
-  // FIX 6 — scroll reveal for welcome header
-  const [headerRef, headerVisible] = useReveal()
-
   useEffect(() => {
     function handleOutside(e) {
       if (avatarRef.current && !avatarRef.current.contains(e.target)) {
@@ -454,7 +462,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
       </button>
 
       {/* FIX 1 — Greeting: shows actual first name and correct subtitle */}
-      <div ref={headerRef} style={revealStyle(headerVisible)}>
+      <div className="db-header-enter">
         <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
           {greeting}, {firstName}
         </div>
@@ -857,8 +865,8 @@ function DashProgressJourney({ STEPS, STUDENT }) {
             <Fragment key={step.id}>
               <div
                 ref={stepRef}
-                style={revealStyle(stepVisible)}
-                className="flex gap-5"
+                style={slideLeftStyle(stepVisible, i * 60)}
+                className={`flex gap-5${isActive ? ' db-step-active-row' : ''}${isCompleted ? ' db-step-completed-row' : ''}`}
               >
                 {/* Timeline column */}
                 <div className="flex flex-col items-center w-11 flex-shrink-0">
@@ -1057,6 +1065,7 @@ const QUICK_ACTIONS_BASE = [
     iconColor: '#16A34A',
     cardBg: 'var(--bg-input)',
     border: 'rgba(22,163,74,0.28)',
+    hoverBorder: 'rgba(22,163,74,0.55)',
     hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(22,163,74,0.22)',
     ctaLabel: 'Continue',
     ctaBg: '#16A34A',
@@ -1073,6 +1082,7 @@ const QUICK_ACTIONS_BASE = [
     iconColor: '#0066FF',
     cardBg: 'var(--bg-input)',
     border: 'rgba(0,102,255,0.24)',
+    hoverBorder: 'rgba(0,102,255,0.5)',
     hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(0,102,255,0.22)',
     ctaLabel: 'Preview',
     ctaBg: 'transparent',
@@ -1091,6 +1101,7 @@ const QUICK_ACTIONS_BASE = [
     iconColor: '#F59E0B',
     cardBg: 'var(--bg-input)',
     border: 'rgba(245,158,11,0.24)',
+    hoverBorder: 'rgba(245,158,11,0.5)',
     hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.2)',
     ctaLabel: 'Export PDF',
     ctaBg: 'transparent',
@@ -1135,7 +1146,7 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
           return (
             <div key={action.label} ref={cardRef} style={revealStyle(cardVisible)}>
               <motion.button
-                whileHover={!isLockedAction ? { y: -4, boxShadow: action.hoverGlow } : {}}
+                whileHover={!isLockedAction ? { y: -4, boxShadow: action.hoverGlow, borderColor: action.hoverBorder } : {}}
                 whileTap={!isLockedAction ? { scale: 0.97 } : {}}
                 aria-label={action.label}
                 aria-disabled={isLockedAction}
@@ -1148,12 +1159,13 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
                     ? () => { if (action.path === '/app') sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined
                 }
-                className={`relative flex flex-col items-start gap-4 p-6 rounded-2xl text-left transition-all duration-200 w-full ${
+                className={`relative flex flex-col items-start gap-4 p-6 rounded-2xl text-left transition-all duration-200 w-full db-quick-card ${
                   isLockedAction ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 style={{
                   background: action.cardBg,
-                  border: `1px solid ${isLockedAction ? 'var(--border-color)' : action.border}`,
+                  border: '1px solid',
+                  borderColor: isLockedAction ? 'var(--border-color)' : action.border,
                   opacity: isLockedAction ? 0.6 : 1,
                 }}
               >
@@ -1166,7 +1178,7 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
 
                 {/* Icon */}
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  className="w-12 h-12 rounded-xl flex items-center justify-center db-quick-icon"
                   style={{ background: action.iconBg, color: action.iconColor }}
                 >
                   <action.Icon />
@@ -1247,12 +1259,12 @@ const PLAN_FEATURES = {
 }
 
 function usageBarColor(pct) {
-  if (pct < 0.5) return '#16A34A'
+  if (pct < 0.6) return '#16A34A'
   if (pct < 0.8) return '#F59E0B'
   return '#DC2626'
 }
 
-function UsageBar({ used, limit }) {
+function UsageBar({ used, limit, visible = true, barIndex = 0 }) {
   const pct = limit !== null ? Math.min(1, used / Math.max(1, limit)) : null
 
   if (limit === null) {
@@ -1280,9 +1292,9 @@ function UsageBar({ used, limit }) {
       >
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${pct * 100}%` }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full rounded-full"
+          animate={{ width: visible ? `${pct * 100}%` : 0 }}
+          transition={{ duration: 0.7, delay: barIndex * 0.05, ease: [0.22, 1, 0.36, 1] }}
+          className={`h-full rounded-full${pct >= 0.8 ? ' db-bar-red-glow' : ''}`}
           style={{ background: usageBarColor(pct) }}
         />
       </div>
@@ -1347,7 +1359,7 @@ function DashUsageSection({ features, runCounts, loading }) {
 
       {/* Feature rows */}
       <div className="flex flex-col gap-5">
-        {featureKeys.map((key) => {
+        {featureKeys.map((key, barIndex) => {
           const used  = runCounts[key] ?? 0
           const limit = resolveLimit(key, features)
           return (
@@ -1364,7 +1376,7 @@ function DashUsageSection({ features, runCounts, loading }) {
                   </span>
                 )}
               </div>
-              <UsageBar used={used} limit={limit} />
+              <UsageBar used={used} limit={limit} visible={sectionVisible} barIndex={barIndex} />
             </div>
           )
         })}
