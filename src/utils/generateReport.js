@@ -180,6 +180,7 @@ function buildStep2(state) {
       ${ch.word_count_target ? `<span style="
         font-family:'JetBrains Mono','Courier New',monospace;
         font-size:10px;color:#6B7280;white-space:nowrap;
+        min-width:80px;text-align:right;
       ">${ch.word_count_target.toLocaleString()} words</span>` : ''}
     </div>`).join('') : ''
 
@@ -435,7 +436,7 @@ function buildReportHTML(state, logoDataUrl) {
   }
 
   return `
-    <div style="width:794px;background:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;">
+    <div style="width:794px;max-width:794px;box-sizing:border-box;overflow:hidden;background:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;">
 
       <!-- ── Header ── -->
       <div style="
@@ -443,7 +444,7 @@ function buildReportHTML(state, logoDataUrl) {
         display:flex;justify-content:space-between;align-items:center;
       ">
         <div>${logoHTML}</div>
-        <div style="text-align:right;min-width:280px;overflow:visible;">
+        <div style="text-align:right;max-width:380px;word-break:break-word;white-space:normal;">
           <div style="
             font-family:'DM Serif Display',Georgia,serif;
             font-size:15px;font-weight:400;color:#FFFFFF;
@@ -466,7 +467,7 @@ function buildReportHTML(state, logoDataUrl) {
       <div style="height:3px;background:linear-gradient(90deg,#0066FF,#3B82F6,transparent);width:100%;"></div>
 
       <!-- ── Content ── -->
-      <div style="background:#FFFFFF;padding:48px;padding-bottom:72px;">
+      <div style="background:#FFFFFF;padding:48px;padding-bottom:72px;padding-left:32px;padding-right:32px;box-sizing:border-box;">
         ${stepsHTML}
       </div>
 
@@ -508,8 +509,18 @@ export async function downloadProgressReport(state) {
         margin: [10, 10, 10, 10],
         filename: `FYPro-Progress-Report-${slug}.pdf`,
         image:     { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
-        jsPDF:     { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: 794,
+          windowWidth: 794,
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+        },
       })
       .from(container.firstElementChild)
       .toPdf()
