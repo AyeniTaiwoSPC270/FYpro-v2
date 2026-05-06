@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FYPro — Instagram Flyer (21dev)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #030812; line-height: 1; }
+
+    /* ── Canvas ──────────────────────────────────────── */
+    .canvas {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      position: relative;
+      background-color: #030812;
+      background-image:
+        radial-gradient(circle, rgba(0,102,255,0.065) 1px, transparent 1px),
+        radial-gradient(ellipse 1000px 800px at 50% 30%, rgba(0,102,255,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 700px 500px at 90% 4%,  rgba(0,148,255,0.11) 0%, transparent 65%),
+        radial-gradient(ellipse 600px 450px at 8%  98%, rgba(0, 70,200,0.08) 0%, transparent 70%);
+      background-size: 28px 28px, auto, auto, auto;
+    }
+
+    /* Accent border */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, #0066FF 28%, #38BDF8 72%, transparent 100%);
+      z-index: 10;
+    }
+
+    /* ── Noise layer ─────────────────────────────────── */
+    .noise-layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1080px; height: 1350px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Content ─────────────────────────────────────── */
+    .content {
+      position: absolute; inset: 0;
+      padding: 0 64px;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    /* ── 1. Top bar ───────────────────────────────────── */
+    .top-bar {
+      padding-top: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo img {
+      height: 40px;
+      display: block;
+      mix-blend-mode: screen;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(22,163,74,0.10);
+      border: 1px solid rgba(22,163,74,0.32);
+      padding: 7px 16px 7px 12px;
+      border-radius: 999px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #16A34A;
+      box-shadow: 0 0 8px rgba(22,163,74,0.9), 0 0 16px rgba(22,163,74,0.4);
+    }
+    .status-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: #16A34A;
+    }
+
+    /* ── 2. Hero ─────────────────────────────────────── */
+    .hero { margin-top: 76px; }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 10px;
+      color: rgba(0,102,255,0.72);
+      letter-spacing: 0.16em;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .hero-headline {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      line-height: 1.07;
+      letter-spacing: -0.022em;
+    }
+
+    .hl-white {
+      display: block;
+      font-size: 86px;
+      color: #FFFFFF;
+    }
+
+    /* Gradient text — the 21dev signature move */
+    .hl-gradient {
+      display: block;
+      font-size: 86px;
+      background: linear-gradient(108deg, #0066FF 0%, #2B8EFF 40%, #38BDF8 75%, #7DD3FC 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 48px rgba(0,102,255,0.30));
+    }
+
+    .hero-divider {
+      width: 56px; height: 2px;
+      margin-top: 30px;
+      background: linear-gradient(90deg, #0066FF, transparent);
+    }
+
+    .hero-tagline {
+      margin-top: 18px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      color: rgba(255,255,255,0.48);
+      line-height: 1.65;
+      max-width: 520px;
+    }
+
+    /* ── 3. Bento grid ───────────────────────────────── */
+    .bento { margin-top: 44px; }
+
+    .bento-row {
+      display: flex;
+      gap: 14px;
+    }
+    .bento-row + .bento-row { margin-top: 14px; }
+
+    /* Glass card — backdrop-filter frosted look */
+    .glass-card {
+      background: rgba(255,255,255,0.026);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.075);
+      border-radius: 16px;
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,102,255,0.04),
+        0 8px 32px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    /* Subtle shimmer on top edge */
+    .glass-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 12%; right: 12%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+    }
+
+    .feature-card { flex: 1; }
+
+    .card-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      color: rgba(0,102,255,0.68);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      font-size: 25px;
+      color: rgba(255,255,255,0.92);
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .card-desc {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(255,255,255,0.40);
+      line-height: 1.65;
+    }
+
+    /* Corner accent glow per card */
+    .card-glow-blue::before {
+      content: '';
+      position: absolute;
+      bottom: -24px; right: -24px;
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,102,255,0.18), transparent 70%);
+      pointer-events: none;
+    }
+
+    .card-glow-cyan::before {
+      content: '';
+      position: absolute;
+      bottom: -24px; right: -24px;
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56,189,248,0.15), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Stats bar — full width */
+    .stats-card { width: 100%; }
+
+    .stats-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .stat-block {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .stat-divider {
+      width: 1px; height: 42px;
+      background: rgba(255,255,255,0.07);
+      flex-shrink: 0;
+      margin: 0 28px;
+    }
+
+    .stat-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 30px;
+      color: #0066FF;
+      line-height: 1;
+    }
+
+    .stat-number-green {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 30px;
+      color: #16A34A;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      color: rgba(255,255,255,0.36);
+      line-height: 1.4;
+    }
+
+    /* ── 4. Quote ────────────────────────────────────── */
+    .quote-block {
+      margin-top: 44px;
+      padding-left: 22px;
+      border-left: 2px solid rgba(0,102,255,0.55);
+    }
+
+    .quote-text {
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      font-weight: 400;
+      font-size: 20px;
+      color: rgba(255,255,255,0.58);
+      line-height: 1.6;
+      max-width: 700px;
+    }
+
+    /* ── 5. CTA ──────────────────────────────────────── */
+    .cta-section {
+      margin-top: auto;
+      padding-bottom: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cta-left {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .cta-url {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      color: #FFFFFF;
+    }
+
+    .cta-subtext {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      color: rgba(255,255,255,0.33);
+    }
+
+    /* Gradient fill button with inset highlight */
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(135deg, #0066FF 0%, #1D5FE8 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 16px 30px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: #FFFFFF;
+      box-shadow:
+        0 4px 24px rgba(0,102,255,0.50),
+        inset 0 1px 0 rgba(255,255,255,0.18);
+      cursor: default;
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <!-- Noise texture -->
+    <svg class="noise-layer" xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 1080 1350" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="noise-filter">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+        </filter>
+      </defs>
+      <rect width="1080" height="1350" filter="url(#noise-filter)" opacity="0.025"/>
+    </svg>
+
+    <div class="content">
+
+      <!-- 1. Top bar -->
+      <div class="top-bar">
+        <div class="logo">
+          <img src="fypro-logo.png" alt="FYPro">
+        </div>
+        <div class="status-pill">
+          <div class="status-dot"></div>
+          <span class="status-text">FREE ACCESS</span>
+        </div>
+      </div>
+
+      <!-- 2. Hero -->
+      <div class="hero">
+        <p class="hero-eyebrow">For Nigerian University Students</p>
+        <h1 class="hero-headline">
+          <span class="hl-white">The Supervisor</span>
+          <span class="hl-gradient">You Never</span>
+          <span class="hl-white">Had.</span>
+        </h1>
+        <div class="hero-divider"></div>
+        <p class="hero-tagline">AI-powered research companion that guides you from topic selection to defense day.</p>
+      </div>
+
+      <!-- 3. Bento grid -->
+      <div class="bento">
+
+        <!-- Feature cards row -->
+        <div class="bento-row">
+          <div class="glass-card feature-card card-glow-blue">
+            <p class="card-label">01 &nbsp;/&nbsp; Topic Validator</p>
+            <p class="card-title">Validate Before You Commit</p>
+            <p class="card-desc">Confirm your research topic is defensible before you invest a semester in it.</p>
+          </div>
+          <div class="glass-card feature-card card-glow-cyan">
+            <p class="card-label">02 &nbsp;/&nbsp; Defense Simulator</p>
+            <p class="card-title">Face the Panel First</p>
+            <p class="card-desc">Three AI examiners ask the hard questions before your real defense day.</p>
+          </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="bento-row">
+          <div class="glass-card stats-card">
+            <div class="stats-row">
+              <div class="stat-block">
+                <span class="stat-number">500K+</span>
+                <span class="stat-label">Nigerian FYP students yearly</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-block">
+                <span class="stat-number">6 Steps</span>
+                <span class="stat-label">From topic to defense</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-block">
+                <span class="stat-number-green">Free</span>
+                <span class="stat-label">No credit card required</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4. Quote -->
+      <div class="quote-block">
+        <p class="quote-text">&ldquo;Most students start preparing for defense 3 days before. Don&rsquo;t be that student.&rdquo;</p>
+      </div>
+
+      <!-- 5. CTA -->
+      <div class="cta-section">
+        <div class="cta-left">
+          <span class="cta-url">fypro.com.ng</span>
+          <span class="cta-subtext">Start free today</span>
+        </div>
+        <button class="cta-button">Get Started Free &rarr;</button>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

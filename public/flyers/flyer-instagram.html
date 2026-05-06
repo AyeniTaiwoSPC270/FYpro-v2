@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FYPro — Instagram Flyer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: #060E18;
+      line-height: 1;
+    }
+
+    /* ── Canvas ─────────────────────────────────────────── */
+    .canvas {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      position: relative;
+      background-color: #060E18;
+      background-image:
+        radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px),
+        radial-gradient(ellipse 800px 600px at 80% 15%, rgba(0,102,255,0.10) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 20% 100%, rgba(0,102,255,0.06) 0%, transparent 70%);
+      background-size: 28px 28px, auto, auto;
+    }
+
+    /* Top border */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, #0066FF 35%, #3B82F6 65%, transparent 100%);
+      z-index: 10;
+    }
+
+    /* ── Noise overlay ──────────────────────────────────── */
+    .noise-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1080px;
+      height: 1350px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Content wrapper ────────────────────────────────── */
+    .content {
+      position: absolute;
+      inset: 0;
+      padding: 0 72px;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    /* ── Section 1 — Top bar ────────────────────────────── */
+    .top-bar {
+      padding-top: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo img {
+      height: 40px;
+      display: block;
+      mix-blend-mode: screen;
+    }
+
+    .badge-free {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(22,163,74,0.15);
+      border: 1px solid rgba(22,163,74,0.4);
+      color: #16A34A;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 6px 16px;
+      border-radius: 999px;
+    }
+
+    /* ── Section 2 — Hero text ──────────────────────────── */
+    .hero {
+      margin-top: 80px;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 11px;
+      color: rgba(0,102,255,0.8);
+      letter-spacing: 0.12em;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .hero-headline {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-headline .hl-white {
+      display: block;
+      font-size: 76px;
+      color: #FFFFFF;
+    }
+
+    .hero-headline .hl-blue {
+      display: block;
+      font-size: 76px;
+      color: #0066FF;
+      text-shadow: 0 0 60px rgba(0,102,255,0.5);
+    }
+
+    .hero-divider {
+      width: 56px;
+      height: 2px;
+      margin-top: 28px;
+      background: linear-gradient(90deg, #0066FF, transparent);
+    }
+
+    .hero-tagline {
+      margin-top: 20px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 19px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      max-width: 560px;
+    }
+
+    /* ── Section 3 — Feature pills ──────────────────────── */
+    .pills {
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(13,27,42,0.9);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 10px 20px;
+    }
+
+    .pill-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-blue {
+      background: #0066FF;
+      box-shadow: 0 0 6px rgba(0,102,255,0.7);
+    }
+
+    .dot-green {
+      background: #16A34A;
+      box-shadow: 0 0 6px rgba(22,163,74,0.7);
+    }
+
+    .pill-text {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+    }
+
+    /* ── Section 4 — Social proof block ─────────────────── */
+    .social-proof {
+      margin-top: 48px;
+      background: rgba(13,27,42,0.85);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .quote-text {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      font-size: 22px;
+      color: #F1F5F9;
+      line-height: 1.5;
+    }
+
+    .quote-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 20px 0;
+    }
+
+    .stats-row {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .stat-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 28px;
+      color: #0066FF;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.4;
+    }
+
+    .stats-divider {
+      width: 1px;
+      height: 40px;
+      background: rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    /* ── Section 5 — CTA bottom ──────────────────────────── */
+    .cta-section {
+      margin-top: auto;
+      padding-bottom: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cta-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cta-url {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      color: #FFFFFF;
+      line-height: 1.2;
+    }
+
+    .cta-subtext {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.2;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      background: #0066FF;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 32px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(0,102,255,0.4);
+      white-space: nowrap;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <!-- Noise texture layer -->
+    <svg class="noise-layer" xmlns="http://www.w3.org/2000/svg"
+         viewBox="0 0 1080 1350" preserveAspectRatio="xMidYMid slice"
+         aria-hidden="true">
+      <defs>
+        <filter id="noise-filter" x="0%" y="0%" width="100%" height="100%"
+                color-interpolation-filters="linearRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65"
+                        numOctaves="3" stitchTiles="stitch" result="noiseOut"/>
+          <feColorMatrix type="saturate" values="0"
+                         in="noiseOut" result="grayNoise"/>
+          <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay"/>
+        </filter>
+      </defs>
+      <rect width="1080" height="1350" filter="url(#noise-filter)" opacity="0.02"/>
+    </svg>
+
+    <div class="content">
+
+      <!-- ── SECTION 1: Top bar ─────────────────────────── -->
+      <div class="top-bar">
+        <div class="logo">
+          <img src="fypro-logo.png" alt="FYPro">
+        </div>
+        <span class="badge-free">FREE ACCESS</span>
+      </div>
+
+      <!-- ── SECTION 2: Hero text ───────────────────────── -->
+      <div class="hero">
+        <p class="hero-eyebrow">For Nigerian University Students</p>
+        <h1 class="hero-headline">
+          <span class="hl-white">The Supervisor</span>
+          <span class="hl-blue">You Never</span>
+          <span class="hl-white">Had.</span>
+        </h1>
+        <div class="hero-divider"></div>
+        <p class="hero-tagline">AI-powered research companion that guides you from topic selection to defense day.</p>
+      </div>
+
+      <!-- ── SECTION 3: Feature pills ──────────────────── -->
+      <div class="pills">
+        <div class="pill">
+          <div class="pill-dot dot-blue"></div>
+          <span class="pill-text">Topic Validator</span>
+        </div>
+        <div class="pill">
+          <div class="pill-dot dot-blue"></div>
+          <span class="pill-text">Defense Simulator</span>
+        </div>
+        <div class="pill">
+          <div class="pill-dot dot-green"></div>
+          <span class="pill-text">Free to Start</span>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: Social proof ────────────────────── -->
+      <div class="social-proof">
+        <p class="quote-text">&ldquo;Most students start preparing for defense 3 days before. Don&rsquo;t be that student.&rdquo;</p>
+        <div class="quote-divider"></div>
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-number">500K+</span>
+            <span class="stat-label">Nigerian FYP students yearly</span>
+          </div>
+          <div class="stats-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">6 Steps</span>
+            <span class="stat-label">From topic to defense</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 5: CTA bottom ──────────────────────── -->
+      <div class="cta-section">
+        <div class="cta-left">
+          <span class="cta-url">fypro.com.ng</span>
+          <span class="cta-subtext">Start free today</span>
+        </div>
+        <button class="cta-button">Get Started Free &rarr;</button>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

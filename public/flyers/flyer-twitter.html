@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1600">
+  <title>FYPro — Twitter Launch Card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 1600px;
+      height: 900px;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .canvas {
+      position: relative;
+      width: 1600px;
+      height: 900px;
+      background-color: #060E18;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Dot grid ── */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(0,102,255,0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Atmospheric glows ── */
+    .glow-right {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 900px 700px at 90% 50%, rgba(0,102,255,0.10) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-left {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 400px 400px at 0% 80%, rgba(0,102,255,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Top border gradient ── */
+    .top-border {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, #0066FF 50%, transparent 100%);
+      z-index: 2;
+    }
+
+    /* ── SVG noise overlay ── */
+    .noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.018;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 100px;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .col-left {
+      flex: 1;
+      padding-right: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .logo {
+      height: 42px;
+      width: auto;
+      mix-blend-mode: screen;
+      margin-bottom: 48px;
+      display: block;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 11px;
+      color: rgba(0, 102, 255, 0.75);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .headline {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      line-height: 1.06;
+      letter-spacing: -0.02em;
+      margin-bottom: 0;
+    }
+
+    .headline-white {
+      display: block;
+      font-size: 80px;
+      color: #FFFFFF;
+    }
+
+    .headline-blue {
+      display: block;
+      font-size: 80px;
+      color: #0066FF;
+      text-shadow: 0 0 80px rgba(0, 102, 255, 0.5);
+    }
+
+    .divider {
+      width: 52px;
+      height: 2px;
+      background: linear-gradient(90deg, #0066FF, transparent);
+      margin: 24px 0;
+      flex-shrink: 0;
+    }
+
+    .tagline {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.6;
+      max-width: 580px;
+    }
+
+    .bottom-row {
+      margin-top: 44px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      background: #0066FF;
+      border-radius: 10px;
+      padding: 14px 28px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      color: #FFFFFF;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0, 102, 255, 0.45);
+      border: none;
+      cursor: default;
+    }
+
+    .cta-sub {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.3);
+      white-space: nowrap;
+    }
+
+    /* ── RIGHT COLUMN ── */
+    .col-right {
+      width: 380px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Card base ── */
+    .card {
+      border-radius: 14px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .card-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .card-title {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .card-desc {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      display: block;
+    }
+
+    /* ── Card 1 — Topic Validator ── */
+    .card-1 {
+      background: rgba(15, 34, 53, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .card-1 .card-badge { color: rgba(0, 102, 255, 0.7); }
+    .card-1 .card-title { color: #F1F5F9; }
+    .card-1 .card-desc  { color: rgba(255, 255, 255, 0.4); }
+
+    .card-1 .right-edge {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, transparent, rgba(0, 102, 255, 0.3), transparent);
+    }
+
+    /* ── Card 2 — Defense Simulator (hero) ── */
+    .card-2 {
+      background: linear-gradient(135deg, rgba(0, 102, 255, 0.18), rgba(0, 60, 180, 0.12));
+      border: 1px solid rgba(0, 102, 255, 0.4);
+      box-shadow:
+        0 8px 32px rgba(0, 102, 255, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .card-2 .card-badge { color: #3B82F6; }
+    .card-2 .card-title { color: #FFFFFF; }
+    .card-2 .card-desc  { color: rgba(255, 255, 255, 0.6); }
+
+    .card-2 .corner-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle at 0% 0%, rgba(0, 102, 255, 0.4), transparent 70%);
+      pointer-events: none;
+    }
+
+    .live-badge {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: rgba(22, 163, 74, 0.15);
+      border: 1px solid rgba(22, 163, 74, 0.4);
+      border-radius: 999px;
+      padding: 3px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #16A34A;
+      box-shadow: 0 0 6px rgba(22, 163, 74, 0.8);
+      flex-shrink: 0;
+    }
+
+    .live-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 9px;
+      color: #16A34A;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Card 3 — Urgency ── */
+    .card-3 {
+      background: rgba(15, 34, 53, 0.9);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+    }
+
+    .card-3 .card-badge { color: rgba(245, 158, 11, 0.8); }
+    .card-3 .card-title { color: #F1F5F9; }
+    .card-3 .card-desc  { color: rgba(255, 255, 255, 0.4); }
+
+    .card-3 .right-edge {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, transparent, rgba(245, 158, 11, 0.25), transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <!-- Layers -->
+    <div class="glow-right"></div>
+    <div class="glow-left"></div>
+    <div class="top-border"></div>
+
+    <!-- SVG Noise -->
+    <svg class="noise" xmlns="http://www.w3.org/2000/svg" width="1600" height="900">
+      <filter id="noise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+        <feColorMatrix type="saturate" values="0"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#noise)"/>
+    </svg>
+
+    <!-- Main Layout -->
+    <div class="layout">
+
+      <!-- LEFT -->
+      <div class="col-left">
+        <img class="logo" src="fypro-logo.png" alt="FYPro">
+
+        <span class="eyebrow">AI-Powered · Built for Nigeria</span>
+
+        <div class="headline">
+          <span class="headline-white">The Supervisor</span>
+          <span class="headline-blue">You Never Had.</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <p class="tagline">
+          The AI research companion that guides Nigerian university final year
+          students from topic selection all the way to defense day.
+        </p>
+
+        <div class="bottom-row">
+          <span class="cta-btn">Try Free at fypro.com.ng</span>
+          <span class="cta-sub">No signup friction · Free to start</span>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="col-right">
+
+        <!-- Card 1 — Topic Validator -->
+        <div class="card card-1">
+          <span class="card-badge">Step 01</span>
+          <span class="card-title">Topic Validator</span>
+          <span class="card-desc">Validates scope, gaps &amp; feasibility</span>
+          <div class="right-edge"></div>
+        </div>
+
+        <!-- Card 2 — Defense Simulator -->
+        <div class="card card-2">
+          <div class="corner-glow"></div>
+          <div class="live-badge">
+            <div class="live-dot"></div>
+            <span class="live-text">LIVE</span>
+          </div>
+          <span class="card-badge">Step 06</span>
+          <span class="card-title">Defense Simulator</span>
+          <span class="card-desc">3 AI examiners. Real questions.</span>
+        </div>
+
+        <!-- Card 3 — Urgency -->
+        <div class="card card-3">
+          <span class="card-badge">Defense Season</span>
+          <span class="card-title">Your date is closer</span>
+          <span class="card-desc">Most students start too late.</span>
+          <div class="right-edge"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+</html>

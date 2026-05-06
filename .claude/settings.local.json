@@ -59,7 +59,10 @@
       "PowerShell(Get-Item *)",
       "PowerShell(Out-File *)",
       "PowerShell($bytes = [IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\public\\\\fypro-logo.png\"\\); Write-Output \"Size: $\\($bytes.Length\\) bytes\")",
-      "Bash(node -e \"const fs=require\\('fs'\\); const b64=fs.readFileSync\\('public/fypro-logo.png'\\).toString\\('base64'\\); console.log\\('data:image/png;base64,'+b64\\);\")"
+      "Bash(node -e \"const fs=require\\('fs'\\); const b64=fs.readFileSync\\('public/fypro-logo.png'\\).toString\\('base64'\\); console.log\\('data:image/png;base64,'+b64\\);\")",
+      "Bash(not exist *)",
+      "Bash(npm --version)",
+      "Bash(node scripts/screenshot-flyers.mjs)"
     ]
   }
 }
