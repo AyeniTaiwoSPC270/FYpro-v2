@@ -45,7 +45,12 @@
       "PowerShell(\\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\_lib\\\\papers.js\"\\).Count; \\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\api\\\\topic-validator.js\"\\).Count)",
       "Bash(node --input-type=module --no-warnings)",
       "Bash(Get-ChildItem *)",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('supabase:', p.dependencies['@supabase/supabase-js']\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('supabase:', p.dependencies['@supabase/supabase-js']\\)\")",
+      "Bash(node_modules/.bin/tsc --noEmit --skipLibCheck)",
+      "Bash(node -e ' *)",
+      "Bash(Select-String -Pattern \"puppeteer|shot|screenshot|capture\")",
+      "PowerShell(ls \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\node_modules\\\\.bin\" | Where-Object { $_.Name -match \"puppeteer|shot|screenshot|capture\" })",
+      "Bash(node scripts/screenshot-og.mjs)"
     ]
   }
 }
