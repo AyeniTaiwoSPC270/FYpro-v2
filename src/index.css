@@ -8991,3 +8991,196 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── LANDING PAGE PREMIUM ANIMATIONS ────────────────────────────────────────
+   Hero word stagger · stat glow · step slide-from-left · pricing border pulse
+   CTA gradient shift · button shimmer · testimonial star pop
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@keyframes lp-word-reveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lp-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lp-cta-enter {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes lp-stat-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,102,255,0.15); }
+  50%       { box-shadow: 0 0 38px rgba(0,102,255,0.35); }
+}
+
+@keyframes lp-slide-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes lp-border-pulse-opacity {
+  0%, 100% { border-color: rgba(0,102,255,0.4); }
+  50%       { border-color: rgba(0,102,255,0.85); }
+}
+
+@keyframes lp-cta-bg-shift {
+  0%   { transform: translate(-50%,-50%) translate(0%,   0%); }
+  25%  { transform: translate(-50%,-50%) translate(-14%, 12%); }
+  50%  { transform: translate(-50%,-50%) translate(16%, -10%); }
+  75%  { transform: translate(-50%,-50%) translate(-8%,  15%); }
+  100% { transform: translate(-50%,-50%) translate(0%,   0%); }
+}
+
+@keyframes lp-star-pop {
+  0%   { transform: scale(0.5); opacity: 0.4; }
+  60%  { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* Hero — word stagger */
+.lp-hero-word {
+  display: inline-block;
+  margin-right: 0.25em;
+  opacity: 0;
+  animation: lp-word-reveal 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Hero — tagline fade */
+.lp-hero-tagline {
+  opacity: 0;
+  animation: lp-fade-up 0.55s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Hero — CTA scale-in */
+.lp-hero-cta {
+  opacity: 0;
+  animation: lp-cta-enter 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Stats — number glow wrapper */
+.lp-stat-num-wrap {
+  display: inline-block;
+  border-radius: 10px;
+  padding: 6px 14px;
+  animation: lp-stat-glow 2.8s ease-in-out infinite;
+}
+
+/* Kicker labels — text-shadow */
+.lp-kicker {
+  text-shadow: 0 0 40px rgba(0,102,255,0.22);
+}
+
+/* Feature cards — lift wrapper */
+.lp-feat-lift {
+  height: 100%;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.lp-feat-lift:hover {
+  transform: translateY(-4px);
+}
+
+/* How-it-works — step left border hover */
+.lp-step-row {
+  position: relative;
+  padding-left: 0;
+}
+.lp-step-row::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 12px;
+  bottom: 12px;
+  width: 0;
+  background: #0066FF;
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+.lp-step-row:hover::before {
+  width: 4px;
+}
+
+/* Testimonial — star pop on hover */
+.lp-star {
+  display: inline-block;
+}
+.lp-testi-card:hover .lp-star {
+  animation: lp-star-pop 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+  animation-delay: var(--lp-star-delay, 0ms);
+}
+
+/* Pricing — featured card pulse border wrapper */
+.lp-pricing-pulse-wrap {
+  position: relative;
+  border-radius: 16px;
+  height: 100%;
+}
+.lp-pricing-pulse-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  border: 1px solid rgba(0,102,255,0.4);
+  animation: lp-border-pulse-opacity 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* CTA section — moving radial glow */
+.lp-cta-glow {
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 60% 70% at center, rgba(0,102,255,0.18) 0%, transparent 65%);
+  left: 50%;
+  top: 50%;
+  animation: lp-cta-bg-shift 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* CTA / Hero buttons — shimmer sweep on hover */
+.lp-btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.lp-btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  left: -100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+  transition: none;
+}
+.lp-btn-shimmer:hover::after {
+  left: 100%;
+  transition: left 0.5s ease;
+}
+
+/* Accessibility — disable all lp-* animations */
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-word,
+  .lp-hero-tagline,
+  .lp-hero-cta,
+  .lp-stat-num-wrap,
+  .lp-pricing-pulse-wrap::before,
+  .lp-cta-glow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lp-btn-shimmer::after,
+  .lp-testi-card:hover .lp-star {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .lp-step-row::before {
+    transition-duration: 0.01ms !important;
+  }
+  .lp-feat-lift {
+    transition-duration: 0.01ms !important;
+  }
+}

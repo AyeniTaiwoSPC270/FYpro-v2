@@ -245,14 +245,24 @@ function MagneticCard({ children, className, style, hoverShadow, dataN }) {
 function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
   return (
     <motion.div
-      className="flex flex-col gap-[18px] p-7 rounded-2xl border border-white/[0.07] transition-colors duration-200"
+      className="lp-testi-card flex flex-col gap-[18px] p-7 rounded-2xl border border-white/[0.1] transition-colors duration-200"
       style={{
         background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
         ...(fixed ? { width: 380, flexShrink: 0 } : {}),
       }}
-      whileHover={fixed ? {} : { borderColor: 'rgba(0,102,255,0.22)', y: -3 }}
+      whileHover={fixed ? {} : {
+        borderColor: 'rgba(0,102,255,0.3)',
+        scale: 1.02,
+        y: -3,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.3)',
+      }}
     >
-      <div className="text-[#F59E0B] text-[0.75rem] tracking-[2px]">★★★★★</div>
+      <div className="flex gap-[3px]">
+        {[0,1,2,3,4].map(idx => (
+          <span key={idx} className="lp-star" style={{ '--lp-star-delay': `${idx * 60}ms`, color: '#F59E0B', fontSize: '0.75rem' }}>★</span>
+        ))}
+      </div>
       <div className="flex-1">
         <span className="block font-serif text-[3.5rem] leading-none mb-4 select-none pointer-events-none" style={{ color: 'rgba(37,99,235,0.4)' }} aria-hidden="true">&ldquo;</span>
         <p className="text-[0.875rem] text-white/[0.78] leading-[1.75] italic">{quote}</p>
@@ -329,10 +339,10 @@ function StatItem({ renderNumber, target, label, delay }) {
   const count = useCountUp(target, inView)
   return (
     <Reveal delay={delay} className="text-center">
-      <div ref={ref} className="font-serif text-[2.6rem] text-white leading-none mb-1.5">
+      <div ref={ref} className="lp-stat-num-wrap font-serif leading-none mb-2" style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: '#60A5FA' }}>
         {renderNumber(count)}
       </div>
-      <div className="text-[0.8rem] text-white/65 font-medium">{label}</div>
+      <div className="text-[0.82rem] text-white/65 font-medium">{label}</div>
     </Reveal>
   )
 }
@@ -345,7 +355,7 @@ function Navbar() {
   const activeSection = useNavActive()
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 30)
+    const h = () => setScrolled(window.scrollY > 80)
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
   }, [])
@@ -367,16 +377,14 @@ function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-5 md:px-12 border-b transition-all duration-200 ${
-          scrolled
-            ? 'border-[rgba(0,102,255,0.18)]'
-            : 'border-white/[0.06]'
-        }`}
+        className="fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-5 md:px-12"
         style={{
-          background: scrolled ? 'rgba(6,14,24,0.94)' : 'rgba(6,14,24,0.82)',
-          backdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
-          WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
-          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.4)' : 'none',
+          background: scrolled ? 'rgba(6,14,24,0.85)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(12px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(255,255,255,0.04)',
+          boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.35)' : 'none',
+          transition: 'all 0.3s ease',
         }}
       >
         <div className="flex items-center gap-2.5 flex-shrink-0">
@@ -587,22 +595,15 @@ function HeroMockup() {
 }
 
 function HeroHeadline() {
-  const [ref, visible] = useReveal()
   const words = ['The', 'Supervisor', 'Most', 'Final', 'Year', 'Students', 'Never', 'Had']
   const italic = new Set(['Never', 'Had'])
   return (
     <h1
-      ref={ref}
       className="relative z-[1] font-serif font-normal leading-[1.1] text-white max-w-[820px] mb-[22px]"
-      style={{
-        fontSize: 'clamp(2.4rem,6vw,4.4rem)',
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(24px)',
-        transition: 'opacity 0.5s ease, transform 0.5s ease',
-      }}
+      style={{ fontSize: 'clamp(2.76rem,6.9vw,5.06rem)', letterSpacing: '-0.03em' }}
     >
       {words.map((word, i) => (
-        <span key={i} className="inline-block mr-[0.25em]">
+        <span key={i} className="lp-hero-word" style={{ animationDelay: `${i * 80}ms` }}>
           {italic.has(word) ? <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>{word}</em> : word}
         </span>
       ))}
@@ -611,27 +612,12 @@ function HeroHeadline() {
 }
 
 function HeroSub() {
-  const [ref, visible] = useReveal()
-  const text = "FYPro guides you from a rough topic to a defensible project — then puts you in front of three examiners before your real panel does."
-  const { displayed, done } = useTypewriter(text, 1080, 26)
   return (
     <p
-      ref={ref}
-      className="relative z-[1] text-[1.05rem] text-white/65 max-w-[540px] leading-[1.75] mb-[38px]"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(24px)',
-        transition: 'opacity 0.5s ease, transform 0.5s ease',
-      }}
+      className="lp-hero-tagline relative z-[1] text-[1.05rem] text-white/65 max-w-[540px] leading-[1.75] mb-[38px]"
+      style={{ animationDelay: '1260ms' }}
     >
-      {displayed}
-      {!done && (
-        <motion.span
-          animate={{ opacity: [1, 0] }}
-          transition={{ duration: 0.55, repeat: Infinity, repeatType: 'reverse' }}
-          className="inline-block w-[2px] h-[0.9em] bg-white/65 ml-px align-text-bottom"
-        />
-      )}
+      FYPro guides you from a rough topic to a defensible project — then puts you in front of three examiners before your real panel does.
     </p>
   )
 }
@@ -639,7 +625,6 @@ function HeroSub() {
 function Hero() {
   const heroRef = useRef(null)
   const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
-  const [btnsRef, btnsVisible] = useReveal()
   const [mockupRef, mockupVisible] = useReveal()
 
   useEffect(() => {
@@ -706,11 +691,10 @@ function Hero() {
 
       {/* Actions */}
       <div
-        ref={btnsRef}
-        className="relative z-[1] flex gap-3 items-center justify-center flex-wrap mb-[72px]"
-        style={{ opacity: btnsVisible ? 1 : 0, transform: btnsVisible ? 'translateY(0)' : 'translateY(24px)', transition: 'opacity 0.5s ease, transform 0.5s ease' }}
+        className="lp-hero-cta relative z-[1] flex gap-3 items-center justify-center flex-wrap mb-[72px]"
+        style={{ animationDelay: '1800ms' }}
       >
-        <BtnLink href="/login" className="px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
+        <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
         <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
           See How It Works
@@ -798,44 +782,58 @@ const FEAT_COLOR_MAP = {
   red:   { kicker: '#F87171', iconBg: 'rgba(220,38,38,0.12)', border: '#0066FF' },
 }
 
+function FeatureCardWrapper({ f, i }) {
+  const [hovered, setHovered] = useState(false)
+  const c = FEAT_COLOR_MAP[f.color]
+  return (
+    <Reveal delay={i * 0.07} className="h-full">
+      <div
+        className="lp-feat-lift"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <MagneticCard
+          className="relative overflow-hidden rounded-2xl p-9 h-full cursor-default"
+          style={{
+            background: 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)',
+            border: '1px solid',
+            borderColor: hovered ? 'rgba(0,102,255,0.4)' : 'rgba(255,255,255,0.07)',
+            borderLeft: `3px solid ${c.border}`,
+            boxShadow: hovered ? '0 8px 32px rgba(0,102,255,0.12)' : 'none',
+            transition: 'border-color 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1)',
+          }}
+          hoverShadow={f.hoverShadow}
+          dataN={f.n}
+        >
+          <span aria-hidden="true" className="absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
+          <motion.div
+            className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
+            style={{ background: c.iconBg }}
+            whileHover={{ rotate: 10, scale: 1.2 }}
+            transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+          >
+            {f.icon}
+          </motion.div>
+          <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase mb-2 font-medium" style={{ color: c.kicker }}>{f.kicker}</div>
+          <h3 className="font-serif text-[1.3rem] text-white mb-2.5">{f.title}</h3>
+          <p className="text-[0.875rem] text-white/65 leading-[1.68]">{f.desc}</p>
+        </MagneticCard>
+      </div>
+    </Reveal>
+  )
+}
+
 function FeaturesSection() {
   return (
     <section id="features" className="py-24 relative" style={{ background: '#060E18' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
-        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
+        <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Built for the gaps supervisors leave behind</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Every step solves a real, specific problem that final year students face with no one to call.</Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[18px]">
-          {FEATURES.map((f, i) => {
-            const c = FEAT_COLOR_MAP[f.color]
-            return (
-              <Reveal key={f.n} delay={i * 0.07}>
-                <MagneticCard
-                  className="relative overflow-hidden rounded-2xl p-9 h-full cursor-default"
-                  style={{ background: 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${c.border}`, transition: 'border-color 0.2s ease' }}
-                  hoverShadow={f.hoverShadow}
-                  dataN={f.n}
-                >
-                  {/* Watermark digit */}
-                  <span aria-hidden="true" className="absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
-
-                  <motion.div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: c.iconBg }}
-                    whileHover={{ rotate: 10, scale: 1.2 }}
-                    transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-                  >
-                    {f.icon}
-                  </motion.div>
-                  <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase mb-2 font-medium" style={{ color: c.kicker }}>{f.kicker}</div>
-                  <h3 className="font-serif text-[1.3rem] text-white mb-2.5">{f.title}</h3>
-                  <p className="text-[0.875rem] text-white/65 leading-[1.68]">{f.desc}</p>
-                </MagneticCard>
-              </Reveal>
-            )
-          })}
+          {FEATURES.map((f, i) => <FeatureCardWrapper key={f.n} f={f} i={i} />)}
         </div>
       </div>
     </section>
@@ -853,27 +851,51 @@ const STEPS = [
   { num: '06', title: 'Defense Simulator — Three-Examiner Panel', desc: 'Face three AI examiners in a full viva simulation. Receive a readiness score, a weak-spots report by chapter, and a preparation guide for every angle they can attack. Walk into your real defense unshakeable.' },
 ]
 
+function StepItem({ s, i }) {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.15 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return (
+    <div
+      ref={ref}
+      className="lp-step-row grid gap-6 py-[18px] items-start"
+      style={{
+        gridTemplateColumns: '48px 1fr',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateX(0)' : 'translateX(-28px)',
+        transition: `opacity 0.55s cubic-bezier(0.22,1,0.36,1) ${i * 120}ms, transform 0.55s cubic-bezier(0.22,1,0.36,1) ${i * 120}ms`,
+      }}
+    >
+      <div className="w-12 h-12 rounded-full border-2 border-blue-brand flex items-center justify-center font-mono text-[0.8rem] font-semibold text-blue-brand relative z-[1] flex-shrink-0" style={{ background: '#060E18' }}>{s.num}</div>
+      <div className="pt-2">
+        <div className="font-serif text-[1.15rem] text-white mb-1.5">{s.title}</div>
+        <div className="text-[0.875rem] text-white/65 leading-[1.7]">{s.desc}</div>
+      </div>
+    </div>
+  )
+}
+
 function HowItWorks() {
   return (
     <section id="how-it-works" className="py-24 bg-bg-dark">
       <div className="max-w-[1080px] mx-auto px-5 md:px-10">
-        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
+        <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Six steps. One defensible project.</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Designed around the exact journey Nigerian final year students go through — with or without a present supervisor.</Reveal>
 
-        <div className="max-w-[760px] mx-auto relative">
+        <div className="max-w-[760px] mx-auto relative" style={{ paddingLeft: '20px' }}>
           {/* Vertical connector */}
-          <div className="absolute top-6 bottom-6 w-0.5 left-[23px]" style={{ background: 'linear-gradient(to bottom, #0066FF, rgba(0,102,255,0.08))' }} />
-
-          {STEPS.map((s, i) => (
-            <Reveal key={s.num} delay={i * 0.08} className="grid gap-6 py-[18px] items-start" style={{ gridTemplateColumns: '48px 1fr' }}>
-              <div className="w-12 h-12 rounded-full border-2 border-blue-brand flex items-center justify-center font-mono text-[0.8rem] font-semibold text-blue-brand relative z-[1] flex-shrink-0" style={{ background: '#060E18' }}>{s.num}</div>
-              <div className="pt-2">
-                <div className="font-serif text-[1.15rem] text-white mb-1.5">{s.title}</div>
-                <div className="text-[0.875rem] text-white/65 leading-[1.7]">{s.desc}</div>
-              </div>
-            </Reveal>
-          ))}
+          <div className="absolute top-6 bottom-6 w-0.5 left-[43px]" style={{ background: 'linear-gradient(to bottom, #0066FF, rgba(0,102,255,0.08))' }} />
+          {STEPS.map((s, i) => <StepItem key={s.num} s={s} i={i} />)}
         </div>
       </div>
     </section>
@@ -887,7 +909,7 @@ function TestimonialsSection() {
     <section className="py-24 relative" style={{ background: '#060E18' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
-        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
+        <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>What it felt like to go from confused to confident</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">&nbsp;</Reveal>
       </div>
@@ -920,22 +942,24 @@ function PricingSection() {
   return (
     <section id="pricing" className="py-24 bg-bg-dark">
       <div className="max-w-[1080px] mx-auto px-5 md:px-10">
-        <Reveal as="span" className="block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Pricing</Reveal>
+        <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Pricing</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Simple, honest pricing</Reveal>
         <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Start free. Upgrade only when your defense date gets close.</Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-[18px] items-start">
           {PLANS.map((p, i) => (
             <Reveal key={p.tier} delay={i * 0.08}>
+              <div className={p.featured ? 'lp-pricing-pulse-wrap' : ''}>
               <motion.div
                 className="relative rounded-2xl py-9 px-8"
                 style={{
                   background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, #0A1929 100%)' : 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)',
-                  border: p.featured ? '1px solid #0066FF' : '1px solid rgba(255,255,255,0.08)',
+                  border: '1px solid',
+                  borderColor: p.featured ? '#0066FF' : 'rgba(255,255,255,0.08)',
                   boxShadow: p.featured ? '0 0 48px rgba(0,102,255,0.12)' : 'none',
                   transform: p.featured ? 'scale(1.025)' : 'none',
                 }}
-                whileHover={!p.featured ? { y: -4, borderColor: 'rgba(0,102,255,0.3)' } : {}}
+                whileHover={{ y: -6, boxShadow: p.featured ? '0 0 64px rgba(0,102,255,0.3), 0 20px 56px rgba(0,0,0,0.45)' : '0 20px 56px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,102,255,0.22)', transition: { duration: 0.25 } }}
               >
                 {p.badge && (
                   <motion.div
@@ -962,6 +986,7 @@ function PricingSection() {
                   {p.ctaLabel}
                 </BtnButton>
               </motion.div>
+              </div>
             </Reveal>
           ))}
         </div>
@@ -1074,14 +1099,14 @@ function LandingFAQSection() {
 function FinalCTA() {
   return (
     <section className="py-24 relative overflow-hidden" style={{ background: '#060E18' }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 70% at 50% 50%, rgba(0,102,255,0.14) 0%, transparent 65%)' }} />
+      <div className="lp-cta-glow" aria-hidden="true" />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
           <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>Your defense is coming.<br />Are you ready?</Reveal>
           <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-9">Every question an examiner can ask, FYPro has already asked you first.<br />Start now — it's free, no account needed.</Reveal>
           <Reveal delay={0.15} className="flex justify-center gap-3 flex-wrap">
-            <BtnLink href="/login" className="px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free — No Sign Up</BtnLink>
+            <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free — No Sign Up</BtnLink>
             <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">See the 6 Steps</BtnLink>
           </Reveal>
         </div>
