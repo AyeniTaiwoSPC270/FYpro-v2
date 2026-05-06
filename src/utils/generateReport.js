@@ -505,7 +505,7 @@ export async function downloadProgressReport(state) {
 
     await html2pdf()
       .set({
-        margin: { top: 0, right: 0, bottom: 10, left: 0 },
+        margin: [10, 10, 10, 10],
         filename: `FYPro-Progress-Report-${slug}.pdf`,
         image:     { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' },
