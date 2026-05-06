@@ -58,7 +58,7 @@ function bodyText(text) {
 
 function infoBox(text) {
   if (!text) return ''
-  return `<div style="
+  return `<div class="info-box" style="
     background:#EFF6FF;
     border:1px solid #BFDBFE;
     border-left:4px solid #0066FF;
@@ -66,20 +66,18 @@ function infoBox(text) {
     padding:16px 20px;margin:16px 0;
     font-family:'Poppins','Helvetica Neue',sans-serif;
     font-size:13px;color:#1E40AF;line-height:1.6;
-    page-break-inside:avoid;break-inside:avoid;
   ">${esc(text)}</div>`
 }
 
 function warningBox(label, text) {
   if (!text) return ''
-  return `<div style="
+  return `<div class="warning-box" style="
     background:#FFFBEB;
     border-left:4px solid #F59E0B;
     border-radius:8px;
     padding:16px 20px;margin:16px 0;
     font-family:'Poppins','Helvetica Neue',sans-serif;
     font-size:13px;color:#92400E;line-height:1.6;
-    page-break-inside:avoid;break-inside:avoid;
   "><strong>${esc(label)}</strong> ${esc(text)}</div>`
 }
 
@@ -145,7 +143,7 @@ function buildStep1(state) {
                : '#DC2626'
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 1 — Topic Validator')}
       ${topic ? `<p style="
         font-family:'DM Serif Display',Georgia,serif;
@@ -187,11 +185,11 @@ function buildStep2(state) {
     </div>`).join('') : ''
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 2 — Chapter Architect')}
       ${kvRow('Structure', `${totalChapters} chapters · ${totalWords} words total`)}
       ${cs.structure_note ? bodyText(cs.structure_note) : ''}
-      ${chapRows ? `<div style="margin-top:16px;">${chapRows}</div>` : ''}
+      ${chapRows ? `<div class="chapter-table" style="margin-top:16px;">${chapRows}</div>` : ''}
     </div>
     ${DIVIDER}`
 }
@@ -201,7 +199,7 @@ function buildStep3(state) {
   const chosen = ma?.options?.find(o => o.methodology === state.chosenMethodology)
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 3 — Methodology Advisor')}
       ${state.chosenMethodology ? `<p style="
         font-family:'DM Serif Display',Georgia,serif;
@@ -246,7 +244,7 @@ function buildStep4(state) {
   }).join('') : ''
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 4 — Writing Planner')}
       ${kvRow('Deadline', deadline)}
       ${wp.total_weeks    ? kvRow('Duration',   `${wp.total_weeks} weeks`) : ''}
@@ -272,7 +270,7 @@ function buildStep5(state) {
     : rd?.grade || ''
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 5 — Project Reviewer')}
       ${up.fileName ? kvRow('Document', up.fileName) : ''}
       ${rd ? `
@@ -349,7 +347,7 @@ function buildStep6(state) {
   ` : ''
 
   return `
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Step 6 — Defense Prep')}
       ${flagsHTML ? `
         ${subsectionLabel('Red Flags Identified')}
@@ -385,7 +383,7 @@ function buildExaminerQs(examinerQs) {
 
   return `
     ${DIVIDER}
-    <div style="margin-bottom:40px;">
+    <div class="step-section" style="margin-bottom:40px;">
       ${sectionHeading('Examiner Questions — From Your Project')}
       <p style="
         font-family:'Poppins',sans-serif;font-size:13px;color:#6B7280;margin-bottom:16px;
@@ -440,6 +438,13 @@ function buildReportHTML(state, logoDataUrl) {
   return `
     <div style="width:794px;max-width:794px;box-sizing:border-box;overflow:hidden;background:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;">
 
+      <style>
+        .step-section { page-break-before: auto; }
+        .examiner-watchout, .info-box, .warning-box { page-break-inside: avoid; break-inside: avoid; }
+        .chapter-table { page-break-inside: avoid; break-inside: avoid; }
+        p { orphans: 3; widows: 3; }
+      </style>
+
       <!-- ── Header ── -->
       <div style="
         background:#060E18;padding:24px 32px;box-sizing:border-box;
@@ -469,7 +474,7 @@ function buildReportHTML(state, logoDataUrl) {
       <div style="height:3px;background:linear-gradient(90deg,#0066FF,#3B82F6,transparent);width:100%;"></div>
 
       <!-- ── Content ── -->
-      <div style="background:#FFFFFF;padding:48px;padding-bottom:72px;padding-left:32px;padding-right:32px;box-sizing:border-box;">
+      <div style="background:#FFFFFF;padding:48px;padding-bottom:32px;padding-left:32px;padding-right:32px;box-sizing:border-box;">
         ${stepsHTML}
       </div>
 
@@ -541,8 +546,7 @@ export async function downloadProgressReport(state) {
           orientation: 'portrait',
         },
         pagebreak: {
-          mode: ['avoid-all', 'css'],
-          before: '.step-section',
+          mode: ['css'],
         },
       })
       .from(container.firstElementChild)
