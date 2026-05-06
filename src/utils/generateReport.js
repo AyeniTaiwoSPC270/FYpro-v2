@@ -237,7 +237,7 @@ function buildStep4(state) {
       font-family:'Poppins',sans-serif;font-size:12px;
     ">
       <span style="font-weight:700;color:${numColor};min-width:36px;">Wk ${wk.week_number}</span>
-      <span style="color:#6B7280;min-width:90px;flex-shrink:0;">${esc(wk.dates || '')}</span>
+      <span style="color:#6B7280;min-width:90px;flex-shrink:0;white-space:nowrap;">${esc(wk.dates || '')}</span>
       <span style="color:#374151;flex:1;">${esc(focus)}</span>
     </div>`
   }).join('') : ''
@@ -439,25 +439,25 @@ function buildReportHTML(state, logoDataUrl) {
 
       <!-- ── Header ── -->
       <div style="
-        background:#060E18;padding:32px 48px;
+        background:#060E18;padding:24px 32px;box-sizing:border-box;
         display:flex;justify-content:space-between;align-items:center;
       ">
         <div>${logoHTML}</div>
-        <div style="text-align:right;">
+        <div style="text-align:right;min-width:280px;overflow:visible;">
           <div style="
             font-family:'DM Serif Display',Georgia,serif;
-            font-size:18px;font-weight:400;color:#FFFFFF;
-            margin-bottom:6px;line-height:1.2;
+            font-size:15px;font-weight:400;color:#FFFFFF;
+            margin-bottom:6px;line-height:1.2;white-space:nowrap;
           ">Progress Report</div>
           <div style="
             font-family:'Poppins','Helvetica Neue',sans-serif;
             font-weight:400;font-size:13px;
-            color:rgba(255,255,255,0.6);margin-bottom:4px;
+            color:rgba(255,255,255,0.6);margin-bottom:4px;white-space:nowrap;
           ">${esc(studentLine)}</div>
           <div style="
             font-family:'JetBrains Mono','Courier New',monospace;
             font-weight:500;font-size:11px;
-            color:rgba(0,102,255,0.7);
+            color:rgba(0,102,255,0.7);white-space:nowrap;
           ">Generated ${esc(dateStr)}</div>
         </div>
       </div>
