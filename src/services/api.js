@@ -14,6 +14,7 @@ import {
   buildProjectReviewerPDFPrompt,
   buildDocumentRelevanceCheckPrompt, DOCUMENT_RELEVANCE_CHECK_SYSTEM,
   buildDocumentRelevanceCheckPDFPrompt,
+  buildPreviousStepsContext,
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
 
@@ -381,10 +382,12 @@ export async function buildInstrument(studentCtx, validatedTopic, chosenMethodol
 }
 
 // ── Step 4: Writing Planner ──────────────────────────────────────────────────
-export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate, features = []) {
+export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate, previousSteps = {}, features = []) {
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
+  const contextBlock = buildPreviousStepsContext(previousSteps);
+  const system = contextBlock ? contextBlock + '\n\n' + WRITING_PLANNER_SYSTEM : WRITING_PLANNER_SYSTEM;
   const result = await callClaude(
-    WRITING_PLANNER_SYSTEM,
+    system,
     [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
   );
   if (isFree && Array.isArray(result.weeks)) {
@@ -417,23 +420,27 @@ export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaTyp
 }
 
 // ── Step 5: Project Reviewer (text) ─────────────────────────────────────────
-export async function reviewProject(studentCtx, validatedTopic, extractedText) {
+export async function reviewProject(studentCtx, validatedTopic, extractedText, previousSteps = {}) {
+  const contextBlock = buildPreviousStepsContext(previousSteps);
+  const system = contextBlock ? contextBlock + '\n\n' + PROJECT_REVIEWER_SYSTEM : PROJECT_REVIEWER_SYSTEM;
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    PROJECT_REVIEWER_SYSTEM,
+    system,
     [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }]
   );
 }
 
 // ── Step 5: Project Reviewer (PDF base64) ────────────────────────────────────
-export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf') {
+export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf', previousSteps = {}) {
+  const contextBlock = buildPreviousStepsContext(previousSteps);
+  const system = contextBlock ? contextBlock + '\n\n' + PROJECT_REVIEWER_SYSTEM : PROJECT_REVIEWER_SYSTEM;
   const userContent = [
     { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
     { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
   ];
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    PROJECT_REVIEWER_SYSTEM,
+    system,
     [{ role: 'user', content: userContent }]
   );
 }

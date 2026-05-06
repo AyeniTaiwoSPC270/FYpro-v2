@@ -83,8 +83,14 @@ export default function WritingPlanner() {
     setSection('loading')
 
     const currentDate = new Date().toISOString().slice(0, 10)
+    const previousSteps = {
+      validatedTopic:    state.validatedTopic,
+      chapterStructure:  state.chapterStructure,
+      chosenMethodology: state.chosenMethodology,
+      methodology:       state.methodology,
+    }
 
-    buildWritingPlan(studentContext, dateValue, currentDate, features)
+    buildWritingPlan(studentContext, dateValue, currentDate, previousSteps, features)
       .then(result => {
         setData(result)
         setSection('result')

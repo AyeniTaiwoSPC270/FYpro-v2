@@ -366,9 +366,16 @@ export default function ProjectReviewer() {
 
     try {
       const validatedTopic = state.validatedTopic || state.roughTopic
+      const previousSteps = {
+        validatedTopic:    state.validatedTopic,
+        chapterStructure:  state.chapterStructure,
+        chosenMethodology: state.chosenMethodology,
+        methodology:       state.methodology,
+        writingPlan:       state.writingPlan,
+      }
       const data = result.pdf
-        ? await reviewProjectPDF(studentContext, validatedTopic, result.pdf)
-        : await reviewProject(studentContext, validatedTopic, result.text)
+        ? await reviewProjectPDF(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps)
+        : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
 
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
         setSection('input')

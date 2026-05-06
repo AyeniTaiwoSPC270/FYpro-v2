@@ -13,6 +13,39 @@ Methodology: ${student.methodology || "Not yet determined"}
 Chapter Count: ${student.chapterCount || "Not yet determined"}`.trim();
 }
 
+export function buildPreviousStepsContext(previousSteps = {}) {
+  const { validatedTopic, chapterStructure, chosenMethodology, methodology, writingPlan } = previousSteps;
+  const lines = [];
+
+  if (validatedTopic) {
+    lines.push(`- Topic: ${validatedTopic}`);
+  }
+
+  if (chapterStructure && Array.isArray(chapterStructure.chapters) && chapterStructure.chapters.length) {
+    const titles = chapterStructure.chapters
+      .map(c => `Chapter ${c.number}: ${c.title}`)
+      .join(', ');
+    lines.push(`- Chapter Structure (${chapterStructure.total_chapters || chapterStructure.chapters.length} chapters): ${titles}`);
+  }
+
+  if (chosenMethodology || (methodology && methodology.recommended)) {
+    const meth = chosenMethodology || methodology.recommended;
+    const reason = methodology?.recommended_reason || '';
+    lines.push(`- Chosen Methodology: ${meth}${reason ? ' — ' + reason : ''}`);
+  }
+
+  if (writingPlan) {
+    const weeks = writingPlan.total_weeks ? `${writingPlan.total_weeks} weeks` : '';
+    const words = writingPlan.total_words ? `${writingPlan.total_words} total words` : '';
+    const summary = [weeks, words].filter(Boolean).join(', ');
+    lines.push(`- Writing Plan: ${summary || 'Generated'}`);
+  }
+
+  if (lines.length === 0) return '';
+
+  return `STUDENT PROJECT CONTEXT (do not contradict these decisions already made):\n${lines.join('\n')}`;
+}
+
 // ── Topic Validator ──────────────────────────────────────────────────────────
 export const TOPIC_VALIDATOR_SYSTEM = `
 You are FYPro — a strict academic research advisor specialising in Nigerian university final year projects.
@@ -253,6 +286,8 @@ Realistic means: accounting for Nigerian public holidays, likely exam periods, a
 Chapter-weighted means: Literature Review and Methodology chapters are always allocated more writing time than Introduction or Conclusion.
 
 Each week gets a single clear focus statement — not a task list.
+
+The methodology has been established above. Your writing plan MUST be consistent with that methodology. If the methodology is quantitative, the writing plan must reflect quantitative structure. Never suggest qualitative framing for a quantitative study.
 
 CRITICAL: Return ONLY valid JSON. No prose. No markdown.
 `.trim();
@@ -671,6 +706,8 @@ Your job is to assess the academic quality of the content and return:
 4. Exactly 5 examiner questions derived directly from the uploaded content
 
 Every strength, weakness, and question must reference specific content, arguments, sections, or claims from the document.
+
+Review the project for internal consistency across all steps shown above. Flag any contradictions between the methodology and writing plan.
 
 CRITICAL: Return ONLY valid JSON. No prose before or after. No markdown.
 `.trim();
