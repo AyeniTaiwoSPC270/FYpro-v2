@@ -50,7 +50,12 @@
       "Bash(node -e ' *)",
       "Bash(Select-String -Pattern \"puppeteer|shot|screenshot|capture\")",
       "PowerShell(ls \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\node_modules\\\\.bin\" | Where-Object { $_.Name -match \"puppeteer|shot|screenshot|capture\" })",
-      "Bash(node scripts/screenshot-og.mjs)"
+      "Bash(node scripts/screenshot-og.mjs)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\({scripts: p.scripts, devDeps: Object.keys\\(p.devDependencies||{}\\)}, null, 2\\)\\)\")",
+      "Bash(node -e \"require\\('puppeteer'\\)\")",
+      "Bash(npx puppeteer@latest --version)",
+      "Bash(npx puppeteer *)",
+      "Bash(node scripts/screenshot-flyer.mjs)"
     ]
   }
 }

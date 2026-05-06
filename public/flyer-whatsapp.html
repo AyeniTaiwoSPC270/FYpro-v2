@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800">
+  <title>FYPro — WhatsApp Flyer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@500&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #060E18;
+      width: 800px;
+      height: 800px;
+      overflow: hidden;
+    }
+
+    .flyer {
+      position: relative;
+      width: 800px;
+      height: 800px;
+      overflow: hidden;
+      background-color: #060E18;
+      background-image:
+        radial-gradient(circle, rgba(0,102,255,0.055) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    /* Center glow */
+    .flyer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 600px 600px at 50% 40%, rgba(0,102,255,0.09) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top border — gradient center glow */
+    .flyer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, #0066FF 50%, transparent 100%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* SVG noise texture */
+    .noise {
+      position: absolute;
+      inset: 0;
+      width: 800px;
+      height: 800px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Main content layer */
+    .content {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      padding: 56px;
+      display: flex;
+      flex-direction: column;
+      height: 800px;
+    }
+
+    /* ─── Logo ────────────────────────────────────────────── */
+    .logo {
+      flex-shrink: 0;
+    }
+
+    .logo img {
+      height: 36px;
+      display: block;
+      mix-blend-mode: screen;
+    }
+
+    /* ─── Hero ────────────────────────────────────────────── */
+    .hero {
+      margin-top: 52px;
+      flex-shrink: 0;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 10px;
+      color: rgba(0, 102, 255, 0.75);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      line-height: 1;
+    }
+
+    .headline {
+      font-family: 'DM Serif Display', serif;
+      font-weight: 400;
+      font-size: 62px;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .headline-white {
+      color: #FFFFFF;
+      display: block;
+    }
+
+    .headline-blue {
+      color: #0066FF;
+      display: block;
+      text-shadow: 0 0 50px rgba(0, 102, 255, 0.45);
+    }
+
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, #0066FF 0%, transparent 100%);
+      margin: 22px 0;
+      border: none;
+    }
+
+    .body-text {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.65;
+      color: rgba(255, 255, 255, 0.55);
+      max-width: 520px;
+    }
+
+    /* ─── Feature Row ─────────────────────────────────────── */
+    .feature-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 36px;
+      flex-shrink: 0;
+    }
+
+    .feature-item {
+      background: rgba(15, 34, 53, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 14px 16px;
+      flex: 1;
+    }
+
+    .feature-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #0066FF;
+      box-shadow: 0 0 6px rgba(0, 102, 255, 0.6);
+      margin-bottom: 8px;
+    }
+
+    .feature-label {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      color: #F1F5F9;
+      display: block;
+      line-height: 1.4;
+    }
+
+    .feature-sub {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      display: block;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    /* ─── CTA Button ──────────────────────────────────────── */
+    .cta-button {
+      margin-top: auto;
+      background: linear-gradient(135deg, #0066FF 0%, #2563EB 100%);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 6px 24px rgba(0, 102, 255, 0.45);
+      flex-shrink: 0;
+    }
+
+    .cta-url {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: #FFFFFF;
+      display: block;
+      line-height: 1.2;
+    }
+
+    .cta-sub {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+      display: block;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="flyer">
+
+    <!-- Noise texture -->
+    <svg class="noise" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <filter id="noise-filter" x="0" y="0" width="100%" height="100%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.65"
+          numOctaves="3"
+          stitchTiles="stitch"
+          result="noiseOut"/>
+        <feColorMatrix type="saturate" values="0" in="noiseOut"/>
+      </filter>
+      <rect width="800" height="800" filter="url(#noise-filter)" opacity="0.02"/>
+    </svg>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Logo -->
+      <div class="logo">
+        <img src="fypro-logo.png" alt="FYPro">
+      </div>
+
+      <!-- Hero -->
+      <div class="hero">
+        <p class="eyebrow">Final Year Students —</p>
+        <h1 class="headline">
+          <span class="headline-white">The Supervisor</span>
+          <span class="headline-blue">You Never Had.</span>
+        </h1>
+        <div class="divider" role="presentation"></div>
+        <p class="body-text">
+          From topic selection to defense day — FYPro is the
+          AI research companion built specifically for Nigerian
+          university final year students.
+        </p>
+      </div>
+
+      <!-- Feature row -->
+      <div class="feature-row">
+        <div class="feature-item">
+          <div class="feature-dot" aria-hidden="true"></div>
+          <span class="feature-label">Validate Topic</span>
+          <span class="feature-sub">In minutes</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot" aria-hidden="true"></div>
+          <span class="feature-label">Prep Defense</span>
+          <span class="feature-sub">3 AI examiners</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-dot" aria-hidden="true"></div>
+          <span class="feature-label">Start Free</span>
+          <span class="feature-sub">No card needed</span>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-button">
+        <span class="cta-url">fypro.com.ng</span>
+        <span class="cta-sub">Start free — no signup friction</span>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
