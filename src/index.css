@@ -8658,3 +8658,336 @@ body {
   color: rgba(255, 255, 255, 0.65);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   PREMIUM STEP ANIMATIONS — Topic Validator · Chapter Architect
+   Methodology Advisor · Writing Planner  |  Added: 2026-05-06
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────────
+   1. CARD ENTRANCE — 16px slide-up, ease-out, fill-mode: both
+   ──────────────────────────────────────────────────────────────────── */
+@keyframes step-card-enter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tv-card, .ca-card, .ma-card, .wp-card {
+  animation: step-card-enter 0.4s ease-out both;
+}
+
+/* Light mode — add inset top edge-light to base shadow */
+.tv-card {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.ca-card, .ma-card, .wp-card {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Dark shell — preserve glow + add inset edge light */
+.app-content .tv-card,
+.app-content .ca-card,
+.app-content .ma-card,
+.app-content .wp-card {
+  box-shadow: 0 0 30px rgba(37,99,235,0.08), 0 8px 40px rgba(0,0,0,0.5),
+              inset 0 1px 0 rgba(255,255,255,0.05) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   2. SUBMIT BUTTON — shimmer sweep on hover, loading pulse class
+   ──────────────────────────────────────────────────────────────────── */
+.tv-btn-validate,
+.ca-btn-generate,
+.ma-btn-analyse,
+.wp-btn-generate {
+  position: relative;
+  overflow: hidden;
+}
+
+.tv-btn-validate::after,
+.ca-btn-generate::after,
+.ma-btn-analyse::after,
+.wp-btn-generate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.tv-btn-validate:hover:not(:disabled)::after,
+.ca-btn-generate:hover:not(:disabled)::after,
+.ma-btn-analyse:hover:not(:disabled)::after,
+.wp-btn-generate:hover:not(:disabled)::after {
+  animation: step-btn-shimmer 0.55s ease forwards;
+}
+
+@keyframes step-btn-shimmer {
+  0%   { left: -100%; }
+  100% { left: 160%; }
+}
+
+@keyframes step-btn-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+.step-btn--loading {
+  animation: step-btn-pulse 1s ease-in-out infinite !important;
+  pointer-events: none;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   3. RESULT SECTIONS — 12px fade-slide children, 60ms stagger
+   ──────────────────────────────────────────────────────────────────── */
+@keyframes result-child-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Topic Validator */
+.tv-result-section.tv-section--visible .tv-verdict-block {
+  animation: result-child-enter 0.5s ease-out 0.10s both;
+}
+.tv-result-section.tv-section--visible .tv-papers-section {
+  animation: result-child-enter 0.5s ease-out 0.16s both;
+}
+.tv-result-section.tv-section--visible .tv-refined-block {
+  animation: result-child-enter 0.5s ease-out 0.22s both;
+}
+.tv-result-section.tv-section--visible .tv-btn-use {
+  animation: result-child-enter 0.5s ease-out 0.28s both;
+}
+.tv-result-section.tv-section--visible .tv-alternatives {
+  animation: result-child-enter 0.5s ease-out 0.34s both;
+}
+
+/* Chapter Architect */
+.ca-result-section.tv-section--visible .ca-structure-note {
+  animation: result-child-enter 0.5s ease-out 0.10s both;
+}
+.ca-result-section.tv-section--visible .ca-chapters-list {
+  animation: result-child-enter 0.5s ease-out 0.18s both;
+}
+.ca-result-section.tv-section--visible .ca-btn-regenerate {
+  animation: result-child-enter 0.5s ease-out 0.26s both;
+}
+.ca-result-section.tv-section--visible .ca-btn-confirm {
+  animation: result-child-enter 0.5s ease-out 0.32s both;
+}
+
+/* Methodology Advisor */
+.ma-result-section.tv-section--visible .ma-rec-banner {
+  animation: result-child-enter 0.5s ease-out 0.10s both;
+}
+.ma-result-section.tv-section--visible .ma-options-list {
+  animation: result-child-enter 0.5s ease-out 0.18s both;
+}
+.ma-result-section.tv-section--visible .ma-defense-section {
+  animation: result-child-enter 0.5s ease-out 0.26s both;
+}
+.ma-result-section.tv-section--visible .ma-watch-out-box {
+  animation: result-child-enter 0.5s ease-out 0.32s both;
+}
+.ma-result-section.tv-section--visible .ma-btn-confirm {
+  animation: result-child-enter 0.5s ease-out 0.38s both;
+}
+
+/* Writing Planner */
+.wp-result-section.tv-section--visible .wp-summary-bar {
+  animation: result-child-enter 0.5s ease-out 0.10s both;
+}
+.wp-result-section.tv-section--visible .wp-timeline {
+  animation: result-child-enter 0.5s ease-out 0.18s both;
+}
+.wp-result-section.tv-section--visible .wp-btn-confirm {
+  animation: result-child-enter 0.5s ease-out 0.26s both;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   4. VERDICT / STATUS BADGES — scale(0.8→1) + fade, bounce easing
+   ──────────────────────────────────────────────────────────────────── */
+@keyframes badge-bounce-in {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.tv-result-section.tv-section--visible .tv-verdict-label {
+  display: inline-block;
+  animation: badge-bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.12s both;
+}
+
+.ma-result-section.tv-section--visible .ma-fit-badge,
+.ma-result-section.tv-section--visible .ma-recommended-tag {
+  animation: badge-bounce-in 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s both;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   5. CHAPTER ROWS — slide from left + hover border brightens
+      Stagger: set --ca-row-delay via inline style in JSX
+   ──────────────────────────────────────────────────────────────────── */
+@keyframes step-slide-from-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.ca-chapter-row {
+  animation: step-slide-from-left 0.4s ease-out both;
+  animation-delay: var(--ca-row-delay, 0ms);
+  border-left: 3px solid rgba(0,102,255,0.28);
+  transition: border-left-color 0.25s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ca-chapter-row:hover {
+  border-left-color: rgba(0,102,255,0.8);
+}
+
+.ca-chapter-row--open {
+  border-left-color: rgba(0,102,255,0.55);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   6. METHODOLOGY CARDS — fade-in stagger, enhanced selected state
+      Stagger: set --ma-card-delay via inline style in JSX
+   ──────────────────────────────────────────────────────────────────── */
+.ma-option-card {
+  animation: result-child-enter 0.4s ease-out both;
+  animation-delay: var(--ma-card-delay, 0ms);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease,
+              background-color 0.25s ease, opacity 0.2s ease;
+}
+
+.ma-option-card--selected {
+  background-color: rgba(0,102,255,0.05);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   7. WRITING PLANNER WEEK ROWS — slide from left + hover bg
+      Stagger: set --wp-week-delay via inline style in JSX
+   ──────────────────────────────────────────────────────────────────── */
+.wp-week-node {
+  animation: step-slide-from-left 0.35s ease-out both;
+  animation-delay: var(--wp-week-delay, 0ms);
+}
+
+.wp-week-node:hover .wp-week-content {
+  background: rgba(0,102,255,0.03);
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   8. PROGRESS STEPPER — active dot: gentle breathing pulse
+   ──────────────────────────────────────────────────────────────────── */
+@keyframes nav-active-breathe {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(0,102,255,0.18), 0 0 18px rgba(0,102,255,0.38); }
+  50%       { box-shadow: 0 0 0 7px rgba(0,102,255,0.08), 0 0 32px rgba(0,102,255,0.58); }
+}
+
+.nav-pill--current {
+  animation: nav-active-breathe 2.5s ease-in-out infinite !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   9. FIRST RESULT ELEMENT — thin blue top border accent
+   ──────────────────────────────────────────────────────────────────── */
+.tv-verdict-block {
+  border-top: 2px solid rgba(0,102,255,0.25);
+  padding-top: 6px;
+}
+
+.ma-rec-banner {
+  border-top: 2px solid rgba(0,102,255,0.25);
+}
+
+.wp-summary-bar {
+  border-top: 2px solid rgba(0,102,255,0.25);
+  padding-top: 4px;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   10. COMPANION CARDS — soft radial glow on hover (::after layer)
+   ──────────────────────────────────────────────────────────────────── */
+.ag-card::after {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(8,145,178,0.13) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  border-radius: 50%;
+}
+.ag-card:hover::after { opacity: 1; }
+
+.lm-card::after {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(22,163,74,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  border-radius: 50%;
+}
+.lm-card:hover::after { opacity: 1; }
+
+.di-card::after {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(0,102,255,0.10) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  border-radius: 50%;
+}
+.di-card:hover::after { opacity: 1; }
+
+/* ────────────────────────────────────────────────────────────────────
+   11. ACCESSIBILITY — disable all new animations for reduced-motion
+   ──────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .tv-card, .ca-card, .ma-card, .wp-card,
+  .ca-chapter-row, .ma-option-card, .wp-week-node,
+  .tv-result-section.tv-section--visible .tv-verdict-label,
+  .tv-result-section.tv-section--visible .tv-verdict-block,
+  .tv-result-section.tv-section--visible .tv-papers-section,
+  .tv-result-section.tv-section--visible .tv-refined-block,
+  .tv-result-section.tv-section--visible .tv-btn-use,
+  .tv-result-section.tv-section--visible .tv-alternatives,
+  .ca-result-section.tv-section--visible .ca-structure-note,
+  .ca-result-section.tv-section--visible .ca-chapters-list,
+  .ca-result-section.tv-section--visible .ca-btn-regenerate,
+  .ca-result-section.tv-section--visible .ca-btn-confirm,
+  .ma-result-section.tv-section--visible .ma-rec-banner,
+  .ma-result-section.tv-section--visible .ma-options-list,
+  .ma-result-section.tv-section--visible .ma-defense-section,
+  .ma-result-section.tv-section--visible .ma-watch-out-box,
+  .ma-result-section.tv-section--visible .ma-btn-confirm,
+  .ma-result-section.tv-section--visible .ma-fit-badge,
+  .ma-result-section.tv-section--visible .ma-recommended-tag,
+  .wp-result-section.tv-section--visible .wp-summary-bar,
+  .wp-result-section.tv-section--visible .wp-timeline,
+  .wp-result-section.tv-section--visible .wp-btn-confirm,
+  .nav-pill--current {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -230,7 +230,7 @@ export default function WritingPlanner() {
 
             <div id="wp-timeline" className="wp-timeline">
               {(isFree ? (data.weeks || []).slice(0, 4) : (data.weeks || [])).map((week, i) => (
-                <WeekNode key={i} week={week} />
+                <WeekNode key={i} week={week} idx={i} />
               ))}
             </div>
 
@@ -265,7 +265,7 @@ export default function WritingPlanner() {
   )
 }
 
-function WeekNode({ week }) {
+function WeekNode({ week, idx = 0 }) {
   const classes = [
     'wp-week-node',
     week.is_current_week ? 'wp-week-node--current'  : '',
@@ -274,7 +274,7 @@ function WeekNode({ week }) {
   ].filter(Boolean).join(' ')
 
   return (
-    <div className={classes}>
+    <div className={classes} style={{ '--wp-week-delay': `${idx * 40}ms` }}>
       <div className="wp-week-dot" />
       <div className="wp-week-content">
         <div className="wp-week-header">

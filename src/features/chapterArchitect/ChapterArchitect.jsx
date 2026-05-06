@@ -46,7 +46,7 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
   }
 
   return (
-    <div className={`ca-chapter-row${isOpen ? ' ca-chapter-row--open' : ''}`}>
+    <div className={`ca-chapter-row${isOpen ? ' ca-chapter-row--open' : ''}`} style={{ '--ca-row-delay': `${idx * 80}ms` }}>
 
       <div className="ca-chapter-header" onClick={handleHeaderClick}>
         <span className="ca-chapter-num-bg" aria-hidden="true">{numStr}</span>

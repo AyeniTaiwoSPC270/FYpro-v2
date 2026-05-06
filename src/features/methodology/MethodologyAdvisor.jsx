@@ -292,6 +292,7 @@ export default function MethodologyAdvisor() {
                   return (
                     <div
                       key={idx}
+                      style={{ '--ma-card-delay': `${idx * 100}ms` }}
                       className={[
                         'ma-option-card',
                         isSelected ? 'ma-option-card--selected' : '',
