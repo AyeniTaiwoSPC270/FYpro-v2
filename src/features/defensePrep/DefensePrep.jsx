@@ -327,6 +327,14 @@ export default function DefensePrep() {
   const [exitModalOpen, setExitModalOpen]     = useState(false)
   const [micActive, setMicActive]             = useState(false)
 
+  // ── circuit breaker state ─────────────────────────────────────────────────
+  const [briefAnswerWarning, setBriefAnswerWarning] = useState(false)
+  const [lowScoreCount, setLowScoreCount]           = useState(0)
+  const [sessionWarned, setSessionWarned]           = useState(false)
+  const [sessionTerminated, setSessionTerminated]   = useState(false)
+  const [turnCount, setTurnCount]                   = useState(0)
+  const [sessionComplete, setSessionComplete]       = useState(false)
+
   // ── refs (survive async boundaries, never trigger re-renders) ─────────────
   const defenseMessagesRef    = useRef([])
   const panelSystemRef        = useRef(null)
@@ -341,6 +349,9 @@ export default function DefensePrep() {
   const chatAreaRef           = useRef(null)
   const textareaRef           = useRef(null)
   const submitHandlerRef      = useRef(null)
+  const lowScoreCountRef      = useRef(0)
+  const sessionWarnedRef      = useRef(false)
+  const turnCountRef          = useRef(0)
 
   const voiceSupported    = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   const loadingTimerRef   = useRef(null)
@@ -574,6 +585,9 @@ export default function DefensePrep() {
     questionCountRef.current   = 0
     currentExaminerRef.current = 'The Methodologist'
     msgIdRef.current           = 0
+    lowScoreCountRef.current   = 0
+    sessionWarnedRef.current   = false
+    turnCountRef.current       = 0
 
     setChatMessages([])
     setInputValue('')
@@ -585,6 +599,12 @@ export default function DefensePrep() {
     setVerdictLoading(false)
     setInputLocked(true)
     setAnswerError('')
+    setBriefAnswerWarning(false)
+    setLowScoreCount(0)
+    setSessionWarned(false)
+    setSessionTerminated(false)
+    setTurnCount(0)
+    setSessionComplete(false)
     setOverlayOpen(true)
 
     initRecognition()
@@ -629,6 +649,14 @@ export default function DefensePrep() {
   async function handleStudentSubmit() {
     // Read from DOM ref — avoids stale closure on inputValue state
     const answer = (textareaRef.current?.value ?? inputValue).trim()
+
+    // Layer 1 — client-side word count guard (no API call, no turn consumed)
+    const wordCount = answer.split(/\s+/).filter(w => w.length > 0).length
+    if (wordCount < 15) {
+      setBriefAnswerWarning(true)
+      return
+    }
+    setBriefAnswerWarning(false)
 
     if (answer.length < 10) {
       setAnswerError('Please provide an answer before submitting.')
@@ -675,6 +703,35 @@ export default function DefensePrep() {
       // Inject scores into the student bubble we just rendered
       if (data.scores?.length) {
         patchMsg(studentMsgId, { scores: data.scores })
+      }
+
+      // Layer 2 — low score tracking
+      if (data.scores?.length) {
+        const avg = data.scores.reduce((s, e) => s + (e.score ?? 0), 0) / data.scores.length
+        if (avg <= 3) {
+          lowScoreCountRef.current += 1
+          setLowScoreCount(lowScoreCountRef.current)
+          if (lowScoreCountRef.current === 2 && !sessionWarnedRef.current) {
+            sessionWarnedRef.current = true
+            setSessionWarned(true)
+          }
+          if (lowScoreCountRef.current >= 3) {
+            setTypingVisible(false)
+            setSessionTerminated(true)
+            setInputLocked(true)
+            return
+          }
+        }
+      }
+
+      // Layer 3 — turn limit
+      turnCountRef.current += 1
+      setTurnCount(turnCountRef.current)
+      if (turnCountRef.current >= 20) {
+        setTypingVisible(false)
+        setSessionComplete(true)
+        setInputLocked(true)
+        return
       }
 
       currentExaminerRef.current = data.next_examiner || 'The Methodologist'
@@ -779,6 +836,98 @@ export default function DefensePrep() {
 
   function handleCloseSummary() {
     setSection(redFlags ? 'flags' : 'input')
+  }
+
+  // ── circuit breaker actions ───────────────────────────────────────────────
+
+  function handleRestartSimulator() {
+    stopAudio()
+    if (micActiveRef.current && recognitionRef.current) {
+      recognitionRef.current.abort()
+      micActiveRef.current = false
+      setMicActive(false)
+    }
+    enterDefenseMode()
+  }
+
+  async function downloadDefenseTranscript() {
+    function esc(str) {
+      if (str == null) return ''
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+    }
+
+    const dateStr = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    })
+
+    const rowsHTML = chatMessages.map(msg => {
+      if (msg.type === 'panel-intro') {
+        return `<div style="background:#F0F4F8;border-radius:8px;padding:12px 16px;margin:8px 0;font-family:'Poppins',sans-serif;font-size:13px;color:#374151;font-style:italic;">${esc(msg.text)}</div>`
+      }
+      if (msg.type === 'examiner') {
+        return `<div style="margin:16px 0;">
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:#0066FF;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;">${esc(msg.examiner || 'Examiner')}</div>
+          <div style="background:#EFF6FF;border-left:3px solid #0066FF;border-radius:0 8px 8px 0;padding:12px 16px;font-family:'Poppins',sans-serif;font-size:13px;color:#1E40AF;line-height:1.6;">${esc(msg.text)}</div>
+        </div>`
+      }
+      if (msg.type === 'student') {
+        const scoresHTML = (msg.scores || []).map(s => {
+          const c = (s.score ?? 0) >= 7 ? '#16A34A' : (s.score ?? 0) >= 5 ? '#0066FF' : '#DC2626'
+          return `<span style="display:inline-block;background:${c};color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;border-radius:999px;margin:6px 4px 0 0;letter-spacing:0.5px;">${esc((s.examiner || '').replace(/^The\s+/i, '').toUpperCase())} · ${s.score ?? '?'}/10</span>`
+        }).join('')
+        return `<div style="margin:16px 0;">
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:#374151;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;">Your Answer</div>
+          <div style="background:#F8FAFC;border-left:3px solid #374151;border-radius:0 8px 8px 0;padding:12px 16px;font-family:'Poppins',sans-serif;font-size:13px;color:#0D1B2A;line-height:1.6;">${esc(msg.text)}</div>
+          ${scoresHTML}
+        </div>`
+      }
+      return ''
+    }).join('')
+
+    const htmlContent = `<div style="width:794px;max-width:794px;box-sizing:border-box;background:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;">
+      <div style="background:#060E18;padding:24px 32px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;font-weight:400;color:#FFFFFF;">FYPro</span>
+        <div style="text-align:right;">
+          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:15px;color:#FFFFFF;margin-bottom:4px;">Defence Session Transcript</div>
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:rgba(0,102,255,0.7);">${dateStr}</div>
+        </div>
+      </div>
+      <div style="height:3px;background:linear-gradient(90deg,#0066FF,#3B82F6,transparent);"></div>
+      <div style="padding:40px 32px;background:#FFFFFF;">
+        <h2 style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;font-weight:400;color:#0D1B2A;border-left:4px solid #0066FF;padding-left:16px;margin:0 0 24px 0;">Session Transcript</h2>
+        ${rowsHTML || '<p style="font-family:Poppins,sans-serif;font-size:13px;color:#6B7280;">No messages recorded.</p>'}
+      </div>
+      <div style="background:#060E18;padding:12px 32px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'Poppins',sans-serif;font-size:10px;color:rgba(255,255,255,0.5);">Generated by FYPro · fypro.com.ng</span>
+        <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;color:rgba(0,102,255,0.6);">${dateStr}</span>
+      </div>
+    </div>`
+
+    const container = document.createElement('div')
+    container.innerHTML = htmlContent
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;'
+    document.body.appendChild(container)
+
+    try {
+      const { default: html2pdf } = await import('html2pdf.js')
+      await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: 'FYPro-Defence-Session-Transcript.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css'] },
+        })
+        .from(container.firstElementChild)
+        .save()
+    } finally {
+      document.body.removeChild(container)
+    }
   }
 
   // ── keyboard shortcut ─────────────────────────────────────────────────────
@@ -978,10 +1127,42 @@ export default function DefensePrep() {
 
               {/* Input area */}
               <div
-                className={`dp-input-area${inputLocked ? ' dp-input-area--loading' : ''}`}
+                className={`dp-input-area${(inputLocked && !sessionTerminated && !sessionComplete) ? ' dp-input-area--loading' : ''}`}
                 id="dp-input-area"
               >
-                {verdictLoading ? (
+                {sessionComplete ? (
+                  /* Layer 3 — Turn limit reached */
+                  <div className="dp-circuit-complete">
+                    <h3 className="dp-circuit-complete__heading">Defense Session Complete</h3>
+                    <p className="dp-circuit-complete__body">
+                      You have completed a full defense simulation.
+                      Review the examiner feedback above and focus
+                      on the areas flagged for improvement.
+                    </p>
+                    <div className="dp-circuit-complete__buttons">
+                      <button className="dp-circuit-complete__btn-restart" onClick={handleRestartSimulator}>
+                        Restart Simulator
+                      </button>
+                      <button className="dp-circuit-complete__btn-download" onClick={downloadDefenseTranscript}>
+                        Download Session Report
+                      </button>
+                    </div>
+                  </div>
+                ) : sessionTerminated ? (
+                  /* Layer 2 — 3 low scores: session terminated */
+                  <div className="dp-circuit-terminated">
+                    <h3 className="dp-circuit-terminated__heading">Defense Session Terminated</h3>
+                    <p className="dp-circuit-terminated__body">
+                      The panel has concluded this session due to
+                      repeated inadequate responses. Review your
+                      project thoroughly and restart the simulator
+                      when you are better prepared.
+                    </p>
+                    <button className="dp-circuit-restart-btn" onClick={handleRestartSimulator}>
+                      Restart Simulator
+                    </button>
+                  </div>
+                ) : verdictLoading ? (
                   <div className="dp-verdict-loading">
                     <div className="skeleton-loader skeleton-loader--dark">
                       <div className="skeleton-bar" style={{ width: '100%' }} />
@@ -992,6 +1173,20 @@ export default function DefensePrep() {
                   </div>
                 ) : (
                   <>
+                    {/* Layer 2 — 2 low scores: panel warning */}
+                    {sessionWarned && (
+                      <div className="dp-circuit-warning">
+                        <span className="dp-circuit-warning__icon">⚠️</span>
+                        <div>
+                          <p className="dp-circuit-warning__heading">Panel Warning Issued</p>
+                          <p className="dp-circuit-warning__body">
+                            The panel has noted a pattern of inadequate responses.
+                            One more unsatisfactory answer will result in
+                            session termination.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <textarea
                       ref={textareaRef}
                       className="dp-student-input"
@@ -1002,6 +1197,14 @@ export default function DefensePrep() {
                       disabled={inputLocked}
                       onKeyDown={handleKeyDown}
                     />
+                    {/* Layer 1 — word count warning */}
+                    {briefAnswerWarning && (
+                      <div className="dp-circuit-brief-warning">
+                        Your answer is too brief. Examiners expect
+                        substantive responses of at least 2–3 sentences.
+                        Elaborate on your answer before submitting.
+                      </div>
+                    )}
                     {answerError && (
                       <p className="dp-answer-error dp-answer-error--visible">{answerError}</p>
                     )}
