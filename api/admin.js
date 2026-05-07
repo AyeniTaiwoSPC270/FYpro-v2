@@ -658,6 +658,47 @@ async function handleResolvePaymentIssue(req, res) {
   }
 }
 
+// action: "system_logs"
+async function handleSystemLogs(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('system_logs')
+      .select('*')
+      .eq('resolved', false)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return res.status(200).json({ logs: data || [] });
+  } catch (err) {
+    console.error('[admin/system_logs] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "resolve_log"
+async function handleResolveLog(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: 'id required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('system_logs')
+      .update({ resolved: true })
+      .eq('id', id);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/resolve_log] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -682,6 +723,8 @@ export default async function handler(req, res) {
   if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
   if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
+  if (action === 'system_logs')   return handleSystemLogs(req, res);
+  if (action === 'resolve_log')   return handleResolveLog(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
