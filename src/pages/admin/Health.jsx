@@ -277,6 +277,7 @@ const INTERVAL_VITALS   = 15 * 1000   // 15s
 const INTERVAL_FAILURES = 20 * 1000   // 20s
 const INTERVAL_AUTH     = 30 * 1000   // 30s
 const INTERVAL_PAYMENTS = 30 * 1000   // 30s
+const INTERVAL_LOGS     = 60 * 1000   // 60s
 
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
@@ -304,6 +305,12 @@ export default function AdminHealth() {
   const [paymentIssues, setPaymentIssues]               = useState(null)
   const [paymentIssuesLoading, setPaymentIssuesLoading] = useState(true)
   const [resolvingIssueId, setResolvingIssueId]         = useState(null)
+
+  const [systemLogs, setSystemLogs]               = useState(null)
+  const [systemLogsLoading, setSystemLogsLoading] = useState(true)
+  const [resolvingLogId, setResolvingLogId]       = useState(null)
+  const [expandedLogIds, setExpandedLogIds]       = useState(new Set())
+  const systemLogsTimerRef                        = useRef(null)
 
   const [authAttempts, setAuthAttempts]       = useState(null)
   const [authAttemptsLoading, setAuthAttemptsLoading] = useState(true)
@@ -375,7 +382,18 @@ export default function AdminHealth() {
       .finally(() => setPaymentIssuesLoading(false))
   }, [session?.access_token])
 
-  // Fire all 5 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
+  const loadSystemLogs = useCallback(() => {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=system_logs', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setSystemLogs(d.logs) })
+      .catch(() => {})
+      .finally(() => setSystemLogsLoading(false))
+  }, [session?.access_token])
+
+  // Fire all 6 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.all([
@@ -384,10 +402,11 @@ export default function AdminHealth() {
       loadFailures(),
       loadAuthAttempts(),
       loadPaymentIssues(),
+      loadSystemLogs(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs])
 
   // Overview / dashboard — 20s polling
   useEffect(() => {
@@ -428,6 +447,14 @@ export default function AdminHealth() {
     paymentTimerRef.current = setInterval(loadPaymentIssues, INTERVAL_PAYMENTS)
     return () => clearInterval(paymentTimerRef.current)
   }, [isAdmin, session, loadPaymentIssues])
+
+  // System logs — 60s polling
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    loadSystemLogs()
+    systemLogsTimerRef.current = setInterval(loadSystemLogs, INTERVAL_LOGS)
+    return () => clearInterval(systemLogsTimerRef.current)
+  }, [isAdmin, session, loadSystemLogs])
 
   // "X seconds ago" counter — ticks every second, resets whenever lastUpdated changes
   useEffect(() => {
@@ -529,6 +556,34 @@ export default function AdminHealth() {
     } finally {
       setResolvingIssueId(null)
     }
+  }
+
+  async function handleResolveLog(id) {
+    setResolvingLogId(id)
+    setSystemLogs(prev => (prev || []).filter(log => log.id !== id))
+    try {
+      const res = await fetch('/api/admin?action=resolve_log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+    } catch (err) {
+      console.error('[admin] resolve log failed:', err.message)
+      loadSystemLogs()
+    } finally {
+      setResolvingLogId(null)
+    }
+  }
+
+  function toggleLogExpanded(id) {
+    setExpandedLogIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   async function handleResolveFailure(id) {
@@ -1344,6 +1399,133 @@ export default function AdminHealth() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── System Logs ───────────────────────────────────────────── */}
+      <div style={{ marginTop: 40, marginBottom: 64 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          marginBottom: 16, paddingBottom: 12,
+          borderBottom: `1px solid ${BORDER}`,
+        }}>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
+            System Logs
+          </h2>
+          {!systemLogsLoading && systemLogs !== null && (
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
+              background: systemLogs.length > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(22,163,74,0.15)',
+              color: systemLogs.length > 0 ? RED : GREEN,
+              border: `1px solid ${systemLogs.length > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
+              borderRadius: 999, padding: '2px 10px',
+            }}>
+              {systemLogs.length} unresolved
+            </span>
+          )}
+        </div>
+
+        {systemLogsLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[0,1,2,3,4].map(i => (
+              <div key={i} style={{ height: 56, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />
+            ))}
+          </div>
+        ) : !systemLogs || systemLogs.length === 0 ? (
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: GREEN, margin: 0 }}>
+            No issues detected — system is healthy
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {systemLogs.map(log => {
+              const severityColor = log.severity === 'error' ? RED : log.severity === 'warning' ? AMBER : BLUE
+              const isExpanded    = expandedLogIds.has(log.id)
+              return (
+                <div key={log.id} style={{
+                  background: CARD,
+                  border: `1px solid ${BORDER}`,
+                  borderLeft: `3px solid ${severityColor}`,
+                  borderRadius: 10,
+                  padding: '14px 18px',
+                }}>
+                  {/* Top row: badge + feature + timestamp + resolve */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10, fontWeight: 700,
+                      color: WHITE,
+                      background: `${severityColor}33`,
+                      border: `1px solid ${severityColor}55`,
+                      borderRadius: 999, padding: '2px 8px',
+                      textTransform: 'uppercase',
+                    }}>
+                      {log.severity}
+                    </span>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, fontWeight: 500 }}>
+                      {log.feature}
+                    </span>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 'auto' }}>
+                      {timeAgo(log.created_at)}
+                    </span>
+                    <button
+                      onClick={() => handleResolveLog(log.id)}
+                      disabled={resolvingLogId === log.id}
+                      style={{
+                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
+                        color: WHITE,
+                        background: resolvingLogId === log.id ? `${GREEN}55` : GREEN,
+                        border: 'none', borderRadius: 6,
+                        padding: '4px 12px',
+                        cursor: resolvingLogId === log.id ? 'not-allowed' : 'pointer',
+                        transition: 'background 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {resolvingLogId === log.id ? 'Resolving…' : 'Resolve'}
+                    </button>
+                  </div>
+
+                  {/* Message */}
+                  <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM, margin: '0 0 8px 0' }}>
+                    {log.plain_message}
+                  </p>
+
+                  {/* Expand toggle */}
+                  {log.raw_detail && (
+                    <>
+                      <button
+                        onClick={() => toggleLogExpanded(log.id)}
+                        style={{
+                          fontFamily: "'Poppins', sans-serif", fontSize: 11,
+                          color: MUTED, background: 'transparent',
+                          border: `1px solid ${BORDER}`, borderRadius: 6,
+                          padding: '3px 10px', cursor: 'pointer',
+                        }}
+                      >
+                        {isExpanded ? 'Hide detail' : 'Show detail'}
+                      </button>
+                      {isExpanded && (
+                        <pre style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 11, color: DIM,
+                          background: SURFACE,
+                          border: `1px solid ${BORDER}`,
+                          borderRadius: 8,
+                          padding: 16,
+                          marginTop: 10,
+                          overflowX: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                        }}>
+                          {JSON.stringify(log.raw_detail, null, 2)}
+                        </pre>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
