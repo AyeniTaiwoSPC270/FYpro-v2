@@ -12,5 +12,6 @@ CREATE TABLE system_logs (
 
 ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admin only" ON system_logs
-  FOR ALL USING (auth.jwt() ->> 'email' = 'team.fypro@gmail.com');
+CREATE POLICY "Admin read" ON system_logs
+  FOR SELECT
+  USING (auth.jwt() ->> 'email' = 'team.fypro@gmail.com');
