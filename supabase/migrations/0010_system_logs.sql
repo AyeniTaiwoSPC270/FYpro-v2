@@ -10,8 +10,7 @@ CREATE TABLE system_logs (
   resolved      boolean     DEFAULT false
 );
 
+-- RLS enabled with no client-visible policies.
+-- All reads and writes go through supabaseAdmin (service_role), which bypasses RLS.
+-- No authenticated user can query this table directly.
 ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admin read" ON system_logs
-  FOR SELECT
-  USING (auth.jwt() ->> 'email' = 'team.fypro@gmail.com');

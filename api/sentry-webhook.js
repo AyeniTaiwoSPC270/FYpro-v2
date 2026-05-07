@@ -27,15 +27,16 @@ export default async function handler(req, res) {
   const rawBody = await readRawBody(req);
   const secret  = process.env.SENTRY_WEBHOOK_SECRET;
 
-  if (secret) {
-    const sig      = req.headers['sentry-hook-signature'] || '';
-    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-    if (sig !== expected) {
-      console.error('[sentry-webhook] invalid signature');
-      return res.status(400).json({ error: 'Invalid signature' });
-    }
-  } else {
-    console.warn('[sentry-webhook] SENTRY_WEBHOOK_SECRET not set — skipping verification');
+  if (!secret) {
+    console.error('[sentry-webhook] SENTRY_WEBHOOK_SECRET is not set — rejecting request');
+    return res.status(500).json({ error: 'Webhook secret not configured on server.' });
+  }
+
+  const sig      = req.headers['sentry-hook-signature'] || '';
+  const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+  if (sig !== expected) {
+    console.error('[sentry-webhook] invalid signature');
+    return res.status(400).json({ error: 'Invalid signature' });
   }
 
   let payload;
