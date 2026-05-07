@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
 import LiteratureMap from '../literatureMap/LiteratureMap'
+import ApiErrorBox from '../../components/ApiErrorBox'
 
 const CHEVRON_PATH = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
@@ -491,7 +492,7 @@ export default function ChapterArchitect() {
             />
           </div>
 
-          {error && <p id="ca-error-text" className="ca-error-text">{error}</p>}
+          <ApiErrorBox error={error} onRetry={handleGenerate} />
 
           <button
             id="btn-generate"
@@ -527,7 +528,7 @@ export default function ChapterArchitect() {
           {data && (
             <>
               <p id="ca-structure-note" className="ca-structure-note">{data.structure_note || ''}</p>
-              {resultError && <p className="ca-error-text">{resultError}</p>}
+              <ApiErrorBox error={resultError} />
 
               <div id="ca-chapters-list" className="ca-chapters-list">
                 {chapters.map((chapter, idx) => (
@@ -567,13 +568,12 @@ export default function ChapterArchitect() {
             <div id="ag-input-section" className="ag-input-section tv-section--visible">
               <p className="ag-step-label">Abstract Generator</p>
               <span className="ag-companion-badge">Companion Card</span>
-              <p className="ag-description" style={agError ? { color: '#DC2626' } : {}}>
-                {agError
-                  ? agError
-                  : 'FYPro will draft a structured abstract scaffold for your project — five labelled ' +
-                    'components for you to refine. This is not a finished abstract; it is a starting ' +
-                    'point calibrated to your topic and chapter structure.'}
+              <p className="ag-description">
+                FYPro will draft a structured abstract scaffold for your project — five labelled
+                components for you to refine. This is not a finished abstract; it is a starting
+                point calibrated to your topic and chapter structure.
               </p>
+              <ApiErrorBox error={agError} onRetry={handleGenerateAbstract} />
               <button
                 id="ag-btn-generate"
                 className="ag-btn-generate"
