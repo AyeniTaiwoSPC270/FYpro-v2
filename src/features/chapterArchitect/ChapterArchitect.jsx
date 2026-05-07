@@ -500,7 +500,7 @@ export default function ChapterArchitect() {
             disabled={btnDisabled || overLimit}
             style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            Generate Chapters
+            {btnDisabled ? 'Generating…' : 'Generate Chapters'}
           </button>
           {overLimit && (
             <p className="ca-error-text" style={{ marginTop: 8 }}>
@@ -581,7 +581,7 @@ export default function ChapterArchitect() {
                 disabled={agBtnDisabled || agOverLimit}
                 style={agOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
               >
-                Generate Abstract
+                {agBtnDisabled ? 'Generating Abstract…' : 'Generate Abstract'}
               </button>
               {agOverLimit && (
                 <p className="ca-error-text" style={{ marginTop: 8 }}>
