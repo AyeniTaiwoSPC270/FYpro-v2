@@ -4,6 +4,7 @@
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
+import { supabaseAdmin } from './_lib/supabase-admin.js';
 
 const TTL_BY_STEP = {
   'topic-validator':     86400,
@@ -66,6 +67,7 @@ const handler = async (req, res) => {
       return res.status(200).json(cached);
     }
 
+    const start = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -83,10 +85,15 @@ const handler = async (req, res) => {
       trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     }
 
-    res.setHeader('X-Cache', 'MISS');
     if (response.ok) {
-      setCached(cacheKey, data, ttl); // fire and forget — do not await
+      const duration = Date.now() - start;
+      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration })
+        .then(() => {})
+        .catch(() => {});
+      setCached(cacheKey, data, ttl);
     }
+
+    res.setHeader('X-Cache', 'MISS');
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[claude] error:', err.message);
