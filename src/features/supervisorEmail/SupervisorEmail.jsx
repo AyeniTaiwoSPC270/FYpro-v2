@@ -105,8 +105,8 @@ export default function SupervisorEmail({ onClose }) {
           objectives, methodology, and a meeting request. All in one.
         </p>
         {error && <p className="se-error-text tv-section--visible">{error}</p>}
-        <button className="se-btn-generate" onClick={handleGenerate}>
-          Generate Email
+        <button className="se-btn-generate" onClick={handleGenerate} disabled={section === 'loading'}>
+          {section === 'loading' ? 'Generating…' : 'Generate Email'}
         </button>
       </div>
 
@@ -172,8 +172,9 @@ export default function SupervisorEmail({ onClose }) {
                 className="se-btn-generate"
                 style={{ marginLeft: 8, width: 'auto', padding: '11px 20px' }}
                 onClick={handleGenerate}
+                disabled={section === 'loading'}
               >
-                Regenerate
+                {section === 'loading' ? 'Generating…' : 'Regenerate'}
               </button>
             </div>
 
