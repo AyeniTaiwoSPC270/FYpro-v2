@@ -51,6 +51,45 @@ function fmtChartDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 }
 
+function timeAgo(iso) {
+  if (!iso) return '—'
+  const ms = Date.now() - new Date(iso).getTime()
+  const s  = Math.floor(ms / 1000)
+  if (s < 60)  return `${s}s ago`
+  const m  = Math.floor(s / 60)
+  if (m < 60)  return `${m} min${m !== 1 ? 's' : ''} ago`
+  const h  = Math.floor(m / 60)
+  if (h < 24)  return `${h} hr${h !== 1 ? 's' : ''} ago`
+  const d  = Math.floor(h / 24)
+  return `${d} day${d !== 1 ? 's' : ''} ago`
+}
+
+function VitalCard({ label, value, dotColor, pulse }) {
+  return (
+    <div style={{
+      background: 'rgba(13,27,42,0.8)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 10,
+      padding: 16,
+      flex: '1 1 0',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{
+          width: 12, height: 12, borderRadius: '50%',
+          background: dotColor, flexShrink: 0,
+          animation: pulse ? 'vitalPulse 1.5s ease-in-out infinite' : 'none',
+        }} />
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: WHITE }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
 // ── Small components ─────────────────────────────────────────────────
 function StatusBadge({ status }) {
   const map = {
@@ -243,6 +282,15 @@ export default function AdminHealth() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const timerRef = useRef(null)
 
+  const [vitals, setVitals]               = useState(null)
+  const [vitalsLoading, setVitalsLoading] = useState(true)
+  const vitalsTimerRef                    = useRef(null)
+
+  const [failures, setFailures]               = useState(null)
+  const [failuresLoading, setFailuresLoading] = useState(true)
+  const failuresTimerRef                      = useRef(null)
+  const [resolvingId, setResolvingId]         = useState(null)
+
   // User table state
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('signup_date')
@@ -273,6 +321,40 @@ export default function AdminHealth() {
     timerRef.current = setInterval(loadData, AUTO_REFRESH_MS)
     return () => clearInterval(timerRef.current)
   }, [isAdmin, session, loadData])
+
+  // Vitals — 30s interval
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    function loadVitals() {
+      fetch('/api/admin?action=vitals', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(r => r.json())
+        .then(d => { if (!d.error) setVitals(d) })
+        .catch(() => {})
+        .finally(() => setVitalsLoading(false))
+    }
+    loadVitals()
+    vitalsTimerRef.current = setInterval(loadVitals, 30 * 1000)
+    return () => clearInterval(vitalsTimerRef.current)
+  }, [isAdmin, session])
+
+  // Failures — 60s interval
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    function loadFailures() {
+      fetch('/api/admin?action=failures', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(r => r.json())
+        .then(d => { if (!d.error) setFailures(d) })
+        .catch(() => {})
+        .finally(() => setFailuresLoading(false))
+    }
+    loadFailures()
+    failuresTimerRef.current = setInterval(loadFailures, 60 * 1000)
+    return () => clearInterval(failuresTimerRef.current)
+  }, [isAdmin, session])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -341,6 +423,27 @@ export default function AdminHealth() {
     }
   }
 
+  async function handleResolveFailure(id) {
+    setResolvingId(id)
+    try {
+      const res = await fetch('/api/admin?action=resolve-failure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setFailures(prev => ({
+        ...prev,
+        rows: prev.rows.map(r => r.id === id ? { ...r, resolved: true } : r),
+      }))
+    } catch (err) {
+      window.alert('Resolve failed: ' + err.message)
+    } finally {
+      setResolvingId(null)
+    }
+  }
+
   // ── Guard states ────────────────────────────────────────────────
   const shell = { minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }
   if (loading)             return <div style={shell}>Loading…</div>
@@ -350,7 +453,8 @@ export default function AdminHealth() {
   if (!data)               return null
 
   const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted,
-          daily_spend, cache_hit_rate, top_active_users, failed_payments_today, signups_yesterday } = data
+          daily_spend, cache_hit_rate, top_active_users, failed_payments_today, signups_yesterday,
+          revenue_today_ngn, paying_users_today, ngn_per_usd } = data
   const maxFeature = feature_usage?.[0]?.count || 1
 
   // ── Shared inline styles ─────────────────────────────────────────
@@ -369,6 +473,12 @@ export default function AdminHealth() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }}>
+      <style>{`
+        @keyframes vitalPulse {
+          0%, 100% { transform: scale(1);   opacity: 1; }
+          50%       { transform: scale(1.3); opacity: 0.6; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
@@ -423,6 +533,46 @@ export default function AdminHealth() {
         </div>
       </div>
 
+      {/* ── Widget 4: System Vitals ──────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        {vitalsLoading ? (
+          <div style={{ display: 'flex', gap: 16 }}>
+            {[0,1,2,3].map(i => (
+              <div key={i} style={{ flex: '1 1 0', height: 82, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 16 }}>
+            {(() => {
+              const lastCallRecent = vitals?.last_call_at
+                ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
+                : false
+              const engineColor = lastCallRecent ? GREEN : RED
+              const engineValue = lastCallRecent ? 'Operational' : 'Degraded'
+
+              const avgMs    = vitals?.avg_response_ms ?? null
+              const avgColor = avgMs === null ? RED : avgMs < 15000 ? GREEN : avgMs <= 30000 ? AMBER : RED
+              const avgValue = avgMs !== null ? `${(avgMs / 1000).toFixed(1)}s` : '—'
+
+              const failuresToday = vitals?.failures_today  || 0
+              const requestsToday = vitals?.requests_today  || 0
+              const errPct   = requestsToday > 0 ? (failuresToday / requestsToday) * 100 : 0
+              const errColor = requestsToday === 0 ? MUTED : errPct < 2 ? GREEN : errPct <= 5 ? AMBER : RED
+              const errValue = requestsToday > 0 ? `${errPct.toFixed(1)}%` : '—'
+
+              return (
+                <>
+                  <VitalCard label="AI Engine"    value={engineValue} dotColor={engineColor} pulse={!lastCallRecent} />
+                  <VitalCard label="Avg Response" value={avgValue}    dotColor={avgColor}    pulse={avgMs !== null && avgMs > 30000} />
+                  <VitalCard label="Error Rate"   value={errValue}    dotColor={errColor}    pulse={errPct > 5} />
+                  <VitalCard label="Active Now"   value={String(vitals?.active_sessions ?? 0)} dotColor={BLUE} pulse={false} />
+                </>
+              )
+            })()}
+          </div>
+        )}
+      </div>
+
       {/* ── SECTION 1: Overview Cards ─────────────────────────────── */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
         <OverviewCard label="Total Users"      value={overview.total_users.toLocaleString()}        accent={BLUE}  />
@@ -432,14 +582,6 @@ export default function AdminHealth() {
         <OverviewCard label="Total Revenue"    value={`₦${overview.total_revenue_ngn.toLocaleString()}`} accent={GREEN} />
         <OverviewCard label="Conversion Rate"  value={`${overview.conversion_rate}%`} sub="paid ÷ total" accent={BLUE}  />
         <SpendCard spend={daily_spend} />
-        {cache_hit_rate && (
-          <OverviewCard
-            label="Cache Hit Rate"
-            value={`${cache_hit_rate.hit_rate_pct}%`}
-            sub={`${(cache_hit_rate.hits_total ?? 0).toLocaleString()} hits today`}
-            accent={BLUE}
-          />
-        )}
         <OverviewCard
           label="Failed Payments"
           value={String(failed_payments_today ?? 0)}
@@ -450,6 +592,96 @@ export default function AdminHealth() {
           today={overview.signups_today ?? 0}
           yesterday={signups_yesterday ?? 0}
         />
+      </div>
+
+      {/* ── Widget 1: Unit Economics ─────────────────────────────── */}
+      <div style={{
+        background: CARD, border: `1px solid ${BORDER}`,
+        borderTop: `3px solid ${AMBER}`,
+        borderRadius: 12, padding: '20px 24px', marginBottom: 8, marginTop: 8,
+      }}>
+        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+          Unit Economics — Today
+        </div>
+        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+          {(() => {
+            const spentUsd    = daily_spend?.spent_usd || 0
+            const activeToday = overview.active_today  || 0
+            const ngn         = ngn_per_usd            || 1600
+            const payingU     = paying_users_today      || 0
+            const revToday    = revenue_today_ngn       || 0
+
+            const costPerUser = activeToday > 0 ? (spentUsd * ngn) / activeToday : null
+            const cpuColor    = costPerUser === null ? MUTED
+              : costPerUser < 200 ? GREEN : costPerUser <= 400 ? AMBER : RED
+
+            const revPerUser  = payingU > 0 ? revToday / payingU : null
+
+            const margin      = revPerUser && costPerUser !== null && revPerUser > 0
+              ? ((revPerUser - costPerUser) / revPerUser) * 100
+              : null
+            const marginColor = margin === null ? MUTED
+              : margin > 60 ? GREEN : margin >= 30 ? AMBER : RED
+
+            return (
+              <>
+                <div>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Cost Per User</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: cpuColor }}>
+                    {costPerUser !== null ? `₦${costPerUser.toFixed(0)}` : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Revenue Per User</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: WHITE }}>
+                    {revPerUser !== null ? `₦${revPerUser.toFixed(0)}` : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Profit Margin Per User</div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: marginColor }}>
+                    {margin !== null ? `${margin.toFixed(1)}%` : '—'}
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      </div>
+
+      {/* ── Widget 3: Cache Performance ───────────────────────────── */}
+      <div style={{
+        background: CARD, border: `1px solid ${BORDER}`,
+        borderTop: `3px solid ${BLUE}`,
+        borderRadius: 12, padding: '20px 24px', marginBottom: 8,
+      }}>
+        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
+          Cache Performance
+        </div>
+        {(() => {
+          const hitRate    = cache_hit_rate?.hit_rate_pct ?? 0
+          const hitsTotal  = cache_hit_rate?.hits_total   ?? 0
+          const reqCount   = daily_spend?.request_count   ?? 0
+          const freshCalls = Math.max(0, reqCount - hitsTotal)
+          const spentUsd   = daily_spend?.spent_usd ?? 0
+          const costPerFresh = freshCalls > 0 ? spentUsd / freshCalls : 0
+          const savings    = hitsTotal * costPerFresh * (ngn_per_usd || 1600)
+          const rateColor  = hitRate > 25 ? GREEN : hitRate >= 10 ? AMBER : RED
+          return (
+            <>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 32, fontWeight: 700, color: rateColor, lineHeight: 1, marginBottom: 12 }}>
+                {hitRate}%
+              </div>
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 10 }}>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: GREEN }}>{hitsTotal.toLocaleString()} cached today</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: AMBER }}>{freshCalls.toLocaleString()} fresh calls today</span>
+              </div>
+              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED }}>
+                Est. savings today: <span style={{ color: WHITE, fontFamily: "'JetBrains Mono', monospace" }}>₦{savings.toFixed(0)}</span>
+              </div>
+            </>
+          )
+        })()}
       </div>
 
       {/* ── SECTION 2: User Table ──────────────────────────────────── */}
@@ -605,6 +837,95 @@ export default function AdminHealth() {
           </div>
         </>
       )}
+
+      {/* ── Widget 2: Failed Generation Log ──────────────────────── */}
+      <div style={{ margin: '40px 0 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
+          Failed Generations
+        </h2>
+        <span style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 12, fontWeight: 700,
+          color: WHITE,
+          background: (failures?.total_today ?? 0) > 0 ? RED : GREEN,
+          borderRadius: 999,
+          padding: '2px 10px',
+        }}>
+          {failures?.total_today ?? 0} today
+        </span>
+      </div>
+      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
+        {failuresLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[0,1,2,3,4].map(i => (
+              <div key={i} style={{ height: 44, background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
+            ))}
+          </div>
+        ) : !failures?.rows?.length ? (
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, margin: 0 }}>No failures logged yet.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 700 }}>
+              <thead>
+                <tr>
+                  {['Time', 'Feature', 'Error', 'User', 'Input Preview', 'Action'].map(h => (
+                    <th key={h} style={{
+                      fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
+                      color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
+                      padding: '10px 12px', textAlign: 'left', background: SURFACE,
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {failures.rows.map(row => (
+                  <tr
+                    key={row.id}
+                    style={{
+                      borderLeft: row.resolved ? 'none' : `3px solid ${RED}`,
+                      opacity: row.resolved ? 0.4 : 1,
+                    }}
+                  >
+                    <td style={{ ...td, color: MUTED, whiteSpace: 'nowrap' }}>{timeAgo(row.created_at)}</td>
+                    <td style={{ ...td, color: WHITE }}>{row.feature || '—'}</td>
+                    <td style={td}>
+                      <span style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 11, fontWeight: 600,
+                        color: row.error_type === 'timeout' ? AMBER : RED,
+                        background: 'rgba(255,255,255,0.07)',
+                        borderRadius: 999, padding: '2px 8px',
+                      }}>{row.error_type || 'generic'}</span>
+                    </td>
+                    <td style={{ ...td, color: DIM }}>{row.user_email ? row.user_email.substring(0, 20) : '—'}</td>
+                    <td style={{ ...td, color: MUTED, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {row.input_preview ? row.input_preview.substring(0, 50) : '—'}
+                    </td>
+                    <td style={{ ...td, padding: '6px 12px' }}>
+                      <button
+                        disabled={row.resolved || resolvingId === row.id}
+                        onClick={() => handleResolveFailure(row.id)}
+                        style={{
+                          fontFamily: "'Poppins', sans-serif",
+                          fontSize: 11, fontWeight: 600,
+                          color: row.resolved ? MUTED : GREEN,
+                          background: 'transparent',
+                          border: `1px solid ${row.resolved ? BORDER : GREEN + '55'}`,
+                          borderRadius: 6, padding: '4px 10px',
+                          cursor: row.resolved || resolvingId === row.id ? 'not-allowed' : 'pointer',
+                          opacity: resolvingId === row.id ? 0.5 : 1,
+                        }}
+                      >
+                        {row.resolved ? 'Resolved' : resolvingId === row.id ? 'Resolving…' : 'Mark Resolved'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* ── SECTION 3 & 4: Charts ──────────────────────────────────── */}
       <SectionHeading title="Revenue & Signups — Last 30 Days" />
