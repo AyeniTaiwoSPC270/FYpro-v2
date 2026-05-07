@@ -771,7 +771,7 @@ export function buildDocumentRelevanceCheckPrompt(student, extractedText) {
 ${buildStudentContext(student)}
 
 DOCUMENT CONTENT (first 2000 characters):
-${wrapUserInput('DOCUMENT CONTENT', content)}
+${wrapUserInput('UPLOADED DOCUMENT CONTENT', content)}
 
 Is this document a final year project, chapter, report, or academic work relevant to this student's Faculty of ${student.faculty}, Department of ${student.department}?
 
