@@ -247,7 +247,7 @@ export default function MethodologyAdvisor() {
             disabled={maBtnDisabled || maOverLimit}
             style={maOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            Analyse Methodology
+            {maBtnDisabled ? 'Analysing…' : 'Analyse Methodology'}
           </button>
           {maOverLimit && (
             <p className="ma-error-text" style={{ marginTop: 8 }}>
