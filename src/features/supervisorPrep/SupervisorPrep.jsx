@@ -171,7 +171,7 @@ export default function SupervisorPrep() {
               onClick={handleSubmit}
               disabled={btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500}
             >
-              Prepare Me
+              {btnDisabled ? 'Preparing…' : 'Prepare Me'}
             </button>
           </>
         )}
