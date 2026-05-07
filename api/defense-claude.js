@@ -4,6 +4,7 @@
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
+import { writeSystemLog } from './_lib/system-log.js';
 
 const handler = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -94,6 +95,13 @@ const handler = async (req, res) => {
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[defense-claude] error:', err.message);
+    writeSystemLog({
+      severity: 'error',
+      feature: 'Defense Simulator',
+      source: 'ai',
+      plain_message: 'A defense session failed — the AI did not respond in time or hit the token limit',
+      raw_detail: { error: err.message, userId: user.id },
+    });
     return res.status(500).json({ error: err.message });
   }
 };
