@@ -62,19 +62,28 @@ export default function SupervisorEmail({ onClose }) {
     setError(null)
     setSection('loading')
 
+    let data
     try {
-      const data = await generateEmail(
+      data = await generateEmail(
         studentContext,
         state.validatedTopic || state.roughTopic || '',
         state.chapterStructure,
         state.chosenMethodology
       )
-      setEmailData(data)
-      setSection('result')
-      saveStep('supervisor_email', data)
     } catch (err) {
       setSection('input')
       handleApiError(err, msg => setError(msg || 'Something went wrong. Please try again.'))
+      return
+    }
+
+    setEmailData(data)
+    setSection('result')
+
+    console.log('[SupervisorEmail] saveStep reached', data)
+    try {
+      await saveStep('supervisor_email', data)
+    } catch (err) {
+      console.error('[SupervisorEmail] saveStep failed', err)
     }
   }
 
