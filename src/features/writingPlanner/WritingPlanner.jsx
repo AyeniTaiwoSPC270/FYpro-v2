@@ -183,7 +183,7 @@ export default function WritingPlanner() {
           disabled={!generateEnabled}
           style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
-          Generate Writing Plan
+          {btnDisabled ? 'Generating…' : 'Generate Writing Plan'}
         </button>
         {overLimit && (
           <p className="wp-error-text" style={{ marginTop: 8 }}>
