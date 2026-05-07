@@ -230,6 +230,11 @@ async function handleDashboard(req, res) {
     const totalPaid      = paidUserIds.size;
     const conversionRate = totalUsers > 0 ? ((totalPaid / totalUsers) * 100).toFixed(1) : '0.0';
 
+    const todayPayments    = payments.filter(p => p.created_at >= todayStart);
+    const revenueTodayNgn  = todayPayments.reduce((sum, p) => sum + Math.round((p.amount_kobo || 0) / 100), 0);
+    const payingUsersToday = new Set(todayPayments.map(p => p.user_id)).size;
+    const ngnPerUsd        = parseFloat(process.env.NGN_PER_USD || '1600');
+
     const projCountByUser = {};
     for (const p of projects) {
       projCountByUser[p.user_id] = (projCountByUser[p.user_id] || 0) + 1;
@@ -362,6 +367,9 @@ async function handleDashboard(req, res) {
       top_active_users:      topActiveUsers,
       failed_payments_today: failedPaymentsToday,
       signups_yesterday:     signupsYesterday,
+      revenue_today_ngn:     revenueTodayNgn,
+      paying_users_today:    payingUsersToday,
+      ngn_per_usd:           ngnPerUsd,
     });
 
   } catch (err) {
@@ -384,6 +392,89 @@ async function verifyAdmin(req, res) {
     return caller;
   } catch {
     res.status(401).json({ error: 'Unauthorized' }); return null;
+  }
+}
+
+// action: "vitals"
+async function handleVitals(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const today      = new Date().toISOString().slice(0, 10);
+    const todayStart = `${today}T00:00:00.000Z`;
+    const tenMinAgo  = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeSessionsRes] = await Promise.all([
+      supabaseAdmin.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabaseAdmin.from('response_times').select('duration_ms').order('created_at', { ascending: false }).limit(10),
+      supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('daily_usage').select('request_count').eq('date', today).maybeSingle(),
+      supabaseAdmin.from('generation_failures').select('user_id').gte('created_at', tenMinAgo),
+    ]);
+
+    const rows          = rtAvgRes.data || [];
+    const avgResponseMs = rows.length > 0
+      ? Math.round(rows.reduce((s, r) => s + (r.duration_ms || 0), 0) / rows.length)
+      : null;
+
+    const activeSessions = new Set((activeSessionsRes.data || []).map(r => r.user_id).filter(Boolean)).size;
+
+    return res.status(200).json({
+      avg_response_ms: avgResponseMs,
+      last_call_at:    rtLatestRes.data?.created_at || null,
+      failures_today:  failuresTodayRes.count || 0,
+      requests_today:  usageRes.data?.request_count || 0,
+      active_sessions: activeSessions,
+    });
+  } catch (err) {
+    console.error('[admin/vitals] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "failures"
+async function handleFailures(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const today      = new Date().toISOString().slice(0, 10);
+    const todayStart = `${today}T00:00:00.000Z`;
+
+    const [rowsRes, countRes] = await Promise.all([
+      supabaseAdmin.from('generation_failures').select('*').order('created_at', { ascending: false }).limit(20),
+      supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+    ]);
+
+    return res.status(200).json({
+      rows:        rowsRes.data || [],
+      total_today: countRes.count || 0,
+    });
+  } catch (err) {
+    console.error('[admin/failures] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "resolve-failure"
+async function handleResolveFailure(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: 'id required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('generation_failures')
+      .update({ resolved: true })
+      .eq('id', id);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/resolve-failure] error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 }
 
@@ -495,12 +586,15 @@ export default async function handler(req, res) {
 
   const action = req.query.action;
 
-  if (action === 'health')       return handleHealth(req, res);
-  if (action === 'alert-check')  return handleAlertCheck(req, res);
-  if (action === 'dashboard')    return handleDashboard(req, res);
-  if (action === 'delete-user')  return handleDeleteUser(req, res);
-  if (action === 'ban-user')     return handleBanUser(req, res);
-  if (action === 'self-delete')  return handleSelfDelete(req, res);
+  if (action === 'health')           return handleHealth(req, res);
+  if (action === 'alert-check')      return handleAlertCheck(req, res);
+  if (action === 'dashboard')        return handleDashboard(req, res);
+  if (action === 'vitals')           return handleVitals(req, res);
+  if (action === 'failures')         return handleFailures(req, res);
+  if (action === 'resolve-failure')  return handleResolveFailure(req, res);
+  if (action === 'delete-user')      return handleDeleteUser(req, res);
+  if (action === 'ban-user')         return handleBanUser(req, res);
+  if (action === 'self-delete')      return handleSelfDelete(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
