@@ -415,9 +415,9 @@ async function handleVitals(req, res) {
   if (!caller) return;
 
   try {
-    const today      = new Date().toISOString().slice(0, 10);
-    const todayStart = `${today}T00:00:00.000Z`;
-    const tenMinAgo  = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const today          = new Date().toISOString().slice(0, 10);
+    const todayStart     = `${today}T00:00:00.000Z`;
+    const thirtyMinAgo   = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
     const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeGenFailRes, activeRtRes] = await Promise.all([
       supabaseAdmin.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -426,9 +426,9 @@ async function handleVitals(req, res) {
       supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
       supabaseAdmin.from('daily_usage').select('request_count').eq('date', today).maybeSingle(),
       // Active users from error events
-      supabaseAdmin.from('generation_failures').select('user_id').gte('created_at', tenMinAgo),
+      supabaseAdmin.from('generation_failures').select('user_id').gte('created_at', thirtyMinAgo),
       // Active users from successful API calls (requires 0009 migration for user_id column)
-      supabaseAdmin.from('response_times').select('user_id').gte('created_at', tenMinAgo).not('user_id', 'is', null),
+      supabaseAdmin.from('response_times').select('user_id').gte('created_at', thirtyMinAgo).not('user_id', 'is', null),
     ]);
 
     const rows          = rtAvgRes.data || [];
@@ -436,7 +436,7 @@ async function handleVitals(req, res) {
       ? Math.round(rows.reduce((s, r) => s + (r.duration_ms || 0), 0) / rows.length)
       : null;
 
-    // Union distinct user_ids from both tables for accurate "active in last 10 min" count
+    // Union distinct user_ids from both tables for accurate "active in last 30 min" count
     const genFailUserIds = new Set((activeGenFailRes.data || []).map(r => r.user_id).filter(Boolean));
     const rtUserIds      = new Set((activeRtRes.data      || []).map(r => r.user_id).filter(Boolean));
     const activeSessions = new Set([...genFailUserIds, ...rtUserIds]).size;

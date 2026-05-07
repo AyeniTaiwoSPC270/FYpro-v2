@@ -652,7 +652,7 @@ export default function AdminHealth() {
           <div style={{ display: 'flex', gap: 16 }}>
             {(() => {
               const lastCallRecent = vitals?.last_call_at
-                ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
+                ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
                 : false
               const engineColor = lastCallRecent ? GREEN : RED
               const engineValue = lastCallRecent ? 'Operational' : 'Degraded'

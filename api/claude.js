@@ -63,11 +63,14 @@ const handler = async (req, res) => {
     const cached = await getCached(cacheKey);
     if (cached) {
       console.log('[claude] cache HIT for step:', prefix);
-      // Record cache hit so response_times.last_call_at stays fresh → AI Engine stays green.
+      // Await the insert so Vercel doesn't kill it before it reaches Supabase.
       const userId = extractUserId(req);
-      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId })
-        .then(() => {})
-        .catch(err => console.error('[claude] response_times (cache-hit) insert failed:', err.message));
+      try {
+        const result = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId });
+        console.log('[claude] response_times insert result (cache-hit):', JSON.stringify(result));
+      } catch (err) {
+        console.error('[claude] response_times insert failed (cache-hit):', err.message);
+      }
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cached);
     }
@@ -93,9 +96,12 @@ const handler = async (req, res) => {
     if (response.ok) {
       const duration = Date.now() - start;
       const userId   = extractUserId(req);
-      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId })
-        .then(() => {})
-        .catch(err => console.error('[claude] response_times insert failed:', err.message));
+      try {
+        const result = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId });
+        console.log('[claude] response_times insert result:', JSON.stringify(result));
+      } catch (err) {
+        console.error('[claude] response_times insert failed:', err.message);
+      }
       setCached(cacheKey, data, ttl);
     }
 
