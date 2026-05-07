@@ -411,12 +411,16 @@ function usePaystackCheckout() {
   const handlePay = useCallback(async (tier) => {
     setPayError(null)
     setBlockInfo(null)
-    const { data: authData, error: authError } = await supabase.auth.getUser()
+    const [{ data: authData, error: authError }, { data: sessionData }] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.auth.getSession(),
+    ])
     if (authError || !authData?.user) {
       navigate('/login?returnUrl=/pricing')
       return
     }
-    const user = authData.user
+    const user        = authData.user
+    const accessToken = sessionData?.session?.access_token || ''
 
     // Check current plan before opening Paystack
     const { data: entitlements } = await supabase
@@ -452,8 +456,8 @@ function usePaystackCheckout() {
 
       const res = await fetch('/api/payments?action=initiate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, userId: user.id, email: user.email }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ tier }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to initiate payment')
@@ -461,7 +465,7 @@ function usePaystackCheckout() {
 
       const handler = window.PaystackPop.setup({
         key: data.publicKey,
-        email: user.email,
+        email: data.email || user.email,
         amount: data.amount_kobo,
         ref: data.reference,
         currency: 'NGN',
@@ -511,7 +515,9 @@ function usePaystackCheckout() {
 
       pollingIntervalRef.current = setInterval(async () => {
         try {
-          const pollRes = await fetch(`/api/payments?action=check-status&reference=${pendingReference}`)
+          const pollRes = await fetch(`/api/payments?action=check-status&reference=${pendingReference}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
           const pollData = await pollRes.json()
           if (pollData.status === 'success') {
             stopPolling()

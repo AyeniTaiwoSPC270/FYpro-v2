@@ -86,9 +86,17 @@ async function handleHealth(req, res) {
 }
 
 // action: "alert-check"
-// Called hourly by external cron. Logs a console.error when spend crosses 80% of daily cap.
+// Called hourly by external cron. Requires X-Cron-Secret header matching CRON_SECRET env var.
+// Logs a console.error when spend crosses 80% of daily cap.
 // TODO (Week 5): replace console.error with Resend API email to ADMIN_EMAIL.
 async function handleAlertCheck(req, res) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const provided = req.headers['x-cron-secret'];
+    if (!provided || provided !== cronSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
   try {
     const today     = new Date().toISOString().slice(0, 10);
     const cap       = parseFloat(process.env.DAILY_CAP_USD || '10');

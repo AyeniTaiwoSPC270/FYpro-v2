@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
@@ -51,13 +52,18 @@ async function sendReceiptEmail(toEmail, plan, amount, reference) {
 }
 
 function generateReference(userId) {
-  const ts   = Date.now();
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `FYP_${userId}_${ts}_${rand}`;
+  const rand = randomBytes(4).toString('hex').toUpperCase();
+  return `FYP_${userId}_${Date.now()}_${rand}`;
 }
 
 // action: "check-status" — reads reference from query string
 async function handleCheckStatus(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
   const { reference } = req.query;
   if (!reference || typeof reference !== 'string') {
     return res.status(400).json({ error: 'Missing reference' });
@@ -67,6 +73,7 @@ async function handleCheckStatus(req, res) {
     .from('payments')
     .select('status')
     .eq('paystack_reference', reference)
+    .eq('user_id', user.id)
     .single();
 
   if (error || !data) {
@@ -78,12 +85,18 @@ async function handleCheckStatus(req, res) {
   });
 }
 
-// action: "initiate" — reads tier/userId/email from body
+// action: "initiate" — reads tier from body; userId/email derived from verified JWT
 async function handleInitiate(req, res) {
   try {
-    const { tier, userId, email } = req.body || {};
-    if (!tier || !userId || !email) {
-      return res.status(400).json({ error: 'Missing required fields: tier, userId, email' });
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { tier } = req.body || {};
+    if (!tier) {
+      return res.status(400).json({ error: 'Missing required field: tier' });
     }
 
     let amountKobo;
@@ -93,12 +106,12 @@ async function handleInitiate(req, res) {
       return res.status(400).json({ error: `Unknown tier: ${tier}` });
     }
 
-    const reference = generateReference(userId);
+    const reference = generateReference(user.id);
 
     const { error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
-        user_id:             userId,
+        user_id:             user.id,
         tier,
         amount_kobo:         amountKobo,
         paystack_reference:  reference,
@@ -113,6 +126,7 @@ async function handleInitiate(req, res) {
     return res.status(200).json({
       reference,
       amount_kobo: amountKobo,
+      email:       user.email,
       publicKey:   process.env.PAYSTACK_PUBLIC_KEY,
     });
   } catch (err) {
