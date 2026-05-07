@@ -127,7 +127,7 @@ export default function LiteratureMap({ chapters }) {
             disabled={btnDisabled || overLimit}
             style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            Generate Literature Map
+            {btnDisabled ? 'Mapping…' : 'Generate Literature Map'}
           </button>
           {overLimit && (
             <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
