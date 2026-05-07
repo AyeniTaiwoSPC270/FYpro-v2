@@ -4,6 +4,7 @@ import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 
 export default function MethodologyAdvisor() {
@@ -239,7 +240,7 @@ export default function MethodologyAdvisor() {
             Qualitative, and Mixed Methods — and explain the trade-offs of each. Claude will
             recommend one, but the final choice is yours.
           </p>
-          {maError && <p id="ma-error-text" className="ma-error-text">{maError}</p>}
+          <ApiErrorBox error={maError} onRetry={handleAnalyse} />
           <button
             id="btn-analyse"
             className="ma-btn-analyse"
@@ -419,7 +420,7 @@ export default function MethodologyAdvisor() {
               FYPro will draft a complete, topic-specific data collection instrument based on your
               confirmed methodology — structured questionnaire, interview guide, or both.
             </p>
-            {diError && <p id="di-error-text" className="di-error-text">{diError}</p>}
+            <ApiErrorBox error={diError} onRetry={handleGenerateInstrument} />
             <button
               id="btn-generate-instrument"
               className="di-btn-generate"
