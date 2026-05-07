@@ -49,9 +49,12 @@ export default function ForgotPassword() {
     e.preventDefault()
     setLoading(true)
     try {
-      // Fire reset email — swallow all errors so we never reveal if email is registered
-      await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Fire and forget — never reveal whether the email is registered.
+      // Rate-limited server-side; 429 is also swallowed to prevent enumeration.
+      await fetch('/api/auth?action=forgot-password', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email }),
       })
     } catch {
       // intentionally swallowed

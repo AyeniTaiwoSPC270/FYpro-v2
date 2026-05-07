@@ -295,6 +295,9 @@ export default function AdminHealth() {
   const [paymentIssuesLoading, setPaymentIssuesLoading] = useState(true)
   const [resolvingIssueId, setResolvingIssueId]         = useState(null)
 
+  const [authAttempts, setAuthAttempts]       = useState(null)
+  const [authAttemptsLoading, setAuthAttemptsLoading] = useState(true)
+
   // User table state
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('signup_date')
@@ -358,6 +361,18 @@ export default function AdminHealth() {
     loadFailures()
     failuresTimerRef.current = setInterval(loadFailures, 60 * 1000)
     return () => clearInterval(failuresTimerRef.current)
+  }, [isAdmin, session])
+
+  // Auth attempts — load once on mount
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    fetch('/api/admin?action=auth-attempts', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setAuthAttempts(d) })
+      .catch(() => {})
+      .finally(() => setAuthAttemptsLoading(false))
   }, [isAdmin, session])
 
   // Payment issues — load once on mount
@@ -1078,6 +1093,127 @@ export default function AdminHealth() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* ── Auth Attempts Widget ───────────────────────────────────── */}
+      <div style={{ marginTop: 40, marginBottom: 40 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          marginBottom: 16, paddingBottom: 12,
+          borderBottom: `1px solid ${BORDER}`,
+        }}>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
+            Auth Attempts
+          </h2>
+          {!authAttemptsLoading && authAttempts && (
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
+              background: authAttempts.suspicious?.length > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.07)',
+              color: authAttempts.suspicious?.length > 0 ? '#F87171' : MUTED,
+              border: `1px solid ${authAttempts.suspicious?.length > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 999, padding: '2px 10px',
+            }}>
+              {authAttempts.suspicious?.length > 0
+                ? `${authAttempts.suspicious.length} suspicious IP${authAttempts.suspicious.length > 1 ? 's' : ''}`
+                : 'all clear'}
+            </span>
+          )}
+        </div>
+
+        {authAttemptsLoading ? (
+          <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
+        ) : !authAttempts ? (
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
+            No data yet. Auth attempts are logged as users sign in.
+          </p>
+        ) : (
+          <>
+            {/* Summary row */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Total (24h)', value: authAttempts.attempts?.length ?? 0, color: MUTED },
+                { label: 'Failed logins', value: authAttempts.attempts?.filter(a => !a.success && a.action === 'login').length ?? 0, color: '#F87171' },
+                { label: 'Signups', value: authAttempts.attempts?.filter(a => a.action === 'signup').length ?? 0, color: '#60A5FA' },
+                { label: 'Suspicious IPs', value: authAttempts.suspicious?.length ?? 0, color: authAttempts.suspicious?.length > 0 ? '#F87171' : MUTED },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{
+                  background: CARD, border: `1px solid ${BORDER}`,
+                  borderRadius: 10, padding: '12px 20px', flex: '1 1 110px',
+                }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color }}>{value}</div>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Suspicious IPs */}
+            {authAttempts.suspicious?.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: '#F87171', marginBottom: 8, marginTop: 0 }}>
+                  Suspicious IPs — 5+ failed logins in last 24h
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {authAttempts.suspicious.map(({ ip, failed_count }) => (
+                    <div key={ip} style={{
+                      background: 'rgba(220,38,38,0.07)',
+                      border: '1px solid rgba(220,38,38,0.2)',
+                      borderLeft: '3px solid #DC2626',
+                      borderRadius: 8, padding: '10px 16px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#F87171' }}>{ip}</span>
+                      <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: '#F87171', fontWeight: 600 }}>
+                        {failed_count} failed attempts
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent failed logins */}
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED, marginBottom: 8, marginTop: 0 }}>
+              Recent failed logins
+            </p>
+            {authAttempts.attempts?.filter(a => !a.success && a.action === 'login').length === 0 ? (
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>None in the last 24 hours.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                  <thead>
+                    <tr>
+                      {['When', 'Email', 'IP'].map(h => (
+                        <th key={h} style={{
+                          fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
+                          color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
+                          padding: '8px 12px', textAlign: 'left', background: SURFACE,
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {authAttempts.attempts
+                      .filter(a => !a.success && a.action === 'login')
+                      .slice(0, 20)
+                      .map((a, i) => (
+                        <tr key={a.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                          <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
+                            {timeAgo(a.created_at)}
+                          </td>
+                          <td style={{ padding: '8px 12px', fontFamily: "'Poppins', sans-serif", fontSize: 12, color: WHITE }}>
+                            {a.email || '—'}
+                          </td>
+                          <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: MUTED }}>
+                            {a.ip || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Payment Issues Widget ──────────────────────────────────── */}

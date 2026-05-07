@@ -123,17 +123,30 @@ export default function Login() {
     setAuthError('')
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
+      const res  = await fetch('/api/auth?action=login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: form.email, password: form.password }),
       })
-      if (error) {
-        // Generic message — never reveal whether the email exists
-        setAuthError('Invalid email or password')
-      } else {
-        const returnUrl = searchParams.get('returnUrl')
-        navigate(returnUrl?.startsWith('/') ? returnUrl : '/dashboard', { replace: true })
+      const data = await res.json()
+      if (res.status === 429) {
+        setAuthError(data.error)
+        return
       }
+      if (!res.ok || !data.access_token) {
+        setAuthError('Invalid email or password')
+        return
+      }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,
+      })
+      if (sessionError) {
+        setAuthError('Invalid email or password')
+        return
+      }
+      const returnUrl = searchParams.get('returnUrl')
+      navigate(returnUrl?.startsWith('/') ? returnUrl : '/dashboard', { replace: true })
     } catch {
       setAuthError('Invalid email or password')
     } finally {

@@ -222,29 +222,23 @@ export default function Signup() {
 
     setLoading(true)
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            full_name: form.name,
-            university: form.university,
-          },
-        },
+      const res  = await fetch('/api/auth?action=signup', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          email:      form.email,
+          password:   form.password,
+          full_name:  form.name,
+          university: form.university,
+        }),
       })
-
-      if (error) {
-        setAuthError(mapSupabaseError(error))
+      const data = await res.json()
+      if (!res.ok) {
+        setAuthError(data.error || 'Sign up failed. Please try again.')
       } else {
-        if (data?.user?.id && form.name) {
-          await supabase.from('users').update({
-            full_name: form.name,
-            university_name: form.university,
-          }).eq('id', data.user.id)
-        }
         setSuccess(true)
       }
-    } catch (err) {
+    } catch {
       setAuthError('Connection failed. Check your internet and try again.')
     } finally {
       setLoading(false)

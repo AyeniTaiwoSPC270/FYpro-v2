@@ -567,6 +567,43 @@ async function handleSelfDelete(req, res) {
   }
 }
 
+// action: "auth-attempts" — last 24h of auth_attempts, with suspicious IP summary
+async function handleAuthAttempts(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('auth_attempts')
+      .select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+
+    const rows = data || [];
+
+    // Suspicious = IP with 5+ failed logins in the window
+    const failsByIp = {};
+    rows.forEach(r => {
+      if (!r.success && r.action === 'login' && r.ip) {
+        failsByIp[r.ip] = (failsByIp[r.ip] || 0) + 1;
+      }
+    });
+    const suspicious = Object.entries(failsByIp)
+      .filter(([, n]) => n >= 5)
+      .sort(([, a], [, b]) => b - a)
+      .map(([ip, failed_count]) => ({ ip, failed_count }));
+
+    return res.status(200).json({ attempts: rows, suspicious });
+  } catch (err) {
+    console.error('[admin/auth-attempts] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 // action: "payment-issues"
 async function handlePaymentIssues(req, res) {
   const caller = await verifyAdmin(req, res);
@@ -629,6 +666,7 @@ export default async function handler(req, res) {
   if (action === 'delete-user')      return handleDeleteUser(req, res);
   if (action === 'ban-user')         return handleBanUser(req, res);
   if (action === 'self-delete')            return handleSelfDelete(req, res);
+  if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
   if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
 
