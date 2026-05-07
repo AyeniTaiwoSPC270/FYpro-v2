@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { generateLiteratureMap, handleApiError } from '../../services/api'
+import { generateLiteratureMap, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -64,6 +64,7 @@ export default function LiteratureMap({ chapters }) {
         saveStep('literature_map', lmResult)
       })
       .catch(err => {
+        logFailure('Literature Map', err, state.validatedTopic || '')
         setSection('input')
         setBtnDisabled(false)
         if (!handleApiError(err, msg => setError(msg))) {

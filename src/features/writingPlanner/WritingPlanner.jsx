@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
-import { buildWritingPlan, handleApiError } from '../../services/api'
+import { buildWritingPlan, handleApiError, logFailure } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -98,6 +98,7 @@ export default function WritingPlanner() {
         saveStep('writing_planner', { ...result, submission_deadline: dateValue }, dateValue)
       })
       .catch(err => {
+        logFailure('Writing Planner', err, dateValue)
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)

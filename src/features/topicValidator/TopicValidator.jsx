@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { validateTopic, handleApiError } from '../../services/api'
+import { validateTopic, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -115,6 +115,7 @@ export default function TopicValidator() {
         saveStep('topic_validator', result, trimmed)
       })
       .catch(err => {
+        logFailure('Topic Validator', err, topic.trim())
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)

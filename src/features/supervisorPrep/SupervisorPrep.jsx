@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { prepareSupervisorMeeting, handleApiError } from '../../services/api'
+import { prepareSupervisorMeeting, handleApiError, logFailure } from '../../services/api'
 
 const STAGES = [
   'Just starting',
@@ -64,6 +64,7 @@ export default function SupervisorPrep() {
         setBtnDisabled(false)
       })
       .catch(err => {
+        logFailure('Meeting Prep', err, `${stage} | ${stuckOn.trim()}`)
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)
