@@ -30,3 +30,6 @@ dist-ssr
 
 # Claude Code local config
 .claude/settings.local.json
+
+# Git worktrees
+.worktrees
