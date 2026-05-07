@@ -321,6 +321,34 @@ export default function AdminHealth() {
       .finally(() => setFetching(false))
   }, [session?.access_token])
 
+  const loadVitals = useCallback(() => {
+    if (!session?.access_token) return
+    fetch('/api/admin?action=vitals', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setVitals(d) })
+      .catch(() => {})
+      .finally(() => setVitalsLoading(false))
+  }, [session?.access_token])
+
+  const loadFailures = useCallback(() => {
+    if (!session?.access_token) return
+    fetch('/api/admin?action=failures', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setFailures(d) })
+      .catch(() => {})
+      .finally(() => setFailuresLoading(false))
+  }, [session?.access_token])
+
+  function handleRefresh() {
+    loadData()
+    loadVitals()
+    loadFailures()
+  }
+
   // Initial fetch + auto-refresh every 5 minutes while tab is open.
   useEffect(() => {
     if (!isAdmin || !session) return
@@ -332,36 +360,18 @@ export default function AdminHealth() {
   // Vitals — 30s interval
   useEffect(() => {
     if (!isAdmin || !session) return
-    function loadVitals() {
-      fetch('/api/admin?action=vitals', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-        .then(r => r.json())
-        .then(d => { if (!d.error) setVitals(d) })
-        .catch(() => {})
-        .finally(() => setVitalsLoading(false))
-    }
     loadVitals()
     vitalsTimerRef.current = setInterval(loadVitals, 30 * 1000)
     return () => clearInterval(vitalsTimerRef.current)
-  }, [isAdmin, session])
+  }, [isAdmin, session, loadVitals])
 
   // Failures — 60s interval
   useEffect(() => {
     if (!isAdmin || !session) return
-    function loadFailures() {
-      fetch('/api/admin?action=failures', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-        .then(r => r.json())
-        .then(d => { if (!d.error) setFailures(d) })
-        .catch(() => {})
-        .finally(() => setFailuresLoading(false))
-    }
     loadFailures()
     failuresTimerRef.current = setInterval(loadFailures, 60 * 1000)
     return () => clearInterval(failuresTimerRef.current)
-  }, [isAdmin, session])
+  }, [isAdmin, session, loadFailures])
 
   // Auth attempts — load once on mount
   useEffect(() => {
@@ -546,7 +556,7 @@ export default function AdminHealth() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <button
-            onClick={loadData}
+            onClick={handleRefresh}
             disabled={fetching}
             style={{
               fontFamily: "'Poppins', sans-serif",
