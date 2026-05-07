@@ -55,6 +55,7 @@ export default function SupervisorEmail({ onClose }) {
 
   // ── Generate handler ────────────────────────────────────────────────────────
   async function handleGenerate() {
+    if (section === 'loading') return
     setError(null)
     setSection('loading')
 
