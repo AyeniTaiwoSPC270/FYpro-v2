@@ -38,6 +38,12 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: 'Project stage is required.' });
     }
 
+    const fbWords = !lastFeedback ? 0 : lastFeedback.trim() === '' ? 0 : lastFeedback.trim().split(/\s+/).length;
+    const stWords = !stuckOn ? 0 : stuckOn.trim() === '' ? 0 : stuckOn.trim().split(/\s+/).length;
+    if (fbWords > 500 || stWords > 500) {
+      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
+    }
+
     const userPrompt = `Stage: ${stage.trim()}. Last feedback: ${lastFeedback || 'none'}. Stuck on: ${stuckOn || 'nothing specific'}.`;
     const cacheKey   = buildCacheKey('supervisor-prep', SYSTEM, userPrompt);
 

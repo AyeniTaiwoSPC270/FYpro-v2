@@ -293,6 +293,10 @@ const MIC_SVG = (
   </svg>
 )
 
+function countWords(text) {
+  return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+}
+
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
   const { saveStep } = useProjectState()
@@ -334,6 +338,7 @@ export default function DefensePrep() {
   const [sessionTerminated, setSessionTerminated]   = useState(false)
   const [turnCount, setTurnCount]                   = useState(0)
   const [sessionComplete, setSessionComplete]       = useState(false)
+  const dpWordCount = countWords(inputValue)
 
   // ── refs (survive async boundaries, never trigger re-renders) ─────────────
   const defenseMessagesRef    = useRef([])
@@ -500,7 +505,8 @@ export default function DefensePrep() {
     rec.onresult = e => {
       const transcript = e.results[0][0].transcript.trim()
       if (transcript) {
-        setInputValue(transcript)
+        const tWords = transcript.split(/\s+/)
+        setInputValue(tWords.length > 300 ? tWords.slice(0, 300).join(' ') : transcript)
         // Use ref so we always call the current (non-stale) submit handler
         setTimeout(() => submitHandlerRef.current?.(), 80)
       }
@@ -657,6 +663,11 @@ export default function DefensePrep() {
       return
     }
     setBriefAnswerWarning(false)
+
+    if (wordCount > 300) {
+      setAnswerError('Answer is too long. Please keep your response under 300 words.')
+      return
+    }
 
     if (answer.length < 10) {
       setAnswerError('Please provide an answer before submitting.')
@@ -1193,10 +1204,17 @@ export default function DefensePrep() {
                       id="dp-student-input"
                       placeholder="Type your answer here…"
                       value={inputValue}
-                      onChange={e => setInputValue(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value
+                        const words = val.trim() === '' ? [] : val.trim().split(/\s+/)
+                        setInputValue(words.length > 300 ? words.slice(0, 300).join(' ') : val)
+                      }}
                       disabled={inputLocked}
                       onKeyDown={handleKeyDown}
                     />
+                    <p style={{ color: dpWordCount >= 300 ? '#DC2626' : dpWordCount >= 240 ? '#F59E0B' : 'rgba(255,255,255,0.35)', fontSize: '0.7rem', fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', marginTop: '4px' }}>
+                      {dpWordCount} / 300 words
+                    </p>
                     {/* Layer 1 — word count warning */}
                     {briefAnswerWarning && (
                       <div className="dp-circuit-brief-warning">
@@ -1242,7 +1260,7 @@ export default function DefensePrep() {
                       <button
                         className="dp-send-btn"
                         id="dp-send-btn"
-                        disabled={inputLocked}
+                        disabled={inputLocked || dpWordCount > 300}
                         onClick={handleStudentSubmit}
                       >
                         Send Answer

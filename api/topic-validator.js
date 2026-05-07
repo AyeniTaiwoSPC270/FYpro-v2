@@ -33,6 +33,11 @@ const handler = async (req, res) => {
       return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
     }
 
+    const topicWordCount = topic.trim() === '' ? 0 : topic.trim().split(/\s+/).length;
+    if (topicWordCount > 500) {
+      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
+    }
+
     // Build Claude cache key from the base system + user prompt (before paper injection)
     const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
     const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);

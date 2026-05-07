@@ -93,7 +93,8 @@ async function callTopicValidator(system, messages, topic) {
     throw err;
   }
   if (!res.ok) {
-    const err = new Error(`HTTP ${res.status}`);
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || `HTTP ${res.status}`);
     err.code = 'HTTP_ERROR';
     err.status = res.status;
     throw err;
@@ -265,7 +266,7 @@ async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
   return parsed;
 }
 
-async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000) {
+async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000, extra = {}) {
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -273,7 +274,7 @@ async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000) {
   const res = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens, ...extra }),
   });
 
   if (res.status === 401) {
@@ -297,8 +298,10 @@ async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000) {
     throw err;
   }
   if (!res.ok) {
-    const err = new Error(`HTTP ${res.status}`);
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || `HTTP ${res.status}`);
     err.code = 'HTTP_ERROR';
+    err.status = res.status;
     throw err;
   }
 
@@ -472,7 +475,8 @@ export async function panelFollowUp(system, apiMessages, studentAnswer) {
     ...apiMessages,
     { role: 'user', content: buildThreeExaminerFollowUpPrompt(studentAnswer) },
   ];
-  const { parsed, rawText } = await callClaudeAuthRaw(DEFENSE_ENDPOINT, system, messages, 2000);
+  const answerWordCount = studentAnswer.trim() === '' ? 0 : studentAnswer.trim().split(/\s+/).length;
+  const { parsed, rawText } = await callClaudeAuthRaw(DEFENSE_ENDPOINT, system, messages, 2000, { answerWordCount });
   return { parsed, rawText };
 }
 

@@ -13,6 +13,10 @@ const STAGES = [
   'Waiting for corrections',
 ]
 
+function countWords(text) {
+  return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+}
+
 export default function SupervisorPrep() {
   const navigate = useNavigate()
 
@@ -24,6 +28,8 @@ export default function SupervisorPrep() {
   const [questions,    setQuestions]    = useState([])
   const [error,        setError]        = useState(null)
   const [btnDisabled,  setBtnDisabled]  = useState(false)
+  const feedbackWordCount = countWords(lastFeedback)
+  const stuckWordCount    = countWords(stuckOn)
 
   const loadingTimerRef = useRef(null)
 
@@ -124,9 +130,15 @@ export default function SupervisorPrep() {
                 className="sp-textarea"
                 placeholder="e.g. narrow your scope, fix your literature review…"
                 value={lastFeedback}
-                onChange={e => setLastFeedback(e.target.value)}
-                maxLength={600}
+                onChange={e => {
+                  const val = e.target.value
+                  const words = val.trim() === '' ? [] : val.trim().split(/\s+/)
+                  setLastFeedback(words.length > 500 ? words.slice(0, 500).join(' ') : val)
+                }}
               />
+              <p style={{ color: feedbackWordCount >= 500 ? '#DC2626' : feedbackWordCount >= 400 ? '#F59E0B' : 'rgba(13,27,42,0.4)', fontSize: '0.75rem', fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', marginTop: '4px' }}>
+                {feedbackWordCount} / 500 words
+              </p>
             </div>
 
             <div className="sp-field">
@@ -139,9 +151,15 @@ export default function SupervisorPrep() {
                 className="sp-textarea"
                 placeholder="e.g. not sure how to structure methodology…"
                 value={stuckOn}
-                onChange={e => setStuckOn(e.target.value)}
-                maxLength={400}
+                onChange={e => {
+                  const val = e.target.value
+                  const words = val.trim() === '' ? [] : val.trim().split(/\s+/)
+                  setStuckOn(words.length > 500 ? words.slice(0, 500).join(' ') : val)
+                }}
               />
+              <p style={{ color: stuckWordCount >= 500 ? '#DC2626' : stuckWordCount >= 400 ? '#F59E0B' : 'rgba(13,27,42,0.4)', fontSize: '0.75rem', fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', marginTop: '4px' }}>
+                {stuckWordCount} / 500 words
+              </p>
             </div>
 
             {error && <p className="sp-error-text">{error}</p>}
@@ -150,7 +168,7 @@ export default function SupervisorPrep() {
               id="btn-prepare-me"
               className="sp-btn-submit"
               onClick={handleSubmit}
-              disabled={btnDisabled || !stage}
+              disabled={btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500}
             >
               Prepare Me
             </button>

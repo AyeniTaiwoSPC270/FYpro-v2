@@ -68,7 +68,12 @@ const handler = async (req, res) => {
       messages,
       max_tokens = 2000,
       model = 'claude-sonnet-4-6',
+      answerWordCount,
     } = req.body || {};
+
+    if (answerWordCount !== undefined && answerWordCount > 300) {
+      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

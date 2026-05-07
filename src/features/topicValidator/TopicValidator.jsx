@@ -6,6 +6,10 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
 
+function countWords(text) {
+  return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
+}
+
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
   const { saveStep } = useProjectState()
@@ -30,6 +34,7 @@ export default function TopicValidator() {
 
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('topic_validator')
+  const wordCount = countWords(topic)
 
   const twIntervalRef   = useRef(null)
   const animateRef      = useRef(false)  // true only after a fresh API response
@@ -196,16 +201,23 @@ export default function TopicValidator() {
           rows={4}
           placeholder="e.g. Impact of social media on academic performance among undergraduates"
           value={topic}
-          onChange={e => setTopic(e.target.value)}
+          onChange={e => {
+            const val = e.target.value
+            const words = val.trim() === '' ? [] : val.trim().split(/\s+/)
+            setTopic(words.length > 500 ? words.slice(0, 500).join(' ') : val)
+          }}
           onAnimationEnd={() => setShaking(false)}
         />
+        <p style={{ color: wordCount >= 500 ? '#DC2626' : wordCount >= 400 ? '#F59E0B' : 'rgba(13,27,42,0.4)', fontSize: '0.75rem', fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', marginTop: '4px', marginBottom: '4px' }}>
+          {wordCount} / 500 words
+        </p>
         {error && <p id="tv-error-text" className="tv-error-text">{error}</p>}
         <button
           id="btn-validate"
           className="tv-btn-validate"
           onClick={handleValidate}
-          disabled={btnDisabled || overLimit}
-          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          disabled={btnDisabled || overLimit || wordCount > 500}
+          style={(overLimit || wordCount > 500) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           Validate Topic
         </button>
