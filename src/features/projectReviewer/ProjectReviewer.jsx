@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError } from '../../services/api'
+import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -389,6 +389,7 @@ export default function ProjectReviewer() {
       setIsProcessing(false)
       saveStep('project_reviewer', data)
     } catch (err) {
+      logFailure('Project Reviewer', err, selectedFile?.name || '')
       setIsProcessing(false)
       setSection('input')
       handleApiError(err, msg => setError(msg || 'Something went wrong during the review. Please try again.'))

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { adviseMethodology, buildInstrument, handleApiError } from '../../services/api'
+import { adviseMethodology, buildInstrument, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -86,6 +86,7 @@ export default function MethodologyAdvisor() {
         saveStep('methodology_advisor', data)
       })
       .catch(err => {
+        logFailure('Methodology Advisor', err, state.validatedTopic || '')
         setMaSection('input')
         if (!handleApiError(err, msg => {
           setMaError(msg)
@@ -144,6 +145,7 @@ export default function MethodologyAdvisor() {
         saveStep('instrument_builder', data)
       })
       .catch(err => {
+        logFailure('Instrument Builder', err, selectedMethodology)
         setDiSection('input')
         if (!handleApiError(err, msg => {
           setDiError(msg)

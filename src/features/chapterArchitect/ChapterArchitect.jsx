@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { buildChapters, generateAbstract, handleApiError } from '../../services/api'
+import { buildChapters, generateAbstract, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -327,6 +327,7 @@ export default function ChapterArchitect() {
         saveStep('chapter_architect', result)
       })
       .catch(err => {
+        logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)
@@ -356,6 +357,7 @@ export default function ChapterArchitect() {
         saveStep('chapter_architect', result)
       })
       .catch(err => {
+        logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('result')
         if (!handleApiError(err, msg => setResultError(msg))) {
           setResultError('Regeneration failed. Your previous structure is still displayed.')
@@ -405,6 +407,7 @@ export default function ChapterArchitect() {
         saveStep('abstract_generator', agResult)
       })
       .catch(err => {
+        logFailure('Abstract Generator', err, state.validatedTopic || '')
         setAgSection('input')
         if (!handleApiError(err, msg => {
           setAgError(msg)

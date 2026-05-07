@@ -6,6 +6,7 @@ import {
   panelFollowUp,
   panelSummary,
   handleApiError,
+  logFailure,
 } from '../../services/api'
 import {
   THREE_EXAMINER_FIRST_QUESTION_PROMPT,
@@ -575,6 +576,7 @@ export default function DefensePrep() {
       setSection('flags')
       setIsScanning(false)
     } catch (err) {
+      logFailure('Defense Simulator', err, state.validatedTopic || '')
       setIsScanning(false)
       setSection('input')
       handleApiError(err, msg => setScanError(msg))
@@ -640,7 +642,8 @@ export default function DefensePrep() {
         text:     parsed.question || '',
       })
       setInputLocked(false)
-    } catch {
+    } catch (err) {
+      logFailure('Defense Simulator', err, state.validatedTopic || '')
       setTypingVisible(false)
       addMsg({
         type:     'examiner',
@@ -756,7 +759,8 @@ export default function DefensePrep() {
         setInputLocked(false)
         textareaRef.current?.focus()
       }, 700)
-    } catch {
+    } catch (err) {
+      logFailure('Defense Simulator', err, state.validatedTopic || '')
       setTypingVisible(false)
       addMsg({
         type:     'examiner',
@@ -797,7 +801,8 @@ export default function DefensePrep() {
       setSummaryData(data)
       setOverlayPhase('summary')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch {
+    } catch (err) {
+      logFailure('Defense Simulator', err, state.validatedTopic || '')
       setVerdictLoading(false)
       setEndEnabled(true)
       addMsg({
