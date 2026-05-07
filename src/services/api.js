@@ -528,42 +528,61 @@ export async function generateEmail(studentCtx, validatedTopic, chapterStructure
 
 // ── Error handler (call from components) ─────────────────────────────────────
 // Returns true if error was handled, false if caller should do fallback
+const AI_ERRORS = {
+  rate_limit:   'FYPro is in high demand right now. Your progress is saved — please try again in {secs} seconds.',
+  timeout:      'This is taking longer than expected. Your progress is saved. Please click Try Again.',
+  network:      'Connection lost. Your progress is saved. Check your internet and try again.',
+  generic:      'Something went wrong on our end. Your progress is saved. Please try again.',
+  token_limit:  'Your input is too long. Please shorten it and try again.',
+  json_parse:   'Received an unexpected response. Your progress is saved. Please try again.',
+  forbidden:    'This feature requires a paid upgrade. Please visit the Pricing page to unlock it.',
+  unauthorized: 'Your session has expired. Please sign in again.',
+};
+
 export function handleApiError(err, showError) {
   if (err.code === 'NO_PAPERS') {
     showError(err.message);
     return true;
   }
   if (err.code === 'FORBIDDEN') {
-    showError('This feature requires a paid upgrade. Please visit the Pricing page to unlock it.');
+    showError(AI_ERRORS.forbidden);
     return true;
   }
   if (err.code === 'UNAUTHORIZED') {
-    showError('Your session has expired. Please sign in again.');
+    showError(AI_ERRORS.unauthorized);
     return true;
   }
   if (err.code === 'RATE_LIMIT') {
-    let secs = 30;
-    showError(`Rate limited. Retrying in ${secs}s…`);
+    let secs = 60;
+    showError(AI_ERRORS.rate_limit.replace('{secs}', secs));
     const interval = setInterval(() => {
       secs--;
       if (secs <= 0) {
         clearInterval(interval);
         showError(null);
       } else {
-        showError(`Rate limited. Retrying in ${secs}s…`);
+        showError(AI_ERRORS.rate_limit.replace('{secs}', secs));
       }
     }, 1000);
     return true;
   }
   if (err.code === 'GATEWAY_TIMEOUT') {
-    showError('The server took too long to respond. Please try again.');
+    showError(AI_ERRORS.timeout);
     return true;
   }
   if (err.code === 'JSON_PARSE') {
-    showError('Received an unexpected response. Please try again.');
+    showError(AI_ERRORS.json_parse);
     return true;
   }
-  showError(err.message || 'Something went wrong. Please try again.');
+  if (err.code === 'TOKEN_LIMIT' || err.status === 400) {
+    showError(AI_ERRORS.token_limit);
+    return true;
+  }
+  if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
+    showError(AI_ERRORS.network);
+    return true;
+  }
+  showError(err.message || AI_ERRORS.generic);
   return true;
 }
 
