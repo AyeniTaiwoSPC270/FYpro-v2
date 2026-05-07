@@ -220,7 +220,7 @@ export default function TopicValidator() {
           disabled={btnDisabled || overLimit || wordCount > 500}
           style={(overLimit || wordCount > 500) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
-          Validate Topic
+          {btnDisabled ? 'Validating…' : 'Validate Topic'}
         </button>
         {overLimit && (
           <p className="tv-error-text" style={{ marginTop: 8 }}>
