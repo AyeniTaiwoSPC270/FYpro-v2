@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, Fragment } from 'react'
+import PaymentIssueModal from '../components/PaymentIssueModal'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useApp } from '../context/AppContext'
@@ -1308,7 +1309,7 @@ function UsageBar({ used, limit, visible = true, barIndex = 0 }) {
   )
 }
 
-function DashUsageSection({ features, runCounts, loading }) {
+function DashUsageSection({ features, runCounts, loading, onPaymentIssue }) {
   const [sectionRef, sectionVisible] = useReveal()
 
   const isDefense = features.includes('defense_pack')
@@ -1402,6 +1403,18 @@ function DashUsageSection({ features, runCounts, loading }) {
           </a>
         </div>
       )}
+
+      <button
+        onClick={onPaymentIssue}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem',
+          fontFamily: "'Poppins', sans-serif", marginTop: 12,
+          padding: 0, textDecoration: 'underline', display: 'block',
+        }}
+      >
+        Paid but access not unlocked? Click here
+      </button>
     </section>
   )
 }
@@ -1429,6 +1442,8 @@ export default function Dashboard() {
 
   // FIX 5 — new session modal state
   const [showNewSessionModal, setShowNewSessionModal] = useState(false)
+
+  const [showPaymentIssueModal, setShowPaymentIssueModal] = useState(false)
 
   // Toast state (used by FIX 4)
   const [toastMsg, setToastMsg] = useState('')
@@ -1557,7 +1572,7 @@ export default function Dashboard() {
             <>
               <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
               <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
-              <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} />
+              <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} onPaymentIssue={() => setShowPaymentIssueModal(true)} />
               <DashQuickActions
                 STEPS={STEPS}
                 allComplete={allComplete}
@@ -1603,6 +1618,11 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      <PaymentIssueModal
+        isOpen={showPaymentIssueModal}
+        onClose={() => setShowPaymentIssueModal(false)}
+      />
     </div>
   )
 }

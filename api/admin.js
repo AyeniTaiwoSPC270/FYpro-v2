@@ -574,6 +574,47 @@ async function handleSelfDelete(req, res) {
   }
 }
 
+// action: "payment-issues"
+async function handlePaymentIssues(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('payment_issues')
+      .select('*')
+      .eq('resolved', false)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return res.status(200).json({ issues: data || [] });
+  } catch (err) {
+    console.error('[admin/payment-issues] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "resolve-payment-issue"
+async function handleResolvePaymentIssue(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { id } = req.body || {};
+  if (!id) return res.status(400).json({ error: 'id required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('payment_issues')
+      .update({ resolved: true })
+      .eq('id', id);
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/resolve-payment-issue] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -594,7 +635,9 @@ export default async function handler(req, res) {
   if (action === 'resolve-failure')  return handleResolveFailure(req, res);
   if (action === 'delete-user')      return handleDeleteUser(req, res);
   if (action === 'ban-user')         return handleBanUser(req, res);
-  if (action === 'self-delete')      return handleSelfDelete(req, res);
+  if (action === 'self-delete')            return handleSelfDelete(req, res);
+  if (action === 'payment-issues')         return handlePaymentIssues(req, res);
+  if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }

@@ -291,6 +291,10 @@ export default function AdminHealth() {
   const failuresTimerRef                      = useRef(null)
   const [resolvingId, setResolvingId]         = useState(null)
 
+  const [paymentIssues, setPaymentIssues]               = useState(null)
+  const [paymentIssuesLoading, setPaymentIssuesLoading] = useState(true)
+  const [resolvingIssueId, setResolvingIssueId]         = useState(null)
+
   // User table state
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('signup_date')
@@ -354,6 +358,18 @@ export default function AdminHealth() {
     loadFailures()
     failuresTimerRef.current = setInterval(loadFailures, 60 * 1000)
     return () => clearInterval(failuresTimerRef.current)
+  }, [isAdmin, session])
+
+  // Payment issues — load once on mount
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    fetch('/api/admin?action=payment-issues', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setPaymentIssues(d.issues) })
+      .catch(() => {})
+      .finally(() => setPaymentIssuesLoading(false))
   }, [isAdmin, session])
 
   // Filtered + sorted user rows
@@ -420,6 +436,24 @@ export default function AdminHealth() {
     } catch (err) {
       setActionState(s => ({ ...s, [userId]: 'error' }))
       window.alert('Ban failed: ' + err.message)
+    }
+  }
+
+  async function handleResolvePaymentIssue(id) {
+    setResolvingIssueId(id)
+    try {
+      const res = await fetch('/api/admin?action=resolve-payment-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setPaymentIssues(prev => (prev || []).filter(issue => issue.id !== id))
+    } catch (err) {
+      console.error('[admin] resolve payment issue failed:', err.message)
+    } finally {
+      setResolvingIssueId(null)
     }
   }
 
@@ -1044,6 +1078,79 @@ export default function AdminHealth() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* ── Payment Issues Widget ──────────────────────────────────── */}
+      <div style={{ marginTop: 40, marginBottom: 40 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          marginBottom: 16, paddingBottom: 12,
+          borderBottom: `1px solid ${BORDER}`,
+        }}>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
+            Payment Issues
+          </h2>
+          {!paymentIssuesLoading && paymentIssues !== null && (
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
+              background: paymentIssues.length > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.07)',
+              color: paymentIssues.length > 0 ? AMBER : MUTED,
+              border: `1px solid ${paymentIssues.length > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 999, padding: '2px 10px',
+            }}>
+              {paymentIssues.length} unresolved
+            </span>
+          )}
+        </div>
+
+        {paymentIssuesLoading ? (
+          <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
+        ) : !paymentIssues || paymentIssues.length === 0 ? (
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
+            No unresolved payment issues.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {paymentIssues.map(issue => (
+              <div key={issue.id} style={{
+                background: CARD, border: `1px solid ${BORDER}`,
+                borderLeft: `3px solid ${AMBER}`,
+                borderRadius: 10, padding: '14px 18px',
+                display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, marginBottom: 2 }}>
+                    {issue.user_email}
+                  </div>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: AMBER, marginBottom: 4 }}>
+                    ref: {issue.transaction_ref}
+                  </div>
+                  {issue.description && (
+                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED }}>
+                      {issue.description.slice(0, 80)}{issue.description.length > 80 ? '…' : ''}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, flexShrink: 0 }}>
+                  {timeAgo(issue.created_at)}
+                </div>
+                <button
+                  onClick={() => handleResolvePaymentIssue(issue.id)}
+                  disabled={resolvingIssueId === issue.id}
+                  style={{
+                    fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600,
+                    background: resolvingIssueId === issue.id ? 'rgba(22,163,74,0.2)' : GREEN,
+                    color: WHITE, border: 'none', borderRadius: 6,
+                    padding: '6px 14px', cursor: resolvingIssueId === issue.id ? 'not-allowed' : 'pointer',
+                    flexShrink: 0, transition: 'background 0.15s ease',
+                  }}
+                >
+                  {resolvingIssueId === issue.id ? 'Resolving…' : 'Mark Resolved'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── SECTION 7: Never Converted ─────────────────────────────── */}
