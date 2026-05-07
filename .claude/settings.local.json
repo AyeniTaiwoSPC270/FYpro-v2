@@ -62,7 +62,14 @@
       "Bash(node -e \"const fs=require\\('fs'\\); const b64=fs.readFileSync\\('public/fypro-logo.png'\\).toString\\('base64'\\); console.log\\('data:image/png;base64,'+b64\\);\")",
       "Bash(not exist *)",
       "Bash(npm --version)",
-      "Bash(node scripts/screenshot-flyers.mjs)"
+      "Bash(node scripts/screenshot-flyers.mjs)",
+      "Bash(supabase --version)",
+      "Bash(npx supabase *)",
+      "Bash(node -c src/services/prompts.js)",
+      "Bash(awk '/buildDocumentRelevanceCheckPDFPrompt|buildProjectReviewerPDFPrompt/{flag=1} flag{print; if\\(/^export function|^function/ && !/buildDocumentRelevanceCheckPDFPrompt|buildProjectReviewerPDFPrompt/\\) flag=0}' \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\src\\\\services\\\\prompts.js\")",
+      "Bash(node -e \"require\\('./vercel.json'\\); console.log\\('JSON valid'\\)\")",
+      "Bash(sed -n '642,655p' src/index.css)",
+      "Bash(sed -n '1095,1108p' src/index.css)"
     ]
   }
 }
