@@ -1416,9 +1416,9 @@ export default function AdminHealth() {
           {!systemLogsLoading && systemLogs !== null && (
             <span style={{
               fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
-              background: systemLogs.length > 0 ? `${RED}22` : `${GREEN}22`,
+              background: systemLogs.length > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(22,163,74,0.15)',
               color: systemLogs.length > 0 ? RED : GREEN,
-              border: `1px solid ${systemLogs.length > 0 ? RED + '55' : GREEN + '55'}`,
+              border: `1px solid ${systemLogs.length > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
               borderRadius: 999, padding: '2px 10px',
             }}>
               {systemLogs.length} unresolved
