@@ -502,7 +502,7 @@ export default function ProjectReviewer() {
           onClick={handleReview}
           style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
-          Review My Project
+          {isProcessing ? 'Reviewing…' : 'Review My Project'}
         </button>
         {overLimit && (
           <p className="pr-error-text tv-section--visible" style={{ marginTop: 8 }}>
