@@ -4,6 +4,7 @@ import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 
 function countWords(text) {
@@ -212,7 +213,7 @@ export default function TopicValidator() {
         <p style={{ color: wordCount >= 500 ? '#DC2626' : wordCount >= 400 ? '#F59E0B' : 'rgba(13,27,42,0.4)', fontSize: '0.75rem', fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', marginTop: '4px', marginBottom: '4px' }}>
           {wordCount} / 500 words
         </p>
-        {error && <p id="tv-error-text" className="tv-error-text">{error}</p>}
+        <ApiErrorBox error={error} onRetry={handleValidate} />
         <button
           id="btn-validate"
           className="tv-btn-validate"
