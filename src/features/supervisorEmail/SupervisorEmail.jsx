@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { generateEmail, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
 
 export default function SupervisorEmail({ onClose }) {
   const { state, studentContext } = useApp()
+  const { saveStep } = useProjectState()
 
   const [section, setSection]     = useState('input')  // 'input' | 'loading' | 'result'
   const [emailData, setEmailData] = useState(null)
@@ -69,6 +71,7 @@ export default function SupervisorEmail({ onClose }) {
       )
       setEmailData(data)
       setSection('result')
+      saveStep('supervisor_email', data)
     } catch (err) {
       setSection('input')
       handleApiError(err, msg => setError(msg || 'Something went wrong. Please try again.'))

@@ -571,6 +571,7 @@ export default function DefensePrep() {
       )
       set({ redFlags: data.flags })
       setRedFlags(data.flags)
+      saveStep('red_flag_detector', { flags: data.flags })
       setVisibleFlags([])
       justScannedRef.current = true
       setSection('flags')

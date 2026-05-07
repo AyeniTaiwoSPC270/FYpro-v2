@@ -312,7 +312,7 @@ async function handleDashboard(req, res) {
       'topic_validator', 'chapter_architect', 'methodology_advisor',
       'writing_planner', 'literature_map', 'abstract_generator',
       'instrument_builder', 'project_reviewer', 'defense_simulator',
-      'supervisor_meeting_prep',
+      'red_flag_detector', 'meeting_prep',
     ];
     const featureTotals = Object.fromEntries(FEATURE_KEYS.map(k => [k, 0]));
     for (const rc of Object.values(runCountsByUser)) {

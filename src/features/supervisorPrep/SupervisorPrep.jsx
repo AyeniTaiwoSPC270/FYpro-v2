@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { prepareSupervisorMeeting, handleApiError, logFailure } from '../../services/api'
+import { checkAndRecord } from '../../hooks/useRunLimit'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
+import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
 
 const STAGES = [
@@ -20,6 +23,8 @@ function countWords(text) {
 
 export default function SupervisorPrep() {
   const navigate = useNavigate()
+  const { features } = usePaidFeatures()
+  const { saveStep } = useProjectState()
 
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section,      setSection]      = useState('input')
@@ -48,11 +53,13 @@ export default function SupervisorPrep() {
     return () => clearTimeout(loadingTimerRef.current)
   }, [section])
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!stage) {
       setError('Please select where you are in your project.')
       return
     }
+    const allowed = await checkAndRecord('meeting_prep', features)
+    if (!allowed) return
     setError(null)
     setBtnDisabled(true)
     setHasSubmitted(true)
@@ -60,9 +67,11 @@ export default function SupervisorPrep() {
 
     prepareSupervisorMeeting(stage, lastFeedback.trim(), stuckOn.trim())
       .then(data => {
-        setQuestions(data.questions || [])
+        const questions = data.questions || []
+        setQuestions(questions)
         setSection('result')
         setBtnDisabled(false)
+        saveStep('meeting_prep', { questions, stage })
       })
       .catch(err => {
         logFailure('Meeting Prep', err, `${stage} | ${stuckOn.trim()}`)

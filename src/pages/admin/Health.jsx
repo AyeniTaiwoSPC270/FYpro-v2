@@ -19,16 +19,17 @@ const DIM     = 'rgba(255,255,255,0.7)'
 const MUTED   = 'rgba(255,255,255,0.4)'
 
 const FEATURE_LABELS = {
-  topic_validator:        'Topic Validator',
-  chapter_architect:      'Chapter Architect',
-  methodology_advisor:    'Methodology Advisor',
-  writing_planner:        'Writing Planner',
-  literature_map:         'Literature Map',
-  abstract_generator:     'Abstract Generator',
-  instrument_builder:     'Instrument Builder',
-  project_reviewer:       'Project Reviewer',
-  defense_simulator:      'Defense Simulator',
-  supervisor_meeting_prep: 'Meeting Prep',
+  topic_validator:     'Topic Validator',
+  chapter_architect:   'Chapter Architect',
+  methodology_advisor: 'Methodology Advisor',
+  writing_planner:     'Writing Planner',
+  literature_map:      'Literature Map',
+  abstract_generator:  'Abstract Generator',
+  instrument_builder:  'Instrument Builder',
+  project_reviewer:    'Project Reviewer',
+  defense_simulator:   'Defense Simulator',
+  red_flag_detector:   'Red Flag Scanner',
+  meeting_prep:        'Meeting Prep',
 }
 
 const FUNNEL_LABELS = {
