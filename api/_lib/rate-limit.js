@@ -15,7 +15,7 @@ const redis = new Redis({
  * Here we only need the sub claim to key the rate limiter — a forged sub would just
  * hit a different (attacker-controlled) bucket, which is the correct behavior.
  */
-function extractUserId(req) {
+export function extractUserId(req) {
   const authHeader = req.headers.authorization || '';
   if (!authHeader.startsWith('Bearer ')) return null;
   try {

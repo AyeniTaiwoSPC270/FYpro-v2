@@ -343,10 +343,34 @@ export default function AdminHealth() {
       .finally(() => setFailuresLoading(false))
   }, [session?.access_token])
 
+  const loadAuthAttempts = useCallback(() => {
+    if (!session?.access_token) return
+    fetch('/api/admin?action=auth-attempts', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setAuthAttempts(d) })
+      .catch(() => {})
+      .finally(() => setAuthAttemptsLoading(false))
+  }, [session?.access_token])
+
+  const loadPaymentIssues = useCallback(() => {
+    if (!session?.access_token) return
+    fetch('/api/admin?action=payment-issues', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (!d.error) setPaymentIssues(d.issues) })
+      .catch(() => {})
+      .finally(() => setPaymentIssuesLoading(false))
+  }, [session?.access_token])
+
   function handleRefresh() {
     loadData()
     loadVitals()
     loadFailures()
+    loadAuthAttempts()
+    loadPaymentIssues()
   }
 
   // Initial fetch + auto-refresh every 5 minutes while tab is open.
@@ -376,26 +400,14 @@ export default function AdminHealth() {
   // Auth attempts — load once on mount
   useEffect(() => {
     if (!isAdmin || !session) return
-    fetch('/api/admin?action=auth-attempts', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then(r => r.json())
-      .then(d => { if (!d.error) setAuthAttempts(d) })
-      .catch(() => {})
-      .finally(() => setAuthAttemptsLoading(false))
-  }, [isAdmin, session])
+    loadAuthAttempts()
+  }, [isAdmin, session, loadAuthAttempts])
 
   // Payment issues — load once on mount
   useEffect(() => {
     if (!isAdmin || !session) return
-    fetch('/api/admin?action=payment-issues', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then(r => r.json())
-      .then(d => { if (!d.error) setPaymentIssues(d.issues) })
-      .catch(() => {})
-      .finally(() => setPaymentIssuesLoading(false))
-  }, [isAdmin, session])
+    loadPaymentIssues()
+  }, [isAdmin, session, loadPaymentIssues])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -720,8 +732,8 @@ export default function AdminHealth() {
         {(() => {
           const hitRate    = cache_hit_rate?.hit_rate_pct ?? 0
           const hitsTotal  = cache_hit_rate?.hits_total   ?? 0
-          const reqCount   = daily_spend?.request_count   ?? 0
-          const freshCalls = Math.max(0, reqCount - hitsTotal)
+          // request_count only tracks fresh Anthropic calls (trackUsage fires after real responses)
+          const freshCalls = daily_spend?.request_count   ?? 0
           const spentUsd   = daily_spend?.spent_usd ?? 0
           const costPerFresh = freshCalls > 0 ? spentUsd / freshCalls : 0
           const savings    = hitsTotal * costPerFresh * (ngn_per_usd || 1600)

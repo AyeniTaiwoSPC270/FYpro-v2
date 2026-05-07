@@ -30,9 +30,13 @@ async function getAccessToken() {
 }
 
 async function callClaude(system, messages, maxTokens = 2000) {
+  const token = await getAccessToken();
   const res = await fetch(ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
   });
 

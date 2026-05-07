@@ -41,7 +41,8 @@ export function buildCacheKey(prefix, systemPrompt, userPrompt) {
 
 function incrementHits() {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
-  fetch(`${UPSTASH_URL}/incr/stats:cache_hits`, {
+  const today = new Date().toISOString().slice(0, 10);
+  fetch(`${UPSTASH_URL}/incr/stats:cache_hits:${today}`, {
     method: 'POST',
     headers: authHeaders(),
   }).catch(() => {});

@@ -1,7 +1,7 @@
 // FYPro — Vercel Serverless Function
 // Proxies requests to Anthropic API. The API key never touches the browser.
 
-import { rateLimitCheck } from './_lib/rate-limit.js';
+import { rateLimitCheck, extractUserId } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
@@ -21,7 +21,7 @@ const handler = async (req, res) => {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -63,6 +63,11 @@ const handler = async (req, res) => {
     const cached = await getCached(cacheKey);
     if (cached) {
       console.log('[claude] cache HIT for step:', prefix);
+      // Record cache hit so response_times.last_call_at stays fresh → AI Engine stays green.
+      const userId = extractUserId(req);
+      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId })
+        .then(() => {})
+        .catch(err => console.error('[claude] response_times (cache-hit) insert failed:', err.message));
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cached);
     }
@@ -87,9 +92,10 @@ const handler = async (req, res) => {
 
     if (response.ok) {
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration })
+      const userId   = extractUserId(req);
+      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId })
         .then(() => {})
-        .catch(() => {});
+        .catch(err => console.error('[claude] response_times insert failed:', err.message));
       setCached(cacheKey, data, ttl);
     }
 

@@ -6,7 +6,8 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 async function readCacheHits() {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return 0;
   try {
-    const res  = await fetch(`${UPSTASH_URL}/get/stats:cache_hits`, {
+    const today = new Date().toISOString().slice(0, 10);
+    const res  = await fetch(`${UPSTASH_URL}/get/stats:cache_hits:${today}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
     });
     const json = await res.json();
@@ -189,10 +190,15 @@ async function handleDashboard(req, res) {
       remaining_usd: parseFloat(Math.max(0, cap - spentUsd).toFixed(4)),
       request_count: usageRow?.request_count || 0,
     };
+    // hit_rate = cached / (cached + fresh).  Both counters are now daily-scoped:
+    //   cacheHits        — daily Redis key stats:cache_hits:YYYY-MM-DD
+    //   request_count    — daily_usage rows (trackUsage only fires for fresh Anthropic calls)
+    const freshCalls    = usageRow?.request_count || 0;
+    const totalCalls    = cacheHits + freshCalls;
     const cacheHitRate = {
       hits_total:   cacheHits,
-      hit_rate_pct: (usageRow?.request_count || 0) > 0
-        ? parseFloat(((cacheHits / usageRow.request_count) * 100).toFixed(1))
+      hit_rate_pct: totalCalls > 0
+        ? Math.min(100, parseFloat(((cacheHits / totalCalls) * 100).toFixed(1)))
         : 0,
     };
     const failedPaymentsToday = failedPaymentsRes.count || 0;
@@ -413,12 +419,16 @@ async function handleVitals(req, res) {
     const todayStart = `${today}T00:00:00.000Z`;
     const tenMinAgo  = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
-    const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeSessionsRes] = await Promise.all([
+    const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeGenFailRes, activeRtRes] = await Promise.all([
       supabaseAdmin.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      supabaseAdmin.from('response_times').select('duration_ms').order('created_at', { ascending: false }).limit(10),
+      // Exclude duration_ms = 0 (cache-hit sentinel) from avg so cached requests don't dilute the mean
+      supabaseAdmin.from('response_times').select('duration_ms').gt('duration_ms', 0).order('created_at', { ascending: false }).limit(10),
       supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
       supabaseAdmin.from('daily_usage').select('request_count').eq('date', today).maybeSingle(),
+      // Active users from error events
       supabaseAdmin.from('generation_failures').select('user_id').gte('created_at', tenMinAgo),
+      // Active users from successful API calls (requires 0009 migration for user_id column)
+      supabaseAdmin.from('response_times').select('user_id').gte('created_at', tenMinAgo).not('user_id', 'is', null),
     ]);
 
     const rows          = rtAvgRes.data || [];
@@ -426,7 +436,10 @@ async function handleVitals(req, res) {
       ? Math.round(rows.reduce((s, r) => s + (r.duration_ms || 0), 0) / rows.length)
       : null;
 
-    const activeSessions = new Set((activeSessionsRes.data || []).map(r => r.user_id).filter(Boolean)).size;
+    // Union distinct user_ids from both tables for accurate "active in last 10 min" count
+    const genFailUserIds = new Set((activeGenFailRes.data || []).map(r => r.user_id).filter(Boolean));
+    const rtUserIds      = new Set((activeRtRes.data      || []).map(r => r.user_id).filter(Boolean));
+    const activeSessions = new Set([...genFailUserIds, ...rtUserIds]).size;
 
     return res.status(200).json({
       avg_response_ms: avgResponseMs,
