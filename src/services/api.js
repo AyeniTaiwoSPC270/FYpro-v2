@@ -566,3 +566,23 @@ export function handleApiError(err, showError) {
   showError(err.message || 'Something went wrong. Please try again.');
   return true;
 }
+
+// ── Failure logging ───────────────────────────────────────────────────────────
+// Call from every feature's catch block. Never throws — never affects UX.
+export async function logFailure(feature, err, inputPreview = '') {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    await supabase.from('generation_failures').insert({
+      user_id:       session?.user?.id    || null,
+      user_email:    session?.user?.email || null,
+      feature,
+      error_type:    err?.code === 'RATE_LIMIT'      ? 'rate_limit'
+                   : err?.code === 'GATEWAY_TIMEOUT' ? 'timeout'
+                   : 'generic',
+      error_message: err?.message || 'Unknown error',
+      input_preview: String(inputPreview).substring(0, 100),
+    });
+  } catch {
+    // silent — never affect UX
+  }
+}
