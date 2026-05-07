@@ -487,8 +487,12 @@ async function handleResolveFailure(req, res) {
 }
 
 // action: "delete-user"
-// SQL required (run once):
-//   -- no extra migration needed; deletes cascade via FK if set, otherwise manual
+// Deletes the auth.users record, which cascades through the full chain:
+//   auth.users → public.users → {user_entitlements, projects, project_steps,
+//                                  defense_sessions, defense_turns, payments}
+// generation_failures and payment_issues use ON DELETE SET NULL, so their rows
+// are preserved with user_id=null for admin review.
+// Run migrations/0007_cascade_audit.sql to verify cascades are in place.
 async function handleDeleteUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
@@ -497,19 +501,6 @@ async function handleDeleteUser(req, res) {
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
-    // Delete child records first (FK order), then parent rows, then auth user.
-    await supabaseAdmin.from('project_steps').delete().eq('user_id', userId);
-    await supabaseAdmin.from('defense_sessions').delete().eq('user_id', userId);
-    // payments references projects — delete before projects
-    try {
-      await supabaseAdmin.from('payments').delete().eq('user_id', userId);
-    } catch {
-      // payments table may not exist in all environments — non-fatal
-    }
-    await supabaseAdmin.from('projects').delete().eq('user_id', userId);
-    await supabaseAdmin.from('user_entitlements').delete().eq('user_id', userId);
-    await supabaseAdmin.from('users').delete().eq('id', userId);
-    // deleteUser removes the auth record and all user_metadata with it.
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
     return res.status(200).json({ ok: true });
@@ -549,6 +540,10 @@ async function handleBanUser(req, res) {
 // action: "self-delete"
 // Called by the authenticated user to permanently delete their own account.
 // Verifies the user's own JWT — does NOT require ADMIN_EMAIL.
+// Deletes auth.users, which cascades through:
+//   public.users → {user_entitlements, projects, project_steps,
+//                    defense_sessions, defense_turns, payments}
+// generation_failures and payment_issues use ON DELETE SET NULL — rows kept for admin.
 async function handleSelfDelete(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -563,16 +558,6 @@ async function handleSelfDelete(req, res) {
   }
 
   try {
-    await supabaseAdmin.from('project_steps').delete().eq('user_id', userId);
-    await supabaseAdmin.from('defense_sessions').delete().eq('user_id', userId);
-    try {
-      await supabaseAdmin.from('payments').delete().eq('user_id', userId);
-    } catch {
-      // non-fatal — payments table may not exist in all environments
-    }
-    await supabaseAdmin.from('projects').delete().eq('user_id', userId);
-    await supabaseAdmin.from('user_entitlements').delete().eq('user_id', userId);
-    await supabaseAdmin.from('users').delete().eq('id', userId);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
     return res.status(200).json({ ok: true });
