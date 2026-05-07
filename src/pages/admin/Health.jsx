@@ -271,7 +271,11 @@ function Th({ children, sortKey, active, dir, onSort }) {
   )
 }
 
-const AUTO_REFRESH_MS = 5 * 60 * 1000  // 5 minutes
+const INTERVAL_OVERVIEW = 20 * 1000   // 20s
+const INTERVAL_VITALS   = 15 * 1000   // 15s
+const INTERVAL_FAILURES = 20 * 1000   // 20s
+const INTERVAL_AUTH     = 30 * 1000   // 30s
+const INTERVAL_PAYMENTS = 30 * 1000   // 30s
 
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
@@ -279,8 +283,13 @@ export default function AdminHealth() {
   const [data, setData]           = useState(null)
   const [error, setError]         = useState(null)
   const [fetching, setFetching]   = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(null)
-  const timerRef = useRef(null)
+  const [secondsAgo, setSecondsAgo]   = useState(null)
+  const timerRef        = useRef(null)
+  const secondsTimerRef = useRef(null)
+  const authTimerRef    = useRef(null)
+  const paymentTimerRef = useRef(null)
 
   const [vitals, setVitals]               = useState(null)
   const [vitalsLoading, setVitalsLoading] = useState(true)
@@ -309,10 +318,10 @@ export default function AdminHealth() {
   const isAdmin    = !!adminEmail && user?.email === adminEmail
 
   const loadData = useCallback(() => {
-    if (!session?.access_token) return
+    if (!session?.access_token) return Promise.resolve()
     setFetching(true)
     setError(null)
-    fetch('/api/admin?action=dashboard', {
+    return fetch('/api/admin?action=dashboard', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
@@ -322,8 +331,8 @@ export default function AdminHealth() {
   }, [session?.access_token])
 
   const loadVitals = useCallback(() => {
-    if (!session?.access_token) return
-    fetch('/api/admin?action=vitals', {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=vitals', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
@@ -333,8 +342,8 @@ export default function AdminHealth() {
   }, [session?.access_token])
 
   const loadFailures = useCallback(() => {
-    if (!session?.access_token) return
-    fetch('/api/admin?action=failures', {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=failures', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
@@ -344,8 +353,8 @@ export default function AdminHealth() {
   }, [session?.access_token])
 
   const loadAuthAttempts = useCallback(() => {
-    if (!session?.access_token) return
-    fetch('/api/admin?action=auth-attempts', {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=auth-attempts', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
@@ -355,8 +364,8 @@ export default function AdminHealth() {
   }, [session?.access_token])
 
   const loadPaymentIssues = useCallback(() => {
-    if (!session?.access_token) return
-    fetch('/api/admin?action=payment-issues', {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=payment-issues', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
@@ -365,49 +374,76 @@ export default function AdminHealth() {
       .finally(() => setPaymentIssuesLoading(false))
   }, [session?.access_token])
 
-  function handleRefresh() {
-    loadData()
-    loadVitals()
-    loadFailures()
-    loadAuthAttempts()
-    loadPaymentIssues()
-  }
+  // Fire all 5 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await Promise.all([
+      loadData(),
+      loadVitals(),
+      loadFailures(),
+      loadAuthAttempts(),
+      loadPaymentIssues(),
+    ])
+    setLastUpdated(new Date())
+    setRefreshing(false)
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues])
 
-  // Initial fetch + auto-refresh every 5 minutes while tab is open.
+  // Overview / dashboard — 20s polling
   useEffect(() => {
     if (!isAdmin || !session) return
     loadData()
-    timerRef.current = setInterval(loadData, AUTO_REFRESH_MS)
+    timerRef.current = setInterval(loadData, INTERVAL_OVERVIEW)
     return () => clearInterval(timerRef.current)
   }, [isAdmin, session, loadData])
 
-  // Vitals — 30s interval
+  // Vitals — 15s polling
   useEffect(() => {
     if (!isAdmin || !session) return
     loadVitals()
-    vitalsTimerRef.current = setInterval(loadVitals, 30 * 1000)
+    vitalsTimerRef.current = setInterval(loadVitals, INTERVAL_VITALS)
     return () => clearInterval(vitalsTimerRef.current)
   }, [isAdmin, session, loadVitals])
 
-  // Failures — 60s interval
+  // Failures — 20s polling
   useEffect(() => {
     if (!isAdmin || !session) return
     loadFailures()
-    failuresTimerRef.current = setInterval(loadFailures, 60 * 1000)
+    failuresTimerRef.current = setInterval(loadFailures, INTERVAL_FAILURES)
     return () => clearInterval(failuresTimerRef.current)
   }, [isAdmin, session, loadFailures])
 
-  // Auth attempts — load once on mount
+  // Auth attempts — 30s polling
   useEffect(() => {
     if (!isAdmin || !session) return
     loadAuthAttempts()
+    authTimerRef.current = setInterval(loadAuthAttempts, INTERVAL_AUTH)
+    return () => clearInterval(authTimerRef.current)
   }, [isAdmin, session, loadAuthAttempts])
 
-  // Payment issues — load once on mount
+  // Payment issues — 30s polling
   useEffect(() => {
     if (!isAdmin || !session) return
     loadPaymentIssues()
+    paymentTimerRef.current = setInterval(loadPaymentIssues, INTERVAL_PAYMENTS)
+    return () => clearInterval(paymentTimerRef.current)
   }, [isAdmin, session, loadPaymentIssues])
+
+  // "X seconds ago" counter — ticks every second, resets whenever lastUpdated changes
+  useEffect(() => {
+    if (!lastUpdated) return
+    setSecondsAgo(0)
+    clearInterval(secondsTimerRef.current)
+    secondsTimerRef.current = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastUpdated.getTime()) / 1000))
+    }, 1000)
+    return () => clearInterval(secondsTimerRef.current)
+  }, [lastUpdated])
+
+  // Refresh immediately when admin switches back to this tab
+  useEffect(() => {
+    window.addEventListener('focus', handleRefresh)
+    return () => window.removeEventListener('focus', handleRefresh)
+  }, [handleRefresh])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -559,9 +595,9 @@ export default function AdminHealth() {
           </h1>
           <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: MUTED, marginTop: 8, marginBottom: 0 }}>
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-            {lastUpdated && (
+            {secondsAgo !== null && (
               <span style={{ marginLeft: 16, color: 'rgba(255,255,255,0.3)' }}>
-                · Last updated {lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                · Last updated: {secondsAgo === 0 ? 'just now' : `${secondsAgo}s ago`}
               </span>
             )}
           </p>
@@ -569,19 +605,19 @@ export default function AdminHealth() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <button
             onClick={handleRefresh}
-            disabled={fetching}
+            disabled={refreshing}
             style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: 13, fontWeight: 600,
-              color: fetching ? MUTED : WHITE,
-              background: fetching ? 'rgba(255,255,255,0.05)' : BLUE,
-              border: `1px solid ${fetching ? BORDER : BLUE}`,
+              color: refreshing ? MUTED : WHITE,
+              background: refreshing ? 'rgba(255,255,255,0.05)' : BLUE,
+              border: `1px solid ${refreshing ? BORDER : BLUE}`,
               borderRadius: 8, padding: '10px 20px',
-              cursor: fetching ? 'not-allowed' : 'pointer',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
               transition: 'background 0.15s ease',
             }}
           >
-            {fetching ? 'Refreshing…' : '↻ Refresh'}
+            {refreshing ? 'Refreshing…' : '↻ Refresh'}
           </button>
           <button
             onClick={() => {
