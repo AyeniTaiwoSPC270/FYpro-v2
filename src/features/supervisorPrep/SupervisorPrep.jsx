@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { prepareSupervisorMeeting, handleApiError, logFailure } from '../../services/api'
+import ApiErrorBox from '../../components/ApiErrorBox'
 
 const STAGES = [
   'Just starting',
@@ -163,7 +164,7 @@ export default function SupervisorPrep() {
               </p>
             </div>
 
-            {error && <p className="sp-error-text">{error}</p>}
+            <ApiErrorBox error={error} onRetry={handleSubmit} />
 
             <button
               id="btn-prepare-me"

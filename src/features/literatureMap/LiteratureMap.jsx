@@ -4,6 +4,7 @@ import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
+import ApiErrorBox from '../../components/ApiErrorBox'
 
 export default function LiteratureMap({ chapters }) {
   const { state, studentContext } = useApp()
@@ -113,13 +114,12 @@ export default function LiteratureMap({ chapters }) {
         <div id="lm-input-section" className="lm-input-section tv-section--visible">
           <p className="lm-step-label">Literature Map</p>
           <span className="lm-companion-badge">Companion Card</span>
-          <p className="lm-description" style={error ? { color: '#DC2626' } : {}}>
-            {error
-              ? error
-              : 'FYPro will map the intellectual territory of your topic using real published papers — ' +
-                'thematic clusters with targeted search terms, recommended sources, and a ' +
-                'synthesis guide for building an argument across papers, not just summarising them.'}
+          <p className="lm-description">
+            FYPro will map the intellectual territory of your topic using real published papers —
+            thematic clusters with targeted search terms, recommended sources, and a
+            synthesis guide for building an argument across papers, not just summarising them.
           </p>
+          <ApiErrorBox error={error} onRetry={handleGenerate} />
           <button
             id="lm-btn-generate"
             className="lm-btn-generate"

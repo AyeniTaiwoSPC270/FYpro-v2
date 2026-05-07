@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { generateEmail, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
+import ApiErrorBox from '../../components/ApiErrorBox'
 
 export default function SupervisorEmail({ onClose }) {
   const { state, studentContext } = useApp()
@@ -104,7 +105,7 @@ export default function SupervisorEmail({ onClose }) {
           Generate a formal email to send your supervisor introducing your project — topic,
           objectives, methodology, and a meeting request. All in one.
         </p>
-        {error && <p className="se-error-text tv-section--visible">{error}</p>}
+        <ApiErrorBox error={error} onRetry={handleGenerate} />
         <button className="se-btn-generate" onClick={handleGenerate} disabled={section === 'loading'}>
           {section === 'loading' ? 'Generating…' : 'Generate Email'}
         </button>

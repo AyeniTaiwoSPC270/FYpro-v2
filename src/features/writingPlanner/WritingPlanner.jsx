@@ -4,6 +4,7 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { buildWritingPlan, handleApiError, logFailure } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 
 function computeUrgency(dateStr) {
@@ -175,7 +176,7 @@ export default function WritingPlanner() {
           <span id="wp-urgency-icon" className="wp-urgency__icon">{urgency?.icon}</span>
           <span id="wp-urgency-text" className="wp-urgency__text">{urgency?.text}</span>
         </div>
-        {error && <p id="wp-error-text" className="wp-error-text">{error}</p>}
+        <ApiErrorBox error={error} onRetry={handleGenerate} />
         <button
           id="btn-generate-plan"
           className="wp-btn-generate"

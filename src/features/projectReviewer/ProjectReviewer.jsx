@@ -4,6 +4,7 @@ import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
+import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 
 const UPLOAD_D =
@@ -491,9 +492,7 @@ export default function ProjectReviewer() {
           </div>
         )}
 
-        {error && (
-          <p id="pr-error-text" className="pr-error-text tv-section--visible">{error}</p>
-        )}
+        <ApiErrorBox error={error} onRetry={handleReview} />
 
         <button
           id="pr-btn-review"
