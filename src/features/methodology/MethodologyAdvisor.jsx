@@ -6,10 +6,11 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -399,6 +400,8 @@ export default function MethodologyAdvisor() {
                   Continue to Writing Planner →
                 </button>
               )}
+
+              <FeedbackThumbs feature="methodology_advisor" contextId={projectId || undefined} />
             </>
           )}
         </div>
@@ -500,6 +503,8 @@ export default function MethodologyAdvisor() {
                     Continue — Writing Planner
                   </button>
                 </div>
+
+                <FeedbackThumbs feature="instrument_builder" contextId={projectId || undefined} />
               </>
             )}
           </div>

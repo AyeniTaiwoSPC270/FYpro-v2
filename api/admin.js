@@ -764,6 +764,41 @@ async function handleResolveLog(req, res) {
   }
 }
 
+// action: "feedback-summary" — per-feature thumbs aggregates, last 30 days
+async function handleFeedbackSummary(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabaseAdmin
+      .from('feature_feedback')
+      .select('feature, rating')
+      .gte('created_at', since30d);
+
+    if (error) throw error;
+
+    const map = {};
+    for (const row of data || []) {
+      if (!map[row.feature]) map[row.feature] = { up: 0, down: 0 };
+      if (row.rating === 1) map[row.feature].up++;
+      else map[row.feature].down++;
+    }
+
+    const rows = Object.entries(map)
+      .map(([feature, { up, down }]) => {
+        const total = up + down;
+        return { feature, up, down, total, score: total > 0 ? (up - down) / total : 0 };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    return res.status(200).json({ rows });
+  } catch (err) {
+    console.error('[admin/feedback-summary] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -799,8 +834,9 @@ export default async function handler(req, res) {
   if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
   if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
-  if (action === 'system_logs')   return handleSystemLogs(req, res);
-  if (action === 'resolve_log')   return handleResolveLog(req, res);
+  if (action === 'system_logs')        return handleSystemLogs(req, res);
+  if (action === 'resolve_log')        return handleResolveLog(req, res);
+  if (action === 'feedback-summary')   return handleFeedbackSummary(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }

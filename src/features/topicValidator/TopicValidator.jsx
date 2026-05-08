@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -13,7 +14,7 @@ function countWords(text) {
 
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
 
   // If already completed, restore straight to result section
@@ -313,6 +314,8 @@ export default function TopicValidator() {
             <button id="btn-use" className="tv-btn-use" onClick={handleUseThisTopic}>
               Use This Topic
             </button>
+
+            <FeedbackThumbs feature="topic_validator" contextId={projectId || undefined} />
 
             {data.verdict === 'Not Suitable' && data.alternatives?.length > 0 && (
               <div id="tv-alternatives" className="tv-alternatives tv-section--visible">

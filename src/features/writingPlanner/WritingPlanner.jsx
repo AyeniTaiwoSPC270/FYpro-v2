@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -21,7 +22,7 @@ function computeUrgency(dateStr) {
 
 export default function WritingPlanner() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -259,6 +260,8 @@ export default function WritingPlanner() {
             >
               Confirm Plan — Continue
             </button>
+
+            <FeedbackThumbs feature="writing_planner" contextId={projectId || undefined} />
           </>
         )}
       </div>

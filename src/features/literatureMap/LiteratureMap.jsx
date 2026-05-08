@@ -5,10 +5,11 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 export default function LiteratureMap({ chapters }) {
   const { state, studentContext } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('literature_map')
@@ -262,6 +263,8 @@ export default function LiteratureMap({ chapters }) {
           >
             {copied ? 'Copied to clipboard' : 'Copy Literature Map'}
           </button>
+
+          <FeedbackThumbs feature="literature_map" contextId={projectId || undefined} />
 
         </div>
       )}

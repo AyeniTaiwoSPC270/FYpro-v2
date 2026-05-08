@@ -7,6 +7,7 @@ import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
 import LiteratureMap from '../literatureMap/LiteratureMap'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 const CHEVRON_PATH = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
@@ -138,7 +139,7 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
 
 export default function ChapterArchitect() {
   const { state, studentContext, completeStep, navigateStep } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -554,6 +555,8 @@ export default function ChapterArchitect() {
               <button id="btn-confirm" className="ca-btn-confirm" onClick={handleConfirm}>
                 I am satisfied with this structure — Continue
               </button>
+
+              <FeedbackThumbs feature="chapter_architect" contextId={projectId || undefined} />
             </>
           )}
         </div>
@@ -624,6 +627,8 @@ export default function ChapterArchitect() {
               >
                 {agCopied ? 'Copied to clipboard' : 'Copy Scaffold'}
               </button>
+
+              <FeedbackThumbs feature="abstract_generator" contextId={projectId || undefined} />
             </div>
           )}
 

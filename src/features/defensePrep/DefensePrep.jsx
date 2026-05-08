@@ -17,6 +17,7 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
+import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -300,7 +301,7 @@ function countWords(text) {
 
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
-  const { saveStep } = useProjectState()
+  const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
   const rfOverLimit = isOverLimit('red_flag_detector')
@@ -1164,6 +1165,7 @@ export default function DefensePrep() {
                         Download Session Report
                       </button>
                     </div>
+                    <FeedbackThumbs feature="defense_simulator" contextId={projectId || undefined} />
                   </div>
                 ) : sessionTerminated ? (
                   /* Layer 2 — 3 low scores: session terminated */
@@ -1178,6 +1180,7 @@ export default function DefensePrep() {
                     <button className="dp-circuit-restart-btn" onClick={handleRestartSimulator}>
                       Restart Simulator
                     </button>
+                    <FeedbackThumbs feature="defense_simulator" contextId={projectId || undefined} />
                   </div>
                 ) : verdictLoading ? (
                   <div className="dp-verdict-loading">

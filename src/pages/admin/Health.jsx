@@ -4,6 +4,7 @@ import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import FeatureFeedbackWidget from './widgets/FeatureFeedbackWidget'
 
 // ── Design tokens (dark admin theme) ────────────────────────────────
 const BG      = '#060E18'
@@ -328,6 +329,11 @@ export default function AdminHealth() {
   const [expandedLogIds, setExpandedLogIds]       = useState(new Set())
   const systemLogsTimerRef                        = useRef(null)
 
+  const [feedbackData, setFeedbackData]             = useState(null)
+  const [feedbackLoading, setFeedbackLoading]       = useState(true)
+  const [feedbackError, setFeedbackError]           = useState(null)
+  const feedbackTimerRef                            = useRef(null)
+
   const [authAttempts, setAuthAttempts]       = useState(null)
   const [authAttemptsLoading, setAuthAttemptsLoading] = useState(true)
 
@@ -416,7 +422,18 @@ export default function AdminHealth() {
       .finally(() => setSystemLogsLoading(false))
   }, [session?.access_token])
 
-  // Fire all 6 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
+  const loadFeedbackSummary = useCallback(() => {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=feedback-summary', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => { if (d.error) throw new Error(d.error); setFeedbackData(d.rows); setFeedbackError(null) })
+      .catch(e => setFeedbackError(e.message || 'Failed to load'))
+      .finally(() => setFeedbackLoading(false))
+  }, [session?.access_token])
+
+  // Fire all 7 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.allSettled([
@@ -426,12 +443,13 @@ export default function AdminHealth() {
       loadAuthAttempts(),
       loadPaymentIssues(),
       loadSystemLogs(),
+      loadFeedbackSummary(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary])
 
-  // Initial parallel fetch — all 6 widgets at once; one failure never blocks the rest
+  // Initial parallel fetch — all 7 widgets at once; one failure never blocks the rest
   useEffect(() => {
     if (!isAdmin || !session) return
     setInitialLoading(true)
@@ -442,8 +460,9 @@ export default function AdminHealth() {
       loadAuthAttempts(),
       loadPaymentIssues(),
       loadSystemLogs(),
+      loadFeedbackSummary(),
     ]).finally(() => setInitialLoading(false))
-  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs])
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary])
 
   // Polling intervals — each widget on its own cadence (initial call handled above)
   useEffect(() => {
@@ -481,6 +500,12 @@ export default function AdminHealth() {
     systemLogsTimerRef.current = setInterval(loadSystemLogs, INTERVAL_LOGS)
     return () => clearInterval(systemLogsTimerRef.current)
   }, [isAdmin, session, loadSystemLogs])
+
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    feedbackTimerRef.current = setInterval(loadFeedbackSummary, INTERVAL_LOGS)
+    return () => clearInterval(feedbackTimerRef.current)
+  }, [isAdmin, session, loadFeedbackSummary])
 
   // "X seconds ago" counter — ticks every second, resets whenever lastUpdated changes
   useEffect(() => {
@@ -1565,6 +1590,13 @@ export default function AdminHealth() {
           </div>
         )}
       </div>
+
+      {/* ── Feature Feedback Widget ───────────────────────────────── */}
+      <FeatureFeedbackWidget
+        data={feedbackData}
+        loading={feedbackLoading}
+        error={feedbackError}
+      />
 
       {/* ── SECTION 7: Never Converted ─────────────────────────────── */}
       <SectionHeading title={`Never Converted — Conversion Targets (${never_converted.length})`} />
