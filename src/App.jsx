@@ -26,6 +26,7 @@ import AppShell from './features/shell/AppShell'
 import SupervisorPrep from './features/supervisorPrep/SupervisorPrep'
 import AdminHealth from './pages/admin/Health'
 import ChangelogPage from './pages/changelog/ChangelogPage'
+import EmailPreferences from './pages/account/EmailPreferences'
 
 export default function App() {
   return (
@@ -68,6 +69,9 @@ export default function App() {
 
           {/* Settings */}
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+          {/* Email Preferences */}
+          <Route path="/account/email-preferences" element={<ProtectedRoute><EmailPreferences /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin/health" element={<AdminHealth />} />
