@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const VERCEL_SEND_URL = 'https://fypro.vercel.app/api/send-nurture-email'
+const VERCEL_SEND_URL = 'https://fypro.com.ng/api/send-nurture-email'
 const CRON_SECRET     = Deno.env.get('CRON_SECRET') ?? ''
 const SUPABASE_URL    = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
