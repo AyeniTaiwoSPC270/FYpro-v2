@@ -5,6 +5,11 @@ const CRON_SECRET     = Deno.env.get('CRON_SECRET') ?? ''
 const SUPABASE_URL    = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
+// Fix 2: Fail fast on missing env vars
+if (!CRON_SECRET || !SUPABASE_URL || !SERVICE_ROLE) {
+  throw new Error('[email-nurture] missing required env: CRON_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY')
+}
+
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE)
 
 type EmailType = 'welcome' | 'defense_nudge' | 'urgency_reminder'
@@ -34,20 +39,25 @@ async function getEligibleUsers(emailType: EmailType): Promise<EligibleUser[]> {
   return (data ?? []) as EligibleUser[]
 }
 
-async function isSubscribed(userId: string, emailType: EmailType): Promise<boolean> {
+// Fix 3: Replace N+1 isSubscribed with a single batch query
+async function getPrefsMap(userIds: string[]): Promise<Map<string, Record<string, boolean>>> {
+  if (userIds.length === 0) return new Map()
   const { data } = await supabase
     .from('email_preferences')
-    .select('unsubscribed_all, welcome_enabled, defense_nudge_enabled, urgency_reminder_enabled')
-    .eq('user_id', userId)
-    .maybeSingle()
+    .select('user_id, unsubscribed_all, welcome_enabled, defense_nudge_enabled, urgency_reminder_enabled')
+    .in('user_id', userIds)
+  const map = new Map<string, Record<string, boolean>>()
+  for (const row of data ?? []) map.set(row.user_id, row)
+  return map
+}
 
-  if (!data) return true // no row = default subscribed (all enabled)
-  if (data.unsubscribed_all) return false
-
+function isSubscribedFromPrefs(prefs: Record<string, boolean> | undefined, emailType: EmailType): boolean {
+  if (!prefs) return true // no row = default subscribed
+  if (prefs.unsubscribed_all) return false
   const toggle: Record<EmailType, boolean> = {
-    welcome:          data.welcome_enabled,
-    defense_nudge:    data.defense_nudge_enabled,
-    urgency_reminder: data.urgency_reminder_enabled,
+    welcome:          prefs.welcome_enabled,
+    defense_nudge:    prefs.defense_nudge_enabled,
+    urgency_reminder: prefs.urgency_reminder_enabled,
   }
   return toggle[emailType] !== false
 }
@@ -82,17 +92,25 @@ async function sendEmail(user: EligibleUser, emailType: EmailType): Promise<void
   }
 }
 
-Deno.serve(async () => {
+// Fix 1: Accept req and check CRON_SECRET auth header
+Deno.serve(async (req) => {
+  const auth = req.headers.get('authorization') ?? ''
+  if (auth !== `Bearer ${CRON_SECRET}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   const emailTypes: EmailType[] = ['welcome', 'defense_nudge', 'urgency_reminder']
 
   for (const emailType of emailTypes) {
     const users = await getEligibleUsers(emailType)
     console.log(`[email-nurture] ${emailType}: ${users.length} eligible`)
 
-    for (const user of users) {
-      const subscribed = await isSubscribed(user.user_id, emailType)
-      if (!subscribed) continue
-      await sendEmail(user, emailType)
+    // Fix 4: Replace sequential fan-out with batched concurrency (10 at a time)
+    const prefsMap = await getPrefsMap(users.map(u => u.user_id))
+    const eligible = users.filter(u => isSubscribedFromPrefs(prefsMap.get(u.user_id), emailType))
+    const BATCH = 10
+    for (let i = 0; i < eligible.length; i += BATCH) {
+      await Promise.allSettled(eligible.slice(i, i + BATCH).map(u => sendEmail(u, emailType)))
     }
   }
 
