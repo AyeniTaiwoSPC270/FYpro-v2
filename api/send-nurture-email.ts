@@ -62,7 +62,7 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
           <p>You've just joined thousands of Nigerian final year students who are taking their
           project seriously. Your next step is simple — paste your topic idea into our Topic
           Validator and find out if it's defensible before your supervisor ever sees it.</p>
-          <a href="${baseUrl}/app/topic-validator" class="btn-green">Validate your topic now</a>
+          <a href="${baseUrl}/app" class="btn-green">Validate your topic now</a>
           ${footer(baseUrl)}
         </div>
       </div>
@@ -79,7 +79,7 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
           Defense Simulator puts you in front of three AI examiners — a methodologist, a
           subject expert, and an external examiner — who push back on your work exactly the
           way the real panel will. Find out where you're weak before it matters.</p>
-          <a href="${baseUrl}/app/defense" class="btn-blue">Try a Defense Simulation</a>
+          <a href="${baseUrl}/app" class="btn-blue">Try a Defense Simulation</a>
           ${footer(baseUrl)}
         </div>
       </div>
