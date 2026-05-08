@@ -16,7 +16,10 @@ const SUBJECTS: Record<EmailType, string> = {
 const STYLES = `
   <style>
     body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
-    .box { background:#fff; border-radius:12px; padding:40px; max-width:560px; margin:32px auto; }
+    .wrapper { max-width:560px; margin:32px auto; }
+    .header { background:#0f172a; border-radius:12px 12px 0 0; padding:24px; text-align:center; }
+    .header img { height:36px; width:auto; }
+    .box { background:#fff; border-radius:0 0 12px 12px; padding:40px; }
     h1 { font-size:22px; font-weight:700; color:#0D1B2A; margin:0 0 16px; }
     p { font-size:15px; line-height:1.7; color:#374151; margin:0 0 24px; }
     .item { font-size:15px; line-height:1.7; color:#374151; margin:0 0 10px; padding-left:8px; }
@@ -27,6 +30,14 @@ const STYLES = `
     .foot a { color:#6B7280; }
   </style>
 `
+
+function header(baseUrl: string) {
+  return `
+    <div class="header">
+      <img src="${baseUrl}/fypro-logo.png" alt="FYPro" />
+    </div>
+  `
+}
 
 function footer(baseUrl: string) {
   return `
@@ -44,44 +55,53 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
 
   if (type === 'welcome') {
     return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-      <div class="box">
-        <h1>Welcome to FYPro, ${firstName}</h1>
-        <p>You've just joined thousands of Nigerian final year students who are taking their
-        project seriously. Your next step is simple — paste your topic idea into our Topic
-        Validator and find out if it's defensible before your supervisor ever sees it.</p>
-        <a href="${baseUrl}/app/topic-validator" class="btn-green">Validate your topic now</a>
-        ${footer(baseUrl)}
+      <div class="wrapper">
+        ${header(baseUrl)}
+        <div class="box">
+          <h1>Welcome to FYPro, ${firstName}</h1>
+          <p>You've just joined thousands of Nigerian final year students who are taking their
+          project seriously. Your next step is simple — paste your topic idea into our Topic
+          Validator and find out if it's defensible before your supervisor ever sees it.</p>
+          <a href="${baseUrl}/app/topic-validator" class="btn-green">Validate your topic now</a>
+          ${footer(baseUrl)}
+        </div>
       </div>
     </body></html>`
   }
 
   if (type === 'defense_nudge') {
     return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-      <div class="box">
-        <h1>Have you met your examiners yet, ${firstName}?</h1>
-        <p>Most students walk into their defense never having practiced out loud. FYPro's
-        Defense Simulator puts you in front of three AI examiners — a methodologist, a
-        subject expert, and an external examiner — who push back on your work exactly the
-        way the real panel will. Find out where you're weak before it matters.</p>
-        <a href="${baseUrl}/app/defense" class="btn-blue">Try a Defense Simulation</a>
-        ${footer(baseUrl)}
+      <div class="wrapper">
+        ${header(baseUrl)}
+        <div class="box">
+          <h1>Have you met your examiners yet, ${firstName}?</h1>
+          <p>Most students walk into their defense never having practiced out loud. FYPro's
+          Defense Simulator puts you in front of three AI examiners — a methodologist, a
+          subject expert, and an external examiner — who push back on your work exactly the
+          way the real panel will. Find out where you're weak before it matters.</p>
+          <a href="${baseUrl}/app/defense" class="btn-blue">Try a Defense Simulation</a>
+          ${footer(baseUrl)}
+        </div>
       </div>
     </body></html>`
   }
 
   // urgency_reminder
   return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-    <div class="box">
-      <h1>Defense checklist, ${firstName} — are you ready?</h1>
-      <p>A week in and the clock is moving. Run through this before you do anything else:</p>
-      <p class="item">☐ &nbsp; Topic locked and validated?</p>
-      <p class="item">☐ &nbsp; Methodology chosen and defensible?</p>
-      <p class="item">☐ &nbsp; Project PDF uploaded for review?</p>
-      <p class="item">☐ &nbsp; Defense Simulator score 7 or above?</p>
-      <p style="margin-top:16px">If any box is unchecked, open your dashboard and work through it.
-      Your panel will not go easy on gaps.</p>
-      <a href="${baseUrl}/dashboard" class="btn-green">Open my dashboard</a>
-      ${footer(baseUrl)}
+    <div class="wrapper">
+      ${header(baseUrl)}
+      <div class="box">
+        <h1>Defense checklist, ${firstName} — are you ready?</h1>
+        <p>A week in and the clock is moving. Run through this before you do anything else:</p>
+        <p class="item">☐ &nbsp; Topic locked and validated?</p>
+        <p class="item">☐ &nbsp; Methodology chosen and defensible?</p>
+        <p class="item">☐ &nbsp; Project PDF uploaded for review?</p>
+        <p class="item">☐ &nbsp; Defense Simulator score 7 or above?</p>
+        <p style="margin-top:16px">If any box is unchecked, open your dashboard and work through it.
+        Your panel will not go easy on gaps.</p>
+        <a href="${baseUrl}/dashboard" class="btn-green">Open my dashboard</a>
+        ${footer(baseUrl)}
+      </div>
     </div>
   </body></html>`
 }
