@@ -26,6 +26,7 @@ import AppShell from './features/shell/AppShell'
 import SupervisorPrep from './features/supervisorPrep/SupervisorPrep'
 import AdminHealth from './pages/admin/Health'
 import ChangelogPage from './pages/changelog/ChangelogPage'
+import RoadmapPage from './pages/roadmap/RoadmapPage'
 import EmailPreferences from './pages/account/EmailPreferences'
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/changelog" element={<ChangelogPage />} />
+          <Route path="/roadmap" element={<RoadmapPage />} />
 
           {/* App entry — splash + onboarding */}
           <Route path="/start" element={<SplashOnboarding />} />

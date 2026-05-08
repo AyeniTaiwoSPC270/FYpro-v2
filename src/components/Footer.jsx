@@ -28,6 +28,13 @@ export default function Footer() {
 
         <nav className="flex flex-wrap items-center gap-4">
           <Link
+            to="/roadmap"
+            className="font-sans text-xs no-underline hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Public roadmap
+          </Link>
+          <Link
             to="/privacy"
             className="font-sans text-xs no-underline hover:opacity-80 transition-opacity"
             style={{ color: 'var(--text-muted)' }}

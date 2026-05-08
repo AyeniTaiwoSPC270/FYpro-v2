@@ -372,6 +372,7 @@ function Navbar() {
     { label: 'Features', id: 'features', href: '#features' },
     { label: 'Pricing', id: 'pricing', href: '/pricing' },
     { label: 'About', id: 'about', href: '/about' },
+    { label: 'Roadmap', id: 'roadmap', href: '/roadmap' },
     { label: 'Contact', id: 'contact', href: '/contact' },
   ]
 
