@@ -128,6 +128,22 @@ function PlanBadge({ plan }) {
   )
 }
 
+function FailedBadge({ label, error }) {
+  return (
+    <div style={{
+      background: 'rgba(220,38,38,0.1)',
+      border: '1px solid rgba(220,38,38,0.25)',
+      borderRadius: 10,
+      padding: '12px 16px',
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: 12,
+      color: '#F87171',
+    }}>
+      {label} — {error}
+    </div>
+  )
+}
+
 function OverviewCard({ label, value, sub, accent = BLUE }) {
   return (
     <div style={{
@@ -315,6 +331,13 @@ export default function AdminHealth() {
   const [authAttempts, setAuthAttempts]       = useState(null)
   const [authAttemptsLoading, setAuthAttemptsLoading] = useState(true)
 
+  const [vitalsError, setVitalsError]               = useState(null)
+  const [failuresError, setFailuresError]           = useState(null)
+  const [authAttemptsError, setAuthAttemptsError]   = useState(null)
+  const [paymentIssuesError, setPaymentIssuesError] = useState(null)
+  const [systemLogsError, setSystemLogsError]       = useState(null)
+  const [initialLoading, setInitialLoading]         = useState(true)
+
   // User table state
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('signup_date')
@@ -344,8 +367,8 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (!d.error) setVitals(d) })
-      .catch(() => {})
+      .then(d => { if (d.error) throw new Error(d.error); setVitals(d); setVitalsError(null) })
+      .catch(e => setVitalsError(e.message || 'Failed to load'))
       .finally(() => setVitalsLoading(false))
   }, [session?.access_token])
 
@@ -355,8 +378,8 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (!d.error) setFailures(d) })
-      .catch(() => {})
+      .then(d => { if (d.error) throw new Error(d.error); setFailures(d); setFailuresError(null) })
+      .catch(e => setFailuresError(e.message || 'Failed to load'))
       .finally(() => setFailuresLoading(false))
   }, [session?.access_token])
 
@@ -366,8 +389,8 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (!d.error) setAuthAttempts(d) })
-      .catch(() => {})
+      .then(d => { if (d.error) throw new Error(d.error); setAuthAttempts(d); setAuthAttemptsError(null) })
+      .catch(e => setAuthAttemptsError(e.message || 'Failed to load'))
       .finally(() => setAuthAttemptsLoading(false))
   }, [session?.access_token])
 
@@ -377,8 +400,8 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (!d.error) setPaymentIssues(d.issues) })
-      .catch(() => {})
+      .then(d => { if (d.error) throw new Error(d.error); setPaymentIssues(d.issues); setPaymentIssuesError(null) })
+      .catch(e => setPaymentIssuesError(e.message || 'Failed to load'))
       .finally(() => setPaymentIssuesLoading(false))
   }, [session?.access_token])
 
@@ -388,15 +411,15 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (!d.error) setSystemLogs(d.logs) })
-      .catch(() => {})
+      .then(d => { if (d.error) throw new Error(d.error); setSystemLogs(d.logs); setSystemLogsError(null) })
+      .catch(e => setSystemLogsError(e.message || 'Failed to load'))
       .finally(() => setSystemLogsLoading(false))
   }, [session?.access_token])
 
   // Fire all 6 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
-    await Promise.all([
+    await Promise.allSettled([
       loadData(),
       loadVitals(),
       loadFailures(),
@@ -408,50 +431,53 @@ export default function AdminHealth() {
     setRefreshing(false)
   }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs])
 
-  // Overview / dashboard — 20s polling
+  // Initial parallel fetch — all 6 widgets at once; one failure never blocks the rest
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadData()
+    setInitialLoading(true)
+    Promise.allSettled([
+      loadData(),
+      loadVitals(),
+      loadFailures(),
+      loadAuthAttempts(),
+      loadPaymentIssues(),
+      loadSystemLogs(),
+    ]).finally(() => setInitialLoading(false))
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs])
+
+  // Polling intervals — each widget on its own cadence (initial call handled above)
+  useEffect(() => {
+    if (!isAdmin || !session) return
     timerRef.current = setInterval(loadData, INTERVAL_OVERVIEW)
     return () => clearInterval(timerRef.current)
   }, [isAdmin, session, loadData])
 
-  // Vitals — 15s polling
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadVitals()
     vitalsTimerRef.current = setInterval(loadVitals, INTERVAL_VITALS)
     return () => clearInterval(vitalsTimerRef.current)
   }, [isAdmin, session, loadVitals])
 
-  // Failures — 20s polling
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadFailures()
     failuresTimerRef.current = setInterval(loadFailures, INTERVAL_FAILURES)
     return () => clearInterval(failuresTimerRef.current)
   }, [isAdmin, session, loadFailures])
 
-  // Auth attempts — 30s polling
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadAuthAttempts()
     authTimerRef.current = setInterval(loadAuthAttempts, INTERVAL_AUTH)
     return () => clearInterval(authTimerRef.current)
   }, [isAdmin, session, loadAuthAttempts])
 
-  // Payment issues — 30s polling
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadPaymentIssues()
     paymentTimerRef.current = setInterval(loadPaymentIssues, INTERVAL_PAYMENTS)
     return () => clearInterval(paymentTimerRef.current)
   }, [isAdmin, session, loadPaymentIssues])
 
-  // System logs — 60s polling
   useEffect(() => {
     if (!isAdmin || !session) return
-    loadSystemLogs()
     systemLogsTimerRef.current = setInterval(loadSystemLogs, INTERVAL_LOGS)
     return () => clearInterval(systemLogsTimerRef.current)
   }, [isAdmin, session, loadSystemLogs])
@@ -611,7 +637,7 @@ export default function AdminHealth() {
   const shell = { minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }
   if (loading)             return <div style={shell}>Loading…</div>
   if (!isAdmin)            return <div style={{ ...shell, color: RED }}>Access denied.</div>
-  if (fetching && !data)   return <div style={shell}>Fetching dashboard data…</div>
+  if (initialLoading && !data) return <div style={shell}>Fetching dashboard data…</div>
   if (error && !data)      return <div style={{ ...shell, color: RED }}>Error: {error}</div>
   if (!data)               return null
 
@@ -704,6 +730,8 @@ export default function AdminHealth() {
               <div key={i} style={{ flex: '1 1 0', height: 82, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
             ))}
           </div>
+        ) : vitalsError ? (
+          <FailedBadge label="System Vitals" error={vitalsError} />
         ) : (
           <div style={{ display: 'flex', gap: 16 }}>
             {(() => {
@@ -1024,6 +1052,8 @@ export default function AdminHealth() {
               <div key={i} style={{ height: 44, background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
             ))}
           </div>
+        ) : failuresError ? (
+          <FailedBadge label="Failed Generations" error={failuresError} />
         ) : !failures?.rows?.length ? (
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, margin: 0 }}>No failures logged yet.</p>
         ) : (
@@ -1236,6 +1266,8 @@ export default function AdminHealth() {
 
         {authAttemptsLoading ? (
           <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
+        ) : authAttemptsError ? (
+          <FailedBadge label="Auth Attempts" error={authAttemptsError} />
         ) : !authAttempts ? (
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
             No data yet. Auth attempts are logged as users sign in.
@@ -1355,6 +1387,8 @@ export default function AdminHealth() {
 
         {paymentIssuesLoading ? (
           <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
+        ) : paymentIssuesError ? (
+          <FailedBadge label="Payment Issues" error={paymentIssuesError} />
         ) : !paymentIssues || paymentIssues.length === 0 ? (
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
             No unresolved payment issues.
@@ -1432,6 +1466,8 @@ export default function AdminHealth() {
               <div key={i} style={{ height: 56, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />
             ))}
           </div>
+        ) : systemLogsError ? (
+          <FailedBadge label="System Logs" error={systemLogsError} />
         ) : !systemLogs || systemLogs.length === 0 ? (
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: GREEN, margin: 0 }}>
             No issues detected — system is healthy
