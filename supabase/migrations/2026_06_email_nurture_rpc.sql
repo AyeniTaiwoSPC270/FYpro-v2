@@ -21,6 +21,7 @@ AS $$
   FROM auth.users au
   LEFT JOIN public.users pu ON pu.id = au.id
   WHERE au.email_confirmed_at IS NOT NULL
+    AND au.email IS NOT NULL
     AND au.email_confirmed_at <= now() - (p_min_days || ' days')::interval
     AND NOT EXISTS (
       SELECT 1 FROM public.email_log el

@@ -7,6 +7,7 @@ import {
   animate as fmAnimate,
   useAnimate,
 } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -1118,6 +1119,12 @@ function FinalCTA() {
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 
 function Footer() {
+  const [authed, setAuthed] = useState(false)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setAuthed(!!session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => setAuthed(!!session))
+    return () => subscription.unsubscribe()
+  }, [])
   return (
     <footer className="relative border-t border-white/[0.06]" style={{ background: '#030A12', padding: '56px 0 28px' }}>
       <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, #060E18, transparent)' }} />
@@ -1177,6 +1184,7 @@ function Footer() {
           <div className="flex gap-[18px]">
             <a href="/privacy" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Privacy</a>
             <a href="/terms" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Terms</a>
+            {authed && <a href="/account/email-preferences" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Email preferences</a>}
           </div>
         </div>
       </div>
