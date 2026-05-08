@@ -467,11 +467,11 @@ export interface EmailProps {
 export async function renderTemplate(type: EmailType, props: EmailProps): Promise<string> {
   switch (type) {
     case 'welcome':
-      return render(<Welcome {...props} />)
+      return await render(<Welcome {...props} />)
     case 'defense_nudge':
-      return render(<DefenseNudge {...props} />)
+      return await render(<DefenseNudge {...props} />)
     case 'urgency_reminder':
-      return render(<UrgencyReminder {...props} />)
+      return await render(<UrgencyReminder {...props} />)
     default:
       throw new Error(`Unknown email type: ${type}`)
   }
