@@ -194,6 +194,7 @@ function Footer() {
             © 2026 FYPro. Built for African students.
           </p>
           <div className="flex gap-6">
+            <a href="/roadmap" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Roadmap</a>
             <a href="/privacy" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Privacy Policy</a>
             <a href="/terms" className="text-slate-500 text-sm hover:text-slate-300 transition-colors duration-150 no-underline font-sans">Terms</a>
           </div>
