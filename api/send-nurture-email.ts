@@ -1,15 +1,89 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
-import { renderTemplate, EmailType } from './_emails/render'
 
-const BASE_URL        = 'https://fypro.vercel.app'
-const FROM            = 'FYPro <hello@fypro.com.ng>'
-const LIST_UNSUB      = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>'
+const BASE_URL   = 'https://fypro.com.ng'
+const FROM       = 'FYPro <hello@fypro.com.ng>'
+const LIST_UNSUB = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>'
+
+type EmailType = 'welcome' | 'defense_nudge' | 'urgency_reminder'
 
 const SUBJECTS: Record<EmailType, string> = {
   welcome:          'Welcome to FYPro — validate your topic now',
   defense_nudge:    'Have you met your AI examiners yet?',
   urgency_reminder: 'Defense checklist — where do you stand?',
+}
+
+const STYLES = `
+  <style>
+    body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
+    .box { background:#fff; border-radius:12px; padding:40px; max-width:560px; margin:32px auto; }
+    h1 { font-size:22px; font-weight:700; color:#0D1B2A; margin:0 0 16px; }
+    p { font-size:15px; line-height:1.7; color:#374151; margin:0 0 24px; }
+    .item { font-size:15px; line-height:1.7; color:#374151; margin:0 0 10px; padding-left:8px; }
+    .btn-green { display:inline-block; background:#16A34A; color:#fff; border-radius:8px; padding:12px 24px; font-size:15px; font-weight:600; text-decoration:none; }
+    .btn-blue  { display:inline-block; background:#0066FF; color:#fff; border-radius:8px; padding:12px 24px; font-size:15px; font-weight:600; text-decoration:none; }
+    hr { border:none; border-top:1px solid #E5E7EB; margin:24px 0; }
+    .foot { font-size:12px; color:#9CA3AF; line-height:1.6; }
+    .foot a { color:#6B7280; }
+  </style>
+`
+
+function footer(baseUrl: string) {
+  return `
+    <hr>
+    <p class="foot">
+      You're receiving this because you signed up for FYPro.<br>
+      FYPro · Lagos, Nigeria<br>
+      <a href="${baseUrl}/account/email-preferences">Manage email preferences</a>
+    </p>
+  `
+}
+
+function renderHtml(type: EmailType, name: string, baseUrl: string): string {
+  const firstName = name ? name.split(' ')[0] : 'there'
+
+  if (type === 'welcome') {
+    return `<!DOCTYPE html><html><head>${STYLES}</head><body>
+      <div class="box">
+        <h1>Welcome to FYPro, ${firstName}</h1>
+        <p>You've just joined thousands of Nigerian final year students who are taking their
+        project seriously. Your next step is simple — paste your topic idea into our Topic
+        Validator and find out if it's defensible before your supervisor ever sees it.</p>
+        <a href="${baseUrl}/app/topic-validator" class="btn-green">Validate your topic now</a>
+        ${footer(baseUrl)}
+      </div>
+    </body></html>`
+  }
+
+  if (type === 'defense_nudge') {
+    return `<!DOCTYPE html><html><head>${STYLES}</head><body>
+      <div class="box">
+        <h1>Have you met your examiners yet, ${firstName}?</h1>
+        <p>Most students walk into their defense never having practiced out loud. FYPro's
+        Defense Simulator puts you in front of three AI examiners — a methodologist, a
+        subject expert, and an external examiner — who push back on your work exactly the
+        way the real panel will. Find out where you're weak before it matters.</p>
+        <a href="${baseUrl}/app/defense" class="btn-blue">Try a Defense Simulation</a>
+        ${footer(baseUrl)}
+      </div>
+    </body></html>`
+  }
+
+  // urgency_reminder
+  return `<!DOCTYPE html><html><head>${STYLES}</head><body>
+    <div class="box">
+      <h1>Defense checklist, ${firstName} — are you ready?</h1>
+      <p>A week in and the clock is moving. Run through this before you do anything else:</p>
+      <p class="item">☐ &nbsp; Topic locked and validated?</p>
+      <p class="item">☐ &nbsp; Methodology chosen and defensible?</p>
+      <p class="item">☐ &nbsp; Project PDF uploaded for review?</p>
+      <p class="item">☐ &nbsp; Defense Simulator score 7 or above?</p>
+      <p style="margin-top:16px">If any box is unchecked, open your dashboard and work through it.
+      Your panel will not go easy on gaps.</p>
+      <a href="${baseUrl}/dashboard" class="btn-green">Open my dashboard</a>
+      ${footer(baseUrl)}
+    </div>
+  </body></html>`
 }
 
 export default async function handler(req: any, res: any) {
@@ -43,7 +117,7 @@ export default async function handler(req: any, res: any) {
   let status: 'sent' | 'failed' = 'sent'
 
   try {
-    const html = await renderTemplate(emailType, { name: name ?? '', baseUrl: BASE_URL })
+    const html = renderHtml(emailType, name ?? '', BASE_URL)
 
     const { data, error } = await resend.emails.send({
       from:    FROM,
@@ -57,7 +131,6 @@ export default async function handler(req: any, res: any) {
     resendId = data?.id ?? null
   } catch (err) {
     status = 'failed'
-    // Log metadata only — no email address, no HTML body
     console.error('[send-nurture-email] Resend failed', {
       userId,
       emailType,
@@ -73,11 +146,9 @@ export default async function handler(req: any, res: any) {
       status,
     })
   } catch (dbErr: any) {
-    // 23505 = unique_violation: this user already received this email type
     if (dbErr?.code === '23505') {
       return res.status(200).json({ ok: true, alreadySent: true })
     }
-    // Log but don't crash the response — send may have succeeded
     console.error('[send-nurture-email] email_log insert failed', { userId, emailType })
   }
 
