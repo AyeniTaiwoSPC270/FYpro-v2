@@ -81,7 +81,7 @@ export const roadmap: RoadmapItem[] = [
     status: 'coming_soon',
     title: 'Supervisor Dashboard',
     description:
-      'Supervisors track their students' structured progress without reading draft chapters. Built for the institutional model launching in v3.',
+      "Supervisors track their students' structured progress without reading draft chapters. Built for the institutional model launching in v3.",
     targetWindow: 'Q4 2026',
   },
 ];
