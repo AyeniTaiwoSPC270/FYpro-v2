@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
-import { renderTemplate, EmailType } from '../src/emails/render'
+import { renderTemplate, EmailType } from './_emails/render'
 
 const BASE_URL        = 'https://fypro.vercel.app'
 const FROM            = 'FYPro <hello@fypro.com.ng>'
