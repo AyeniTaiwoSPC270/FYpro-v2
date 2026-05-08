@@ -25,6 +25,7 @@ import NotFound from './pages/NotFound'
 import AppShell from './features/shell/AppShell'
 import SupervisorPrep from './features/supervisorPrep/SupervisorPrep'
 import AdminHealth from './pages/admin/Health'
+import ChangelogPage from './pages/changelog/ChangelogPage'
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
 
           {/* App entry — splash + onboarding */}
           <Route path="/start" element={<SplashOnboarding />} />

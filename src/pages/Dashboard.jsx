@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, Fragment } from 'react'
 import PaymentIssueModal from '../components/PaymentIssueModal'
+import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useApp } from '../context/AppContext'
@@ -1514,6 +1515,7 @@ export default function Dashboard() {
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={() => setSidebarOpen(o => !o)} />
+        <AnnouncementBanner />
 
         <main
           className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"

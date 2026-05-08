@@ -1162,7 +1162,7 @@ function Footer() {
           <div>
             <div className="text-[0.78rem] font-bold text-white tracking-[0.05em] uppercase mb-4">About</div>
             <ul className="list-none flex flex-col gap-[9px]">
-              {[['About FYPro', '/about'], ['Contact', '/contact']].map(([label, href]) => (
+              {[['About FYPro', '/about'], ['Contact', '/contact'], ["What's new", '/changelog']].map(([label, href]) => (
                 <li key={label}><a href={href} className="text-[0.84rem] text-white/65 hover:text-white transition-colors duration-150 no-underline">{label}</a></li>
               ))}
             </ul>
