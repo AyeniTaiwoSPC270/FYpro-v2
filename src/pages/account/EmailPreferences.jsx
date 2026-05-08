@@ -90,7 +90,7 @@ export default function EmailPreferences() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setLoading(false); return }
 
       const { data } = await supabase
         .from('email_preferences')
@@ -112,7 +112,7 @@ export default function EmailPreferences() {
     load()
   }, [])
 
-  async function persist(updated) {
+  async function persist(updated, previous) {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
@@ -134,7 +134,7 @@ export default function EmailPreferences() {
 
     if (error) {
       showToast('Failed to save. Please try again.', 'error')
-      setPrefs(prefs) // revert optimistic update
+      setPrefs(previous)
     } else {
       showToast('Preferences saved')
     }
@@ -142,9 +142,10 @@ export default function EmailPreferences() {
   }
 
   function toggle(field) {
+    const previous = prefs
     const updated = { ...prefs, [field]: !prefs[field] }
     setPrefs(updated)   // optimistic
-    persist(updated)
+    persist(updated, previous)
   }
 
   const isUnsubscribed = prefs.unsubscribed_all
