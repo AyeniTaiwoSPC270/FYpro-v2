@@ -11,6 +11,8 @@ import { supabase } from '../lib/supabase'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import Footer from '../components/Footer'
+import OnboardingNudge from '../components/onboarding/OnboardingNudge'
+import { useOnboardingState } from '../hooks/useOnboardingState'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -1459,6 +1461,8 @@ export default function Dashboard() {
     toastTimer.current = setTimeout(() => setToastVisible(false), 3000)
   }
 
+  const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
+
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
 
@@ -1526,6 +1530,21 @@ export default function Dashboard() {
             backgroundSize: '28px 28px',
           }}
         >
+          <AnimatePresence>
+            {!nudgeLoading && showNudge && (
+              <motion.div
+                key="onboarding-nudge"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{ overflow: 'hidden' }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <OnboardingNudge onDismiss={dismiss} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {completedCount === 0 ? (
             /* FIX 1 — New user welcome state */
             <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>

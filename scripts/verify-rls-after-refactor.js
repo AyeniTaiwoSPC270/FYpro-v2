@@ -28,6 +28,7 @@ const TABLES = [
   'defense_turns',
   'payments',
   'daily_usage',
+  'user_onboarding',
 ]
 
 let failed = false
