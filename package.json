@@ -22,7 +22,9 @@
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1",
-    "resend": "^6.12.2"
+    "resend": "^6.12.2",
+    "@react-email/components": "^0.0.36",
+    "@react-email/render": "^1.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
