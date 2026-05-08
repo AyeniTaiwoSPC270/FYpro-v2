@@ -10,6 +10,7 @@ import { downloadProgressReport } from '../utils/generateReport'
 import { supabase } from '../lib/supabase'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
+import Footer from '../components/Footer'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -1625,6 +1626,7 @@ export default function Dashboard() {
         isOpen={showPaymentIssueModal}
         onClose={() => setShowPaymentIssueModal(false)}
       />
+      <Footer />
     </div>
   )
 }

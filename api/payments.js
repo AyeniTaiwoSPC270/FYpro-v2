@@ -1,8 +1,12 @@
-import { randomBytes } from 'crypto';
+import crypto, { randomBytes } from 'crypto';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
 import { Resend } from 'resend';
+
+// bodyParser disabled so the webhook handler can access the raw body for HMAC.
+// Non-webhook actions parse the body manually below.
+export const config = { api: { bodyParser: false } };
 
 if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Missing env var: PAYSTACK_SECRET_KEY');
 
@@ -13,6 +17,14 @@ const PLAN_DISPLAY_NAMES = {
   defense_pack:  'Defense Pack',
   project_reset: 'Project Reset',
 };
+
+async function getRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
 
 async function sendReceiptEmail(toEmail, plan, amount, reference) {
   const planDisplay = PLAN_DISPLAY_NAMES[plan] || plan;
@@ -56,7 +68,58 @@ function generateReference(userId) {
   return `FYP_${userId}_${Date.now()}_${rand}`;
 }
 
-// action: "check-status" — reads reference from query string
+// ─── Webhook ──────────────────────────────────────────────────────────────────
+
+async function handleWebhook(req, res, rawBody) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const signature = req.headers['x-paystack-signature'];
+  if (!signature) {
+    console.warn('[webhook] missing signature header from', req.headers['x-forwarded-for']);
+    return res.status(400).json({ error: 'Missing signature' });
+  }
+
+  const computed = crypto
+    .createHmac('sha512', process.env.PAYSTACK_SECRET_KEY)
+    .update(rawBody)
+    .digest('hex');
+
+  const sigBuf  = Buffer.from(signature, 'hex');
+  const compBuf = Buffer.from(computed, 'hex');
+  if (sigBuf.length !== compBuf.length || !crypto.timingSafeEqual(sigBuf, compBuf)) {
+    console.warn('[webhook] invalid signature from', req.headers['x-forwarded-for']);
+    return res.status(400).json({ error: 'Invalid signature' });
+  }
+
+  const event = JSON.parse(rawBody.toString('utf8'));
+
+  switch (event.event) {
+    case 'charge.success': {
+      try {
+        const result = await creditUser({
+          reference:          event.data.reference,
+          paystackAmountKobo: event.data.amount,
+          paystackStatus:     event.data.status,
+          paystackCurrency:   event.data.currency,
+          source:             'webhook',
+        });
+        return res.status(200).json({ received: true, status: result.status });
+      } catch (err) {
+        if (err.code === 'KNOWN_REJECTION') {
+          console.warn('[webhook] known rejection', { reference: event.data.reference, reason: err.message });
+          return res.status(200).json({ received: true, rejected: err.message });
+        }
+        console.error('[webhook] creditUser failed', { reference: event.data.reference, message: err.message });
+        return res.status(500).json({ error: 'Internal error' });
+      }
+    }
+    default:
+      return res.status(200).json({ received: true, ignored: event.event });
+  }
+}
+
+// ─── Payment actions ──────────────────────────────────────────────────────────
+
 async function handleCheckStatus(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -76,16 +139,13 @@ async function handleCheckStatus(req, res) {
     .eq('user_id', user.id)
     .single();
 
-  if (error || !data) {
-    return res.status(200).json({ status: 'not_found' });
-  }
+  if (error || !data) return res.status(200).json({ status: 'not_found' });
 
   return res.status(200).json({
     status: data.status === 'success' ? 'success' : 'pending',
   });
 }
 
-// action: "initiate" — reads tier from body; userId/email derived from verified JWT
 async function handleInitiate(req, res) {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -95,9 +155,7 @@ async function handleInitiate(req, res) {
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
     const { tier } = req.body || {};
-    if (!tier) {
-      return res.status(400).json({ error: 'Missing required field: tier' });
-    }
+    if (!tier) return res.status(400).json({ error: 'Missing required field: tier' });
 
     let amountKobo;
     try {
@@ -111,11 +169,11 @@ async function handleInitiate(req, res) {
     const { error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
-        user_id:             user.id,
+        user_id:            user.id,
         tier,
-        amount_kobo:         amountKobo,
-        paystack_reference:  reference,
-        status:              'pending',
+        amount_kobo:        amountKobo,
+        paystack_reference: reference,
+        status:             'pending',
       });
 
     if (insertError) {
@@ -135,7 +193,6 @@ async function handleInitiate(req, res) {
   }
 }
 
-// action: "verify" — reads reference from body
 async function handleVerify(req, res) {
   const { reference } = req.body || {};
   if (!reference || typeof reference !== 'string' || !reference.trim()) {
@@ -207,22 +264,44 @@ async function handleVerify(req, res) {
   }
 }
 
+// ─── Main handler ─────────────────────────────────────────────────────────────
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const action = req.query.action || (req.body && req.body.action);
-
-  if (!action) {
-    return res.status(400).json({ error: 'Missing action parameter' });
+  let rawBody;
+  try {
+    rawBody = await getRawBody(req);
+  } catch (err) {
+    console.error('[payments] failed to read body', err.message);
+    return res.status(400).json({ error: 'Bad request' });
   }
 
-  if (action === 'check-status') {
-    return handleCheckStatus(req, res);
+  // Paystack webhook — detected by signature header, not action param
+  if (req.headers['x-paystack-signature']) {
+    return handleWebhook(req, res, rawBody);
   }
+
+  // All other actions — parse body manually (bodyParser is disabled globally)
+  if (rawBody.length > 0) {
+    try {
+      req.body = JSON.parse(rawBody.toString('utf8'));
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  } else {
+    req.body = {};
+  }
+
+  const action = req.query.action || req.body.action;
+
+  if (!action) return res.status(400).json({ error: 'Missing action parameter' });
+
+  if (action === 'check-status') return handleCheckStatus(req, res);
   if (action === 'initiate') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     return handleInitiate(req, res);
