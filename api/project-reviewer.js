@@ -76,13 +76,13 @@ const handler = async (req, res) => {
     // Applies to string content only (TXT/DOCX). PDF base64 blocks are not strings
     // and are bounded upstream by the 4 MB file size check in the frontend.
     const CHAR_LIMIT = 6000;
-    const TRUNCATION_NOTICE = ‘[Document truncated for review — upload individual chapters for more detailed feedback]’;
+    const TRUNCATION_NOTICE = '[Document truncated for review — upload individual chapters for more detailed feedback]';
     let truncationWarning = null;
 
     const messages = (rawMessages || []).map(msg => {
-      if (typeof msg.content === ‘string’ && msg.content.length > CHAR_LIMIT) {
+      if (typeof msg.content === 'string' && msg.content.length > CHAR_LIMIT) {
         truncationWarning = TRUNCATION_NOTICE;
-        return { ...msg, content: msg.content.slice(0, CHAR_LIMIT) + ‘\n\n’ + TRUNCATION_NOTICE };
+        return { ...msg, content: msg.content.slice(0, CHAR_LIMIT) + '\n\n' + TRUNCATION_NOTICE };
       }
       return msg;
     });
