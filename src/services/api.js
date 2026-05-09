@@ -267,6 +267,10 @@ async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
     throw err;
   }
 
+  if (raw._truncationWarning) {
+    parsed._truncationWarning = raw._truncationWarning;
+  }
+
   return parsed;
 }
 

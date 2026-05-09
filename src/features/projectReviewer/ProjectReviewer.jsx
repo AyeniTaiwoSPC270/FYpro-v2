@@ -224,6 +224,7 @@ export default function ProjectReviewer() {
   const [reviewData, setReviewData]   = useState(savedData || null)
   const [selectedFile, setSelectedFile] = useState(null)
   const [error, setError]             = useState(null)
+  const [truncationWarning, setTruncationWarning] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isDragging, setIsDragging]   = useState(false)
 
@@ -273,6 +274,7 @@ export default function ProjectReviewer() {
 
   function handleFileSelect(file) {
     setError(null)
+    setTruncationWarning(null)
     const ext = (file.name || '').split('.').pop().toLowerCase()
     if (!['pdf', 'docx', 'txt'].includes(ext)) {
       setError('Unsupported file type. Please upload a PDF, Word (.docx), or plain text (.txt) file.')
@@ -387,6 +389,7 @@ export default function ProjectReviewer() {
         return
       }
 
+      setTruncationWarning(data._truncationWarning || null)
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
@@ -543,6 +546,14 @@ export default function ProjectReviewer() {
       >
         {reviewData && (
           <>
+            {/* Truncation warning — shown when the uploaded document was trimmed server-side */}
+            {truncationWarning && (
+              <div className="pr-truncation-warning" role="note">
+                <span className="pr-truncation-icon" aria-hidden="true">⚠</span>
+                {truncationWarning}
+              </div>
+            )}
+
             {/* Grade block */}
             <div id="pr-grade-block" className="pr-grade-block">
               <div className="pr-grade-badge" data-grade={gradeSlug}>

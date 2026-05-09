@@ -15,15 +15,8 @@ export function useOnboardingState(): UseOnboardingStateReturn {
   useEffect(() => {
     let cancelled = false
 
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (cancelled || !user) {
-        setLoading(false)
-        return
-      }
-
-      const row = await fetchOrCreateOnboardingRow(user.id)
+    async function load(userId: string) {
+      const row = await fetchOrCreateOnboardingRow(userId)
       if (cancelled) return
 
       setLoading(false)
@@ -35,8 +28,28 @@ export function useOnboardingState(): UseOnboardingStateReturn {
       }
     }
 
-    load()
-    return () => { cancelled = true }
+    // Subscribe to auth state changes so the hook fires correctly on fresh
+    // signup redirects, where the component may mount before the JWT exchange
+    // completes and getUser() would return null.
+    // INITIAL_SESSION fires immediately with the current session (or null).
+    // SIGNED_IN fires after a successful email-verification redirect.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session?.user) {
+        setLoading(true)
+        load(session.user.id)
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        // No session at all — stop loading.
+        setLoading(false)
+      } else if (event === 'SIGNED_OUT') {
+        setShowNudge(false)
+        setLoading(false)
+      }
+    })
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   const dismiss = useCallback(async () => {

@@ -164,7 +164,7 @@ CREATE TABLE public.project_steps (
                     'topic_validator', 'chapter_architect', 'literature_map',
                     'abstract_generator', 'methodology_advisor', 'instrument_builder',
                     'writing_planner', 'project_reviewer', 'red_flag_detector',
-                    'supervisor_email', 'meeting_prep'
+                    'supervisor_email', 'meeting_prep', 'defense_prep'
                   )),
   result_json     JSONB NOT NULL,            -- the step's output
   input_summary   TEXT,                       -- what the student provided

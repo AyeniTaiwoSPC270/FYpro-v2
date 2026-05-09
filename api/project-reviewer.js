@@ -66,10 +66,27 @@ const handler = async (req, res) => {
   try {
     const {
       system,
-      messages,
+      messages: rawMessages,
       max_tokens = 2000,
       model = 'claude-sonnet-4-6',
     } = req.body || {};
+
+    // ── Token pre-check: truncate oversized text content ─────────────────────
+    const WORD_LIMIT = 4000;
+    let truncationWarning = null;
+
+    const messages = (rawMessages || []).map(msg => {
+      if (typeof msg.content === 'string') {
+        const words = msg.content.trim().split(/\s+/);
+        if (words.length > WORD_LIMIT) {
+          truncationWarning =
+            "Your document is large — we’ve analysed the first section. " +
+            "For best results upload 15 pages or fewer at a time.";
+          return { ...msg, content: words.slice(0, WORD_LIMIT).join(' ') };
+        }
+      }
+      return msg;
+    });
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -87,6 +104,11 @@ const handler = async (req, res) => {
     if (data.usage) {
       trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     }
+
+    if (truncationWarning) {
+      data._truncationWarning = truncationWarning;
+    }
+
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[project-reviewer] error:', err.message);
