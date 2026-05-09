@@ -1,5 +1,7 @@
 // Rate limiting via Upstash Redis — enforces per-user and per-IP daily caps.
-// Uses sliding window algorithm: a burst at 23:59 does not reset the counter at 00:00.
+// User limiter uses a fixed calendar-day key (user_id:YYYY-MM-DD UTC) so the
+// counter resets at midnight UTC regardless of when in the day requests were made.
+// IP limiter uses a sliding window — less critical to reset exactly at midnight.
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -29,12 +31,20 @@ export function extractUserId(req) {
 }
 
 /**
+ * Returns today's date as a UTC string — used to scope per-user rate limit keys
+ * so the counter resets at midnight UTC each calendar day.
+ */
+function utcDateKey() {
+  return new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+}
+
+/**
  * rateLimitCheck — call at the top of any serverless handler.
  *
  * @param {object} req    — Vercel request object
  * @param {object} limits — { userDay, ipDay, prefix }
- *   userDay: max requests per authenticated user per calendar day
- *   ipDay:   max requests per IP per calendar day
+ *   userDay: max requests per authenticated user per calendar day (UTC midnight reset)
+ *   ipDay:   max requests per IP per sliding 24-hour window
  *   prefix:  short string that scopes the Redis keys (e.g. 'claude', 'defense')
  * @returns {{ allowed: boolean, reason: string }}
  */
@@ -47,7 +57,7 @@ export async function rateLimitCheck(req, limits) {
 
   const userId = extractUserId(req);
 
-  // IP check — applies to all requests (authenticated or not)
+  // IP check — sliding window, applies to all requests (authenticated or not)
   const ipLimiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(ipDay, '1 d'),
@@ -59,17 +69,19 @@ export async function rateLimitCheck(req, limits) {
     return { allowed: false, reason: 'Rate limit exceeded. Try again tomorrow.' };
   }
 
-  // User check — applies only when a JWT is present
+  // User check — fixed calendar-day key resets at UTC midnight.
+  // Key: userId:YYYY-MM-DD — each new day gets a fresh Redis entry.
   if (userId) {
     const userLimiter = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(userDay, '1 d'),
+      limiter: Ratelimit.fixedWindow(userDay, '1 d'),
       prefix: `rl:user:${prefix}`,
     });
 
-    const userResult = await userLimiter.limit(userId);
+    const dateKey = `${userId}:${utcDateKey()}`;
+    const userResult = await userLimiter.limit(dateKey);
     if (!userResult.success) {
-      return { allowed: false, reason: 'Rate limit exceeded. Try again tomorrow.' };
+      return { allowed: false, reason: 'Daily limit reached. Your allowance resets at midnight UTC.' };
     }
   }
 
