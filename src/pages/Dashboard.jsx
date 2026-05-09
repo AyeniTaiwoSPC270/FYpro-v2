@@ -418,6 +418,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const { features } = usePaidFeatures()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
 
+  const [notifications, setNotifications] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef(null)
 
@@ -1473,8 +1474,6 @@ export default function Dashboard() {
 
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
-
-  const notifications = []
 
   const completedCount = state.stepsCompleted.filter(Boolean).length
   // FIX 1 — activeStepId: state.currentStep is 0-indexed count; step IDs are 1-indexed
