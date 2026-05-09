@@ -29,6 +29,7 @@ export async function downloadCertificate(defenseSessionId: string): Promise<voi
   })
 
   if (!res.ok) {
+    if (res.status === 429) throw new Error('Please wait a moment before downloading again.')
     let data: { error?: string; message?: string } = {}
     try { data = await res.json() } catch { /* ignore */ }
     throw new Error(data.error || data.message || 'Failed to generate certificate')

@@ -53,6 +53,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
       })
 
       if (!res.ok) {
+        if (res.status === 429) throw new Error('Please wait a moment before sharing again.')
         let data = {}
         try { data = await res.json() } catch { /* ignore */ }
         throw new Error(data.error || data.message || 'Failed to generate certificate')
