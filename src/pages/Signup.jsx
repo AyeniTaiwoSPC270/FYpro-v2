@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
+import { getStoredRef, callTrackReferral } from '../lib/referral'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -237,6 +238,11 @@ export default function Signup() {
         setAuthError(data.error || 'Sign up failed. Please try again.')
       } else {
         setSuccess(true)
+        // Fire-and-forget referral tracking — never block the signup UX
+        const refCode = getStoredRef()
+        if (refCode) {
+          callTrackReferral(form.email.trim().toLowerCase(), refCode).catch(() => {})
+        }
       }
     } catch {
       setAuthError('Connection failed. Check your internet and try again.')

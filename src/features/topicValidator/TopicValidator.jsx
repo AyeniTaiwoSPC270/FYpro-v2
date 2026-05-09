@@ -8,6 +8,7 @@ import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
+import { callCreditReferral } from '../../lib/referral'
 
 function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -155,11 +156,17 @@ export default function TopicValidator() {
 
     if (!finalTopic) return
 
+    // Capture before completeStep flips stepsCompleted[0] to true
+    const isFirstCompletion = !state.stepsCompleted[0]
+
     // Update AppContext + localStorage cache
     completeStep(0, { validatedTopic: finalTopic })
     // Persist to Supabase (fire-and-forget; errors handled inside saveStep)
     saveStep('topic_validator', { ...data, refined_topic: finalTopic }, topic.trim())
-    markStepComplete('topic_validator')
+    // Await markStepComplete so user_progress row exists before credit endpoint checks it
+    markStepComplete('topic_validator').then(() => {
+      if (isFirstCompletion) callCreditReferral().catch(() => {})
+    })
     showToast('Topic validated ✓')
   }
 

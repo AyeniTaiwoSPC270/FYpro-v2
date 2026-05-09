@@ -29,6 +29,7 @@ import ChangelogPage from './pages/changelog/ChangelogPage'
 import RoadmapPage from './pages/roadmap/RoadmapPage'
 import EmailPreferences from './pages/account/EmailPreferences'
 import MyCertificates from './pages/account/MyCertificates'
+import MyReferrals from './pages/account/MyReferrals'
 
 export default function App() {
   return (
@@ -78,6 +79,9 @@ export default function App() {
 
           {/* My Certificates */}
           <Route path="/account/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
+
+          {/* My Referrals */}
+          <Route path="/account/referrals" element={<ProtectedRoute><MyReferrals /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin/health" element={<AdminHealth />} />

@@ -8,6 +8,7 @@ import {
   useAnimate,
 } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import ReferralCapture from '../components/onboarding/ReferralCapture'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -1226,6 +1227,7 @@ export default function LandingPage() {
       <FinalCTA />
       <Footer />
       <BackToTop />
+      <ReferralCapture />
     </motion.div>
   )
 }

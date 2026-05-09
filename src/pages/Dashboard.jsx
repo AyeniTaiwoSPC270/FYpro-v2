@@ -603,6 +603,13 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
                   >
                     <span className="font-sans text-[0.82rem] text-slate-300">Settings</span>
                   </Link>
+                  <Link
+                    to="/account/referrals"
+                    onClick={() => setAvatarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-slate-300">My Referrals</span>
+                  </Link>
                   <div className="mx-3 my-1 h-px" style={{ background: 'var(--border-color)' }} />
                   <button
                     onClick={handleLogout}
