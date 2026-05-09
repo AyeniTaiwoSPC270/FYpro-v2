@@ -473,9 +473,13 @@ function usePaystackCheckout() {
           stopPolling()
           setVerifying(true)
           try {
+            const { data: { session: vSession } } = await supabase.auth.getSession()
             const vRes = await fetch('/api/payments?action=verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(vSession?.access_token ? { Authorization: `Bearer ${vSession.access_token}` } : {}),
+              },
               body: JSON.stringify({ reference: transaction.reference }),
             })
             const vData = await vRes.json()
@@ -494,9 +498,13 @@ function usePaystackCheckout() {
         onClose: () => {
           stopPolling()
           if (pendingReference) {
+            supabase.auth.getSession().then(({ data: { session: cSession } }) => {
             fetch('/api/payments?action=verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(cSession?.access_token ? { Authorization: `Bearer ${cSession.access_token}` } : {}),
+              },
               body: JSON.stringify({ reference: pendingReference })
             })
             .then(res => res.json())
@@ -508,6 +516,7 @@ function usePaystackCheckout() {
             .catch(() => {
               // silent - webhook handles it
             })
+            }) // end getSession().then
           }
         },
       })

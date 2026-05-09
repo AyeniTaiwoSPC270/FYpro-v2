@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 const CONFETTI_COLORS = [
   '#3B82F6', '#60A5FA', '#22C55E', '#4ADE80',
@@ -59,9 +60,13 @@ export default function PaymentSuccess() {
     let cancelled = false
     async function verifyPayment() {
       try {
+        const { data: { session } } = await supabase.auth.getSession()
         const res = await fetch('/api/payments?action=verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({ reference }),
         })
         const data = await res.json()
