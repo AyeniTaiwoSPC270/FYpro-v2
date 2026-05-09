@@ -7877,6 +7877,11 @@ html, body {
   --text-primary:        #F8FAFC;
   --text-secondary:      #94A3B8;
   --text-muted:          #475569;
+  /* Bridge old --color-text-* vars to dark theme */
+  --color-text-primary:   rgba(255, 255, 255, 0.90);
+  --color-text-secondary: rgba(255, 255, 255, 0.58);
+  --color-text-muted:     rgba(255, 255, 255, 0.32);
+  --color-text-faint:     rgba(255, 255, 255, 0.18);
   --accent:              #2563EB;
   --accent-hover:        #3B82F6;
   --card-shadow:         0 0 0 transparent;
@@ -7907,6 +7912,11 @@ html, body {
   --text-primary:        #0F172A;
   --text-secondary:      #475569;
   --text-muted:          #94A3B8;
+  /* Bridge old --color-text-* vars to light theme */
+  --color-text-primary:   #0D1B2A;
+  --color-text-secondary: rgba(13, 27, 42, 0.6);
+  --color-text-muted:     rgba(13, 27, 42, 0.4);
+  --color-text-faint:     rgba(13, 27, 42, 0.25);
   --accent:              #2563EB;
   --accent-hover:        #1D4ED8;
   --card-shadow:         0 1px 3px rgba(0,0,0,0.08);
