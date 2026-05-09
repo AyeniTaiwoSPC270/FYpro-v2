@@ -183,6 +183,7 @@ function buildCardElement(score, scoreLabel, topic) {
       // Score label badge
       scoreLabel && React.createElement('div', {
         style: {
+          display: 'flex',
           padding: '10px 36px',
           borderRadius: 999,
           border: `2px solid ${color}66`,

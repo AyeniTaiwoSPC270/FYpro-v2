@@ -229,14 +229,10 @@ export default async function handler(req, res) {
   let cert = existing;
 
   if (!cert) {
-    // Fetch full name — must be set before a certificate can be issued
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!profile?.full_name) {
+    // Full name is stored in auth user metadata by the profile page
+    // (supabase.auth.updateUser({ data: { full_name } }))
+    const fullName = user.user_metadata?.full_name || '';
+    if (!fullName) {
       return res.status(422).json({
         error:   'NAME_REQUIRED',
         message: 'Please set your full name in your profile before downloading your certificate.',
@@ -261,7 +257,7 @@ export default async function handler(req, res) {
         defense_session_id: defense_session_id,
         score:              sessionScore,
         topic_title:        topicTitle,
-        recipient_name:     profile.full_name,
+        recipient_name:     fullName,
       })
       .select()
       .single();
