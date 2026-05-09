@@ -7,6 +7,7 @@ import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
 import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
+import { resetUser } from '../lib/analytics'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -435,6 +436,7 @@ export default function Profile() {
     }
 
     await supabase.auth.signOut()
+    resetUser()
     clearState()
     navigate('/')
   }

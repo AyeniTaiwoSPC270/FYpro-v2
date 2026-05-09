@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { downloadProgressReport } from '../utils/generateReport'
 import { supabase } from '../lib/supabase'
+import { resetUser } from '../lib/analytics'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import Footer from '../components/Footer'
@@ -425,6 +426,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   async function handleLogout() {
     setAvatarOpen(false)
     await supabase.auth.signOut()
+    resetUser()
     const cachedOnboarded = localStorage.getItem('isOnboarded')
     const cachedRunCounts = localStorage.getItem('fypro_run_counts')
     localStorage.clear()

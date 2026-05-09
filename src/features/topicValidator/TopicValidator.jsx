@@ -9,6 +9,7 @@ import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { callCreditReferral } from '../../lib/referral'
+import { trackEvent } from '../../lib/analytics'
 
 function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -104,6 +105,7 @@ export default function TopicValidator() {
     const allowed = await checkAndRecord('topic_validator', features)
     if (!allowed) return
 
+    trackEvent('workflow_step_started', { step: 'topic_validator' })
     set({ roughTopic: trimmed })
     setBtnDisabled(true)
     setHasSubmitted(true)

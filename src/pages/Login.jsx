@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
+import { trackEvent, identifyUser } from '../lib/analytics'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -137,7 +138,7 @@ export default function Login() {
         setAuthError('Invalid email or password')
         return
       }
-      const { error: sessionError } = await supabase.auth.setSession({
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token:  data.access_token,
         refresh_token: data.refresh_token,
       })
@@ -145,6 +146,10 @@ export default function Login() {
         setAuthError('Invalid email or password')
         return
       }
+      if (sessionData?.user) {
+        identifyUser(sessionData.user.id, { email: form.email })
+      }
+      trackEvent('logged_in')
       const returnUrl = searchParams.get('returnUrl')
       navigate(returnUrl?.startsWith('/') ? returnUrl : '/dashboard', { replace: true })
     } catch {

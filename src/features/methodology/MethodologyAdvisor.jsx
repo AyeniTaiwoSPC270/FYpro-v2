@@ -8,6 +8,7 @@ import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
+import { trackEvent } from '../../lib/analytics'
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
@@ -77,6 +78,7 @@ export default function MethodologyAdvisor() {
     const allowed = await checkAndRecord('methodology_advisor', features)
     if (!allowed) return
 
+    trackEvent('workflow_step_started', { step: 'methodology_advisor' })
     setMaBtnDisabled(true)
     setMaHasSubmitted(true)
     setMaSection('loading')

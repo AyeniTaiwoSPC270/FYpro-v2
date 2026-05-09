@@ -1,5 +1,13 @@
 import './lib/sentry'
+import posthog from 'posthog-js'
 import * as Sentry from "@sentry/react";
+
+if (import.meta.env.VITE_POSTHOG_KEY) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: 'https://app.posthog.com',
+    capture_pageview: false,
+  })
+}
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

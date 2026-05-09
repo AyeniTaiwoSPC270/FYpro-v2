@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { supabase } from '../lib/supabase'
+import { resetUser } from '../lib/analytics'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -443,6 +444,7 @@ export default function Settings() {
 
   async function handleSignOutEverywhere() {
     await supabase.auth.signOut({ scope: 'global' })
+    resetUser()
     clearState()
     navigate('/')
   }

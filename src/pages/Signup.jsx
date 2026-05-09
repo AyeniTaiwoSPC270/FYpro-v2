@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { getStoredRef, callTrackReferral } from '../lib/referral'
+import { trackEvent } from '../lib/analytics'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -238,6 +239,7 @@ export default function Signup() {
         setAuthError(data.error || 'Sign up failed. Please try again.')
       } else {
         setSuccess(true)
+        trackEvent('signed_up', { university: form.university })
         // Fire-and-forget referral tracking — never block the signup UX
         const refCode = getStoredRef()
         if (refCode) {

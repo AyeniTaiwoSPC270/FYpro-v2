@@ -23,6 +23,7 @@ import { fetchShareCardBlob, shareToWhatsApp } from '../../lib/shareCard'
 import DefenseShareCard from '../../components/share/DefenseShareCard'
 import CertificateUnlock from '../../components/defense/CertificateUnlock'
 import { supabase } from '../../lib/supabase'
+import { trackEvent } from '../../lib/analytics'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -727,6 +728,8 @@ export default function DefensePrep() {
   async function enterDefenseMode() {
     const allowed = await checkAndRecord('defense_simulator', features)
     if (!allowed) return
+    trackEvent('workflow_step_started', { step: 'defense_prep' })
+    trackEvent('defense_simulator_started')
     defenseMessagesRef.current = []
     panelSystemRef.current     = null
     questionCountRef.current   = 0
@@ -939,6 +942,12 @@ export default function DefensePrep() {
 
     try {
       const data = await panelSummary(panelSystemRef.current, defenseMessagesRef.current)
+
+      trackEvent('defense_simulator_completed', {
+        score:   data.overall_score,
+        examiner: 'three_examiner_panel',
+        passed:  (data.overall_score ?? 0) >= 7,
+      })
 
       // Mark complete without advancing currentStep past the last step
       const newCompleted = [...state.stepsCompleted]

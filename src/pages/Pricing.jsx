@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { trackEvent } from '../lib/analytics'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -484,6 +485,7 @@ function usePaystackCheckout() {
             })
             const vData = await vRes.json()
             if (vRes.ok && (vData.status === 'success' || vData.status === 'already_processed')) {
+              trackEvent('payment_completed', { tier })
               navigate(`/payment-success?reference=${transaction.reference}`)
             } else {
               setPayError('Payment received but verification failed. Please contact support.')
@@ -520,6 +522,7 @@ function usePaystackCheckout() {
           }
         },
       })
+      trackEvent('payment_initiated', { tier })
       handler.openIframe()
 
       pollingIntervalRef.current = setInterval(async () => {

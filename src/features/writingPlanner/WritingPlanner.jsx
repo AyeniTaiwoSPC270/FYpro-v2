@@ -8,6 +8,7 @@ import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
+import { trackEvent } from '../../lib/analytics'
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -81,6 +82,7 @@ export default function WritingPlanner() {
     const allowed = await checkAndRecord('writing_planner', features)
     if (!allowed) return
 
+    trackEvent('workflow_step_started', { step: 'writing_planner' })
     setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
