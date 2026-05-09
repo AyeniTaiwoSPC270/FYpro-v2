@@ -15,41 +15,21 @@ import { ImageResponse }    from '@vercel/og'
 import { supabaseAdmin }    from './_lib/supabase-admin.js'
 import { rateLimitCheck }   from './_lib/rate-limit.js'
 import * as React           from 'react'
-import fs                   from 'fs'
-import path                 from 'path'
-import { fileURLToPath }    from 'url'
-
-// __dirname is not available in ES modules — derive it from import.meta.url
-const __filename = fileURLToPath(import.meta.url)
-const __dirname  = path.dirname(__filename)
 
 const WIDTH  = 1080
 const HEIGHT = 1350
 
-// Load logo at cold start. Try process.cwd()/public first (works when Vercel
-// sets cwd to the project root), then fall back to __dirname/../public (works
-// when cwd is the function directory). Logs which path succeeded or failed.
-function loadLogoBase64() {
-  const candidates = [
-    path.join(process.cwd(), 'public', 'fypro-logo.png'),
-    path.join(__dirname, '..', 'public', 'fypro-logo.png'),
-  ]
-
-  for (const logoPath of candidates) {
-    try {
-      const bytes = fs.readFileSync(logoPath)
-      console.log('[share-card] logo loaded from:', logoPath)
-      return `data:image/png;base64,${bytes.toString('base64')}`
-    } catch (err) {
-      console.log('[share-card] logo not found at:', logoPath, '—', err.message)
-    }
+async function fetchLogoBase64() {
+  try {
+    const res = await fetch('https://fypro.com.ng/fypro-logo.png')
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const buf = await res.arrayBuffer()
+    return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`
+  } catch (err) {
+    console.log('[share-card] logo fetch failed:', err.message)
+    return null
   }
-
-  console.log('[share-card] logo not found at any candidate path — using text fallback')
-  return null
 }
-
-const logoBase64 = loadLogoBase64()
 
 function scoreColor(score) {
   if (score == null) return '#3B82F6'
@@ -338,9 +318,11 @@ export default async function handler(req, res) {
   const studentName = user.user_metadata?.full_name || ''
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
+  const logoSrc = await fetchLogoBase64()
+
   try {
     const imgResponse = new ImageResponse(
-      buildCardElement(score, scoreLabel, topic, studentName, logoBase64),
+      buildCardElement(score, scoreLabel, topic, studentName, logoSrc),
       { width: WIDTH, height: HEIGHT }
     )
 
