@@ -1,7 +1,10 @@
 {
   "functions": {
-    "api/claude.js": {
+    "api/ai.js": {
       "maxDuration": 60
+    },
+    "api/share-card.js": {
+      "maxDuration": 30
     },
     "api/speak.js": {
       "maxDuration": 30
