@@ -6,10 +6,8 @@
 //   1. Score is read from defense_sessions.total_score — never from the request body.
 //   2. defense_certificates INSERT is service_role only (RLS).
 //   3. Cross-user access blocked: .eq('user_id', user.id) on every DB fetch.
-//   4. Rate limited: 20 downloads per user per day.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
-import { rateLimitCheck } from './_lib/rate-limit.js';
 import { jsPDF } from 'jspdf';
 import fs from 'fs';
 import path from 'path';
@@ -225,10 +223,6 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
-
-  // Rate limit: 20 certificate downloads per user per day
-  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 60, prefix: 'certificate' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   // Auth
   const authHeader = req.headers.authorization || '';
