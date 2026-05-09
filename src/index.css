@@ -4926,6 +4926,12 @@ html, body {
 .app-content .lm-btn-copy       { border-color: rgba(22,163,74,0.25) !important; color: #4ADE80 !important; }
 .app-content .lm-companion-badge { background: rgba(22,163,74,0.12) !important; color: #4ADE80 !important; border-color: rgba(22,163,74,0.25) !important; }
 .app-content .lm-source-access  { color: rgba(255,255,255,0.65) !important; }
+.app-content .lm-paper-title    { color: rgba(255,255,255,0.92) !important; }
+.app-content .lm-paper-meta     { color: rgba(255,255,255,0.65) !important; }
+.app-content .lm-citation-item  { color: rgba(255,255,255,0.82) !important; background: rgba(255,255,255,0.04) !important; }
+.app-content .lm-citation-author { color: rgba(255,255,255,0.90) !important; }
+.app-content .lm-citation-year  { color: rgba(255,255,255,0.60) !important; }
+.app-content .lm-citation-title { color: rgba(255,255,255,0.80) !important; }
 
 /* ── 20. PR project reviewer sub-elements ──────────────────────── */
 .app-content .pr-watermark           { color: rgba(0,102,255,0.05) !important; }
