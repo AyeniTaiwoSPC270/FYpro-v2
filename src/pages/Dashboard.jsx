@@ -1474,6 +1474,8 @@ export default function Dashboard() {
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
 
+  const notifications = []
+
   const completedCount = state.stepsCompleted.filter(Boolean).length
   // FIX 1 — activeStepId: state.currentStep is 0-indexed count; step IDs are 1-indexed
   const activeStepId = Math.min(6, (state.currentStep ?? 0) + 1)
