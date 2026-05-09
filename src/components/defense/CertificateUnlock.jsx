@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { downloadCertificate } from '../../lib/certificate'
-import { fetchShareCardBlob, shareToWhatsApp } from '../../lib/shareCard'
+import { supabase } from '../../lib/supabase'
 
 const SCORE_THRESHOLD = 7
 
@@ -35,14 +35,54 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
   }
 
   async function handleShare() {
-    if (!projectId) { setShareError('Project ID not available.'); return }
+    if (!defenseSessionId) { setShareError('Session ID unavailable — please try again.'); return }
     setShareError(null)
     setShareLoading(true)
     try {
-      const blob = await fetchShareCardBlob(projectId)
-      await shareToWhatsApp(blob, score, topic || '')
+      // Fetch the certificate PDF (same endpoint as download, auth required)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Not authenticated')
+
+      const res = await fetch('/api/certificate', {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ defense_session_id: defenseSessionId }),
+      })
+
+      if (!res.ok) {
+        let data = {}
+        try { data = await res.json() } catch { /* ignore */ }
+        throw new Error(data.error || data.message || 'Failed to generate certificate')
+      }
+
+      const blob = await res.blob()
+      const pdfFile = new File([blob], 'FYPro-Certificate.pdf', { type: 'application/pdf' })
+      const truncatedTopic = (topic || 'my research project').slice(0, 60)
+      const shareText = `I just earned a FYPro Defense Readiness Certificate for ${truncatedTopic}. Score: ${score}/10. Try it: https://fypro.com.ng`
+
+      // Try Web Share API with PDF file attached
+      if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: 'FYPro Defense Certificate',
+            text:  shareText,
+          })
+          return
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') return
+          // Other errors fall through to text-only fallback
+        }
+      }
+
+      // Fallback: WhatsApp text-only (no file — Web Share not supported or failed)
+      const encoded = encodeURIComponent(shareText)
+      window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener,noreferrer')
     } catch (err) {
-      setShareError(err.message || 'Failed to generate share card.')
+      setShareError(err.message || 'Failed to share certificate.')
     } finally {
       setShareLoading(false)
     }
@@ -195,7 +235,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
           <button
             onClick={handleShare}
             disabled={shareLoading}
-            aria-label="Share result to WhatsApp"
+            aria-label="Share certificate to WhatsApp"
             style={{
               padding:    '10px 18px',
               borderRadius: 10,
