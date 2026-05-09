@@ -1606,6 +1606,7 @@ export default function Dashboard() {
             </>
           )}
         </main>
+        <Footer />
       </div>
 
       {/* FIX 5 — New Session confirmation modal */}
@@ -1647,7 +1648,6 @@ export default function Dashboard() {
         isOpen={showPaymentIssueModal}
         onClose={() => setShowPaymentIssueModal(false)}
       />
-      <Footer />
     </div>
   )
 }
