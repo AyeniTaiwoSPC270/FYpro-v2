@@ -2,6 +2,8 @@
 // The actual PNG is rendered server-side by /api/share-card.
 // This component shows the same design in-app for preview.
 
+import fyproLogo from '../../assets/fypro-logo.png'
+
 function scoreColor(score) {
   if (score == null) return '#3B82F6'
   if (score >= 8) return '#16A34A'
@@ -52,7 +54,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
         position: 'relative',
       }}>
         <img
-          src="/fypro-logo.png"
+          src={fyproLogo}
           alt="FYPro"
           style={{ height: 22, width: 'auto', objectFit: 'contain', display: 'block' }}
         />
