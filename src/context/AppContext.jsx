@@ -99,8 +99,10 @@ export function AppProvider({ children }) {
       const metaOnboarded = user.user_metadata?.onboarding_completed === true
       if (metaOnboarded || (profile.faculty && profile.department)) {
         localStorage.setItem('isOnboarded', 'true')
+        setOnboardedFlag(true)
       } else {
         localStorage.removeItem('isOnboarded')
+        setOnboardedFlag(false)
       }
 
       setState(prev => ({
