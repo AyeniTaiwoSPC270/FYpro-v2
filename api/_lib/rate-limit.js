@@ -1,7 +1,5 @@
 // Rate limiting via Upstash Redis — enforces per-user and per-IP daily caps.
-// User limiter uses a fixed calendar-day key (user_id:YYYY-MM-DD UTC) so the
-// counter resets at midnight UTC regardless of when in the day requests were made.
-// IP limiter uses a sliding window — less critical to reset exactly at midnight.
+// Both limiters use fixedWindow so counters reset at UTC midnight each calendar day.
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -44,7 +42,7 @@ function utcDateKey() {
  * @param {object} req    — Vercel request object
  * @param {object} limits — { userDay, ipDay, prefix }
  *   userDay: max requests per authenticated user per calendar day (UTC midnight reset)
- *   ipDay:   max requests per IP per sliding 24-hour window
+ *   ipDay:   max requests per IP per calendar day (UTC midnight reset)
  *   prefix:  short string that scopes the Redis keys (e.g. 'claude', 'defense')
  * @returns {{ allowed: boolean, reason: string }}
  */
@@ -57,10 +55,10 @@ export async function rateLimitCheck(req, limits) {
 
   const userId = extractUserId(req);
 
-  // IP check — sliding window, applies to all requests (authenticated or not)
+  // IP check — fixed calendar-day window, applies to all requests (authenticated or not)
   const ipLimiter = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(ipDay, '1 d'),
+    limiter: Ratelimit.fixedWindow(ipDay, '1 d'),
     prefix: `rl:ip:${prefix}`,
   });
 
