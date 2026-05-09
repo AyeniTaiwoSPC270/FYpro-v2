@@ -11,31 +11,45 @@
 //   Landscape OG (1200×630) looks like a link preview; 9:16 stories require full-screen.
 //   4:5 portrait renders full-width in WhatsApp chat with no letterboxing.
 
-import { ImageResponse } from '@vercel/og'
-import { supabaseAdmin }  from './_lib/supabase-admin.js'
-import { rateLimitCheck } from './_lib/rate-limit.js'
-import * as React from 'react'
+import { ImageResponse }    from '@vercel/og'
+import { supabaseAdmin }    from './_lib/supabase-admin.js'
+import { rateLimitCheck }   from './_lib/rate-limit.js'
+import * as React           from 'react'
+import fs                   from 'fs'
+import path                 from 'path'
+import { fileURLToPath }    from 'url'
+
+// __dirname is not available in ES modules — derive it from import.meta.url
+const __filename = fileURLToPath(import.meta.url)
+const __dirname  = path.dirname(__filename)
 
 const WIDTH  = 1080
 const HEIGHT = 1350
 
-// Load logo from the public URL at request time.
-// fs.readFileSync is unreliable for Vercel API functions — public/ assets are
-// served from the CDN and are not on the function's filesystem. Fetching from
-// the request's own origin is reliable in both local dev and production.
-async function fetchLogoBase64(req) {
-  try {
-    const proto  = req.headers['x-forwarded-proto'] || 'http'
-    const host   = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000'
-    const url    = `${proto}://${host}/fypro-logo.png`
-    const resp   = await fetch(url)
-    if (!resp.ok) return null
-    const buf    = await resp.arrayBuffer()
-    return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`
-  } catch {
-    return null
+// Load logo at cold start. Try process.cwd()/public first (works when Vercel
+// sets cwd to the project root), then fall back to __dirname/../public (works
+// when cwd is the function directory). Logs which path succeeded or failed.
+function loadLogoBase64() {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'fypro-logo.png'),
+    path.join(__dirname, '..', 'public', 'fypro-logo.png'),
+  ]
+
+  for (const logoPath of candidates) {
+    try {
+      const bytes = fs.readFileSync(logoPath)
+      console.log('[share-card] logo loaded from:', logoPath)
+      return `data:image/png;base64,${bytes.toString('base64')}`
+    } catch (err) {
+      console.log('[share-card] logo not found at:', logoPath, '—', err.message)
+    }
   }
+
+  console.log('[share-card] logo not found at any candidate path — using text fallback')
+  return null
 }
+
+const logoBase64 = loadLogoBase64()
 
 function scoreColor(score) {
   if (score == null) return '#3B82F6'
@@ -322,9 +336,6 @@ export default async function handler(req, res) {
   const scoreLabel  = result.panel_score_label ?? null
   const topic       = project?.title || result.topic || ''
   const studentName = user.user_metadata?.full_name || ''
-
-  // Fetch logo from public URL — fs is not reliable for public/ assets in Vercel
-  const logoBase64 = await fetchLogoBase64(req)
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
   try {
