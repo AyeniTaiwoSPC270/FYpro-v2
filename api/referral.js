@@ -115,7 +115,6 @@ async function handleTrack(req, res) {
 
   if (creditErr) console.error('[referral/track] credit insert:', creditErr.message);
 
-  console.log('[referral/track] tracked', { referrer: referrer.id, referred: newUser.id });
   return res.status(200).json({ tracked: true });
 }
 
@@ -162,8 +161,6 @@ async function handleCredit(req, res) {
     console.error('[referral/credit] qualify:', qualifyErr.message);
     return res.status(500).json({ error: 'Database error' });
   }
-
-  console.log('[referral/credit] qualified', { referral: referral.id });
 
   const { count } = await supabaseAdmin
     .from('referrals')
@@ -213,5 +210,4 @@ async function awardMilestoneCredit(referrerId, triggerReferralId, now) {
       .in('id', toReward.map((r) => r.id));
   }
 
-  console.log('[referral/credit] milestone awarded', { referrer: referrerId });
 }

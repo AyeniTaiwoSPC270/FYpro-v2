@@ -16,8 +16,6 @@ const TTL_BY_STEP = {
 };
 
 async function handleGeneral(req, res) {
-  console.log('[ai/general] incoming — method:', req.method, '| body:', JSON.stringify(req.body));
-
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
@@ -47,14 +45,8 @@ async function handleGeneral(req, res) {
 
     const cached = await getCached(cacheKey);
     if (cached) {
-      console.log('[ai/general] cache HIT for step:', prefix);
       const userId = extractUserId(req);
-      try {
-        const result = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId });
-        console.log('[ai/general] response_times insert (cache-hit):', JSON.stringify(result));
-      } catch (err) {
-        console.error('[ai/general] response_times insert failed (cache-hit):', err.message);
-      }
+      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }).catch(() => {});
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cached);
     }
@@ -72,19 +64,13 @@ async function handleGeneral(req, res) {
     });
 
     const data = await response.json();
-    console.log('[ai/general] Anthropic status:', response.status);
     if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
 
     if (response.ok) {
       const duration = Date.now() - start;
       const userId   = extractUserId(req);
-      try {
-        const result = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId });
-        console.log('[ai/general] response_times insert:', JSON.stringify(result));
-      } catch (err) {
-        console.error('[ai/general] response_times insert failed:', err.message);
-      }
-      setCached(cacheKey, data, ttl);
+      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId }).catch(() => {});
+      setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
 
     res.setHeader('X-Cache', 'MISS');

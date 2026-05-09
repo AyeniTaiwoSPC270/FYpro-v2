@@ -158,7 +158,17 @@ export function AppProvider({ children }) {
     state.chapterStructure,
   ])
 
-  const isOnboarded = localStorage.getItem('isOnboarded') === 'true' || Boolean(state.faculty && state.department)
+  const [_onboardedFlag, setOnboardedFlag] = useState(() => localStorage.getItem('isOnboarded') === 'true')
+
+  useEffect(() => {
+    function syncOnboarded(e) {
+      if (e.key === 'isOnboarded') setOnboardedFlag(e.newValue === 'true')
+    }
+    window.addEventListener('storage', syncOnboarded)
+    return () => window.removeEventListener('storage', syncOnboarded)
+  }, [])
+
+  const isOnboarded = _onboardedFlag || Boolean(state.faculty && state.department)
 
   return (
     <AppContext.Provider value={{

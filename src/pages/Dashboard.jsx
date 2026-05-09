@@ -436,8 +436,6 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
     navigate('/')
   }
 
-  // FIX 3 — notifications state: dot only shows when there are unread notifications
-  const [notifications, setNotifications] = useState([]) // eslint-disable-line no-unused-vars
 
   useEffect(() => {
     function handleOutside(e) {
@@ -1461,6 +1459,8 @@ export default function Dashboard() {
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const toastTimer = useRef(null)
+
+  useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   function showToastMessage(msg) {
     setToastMsg(msg)

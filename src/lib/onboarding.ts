@@ -48,6 +48,7 @@ export async function fetchOrCreateOnboardingRow(userId: string): Promise<Onboar
       return null
     }
 
+    // Any other fetch error is unexpected
     console.error('[onboarding] fetch failed:', error.message)
     return null
   } catch (err) {

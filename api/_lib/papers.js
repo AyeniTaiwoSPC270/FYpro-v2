@@ -30,12 +30,10 @@ async function fetchWithCache(topic, count, feature, ttl) {
 
   const cached = await getCached(cacheKey);
   if (cached) {
-    console.log(`[papers] cache HIT | feature:${feature} | normalized:"${normalized.slice(0, 60)}"`);
     return { ...cached, cache_hit: true };
   }
 
   const result = await fetchPapers(topic, normalized, count);
-  console.log(`[papers] cache MISS | feature:${feature} | source:${result.papers[0]?.source || 'none'} | count:${result.papers.length} | sparse:${result.sparse_literature}`);
 
   if (result.papers.length > 0) {
     setCached(cacheKey, result, ttl); // fire and forget

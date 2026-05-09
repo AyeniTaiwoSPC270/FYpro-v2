@@ -111,15 +111,14 @@ async function handleHealth(req, res) {
 
 // action: "alert-check"
 // Called hourly by external cron. Requires X-Cron-Secret header matching CRON_SECRET env var.
-// Logs a console.error when spend crosses 80% of daily cap.
-// TODO (Week 5): replace console.error with Resend API email to ADMIN_EMAIL.
+// Sends a Resend email alert when spend crosses 80% of daily cap.
 async function handleAlertCheck(req, res) {
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const provided = req.headers['x-cron-secret'];
-    if (!provided || provided !== cronSecret) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Fail closed: if CRON_SECRET is not configured, reject all requests.
+  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
+  const provided = req.headers['x-cron-secret'];
+  if (!provided || provided !== cronSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
     const today     = new Date().toISOString().slice(0, 10);
@@ -138,11 +137,22 @@ async function handleAlertCheck(req, res) {
     const alertTriggered = spent >= threshold;
 
     if (alertTriggered) {
-      const pct = ((spent / cap) * 100).toFixed(1);
-      console.error(
-        `[alert-check] SPEND ALERT — $${spent.toFixed(4)} of $${cap.toFixed(2)} cap used (${pct}%). ` +
-        `Requests: ${data?.request_count || 0}. Admin: ${process.env.ADMIN_EMAIL}`
-      );
+      const pct       = ((spent / cap) * 100).toFixed(1);
+      const reqCount  = data?.request_count || 0;
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from:    'FYPro Alerts <hello@fypro.com.ng>',
+            to:      adminEmail,
+            subject: `[FYPro] Spend alert — ${pct}% of daily cap used`,
+            html: `<p>Daily spend: <strong>$${spent.toFixed(4)}</strong> of $${cap.toFixed(2)} cap (${pct}%).<br>Requests today: ${reqCount}.</p>`,
+          });
+        } catch (emailErr) {
+          console.error('[admin/alert-check] email send failed:', emailErr.message);
+        }
+      }
     }
 
     return res.status(200).json({

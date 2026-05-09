@@ -351,8 +351,9 @@ export default function AdminHealth() {
   const [page, setPage]       = useState(0)
   const [actionState, setActionState] = useState({}) // { userId: 'pending' | 'banned' | 'deleted' | 'error' }
 
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
-  const isAdmin    = !!adminEmail && user?.email === adminEmail
+  // isAdmin is determined by the server response (403 = not admin), not by comparing
+  // against a client-side email value that would be visible in the JS bundle.
+  const [isAdmin, setIsAdmin] = useState(true) // optimistic; server corrects to false on 403
 
   const loadData = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
@@ -361,7 +362,10 @@ export default function AdminHealth() {
     return fetch('/api/admin?action=dashboard', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
-      .then(r => r.json())
+      .then(r => {
+        if (r.status === 403) { setIsAdmin(false); throw new Error('Forbidden') }
+        return r.json()
+      })
       .then(d => { if (d.error) throw new Error(d.error); setData(d); setLastUpdated(new Date()) })
       .catch(e => setError(e.message))
       .finally(() => setFetching(false))

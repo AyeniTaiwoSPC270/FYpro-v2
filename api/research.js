@@ -36,13 +36,11 @@ async function handleValidate(req, res) {
 
     const claudeCached = await getCached(claudeKey);
     if (claudeCached) {
-      console.log('[research/validate] Claude cache HIT');
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(claudeCached);
     }
 
     const papersResult = await fetchPapersForValidation(topic.trim());
-    console.log(`[research/validate] papers | count:${papersResult.papers.length} | status:${papersResult.status} | cache:${papersResult.cache_hit}`);
 
     let augmentedSystem = system ?? '';
     if (papersResult.papers.length > 0) {
@@ -75,7 +73,6 @@ async function handleValidate(req, res) {
     });
 
     const data = await response.json();
-    console.log('[research/validate] Anthropic status:', response.status);
     if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
 
     if (response.ok && data.content?.[0]?.text) {
@@ -127,13 +124,11 @@ async function handleLitMap(req, res) {
 
     const claudeCached = await getCached(claudeKey);
     if (claudeCached) {
-      console.log('[research/lit-map] Claude cache HIT');
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(claudeCached);
     }
 
     const papersResult = await fetchPapersForLitMap(topic.trim());
-    console.log(`[research/lit-map] papers | count:${papersResult.papers.length} | status:${papersResult.status} | sparse:${papersResult.sparse_literature} | cache:${papersResult.cache_hit}`);
 
     let papers = papersResult.papers;
     if (papersResult.sparse_literature) {
@@ -175,7 +170,6 @@ async function handleLitMap(req, res) {
     });
 
     const data = await response.json();
-    console.log('[research/lit-map] Anthropic status:', response.status);
     if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
 
     if (response.ok && data.content?.[0]?.text) {

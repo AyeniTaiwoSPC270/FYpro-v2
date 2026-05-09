@@ -83,7 +83,8 @@ function ExaminerBubble({ examiner, text, onReady }) {
       }
     }, 45)
     return () => clearInterval(id)
-  }, []) // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- animation runs once on mount; examiner and onReady are props that don't change after initial render
+  }, [])
 
   return (
     <div className="dp-examiner-wrap">
@@ -103,7 +104,8 @@ function ScoreBadges({ scores }) {
       setTimeout(() => setVisible(prev => [...prev, i]), 150 + i * 300)
     )
     return () => timers.forEach(clearTimeout)
-  }, []) // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stagger animation runs once on mount; scores identity doesn't change after the component is rendered
+  }, [])
 
   return (
     <>
@@ -137,7 +139,8 @@ function ScoreReasonings({ scores }) {
       setTimeout(() => setVisible(prev => [...prev, i]), 350 + i * 300)
     )
     return () => timers.forEach(clearTimeout)
-  }, []) // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stagger animation runs once on mount; scores identity doesn't change after the component is rendered
+  }, [])
 
   return (
     <>
@@ -466,7 +469,8 @@ export default function DefensePrep() {
           setDefenseSessionId(data.id)
         }
       })
-  }, [section, projectId]) // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase is a module-level singleton; only section and projectId are true dependencies
+  }, [section, projectId])
 
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {

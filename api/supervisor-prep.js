@@ -49,7 +49,6 @@ const handler = async (req, res) => {
 
     const cached = await getCached(cacheKey);
     if (cached) {
-      console.log('[supervisor-prep] cache HIT');
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cached);
     }
@@ -71,8 +70,6 @@ const handler = async (req, res) => {
     });
 
     const data = await response.json();
-    console.log('[supervisor-prep] Anthropic status:', response.status);
-
     if (data.usage) {
       trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
     }

@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from './_lib/supabase-admin.js'
 
 const BASE_URL   = 'https://fypro.com.ng'
 const FROM       = 'FYPro <hello@fypro.com.ng>'
@@ -127,10 +127,6 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing required fields: userId, emailType, email' })
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   let resendId: string | null = null
@@ -159,7 +155,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    await supabase.from('email_log').insert({
+    await supabaseAdmin.from('email_log').insert({
       user_id:    userId,
       email_type: emailType,
       resend_id:  resendId,

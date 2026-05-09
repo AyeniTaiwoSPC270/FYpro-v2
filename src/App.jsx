@@ -84,7 +84,7 @@ export default function App() {
           <Route path="/account/referrals" element={<ProtectedRoute><MyReferrals /></ProtectedRoute>} />
 
           {/* Admin */}
-          <Route path="/admin/health" element={<AdminHealth />} />
+          <Route path="/admin/health" element={<ProtectedRoute><AdminHealth /></ProtectedRoute>} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />

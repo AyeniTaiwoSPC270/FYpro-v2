@@ -25,18 +25,6 @@ const STEPS = [
   'Defence Prep',
 ]
 
-// Placeholder for steps not yet converted to React
-function StepPlaceholder({ stepIndex }) {
-  return (
-    <div className="placeholder-card">
-      <p className="placeholder-card__step-label">
-        Step {stepIndex + 1}: {STEPS[stepIndex]}
-      </p>
-      <p className="placeholder-card__subtitle">Coming soon.</p>
-    </div>
-  )
-}
-
 const STEP_COMPONENTS = [
   TopicValidator,
   ChapterArchitect,
@@ -134,7 +122,8 @@ export default function AppShell() {
     } else if (!document.referrer.includes('/app')) {
       navigate('/dashboard', { replace: true })
     }
-  }, [isLoading]) // eslint-disable-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; re-running on every render would cause redirect loops
+  }, [isLoading])
 
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)

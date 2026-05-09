@@ -547,6 +547,14 @@ const AI_ERRORS = {
   unauthorized: 'Your session has expired. Please sign in again.',
 };
 
+// Module-level handle for the rate-limit countdown so components can clear it on unmount.
+let _rateLimitInterval = null;
+
+export function clearRateLimitCountdown() {
+  clearInterval(_rateLimitInterval);
+  _rateLimitInterval = null;
+}
+
 export function handleApiError(err, showError) {
   if (err.code === 'NO_PAPERS') {
     showError(err.message);
@@ -561,12 +569,14 @@ export function handleApiError(err, showError) {
     return true;
   }
   if (err.code === 'RATE_LIMIT') {
+    clearInterval(_rateLimitInterval);
     let secs = 60;
     showError(AI_ERRORS.rate_limit.replace('{secs}', secs));
-    const interval = setInterval(() => {
+    _rateLimitInterval = setInterval(() => {
       secs--;
       if (secs <= 0) {
-        clearInterval(interval);
+        clearInterval(_rateLimitInterval);
+        _rateLimitInterval = null;
         showError(null);
       } else {
         showError(AI_ERRORS.rate_limit.replace('{secs}', secs));

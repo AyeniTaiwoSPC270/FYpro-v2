@@ -270,7 +270,6 @@ export default function Login() {
             whileHover={{ borderColor: 'rgba(100,116,139,0.65)', y: -1 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              console.log('[TODO] Google OAuth — requires auth provider (Firebase/Supabase)')
               showToast('Google sign-in coming soon')
             }}
             className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"

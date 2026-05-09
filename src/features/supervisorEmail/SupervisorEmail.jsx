@@ -79,7 +79,6 @@ export default function SupervisorEmail({ onClose }) {
     setEmailData(data)
     setSection('result')
 
-    console.log('[SupervisorEmail] saveStep reached', data)
     try {
       await saveStep('supervisor_email', data)
     } catch (err) {

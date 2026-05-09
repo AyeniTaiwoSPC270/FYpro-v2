@@ -113,7 +113,8 @@
       "PowerShell(New-Item *)",
       "Bash(supabase functions *)",
       "Bash(node -e \"const fs=require\\('fs'\\);const b=fs.readFileSync\\('public/fypro-logo.png'\\).toString\\('base64'\\);console.log\\('data:image/png;base64,'+b\\)\")",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(Sort-Object)"
     ]
   }
 }

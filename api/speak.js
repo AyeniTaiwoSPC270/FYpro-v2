@@ -4,6 +4,8 @@
 // audio as an audio/mpeg blob. The EL_API_KEY is read from the Vercel
 // environment and never exposed to the browser.
 
+import { rateLimitCheck } from './_lib/rate-limit.js';
+
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
   methodologist:   'YGoleLoJg5Y6OkKrTexX',
@@ -34,18 +36,18 @@ function resolveVoiceKey(examiner) {
  * the audio/mpeg binary back to the browser as a blob response.
  */
 const handler = async (req, res) => {
-  // Log every incoming request so Vercel function logs show what arrived.
-  // Fires even on early returns so failures are always visible in the dashboard.
-  console.log('[speak] incoming — method:', req.method);
-
   // CORS headers — mirrors the pattern used in api/claude.js
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Handle CORS preflight so browsers don't block the POST
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+
+  // Rate limit: 30 TTS calls per user per day, 60 per IP per day
+  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   // Guard: EL_API_KEY must be set in Vercel environment variables.
   // If it is missing the function returns 500 and the frontend falls back to
@@ -68,7 +70,6 @@ const handler = async (req, res) => {
     // Resolve the correct ElevenLabs voice ID for this examiner
     const voiceKey = resolveVoiceKey(examiner);
     const voiceId  = VOICE_IDS[voiceKey];
-    console.log('[speak] voiceKey:', voiceKey, '| voiceId:', voiceId);
 
     // Call the ElevenLabs text-to-speech API.
     // eleven_multilingual_v2 is used because it handles Nigerian English accent

@@ -232,7 +232,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         channelRef.current = null
       }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable memoized refs whose identity never changes; re-running on every render would leak Realtime subscriptions
+  }, [])
 
   const ensureProject = useCallback(async (): Promise<string | null> => {
     if (projectId) return projectId
@@ -253,7 +254,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     }
     subscribeToProject(project.id)
     return project.id
-  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable memoized refs; only projectId is a true dependency
+  }, [projectId])
 
   const saveStep = useCallback(async (
     stepType: string,

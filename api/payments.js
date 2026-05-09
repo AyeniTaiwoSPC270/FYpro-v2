@@ -194,6 +194,12 @@ async function handleInitiate(req, res) {
 }
 
 async function handleVerify(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
   const { reference } = req.body || {};
   if (!reference || typeof reference !== 'string' || !reference.trim()) {
     return res.status(400).json({ error: 'Missing or invalid reference' });
