@@ -54,10 +54,12 @@ export default function AnnouncementBanner() {
           aria-label="Product announcement"
           {...motionProps}
           style={{
-            background: 'linear-gradient(90deg, rgba(0,102,255,0.09) 0%, rgba(0,102,255,0.03) 100%)',
-            borderBottom: '1px solid rgba(0,102,255,0.18)',
+            background: 'linear-gradient(135deg, #0F2235 0%, #0D1B2A 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderLeft: '3px solid #0066FF',
-            padding: '10px 20px 10px 20px',
+            borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 1px 6px rgba(0,0,0,0.2)',
+            padding: '10px 20px',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -78,9 +80,9 @@ export default function AnnouncementBanner() {
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
             <span
               style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 600,
-                fontSize: '0.8rem',
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 400,
+                fontSize: '0.9rem',
                 color: '#FFFFFF',
                 whiteSpace: 'nowrap',
               }}
@@ -90,8 +92,8 @@ export default function AnnouncementBanner() {
             <span
               style={{
                 fontFamily: "'Poppins', sans-serif",
-                fontSize: '0.77rem',
-                color: 'rgba(255,255,255,0.48)',
+                fontSize: '0.875rem',
+                color: 'rgba(255,255,255,0.7)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -116,13 +118,13 @@ export default function AnnouncementBanner() {
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: '0.76rem',
                 fontWeight: 600,
-                color: '#60A5FA',
+                color: '#3B82F6',
                 textDecoration: 'none',
                 whiteSpace: 'nowrap',
                 transition: 'color 0.15s ease',
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#93C5FD' }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#60A5FA' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#60A5FA' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#3B82F6' }}
             >
               View all updates
             </Link>
