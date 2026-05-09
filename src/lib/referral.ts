@@ -52,7 +52,7 @@ export function clearRef(): void {
  */
 export async function callTrackReferral(email: string, refCode: string): Promise<void> {
   try {
-    await fetch('/api/referral/track', {
+    await fetch('/api/referral?action=track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, ref_code: refCode }),
@@ -72,7 +72,7 @@ export async function callCreditReferral(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
-    await fetch('/api/referral/credit', {
+    await fetch('/api/referral?action=credit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
