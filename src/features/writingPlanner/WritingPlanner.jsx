@@ -7,6 +7,7 @@ import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
+import { markStepComplete } from '../../lib/progress'
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -116,6 +117,7 @@ export default function WritingPlanner() {
     if (!data) return
     completeStep(3, { writingPlan: data, submissionDeadline: dateValue })
     saveStep('writing_planner', { ...data, submission_deadline: dateValue }, dateValue)
+    markStepComplete('writing_planner')
     showToast('Writing plan created ✓')
   }
 

@@ -7,6 +7,7 @@ import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
+import { markStepComplete } from '../../lib/progress'
 
 function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -158,6 +159,7 @@ export default function TopicValidator() {
     completeStep(0, { validatedTopic: finalTopic })
     // Persist to Supabase (fire-and-forget; errors handled inside saveStep)
     saveStep('topic_validator', { ...data, refined_topic: finalTopic }, topic.trim())
+    markStepComplete('topic_validator')
     showToast('Topic validated ✓')
   }
 

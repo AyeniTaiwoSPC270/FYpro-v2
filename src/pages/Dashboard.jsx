@@ -13,6 +13,7 @@ import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import Footer from '../components/Footer'
 import OnboardingNudge from '../components/onboarding/OnboardingNudge'
 import { useOnboardingState } from '../hooks/useOnboardingState'
+import BadgeRow from '../components/badges/BadgeRow'
 
 const STEP_DEFS = [
   { id: 1, name: 'Topic Validator',    desc: 'Validated your research topic for feasibility, scope, and originality against your department and level.',              path: '/app' },
@@ -1592,6 +1593,7 @@ export default function Dashboard() {
           ) : (
             /* Returning user — full dashboard */
             <>
+              <BadgeRow />
               <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
               <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
               <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} onPaymentIssue={() => setShowPaymentIssueModal(true)} />

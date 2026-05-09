@@ -7,6 +7,7 @@ import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
+import { markStepComplete } from '../../lib/progress'
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
@@ -118,6 +119,7 @@ export default function MethodologyAdvisor() {
       stepsCompleted: updatedStepsCompleted,
     })
     saveStep('methodology_advisor', { ...maData, chosen_methodology: selectedMethodology })
+    markStepComplete('methodology_advisor')
     showToast('Methodology confirmed ✓')
     setConfirmDone(true)
     setDiVisible(true)
