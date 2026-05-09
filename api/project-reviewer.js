@@ -72,18 +72,17 @@ const handler = async (req, res) => {
     } = req.body || {};
 
     // ── Token pre-check: truncate oversized text content ─────────────────────
-    const WORD_LIMIT = 4000;
+    // 6000 chars ≈ 1500 tokens (4 chars/token) — stays well under the 10k TPM limit.
+    // Applies to string content only (TXT/DOCX). PDF base64 blocks are not strings
+    // and are bounded upstream by the 4 MB file size check in the frontend.
+    const CHAR_LIMIT = 6000;
+    const TRUNCATION_NOTICE = ‘[Document truncated for review — upload individual chapters for more detailed feedback]’;
     let truncationWarning = null;
 
     const messages = (rawMessages || []).map(msg => {
-      if (typeof msg.content === 'string') {
-        const words = msg.content.trim().split(/\s+/);
-        if (words.length > WORD_LIMIT) {
-          truncationWarning =
-            "Your document is large — we’ve analysed the first section. " +
-            "For best results upload 15 pages or fewer at a time.";
-          return { ...msg, content: words.slice(0, WORD_LIMIT).join(' ') };
-        }
+      if (typeof msg.content === ‘string’ && msg.content.length > CHAR_LIMIT) {
+        truncationWarning = TRUNCATION_NOTICE;
+        return { ...msg, content: msg.content.slice(0, CHAR_LIMIT) + ‘\n\n’ + TRUNCATION_NOTICE };
       }
       return msg;
     });
