@@ -467,6 +467,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col items-center text-center"
         >
           <h1 className="font-serif text-3xl leading-none" style={{ color: 'var(--text-primary)' }}>Settings</h1>
           <p className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>

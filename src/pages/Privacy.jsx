@@ -276,12 +276,14 @@ export default function Privacy() {
         <div className="max-w-3xl mx-auto px-6 py-16">
 
           {/* Header */}
-          <span className="font-mono text-xs uppercase tracking-widest text-blue-400">Legal</span>
-          <h1 className="font-serif text-4xl text-white mt-3">Privacy Policy</h1>
-          <p className="font-mono text-xs text-slate-500 mt-2">Last updated: April 25, 2026</p>
-          <p className="text-slate-400 text-base leading-relaxed mt-6">
-            FYPro is committed to protecting your personal data in accordance with the Nigeria Data Protection Act 2023 (NDPA) and the General Application and Implementation Directive (GAID) 2025.
-          </p>
+          <div className="flex flex-col items-center text-center">
+            <span className="font-mono text-xs uppercase tracking-widest text-blue-400">Legal</span>
+            <h1 className="font-serif text-4xl text-white mt-3">Privacy Policy</h1>
+            <p className="font-mono text-xs text-slate-500 mt-2">Last updated: April 25, 2026</p>
+            <p className="text-slate-400 text-base leading-relaxed mt-6">
+              FYPro is committed to protecting your personal data in accordance with the Nigeria Data Protection Act 2023 (NDPA) and the General Application and Implementation Directive (GAID) 2025.
+            </p>
+          </div>
 
           {/* Sections */}
           {SECTIONS.map(({ heading, paras, list, footer }, idx) => (

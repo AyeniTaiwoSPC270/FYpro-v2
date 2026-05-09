@@ -256,12 +256,14 @@ export default function Terms() {
         <div className="max-w-3xl mx-auto px-6 py-16">
 
           {/* Header */}
-          <span className="font-mono text-xs uppercase tracking-widest text-blue-400">Legal</span>
-          <h1 className="font-serif text-4xl text-white mt-3">Terms of Service</h1>
-          <p className="font-mono text-xs text-slate-500 mt-2">Last updated: April 25, 2026</p>
-          <p className="text-slate-400 text-base leading-relaxed mt-6">
-            Please read these terms carefully before using FYPro. By creating an account, you agree to be bound by these terms.
-          </p>
+          <div className="flex flex-col items-center text-center">
+            <span className="font-mono text-xs uppercase tracking-widest text-blue-400">Legal</span>
+            <h1 className="font-serif text-4xl text-white mt-3">Terms of Service</h1>
+            <p className="font-mono text-xs text-slate-500 mt-2">Last updated: April 25, 2026</p>
+            <p className="text-slate-400 text-base leading-relaxed mt-6">
+              Please read these terms carefully before using FYPro. By creating an account, you agree to be bound by these terms.
+            </p>
+          </div>
 
           {/* Sections */}
           {SECTIONS.map(({ heading, paras, list }, idx) => (

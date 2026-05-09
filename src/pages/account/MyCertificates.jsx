@@ -185,7 +185,7 @@ export default function MyCertificates() {
         </Link>
 
         {/* Page header */}
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <h1 style={{
             fontFamily:   "'DM Serif Display', Georgia, serif",
             fontSize:     '2rem',
