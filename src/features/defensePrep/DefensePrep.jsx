@@ -1083,7 +1083,7 @@ export default function DefensePrep() {
       }
       if (msg.type === 'examiner') {
         return `<div style="margin:16px 0;">
-          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:#0066FF;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;">${esc(msg.examiner || 'Examiner')}</div>
+          <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:#4d9fff;letter-spacing:0.8px;margin-bottom:6px;text-transform:uppercase;">${esc(msg.examiner || 'Examiner')}</div>
           <div style="background:#EFF6FF;border-left:3px solid #0066FF;border-radius:0 8px 8px 0;padding:12px 16px;font-family:'Poppins',sans-serif;font-size:13px;color:#1E40AF;line-height:1.6;">${esc(msg.text)}</div>
         </div>`
       }
