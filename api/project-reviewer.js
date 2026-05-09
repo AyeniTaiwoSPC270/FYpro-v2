@@ -66,26 +66,10 @@ const handler = async (req, res) => {
   try {
     const {
       system,
-      messages: rawMessages,
+      messages,
       max_tokens = 2000,
       model = 'claude-sonnet-4-6',
     } = req.body || {};
-
-    // ── Token pre-check: truncate oversized text content ─────────────────────
-    // 2000 chars ≈ 500 tokens (4 chars/token) — leaves room for the system prompt under the 10k TPM limit.
-    // Applies to string content only (TXT/DOCX). PDF base64 blocks are not strings
-    // and are bounded upstream by the 4 MB file size check in the frontend.
-    const CHAR_LIMIT = 2000;
-    const TRUNCATION_NOTICE = '[Document truncated for review — upload individual chapters for more detailed feedback]';
-    let truncationWarning = null;
-
-    const messages = (rawMessages || []).map(msg => {
-      if (typeof msg.content === 'string' && msg.content.length > CHAR_LIMIT) {
-        truncationWarning = TRUNCATION_NOTICE;
-        return { ...msg, content: msg.content.slice(0, CHAR_LIMIT) + '\n\n' + TRUNCATION_NOTICE };
-      }
-      return msg;
-    });
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -102,10 +86,6 @@ const handler = async (req, res) => {
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
       trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
-    }
-
-    if (truncationWarning) {
-      data._truncationWarning = truncationWarning;
     }
 
     return res.status(response.status).json(data);
