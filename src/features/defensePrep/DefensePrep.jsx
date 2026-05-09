@@ -379,7 +379,7 @@ function countWords(text) {
 
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
-  const { saveStep, projectId } = useProjectState()
+  const { saveStep, projectId, ensureProject } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
   const rfOverLimit = isOverLimit('red_flag_detector')
@@ -697,11 +697,14 @@ export default function DefensePrep() {
   async function createDefenseSessionRecord() {
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession()
-      if (!authSession || !projectId) return null
+      if (!authSession) return null
+      // projectId may still be loading; ensureProject() creates or fetches it
+      const pid = projectId || await ensureProject()
+      if (!pid) return null
       const { data } = await supabase
         .from('defense_sessions')
         .insert({
-          project_id:       projectId,
+          project_id:       pid,
           user_id:          authSession.user.id,
           examiner_persona: 'external_examiner',  // three-examiner panel
           status:           'in_progress',
@@ -958,6 +961,35 @@ export default function DefensePrep() {
           .then(({ error }) => {
             if (error) console.warn('[defense] session update failed:', error.message)
           })
+      } else {
+        // Fallback: session row was never created (projectId was null at session start
+        // or the insert failed). Create it directly as completed so the certificate
+        // endpoint can verify the score and the recovery useEffect finds it.
+        const pid = projectId || await ensureProject()
+        if (pid) {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const { data: row, error: rowErr } = await supabase
+              .from('defense_sessions')
+              .insert({
+                project_id:       pid,
+                user_id:          user.id,
+                examiner_persona: 'external_examiner',
+                status:           'completed',
+                total_score:      Math.round(data.panel_score ?? 0),
+                turns_count:      questionCountRef.current,
+                completed_at:     new Date().toISOString(),
+              })
+              .select('id')
+              .single()
+            if (rowErr) {
+              console.warn('[defense] fallback session insert failed:', rowErr.message)
+            } else if (row?.id) {
+              defenseSessionIdRef.current = row.id
+              setDefenseSessionId(row.id)
+            }
+          }
+        }
       }
 
       showToast('Defence session complete ✓')
