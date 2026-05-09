@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 function formatDate(isoDate) {
@@ -10,16 +11,42 @@ function isExternalUrl(href) {
 }
 
 export default function ChangelogEntry({ entry }) {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced) { el.style.opacity = '1'; el.style.transform = 'none'; return }
+
+    const observer = new IntersectionObserver(
+      ([io]) => {
+        if (io.isIntersecting) {
+          el.style.opacity = '1'
+          el.style.transform = 'translateY(0)'
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.08 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <article
+      ref={ref}
+      className="changelog-entry"
       style={{
         background: 'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
         border: '1px solid rgba(255,255,255,0.07)',
-        borderLeft: '3px solid #0066FF',
         borderRadius: 12,
         padding: '22px 24px',
         position: 'relative',
         overflow: 'hidden',
+        opacity: 0,
+        transform: 'translateY(20px)',
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>

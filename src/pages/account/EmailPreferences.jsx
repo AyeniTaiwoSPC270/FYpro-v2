@@ -31,10 +31,10 @@ function ToggleRow({ title, desc, checked, onChange, disabled = false }) {
   return (
     <div className={`flex items-center justify-between gap-4 ${disabled ? 'opacity-50' : ''}`}>
       <div className="flex-1 min-w-0">
-        <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+        <div className="font-sans text-sm font-medium" style={{ color: '#FFFFFF' }}>
           {title}
         </div>
-        <div className="font-sans text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <div className="font-sans text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {desc}
         </div>
       </div>
@@ -57,7 +57,7 @@ function Navbar() {
       <Link
         to="/settings"
         className="font-sans text-sm no-underline transition-opacity hover:opacity-80"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: 'rgba(255,255,255,0.4)' }}
       >
         ← Back to Settings
       </Link>
@@ -75,10 +75,10 @@ const DEFAULTS = {
 }
 
 const cardStyle = {
-  background:   'var(--bg-card)',
+  background:   '#0d1f35',
   borderRadius: '1rem',
-  border:       '1px solid var(--border-color)',
-  boxShadow:    'var(--card-shadow)',
+  border:       '1px solid rgba(255,255,255,0.08)',
+  boxShadow:    '0 4px 20px rgba(0,0,0,0.35)',
 }
 
 export default function EmailPreferences() {
@@ -154,8 +154,8 @@ export default function EmailPreferences() {
     <div
       className="min-h-screen"
       style={{
-        background:          'var(--bg-base)',
-        backgroundImage:     'var(--dot-bg-image)',
+        background:          '#060E18',
+        backgroundImage:     'radial-gradient(circle, rgba(0,102,255,0.05) 1px, transparent 1px)',
         backgroundSize:      '28px 28px',
       }}
     >
@@ -168,10 +168,10 @@ export default function EmailPreferences() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className="font-serif text-3xl leading-none" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-serif text-3xl leading-none" style={{ color: '#FFFFFF' }}>
             Email Preferences
           </h1>
-          <p className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          <p className="font-sans text-sm mt-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
             Control which emails FYPro sends you.
           </p>
         </motion.div>
@@ -192,7 +192,7 @@ export default function EmailPreferences() {
             >
               <div
                 className="font-mono text-xs font-semibold uppercase tracking-wider mb-6"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: 'rgba(255,255,255,0.4)' }}
               >
                 Email Types
               </div>
@@ -205,7 +205,7 @@ export default function EmailPreferences() {
                   onChange={() => toggle('welcome_enabled')}
                   disabled={isUnsubscribed}
                 />
-                <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
+                <div className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
                 <ToggleRow
                   title="Defense Simulator nudge"
                   desc="Sent 3 days after signup — introduces the three-examiner Defense Simulator"
@@ -213,7 +213,7 @@ export default function EmailPreferences() {
                   onChange={() => toggle('defense_nudge_enabled')}
                   disabled={isUnsubscribed}
                 />
-                <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
+                <div className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
                 <ToggleRow
                   title="Urgency reminder"
                   desc="Sent 7 days after signup — defense checklist and dashboard link"
@@ -234,12 +234,12 @@ export default function EmailPreferences() {
                 ...cardStyle,
                 border: isUnsubscribed
                   ? '1px solid rgba(239,68,68,0.3)'
-                  : '1px solid var(--border-color)',
+                  : '1px solid rgba(255,255,255,0.08)',
               }}
             >
               <div
                 className="font-mono text-xs font-semibold uppercase tracking-wider mb-6"
-                style={{ color: 'var(--text-muted)' }}
+                style={{ color: 'rgba(255,255,255,0.4)' }}
               >
                 Global Opt-Out
               </div>
@@ -254,7 +254,7 @@ export default function EmailPreferences() {
             {saving && (
               <div className="mt-4 flex items-center gap-2 justify-center">
                 <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-                <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span className="font-sans text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   Saving…
                 </span>
               </div>

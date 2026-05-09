@@ -1,3 +1,5 @@
+import { useRef, useEffect, useState } from 'react'
+
 function formatDate(isoDate) {
   const d = new Date(isoDate + 'T00:00:00')
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -10,8 +12,38 @@ const BORDER_COLOR = {
 }
 
 export default function RoadmapCard({ item }) {
+  const ref                     = useRef(null)
+  const [visible, setVisible]   = useState(false)
+  const [hovered, setHovered]   = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced) { setVisible(true); return }
+
+    const observer = new IntersectionObserver(
+      ([io]) => {
+        if (io.isIntersecting) {
+          setVisible(true)
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.08 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const glowShadow = hovered && item.status === 'in_progress'
+    ? '0 8px 32px rgba(0,102,255,0.18), 0 2px 8px rgba(0,102,255,0.1)'
+    : undefined
+
   return (
     <article
+      ref={ref}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         background: 'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
         border: '1px solid rgba(255,255,255,0.07)',
@@ -19,6 +51,10 @@ export default function RoadmapCard({ item }) {
         borderRadius: 12,
         padding: '18px 20px',
         position: 'relative',
+        opacity: visible ? 1 : 0,
+        transform: hovered ? 'translateY(-4px)' : visible ? 'translateY(0)' : 'translateY(20px)',
+        transition: 'opacity 0.5s ease, transform 0.2s ease, box-shadow 0.2s ease',
+        boxShadow: glowShadow,
       }}
     >
       <h3

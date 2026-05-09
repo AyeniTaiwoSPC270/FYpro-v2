@@ -50,10 +50,10 @@ function CertRow({ cert, onDownload, downloading }) {
       gridTemplateColumns: '1fr auto',
       gap:           16,
       padding:       '18px 22px',
-      background:    'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+      background:    'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)',
       borderRadius:  12,
-      border:        '1px solid rgba(13,27,42,0.1)',
-      boxShadow:     '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+      border:        '1px solid rgba(255,255,255,0.08)',
+      boxShadow:     '0 4px 20px rgba(0,0,0,0.35)',
       marginBottom:  12,
       animation:     'card-enter 0.4s ease forwards',
     }}>
@@ -65,7 +65,7 @@ function CertRow({ cert, onDownload, downloading }) {
             fontFamily:    "'JetBrains Mono', 'Courier New', monospace",
             fontSize:      '0.68rem',
             fontWeight:    500,
-            color:         'rgba(13,27,42,0.4)',
+            color:         'rgba(255,255,255,0.3)',
             letterSpacing: '0.3px',
           }}>
             {cert.certificate_number}
@@ -75,7 +75,7 @@ function CertRow({ cert, onDownload, downloading }) {
         <p style={{
           fontFamily:  "'DM Serif Display', Georgia, serif",
           fontSize:    '0.95rem',
-          color:       '#0D1B2A',
+          color:       '#FFFFFF',
           lineHeight:  1.4,
           marginBottom: 4,
           overflow:    'hidden',
@@ -88,7 +88,7 @@ function CertRow({ cert, onDownload, downloading }) {
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize:   '0.75rem',
-          color:      'rgba(13,27,42,0.5)',
+          color:      'rgba(255,255,255,0.45)',
           margin:     0,
         }}>
           Issued {formatDate(cert.issued_at)} · {cert.recipient_name}
@@ -160,8 +160,8 @@ export default function MyCertificates() {
   return (
     <div style={{
       minHeight:      '100vh',
-      background:     '#F0F4F8',
-      backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px)',
+      background:     '#060E18',
+      backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.05) 1px, transparent 1px)',
       backgroundSize: '28px 28px',
       padding:        '40px 24px',
     }}>
@@ -176,7 +176,7 @@ export default function MyCertificates() {
             gap:            6,
             fontFamily:     "'Poppins', sans-serif",
             fontSize:       '0.82rem',
-            color:          'rgba(13,27,42,0.5)',
+            color:          'rgba(255,255,255,0.4)',
             textDecoration: 'none',
             marginBottom:   28,
           }}
@@ -190,7 +190,7 @@ export default function MyCertificates() {
             fontFamily:   "'DM Serif Display', Georgia, serif",
             fontSize:     '2rem',
             fontWeight:   400,
-            color:        '#0D1B2A',
+            color:        '#FFFFFF',
             lineHeight:   1.2,
             marginBottom: 8,
           }}>
@@ -199,7 +199,7 @@ export default function MyCertificates() {
           <p style={{
             fontFamily: "'Poppins', sans-serif",
             fontSize:   '0.875rem',
-            color:      'rgba(13,27,42,0.55)',
+            color:      'rgba(255,255,255,0.5)',
             lineHeight: 1.6,
             margin:     0,
           }}>
@@ -215,7 +215,7 @@ export default function MyCertificates() {
             alignItems:    'center',
             gap:           12,
             padding:       48,
-            color:         'rgba(13,27,42,0.4)',
+            color:         'rgba(255,255,255,0.4)',
             fontFamily:    "'Poppins', sans-serif",
             fontSize:      '0.875rem',
           }}>
@@ -250,10 +250,10 @@ export default function MyCertificates() {
         {/* Empty state */}
         {!loading && !fetchError && certs.length === 0 && (
           <div style={{
-            background:   'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+            background:   'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
             borderRadius: 16,
-            border:       '1px solid rgba(13,27,42,0.1)',
-            boxShadow:    '0 4px 24px rgba(0,0,0,0.08)',
+            border:       '1px solid rgba(255,255,255,0.08)',
+            boxShadow:    '0 4px 24px rgba(0,0,0,0.4)',
             padding:      '48px 40px',
             textAlign:    'center',
           }}>
@@ -261,7 +261,7 @@ export default function MyCertificates() {
             <p style={{
               fontFamily:   "'DM Serif Display', Georgia, serif",
               fontSize:     '1.25rem',
-              color:        '#0D1B2A',
+              color:        '#FFFFFF',
               marginBottom: 8,
             }}>
               No certificates yet
@@ -269,7 +269,7 @@ export default function MyCertificates() {
             <p style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize:   '0.875rem',
-              color:      'rgba(13,27,42,0.5)',
+              color:      'rgba(255,255,255,0.45)',
               lineHeight: 1.6,
               maxWidth:   380,
               margin:     '0 auto',
@@ -285,7 +285,7 @@ export default function MyCertificates() {
             <p style={{
               fontFamily:   "'JetBrains Mono', 'Courier New', monospace",
               fontSize:     '0.7rem',
-              color:        'rgba(13,27,42,0.4)',
+              color:        'rgba(255,255,255,0.35)',
               letterSpacing: '0.6px',
               textTransform: 'uppercase',
               marginBottom: 16,

@@ -126,6 +126,22 @@ export default function ChangelogPage() {
           ))}
         </div>
 
+        <style>{`
+          .changelog-entry {
+            border-left: 3px solid #0066FF;
+            transition: opacity 0.5s ease, transform 0.5s ease, border-left-color 0.2s ease;
+          }
+          @media (prefers-reduced-motion: no-preference) {
+            .changelog-entry:hover {
+              animation: cl-border-pulse 1.2s ease infinite;
+            }
+          }
+          @keyframes cl-border-pulse {
+            0%, 100% { border-left-color: #0066FF; }
+            50%       { border-left-color: rgba(0,102,255,0.25); }
+          }
+        `}</style>
+
         {changelog.length === 0 && (
           <p
             style={{

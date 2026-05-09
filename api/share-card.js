@@ -15,9 +15,20 @@ import { ImageResponse } from '@vercel/og'
 import { supabaseAdmin }  from './_lib/supabase-admin.js'
 import { rateLimitCheck } from './_lib/rate-limit.js'
 import * as React from 'react'
+import fs   from 'fs'
+import path from 'path'
 
 const WIDTH  = 1080
 const HEIGHT = 1350
+
+// Load logo once at cold start — same pattern as certificate.js
+let logoBase64 = null
+try {
+  const bytes = fs.readFileSync(path.join(process.cwd(), 'public', 'fypro-logo.png'))
+  logoBase64 = `data:image/png;base64,${bytes.toString('base64')}`
+} catch {
+  // Serverless context may not expose public/ — card falls back to text wordmark
+}
 
 function scoreColor(score) {
   if (score == null) return '#3B82F6'
@@ -31,7 +42,7 @@ function truncate(str, max) {
   return str.length <= max ? str : str.slice(0, max - 1) + '…'
 }
 
-function buildCardElement(score, scoreLabel, topic) {
+function buildCardElement(score, scoreLabel, topic, studentName) {
   const color = scoreColor(score)
   const scoreDisplay = score != null ? String(score) : '?'
 
@@ -41,7 +52,7 @@ function buildCardElement(score, scoreLabel, topic) {
       flexDirection: 'column',
       width: WIDTH,
       height: HEIGHT,
-      background: 'linear-gradient(160deg, #060E18 0%, #0D1B2A 55%, #0F2235 100%)',
+      background: 'linear-gradient(160deg, #060E18 0%, #0a1628 100%)',
       fontFamily: "'Poppins', sans-serif",
       position: 'relative',
       overflow: 'hidden',
@@ -88,35 +99,21 @@ function buildCardElement(score, scoreLabel, topic) {
         position: 'relative',
       },
     },
-      // Shield icon (inline SVG path as background-image not supported; use a styled div)
-      React.createElement('div', {
-        style: {
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'rgba(0,102,255,0.15)',
-          border: '1.5px solid rgba(0,102,255,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        },
-      },
-        React.createElement('div', {
-          style: {
-            width: 24, height: 24,
-            background: '#0066FF',
-            clipPath: 'polygon(50% 0%, 95% 15%, 95% 50%, 50% 100%, 5% 50%, 5% 15%)',
-          },
-        })
-      ),
-
-      // Wordmark
-      React.createElement('span', {
-        style: {
-          fontFamily: 'Georgia, serif',
-          fontSize: 40,
-          fontWeight: 700,
-          color: '#FFFFFF',
-          letterSpacing: '-0.01em',
-        },
-      }, 'FYPro'),
+      // Logo image — falls back to text wordmark if file unavailable
+      logoBase64
+        ? React.createElement('img', {
+            src: logoBase64,
+            style: { height: 48, width: 'auto', objectFit: 'contain' },
+          })
+        : React.createElement('span', {
+            style: {
+              fontFamily: 'Georgia, serif',
+              fontSize: 40,
+              fontWeight: 700,
+              color: '#FFFFFF',
+              letterSpacing: '-0.01em',
+            },
+          }, 'FYPro'),
 
       // Spacer
       React.createElement('div', { style: { flex: 1 } }),
@@ -201,6 +198,18 @@ function buildCardElement(score, scoreLabel, topic) {
           },
         }, (scoreLabel || '').toUpperCase()),
       ),
+
+      // Student name
+      studentName && React.createElement('span', {
+        style: {
+          fontFamily: 'sans-serif',
+          fontSize: 32,
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.75)',
+          letterSpacing: '0.01em',
+          marginTop: 8,
+        },
+      }, truncate(studentName, 40)),
     ),
 
     // ── Topic ─────────────────────────────────────────────────────────────────
@@ -211,7 +220,7 @@ function buildCardElement(score, scoreLabel, topic) {
       },
     },
       React.createElement('div', {
-        style: { width: 60, height: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 999 },
+        style: { width: '72%', height: 3, background: '#0066FF', borderRadius: 999, opacity: 0.85 },
       }),
       React.createElement('p', {
         style: {
@@ -302,14 +311,15 @@ export default async function handler(req, res) {
     .maybeSingle()
 
   const result = step.result_json || {}
-  const score      = result.panel_score ?? null
-  const scoreLabel = result.panel_score_label ?? null
-  const topic      = project?.title || result.topic || ''
+  const score       = result.panel_score ?? null
+  const scoreLabel  = result.panel_score_label ?? null
+  const topic       = project?.title || result.topic || ''
+  const studentName = user.user_metadata?.full_name || ''
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
   try {
     const imgResponse = new ImageResponse(
-      buildCardElement(score, scoreLabel, topic),
+      buildCardElement(score, scoreLabel, topic, studentName),
       { width: WIDTH, height: HEIGHT }
     )
 
