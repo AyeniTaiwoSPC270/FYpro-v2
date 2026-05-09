@@ -110,7 +110,10 @@
       "Bash(rm -f claude.js defense-claude.js topic-validator.js literature-map.js report-payment-issue.js)",
       "Read(//c/c/Users/FEYISAYO ATINUKE/Downloads/fypro-v2/**)",
       "Bash(npx vercel *)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(supabase functions *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b=fs.readFileSync\\('public/fypro-logo.png'\\).toString\\('base64'\\);console.log\\('data:image/png;base64,'+b\\)\")",
+      "Read(//tmp/**)"
     ]
   }
 }
