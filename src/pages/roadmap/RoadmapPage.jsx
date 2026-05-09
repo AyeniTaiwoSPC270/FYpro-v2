@@ -127,7 +127,6 @@ export default function RoadmapPage() {
           className="roadmap-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 24,
             alignItems: 'start',
           }}

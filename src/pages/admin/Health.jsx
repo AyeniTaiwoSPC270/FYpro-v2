@@ -659,11 +659,11 @@ export default function AdminHealth() {
   }
 
   // ── Guard states ────────────────────────────────────────────────
-  const shell = { minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }
-  if (loading)             return <div style={shell}>Loading…</div>
-  if (!isAdmin)            return <div style={{ ...shell, color: RED }}>Access denied.</div>
-  if (initialLoading && !data) return <div style={shell}>Fetching dashboard data…</div>
-  if (error && !data)      return <div style={{ ...shell, color: RED }}>Error: {error}</div>
+  const shell = { minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }
+  if (loading)             return <div className="admin-shell" style={shell}>Loading…</div>
+  if (!isAdmin)            return <div className="admin-shell" style={{ ...shell, color: RED }}>Access denied.</div>
+  if (initialLoading && !data) return <div className="admin-shell" style={shell}>Fetching dashboard data…</div>
+  if (error && !data)      return <div className="admin-shell" style={{ ...shell, color: RED }}>Error: {error}</div>
   if (!data)               return null
 
   const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted,
@@ -686,11 +686,23 @@ export default function AdminHealth() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, padding: '40px 48px', fontFamily: "'Poppins', sans-serif", color: WHITE }}>
+    <div className="admin-shell" style={{ minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }}>
       <style>{`
         @keyframes vitalPulse {
           0%, 100% { transform: scale(1);   opacity: 1; }
           50%       { transform: scale(1.3); opacity: 0.6; }
+        }
+        .admin-shell { padding: 40px 48px; }
+        .admin-charts-grid { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 1024px) {
+          .admin-shell { padding: 28px 28px; }
+        }
+        @media (max-width: 768px) {
+          .admin-shell { padding: 20px 16px !important; }
+          .admin-charts-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .admin-shell { padding: 14px 12px !important; }
         }
       `}</style>
 
@@ -1147,7 +1159,7 @@ export default function AdminHealth() {
 
       {/* ── SECTION 3 & 4: Charts ──────────────────────────────────── */}
       <SectionHeading title="Revenue & Signups — Last 30 Days" />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 8 }}>
+      <div className="admin-charts-grid" style={{ display: 'grid', gap: 24, marginBottom: 8 }}>
         <ChartCard title="Daily Revenue (₦)">
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={revenue_chart} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>

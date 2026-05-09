@@ -5074,7 +5074,7 @@ html, body {
 
   /* Step cards: full width */
   .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
-  .se-card, .placeholder-card {
+  .se-card, .lm-card, .ag-card, .pr-card, .placeholder-card {
     max-width: 100% !important;
   }
 
@@ -5088,6 +5088,10 @@ html, body {
   .dp-student-wrap {
     max-width: 90%;
   }
+
+  /* Defense Mode overlay: reduce padding */
+  .dp-chat-area { padding: 16px !important; }
+  .dp-input-area { padding: 12px 16px 20px !important; }
 }
 
 /* ── 480px mobile ──────────────────────────────────────────────── */
@@ -5148,6 +5152,16 @@ html, body {
   .dp-input-row .dp-send-btn {
     width: 100%;
   }
+
+  /* Defense Mode: tighter overlay padding */
+  .dp-defense-header {
+    padding: 12px 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dp-defense-title { font-size: 0.88rem !important; }
+  .dp-chat-area     { padding: 12px !important; gap: 14px !important; }
+  .dp-input-area    { padding: 10px 12px 16px !important; }
 }
 
 
@@ -9342,4 +9356,55 @@ body {
 }
 .api-error-box__retry:hover {
   background: rgba(245, 158, 11, 0.15);
+}
+
+
+/* ============================================================
+   ROADMAP PAGE — Responsive grid
+   ============================================================ */
+
+/* Desktop default: 3 columns (set via inline style in JSX) */
+.roadmap-grid { grid-template-columns: repeat(3, 1fr); }
+
+@media (max-width: 1024px) {
+  .roadmap-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .roadmap-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ============================================================
+   GLOBAL TOUCH-TARGET ENFORCEMENT — min 44px on interactive elements
+   Applied only to custom CSS components (Tailwind handles its own).
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .tv-btn-validate,
+  .tv-btn-use,
+  .tv-btn-use-alt,
+  .ca-btn-generate,
+  .ca-btn-confirm,
+  .ma-btn-analyse,
+  .ma-btn-confirm,
+  .ma-btn-select,
+  .di-btn-generate,
+  .di-btn-continue,
+  .di-btn-copy,
+  .wp-btn-generate,
+  .wp-btn-confirm,
+  .dp-btn-start-scan,
+  .dp-btn-enter-defense,
+  .dp-btn-go-back,
+  .se-btn-generate,
+  .se-btn-copy,
+  .ag-btn-generate,
+  .ag-btn-copy,
+  .lm-btn-generate,
+  .lm-btn-copy,
+  .pr-btn-review,
+  .pr-btn-confirm {
+    min-height: 44px;
+  }
 }

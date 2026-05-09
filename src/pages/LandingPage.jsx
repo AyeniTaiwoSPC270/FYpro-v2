@@ -251,7 +251,7 @@ function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
       style={{
         background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
-        ...(fixed ? { width: 380, flexShrink: 0 } : {}),
+        ...(fixed ? { width: 'clamp(280px, 80vw, 380px)', flexShrink: 0 } : {}),
       }}
       whileHover={fixed ? {} : {
         borderColor: 'rgba(0,102,255,0.3)',
@@ -537,7 +537,7 @@ function HeroMockup() {
           </div>
 
           {/* Examiners — individual reveal */}
-          <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+          <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-3">
             {examiners.map(({ av, avCls, name, role, q, asking }, i) => {
               const cardKeys = ['methodologist', 'subject-expert', 'external-examiner']
               const cardRefs = [card1Ref, card2Ref, card3Ref]
