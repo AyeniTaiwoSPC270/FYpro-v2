@@ -20,10 +20,16 @@ const WIDTH  = 1080
 const HEIGHT = 1350
 
 async function fetchLogoBase64() {
+  // VERCEL_URL is set automatically by Vercel on every deployment (no protocol prefix).
+  // It resolves to the canonical deployment URL so public/ assets are always reachable.
+  const base = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'https://fypro.vercel.app'
   try {
-    const res = await fetch('https://fypro.com.ng/fypro-logo.png')
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const res = await fetch(`${base}/fypro-logo.png`)
+    if (!res.ok) throw new Error(`HTTP ${res.status} from ${base}`)
     const buf = await res.arrayBuffer()
+    console.log('[share-card] logo fetched from:', base)
     return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`
   } catch (err) {
     console.log('[share-card] logo fetch failed:', err.message)
