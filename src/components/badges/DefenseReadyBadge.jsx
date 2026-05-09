@@ -192,7 +192,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
               borderRadius: 10,
               padding: '8px 12px',
               width: 220,
-              zIndex: 30,
+              zIndex: 9999,
               pointerEvents: 'none',
               textAlign: 'center',
             }}

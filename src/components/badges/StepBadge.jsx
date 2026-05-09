@@ -206,7 +206,7 @@ export default function StepBadge({ index, completedAt }) {
               borderRadius: 8,
               padding: '6px 10px',
               whiteSpace: 'nowrap',
-              zIndex: 30,
+              zIndex: 9999,
               pointerEvents: 'none',
             }}
           >

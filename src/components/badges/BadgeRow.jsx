@@ -34,7 +34,7 @@ export default function BadgeRow() {
         background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
         border: '1px solid rgba(255,255,255,0.07)',
         marginBottom: 20,
-        overflowX: 'auto',
+        overflow: 'visible',
       }}
       role="region"
       aria-label="Achievement badges"
