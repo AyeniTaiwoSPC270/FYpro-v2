@@ -72,10 +72,10 @@ const handler = async (req, res) => {
     } = req.body || {};
 
     // ── Token pre-check: truncate oversized text content ─────────────────────
-    // 6000 chars ≈ 1500 tokens (4 chars/token) — stays well under the 10k TPM limit.
+    // 2000 chars ≈ 500 tokens (4 chars/token) — leaves room for the system prompt under the 10k TPM limit.
     // Applies to string content only (TXT/DOCX). PDF base64 blocks are not strings
     // and are bounded upstream by the 4 MB file size check in the frontend.
-    const CHAR_LIMIT = 6000;
+    const CHAR_LIMIT = 2000;
     const TRUNCATION_NOTICE = '[Document truncated for review — upload individual chapters for more detailed feedback]';
     let truncationWarning = null;
 
