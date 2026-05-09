@@ -414,7 +414,7 @@ html, body {
 .step-list__item--completed .step-list__badge {
   background: rgba(0,102,255,0.18);
   border-color: rgba(0,102,255,0.4);
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .step-list__name {
   font-family: 'Poppins', sans-serif;
@@ -529,7 +529,7 @@ html, body {
   letter-spacing: 0.03em;
   pointer-events: none;
 }
-.nav-pill--current  .nav-pill__label { color: #4d9fff; font-weight: 600; }
+.nav-pill--current  .nav-pill__label { color: #7ab8ff; font-weight: 600; }
 .nav-pill--completed .nav-pill__label { color: rgba(0,0,0,0.5); }
 
 /* ── Placeholder Card ────────────────────────── */
@@ -805,7 +805,7 @@ html, body {
 }
 .tv-btn-edit:hover {
   border-color: #0066FF;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .tv-btn-save {
   padding: 7px 16px;
@@ -916,7 +916,7 @@ html, body {
 }
 .tv-btn-use-alt:hover {
   border-color: #0066FF;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 
 
@@ -961,9 +961,9 @@ html, body {
   color: rgba(13,27,42,0.45);
   line-height: 1.4;
 }
-.tv-paper-author  { color: rgba(13,27,42,0.55); }
-.tv-paper-year    { color: rgba(13,27,42,0.40); }
-.tv-paper-citations { color: #4d9fff; opacity: 0.75; }
+.tv-paper-author  { color: rgba(13,27,42,0.7); }
+.tv-paper-year    { color: rgba(13,27,42,0.6); }
+.tv-paper-citations { color: #7ab8ff; }
 .tv-papers-sparse-note {
   font-family: 'Poppins', sans-serif;
   font-size: 0.75rem;
@@ -1052,7 +1052,7 @@ html, body {
 }
 .ca-toggle-btn:hover:not(.ca-toggle-btn--active) {
   background: rgba(0,102,255,0.05);
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .ca-toggle-btn--active {
   background: #0066FF;
@@ -1289,7 +1289,7 @@ html, body {
 }
 .ca-btn-edit-chapter:hover {
   border-color: #0066FF;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .ca-btn-save-chapter {
   margin-top: 14px;
@@ -1357,7 +1357,7 @@ html, body {
 }
 .ca-btn-regenerate:hover {
   border-color: #0066FF;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .ca-btn-confirm {
   width: 100%;
@@ -1566,7 +1566,7 @@ html, body {
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(0,102,255,0.1);
-  color: #4d9fff;
+  color: #7ab8ff;
   flex-shrink: 0;
 }
 
@@ -1644,7 +1644,7 @@ html, body {
 }
 .ma-btn-select:hover {
   border-color: #0066FF;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .ma-btn-select--active {
   background: #0066FF;
@@ -1915,7 +1915,7 @@ html, body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.3rem;
   font-weight: 500;
-  color: #4d9fff;
+  color: #7ab8ff;
 }
 .wp-summary-stat__label {
   font-family: 'Poppins', sans-serif;
@@ -2266,7 +2266,7 @@ html, body {
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #4d9fff;
+  color: #7ab8ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 4px;
@@ -4216,7 +4216,7 @@ html, body {
 
 /* Upload icon */
 .pr-upload-icon {
-  color: #4d9fff;
+  color: #7ab8ff;
   opacity: 0.8;
 }
 
@@ -4399,7 +4399,7 @@ html, body {
 }
 
 .pr-grade-badge[data-grade="distinction"] .pr-grade-label { color: #16A34A; }
-.pr-grade-badge[data-grade="merit"]       .pr-grade-label { color: #4d9fff; }
+.pr-grade-badge[data-grade="merit"]       .pr-grade-label { color: #7ab8ff; }
 .pr-grade-badge[data-grade="pass"]        .pr-grade-label { color: #D97706; }
 .pr-grade-badge[data-grade="fail"]        .pr-grade-label { color: #DC2626; }
 
@@ -4922,7 +4922,7 @@ html, body {
 .app-content .lm-synthesis-text { color: rgba(255,255,255,0.82) !important; }
 .app-content .lm-btn-copy       { border-color: rgba(22,163,74,0.25) !important; color: #4ADE80 !important; }
 .app-content .lm-companion-badge { background: rgba(22,163,74,0.12) !important; color: #4ADE80 !important; border-color: rgba(22,163,74,0.25) !important; }
-.app-content .lm-source-access  { color: rgba(255,255,255,0.32) !important; }
+.app-content .lm-source-access  { color: rgba(255,255,255,0.65) !important; }
 
 /* ── 20. PR project reviewer sub-elements ──────────────────────── */
 .app-content .pr-watermark           { color: rgba(0,102,255,0.05) !important; }
@@ -8380,13 +8380,13 @@ body {
 
 [data-theme="dark"] .lm-paper-meta,
 .dark .lm-paper-meta {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 [data-theme="dark"] .lm-citation-item,
 .dark .lm-citation-item {
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 [data-theme="dark"] .lm-citation-author,
@@ -8643,7 +8643,7 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #4d9fff;
+  color: #7ab8ff;
   background: rgba(0, 102, 255, 0.12);
   border-radius: 5px;
   padding: 3px 7px;

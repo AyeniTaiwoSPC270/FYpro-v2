@@ -38,7 +38,7 @@ export default function FeedbackThumbs({ feature, contextId }) {
       <p style={{
         fontFamily:  "'Poppins', sans-serif",
         fontSize:    '0.75rem',
-        color:       'rgba(13, 27, 42, 0.45)',
+        color:       'rgba(13, 27, 42, 0.65)',
         margin:      '12px 0 0',
         userSelect:  'none',
       }}>
@@ -52,7 +52,7 @@ export default function FeedbackThumbs({ feature, contextId }) {
       <span style={{
         fontFamily: "'Poppins', sans-serif",
         fontSize:   '0.75rem',
-        color:      'rgba(13, 27, 42, 0.4)',
+        color:      'rgba(13, 27, 42, 0.65)',
         marginRight: 2,
       }}>
         Was this helpful?

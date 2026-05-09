@@ -51,7 +51,7 @@ export default function ProtectedRoute({ children }) {
           <p style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: 8 }}>
             Account Suspended
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.88rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.88rem' }}>
             Your account has been suspended. Contact support.
           </p>
         </div>

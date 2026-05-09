@@ -77,7 +77,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
           style={{
             position: 'absolute', top: 16, right: 16,
             background: 'none', border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            color: 'rgba(255,255,255,0.4)', fontSize: 20, lineHeight: 1,
+            color: 'rgba(255,255,255,0.65)', fontSize: 20, lineHeight: 1,
             fontFamily: "'Poppins', sans-serif",
           }}
           aria-label="Close"
@@ -94,7 +94,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
             }}>Report sent</h2>
             <p style={{
               fontFamily: "'Poppins', sans-serif",
-              fontSize: 14, color: 'rgba(255,255,255,0.65)',
+              fontSize: 14, color: 'rgba(255,255,255,0.82)',
               lineHeight: 1.6, marginBottom: 24,
             }}>
               We'll manually verify and unlock your access within 2 hours.
@@ -122,13 +122,13 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
             }}>Payment Issue</h2>
             <p style={{
               fontFamily: "'Poppins', sans-serif",
-              fontSize: 13, color: 'rgba(255,255,255,0.55)',
+              fontSize: 13, color: 'rgba(255,255,255,0.82)',
               marginBottom: 24, lineHeight: 1.5,
             }}>
               If you completed a payment but your plan wasn't unlocked, we'll fix this within 2 hours.
             </p>
 
-            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.82)', display: 'block', marginBottom: 6 }}>
               Transaction Reference <span style={{ color: '#DC2626' }}>*</span>
             </label>
             <input
@@ -146,7 +146,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
               }}
             />
 
-            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.82)', display: 'block', marginBottom: 6 }}>
               Brief description <span style={{ color: 'rgba(255,255,255,0.3)' }}>(optional)</span>
             </label>
             <textarea

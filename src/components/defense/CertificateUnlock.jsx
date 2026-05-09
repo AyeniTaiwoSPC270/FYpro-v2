@@ -76,7 +76,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
           <p style={{
             fontFamily: "'Poppins', sans-serif",
             fontSize:   '0.8rem',
-            color:      'rgba(255,255,255,0.6)',
+            color:      'rgba(255,255,255,0.82)',
             lineHeight: 1.6,
             margin:     0,
           }}>
@@ -115,7 +115,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         <p style={{
           fontFamily:   "'Poppins', sans-serif",
           fontSize:     '0.8rem',
-          color:        'rgba(255,255,255,0.6)',
+          color:        'rgba(255,255,255,0.82)',
           lineHeight:   1.6,
           marginBottom: 14,
         }}>

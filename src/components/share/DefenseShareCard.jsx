@@ -63,7 +63,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.5rem',
           fontWeight: 600,
-          color: 'rgba(255,255,255,0.3)',
+          color: 'rgba(255,255,255,0.75)',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
         }}>
@@ -90,7 +90,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.6rem',
           fontWeight: 600,
-          color: 'rgba(255,255,255,0.35)',
+          color: 'rgba(255,255,255,0.75)',
           textTransform: 'uppercase',
           letterSpacing: '0.14em',
           marginBottom: 4,
@@ -107,7 +107,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
           letterSpacing: '-0.02em',
           position: 'relative',
         }}>
-          {score ?? '?'}<span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.4)' }}>/10</span>
+          {score ?? '?'}<span style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.75)' }}>/10</span>
         </span>
 
         {scoreLabel && (
@@ -134,7 +134,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.62rem',
-          color: 'rgba(255,255,255,0.55)',
+          color: 'rgba(255,255,255,0.82)',
           lineHeight: 1.5,
           margin: 0,
           textAlign: 'center',
@@ -151,7 +151,7 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.6rem',
-          color: 'rgba(255,255,255,0.45)',
+          color: 'rgba(255,255,255,0.8)',
           margin: 0,
           textAlign: 'center',
           lineHeight: 1.5,
@@ -170,9 +170,9 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.52rem',
           fontWeight: 600,
-          color: '#0066FF',
+          color: '#7ab8ff',
           letterSpacing: '0.08em',
-          opacity: 0.8,
+          opacity: 0.9,
         }}>
           fypro.com.ng
         </span>
