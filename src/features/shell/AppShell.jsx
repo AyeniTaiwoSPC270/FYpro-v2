@@ -283,6 +283,18 @@ export default function AppShell() {
           </div>
         )}
 
+        {/* My Certificates — visible once the user has completed a defense session */}
+        {state.stepsCompleted[5] && (
+          <div className="sidebar__bonus" style={{ marginTop: 8 }}>
+            <button
+              className="sidebar__bonus-btn"
+              onClick={() => navigate('/account/certificates')}
+            >
+              🏆 My Certificates
+            </button>
+          </div>
+        )}
+
         {/* Back to Dashboard */}
         <button
           className="sidebar__back-dashboard"

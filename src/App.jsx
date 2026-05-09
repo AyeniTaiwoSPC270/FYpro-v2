@@ -28,6 +28,7 @@ import AdminHealth from './pages/admin/Health'
 import ChangelogPage from './pages/changelog/ChangelogPage'
 import RoadmapPage from './pages/roadmap/RoadmapPage'
 import EmailPreferences from './pages/account/EmailPreferences'
+import MyCertificates from './pages/account/MyCertificates'
 
 export default function App() {
   return (
@@ -74,6 +75,9 @@ export default function App() {
 
           {/* Email Preferences */}
           <Route path="/account/email-preferences" element={<ProtectedRoute><EmailPreferences /></ProtectedRoute>} />
+
+          {/* My Certificates */}
+          <Route path="/account/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
 
           {/* Admin */}
           <Route path="/admin/health" element={<AdminHealth />} />

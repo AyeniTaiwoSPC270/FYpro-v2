@@ -21,6 +21,8 @@ import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete, markDefenseSimulatorRun, tryAwardDefenseReady } from '../../lib/progress'
 import { fetchShareCardBlob, shareToWhatsApp } from '../../lib/shareCard'
 import DefenseShareCard from '../../components/share/DefenseShareCard'
+import CertificateUnlock from '../../components/defense/CertificateUnlock'
+import { supabase } from '../../lib/supabase'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -223,7 +225,7 @@ function ExitModal({ questionCount, onContinue, onLeave }) {
   )
 }
 
-function SummaryCard({ data, onClose, projectId, topic }) {
+function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
   const panelLabel = (data.panel_score_label || '').toLowerCase()
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError]     = useState(null)
@@ -295,6 +297,14 @@ function SummaryCard({ data, onClose, projectId, topic }) {
           {data.final_advice && (
             <p className="dp-summary-advice">{data.final_advice}</p>
           )}
+
+          {/* ── Certificate unlock / encouragement ─────────────────────────── */}
+          <CertificateUnlock
+            score={data.panel_score ?? null}
+            defenseSessionId={defenseSessionId}
+            projectId={projectId}
+            topic={topic}
+          />
 
           {/* ── Share card ─────────────────────────────────────────────────── */}
           <div className="dp-share-section">
@@ -428,8 +438,35 @@ export default function DefensePrep() {
   const sessionWarnedRef      = useRef(false)
   const turnCountRef          = useRef(0)
 
+  const [defenseSessionId, setDefenseSessionId] = useState(null)
+  const defenseSessionIdRef = useRef(null)
+
   const voiceSupported    = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   const loadingTimerRef   = useRef(null)
+
+  // When the persisted summary screen is shown (remount after page reload),
+  // look up the most recent completed defense session so CertificateUnlock has an ID
+  useEffect(() => {
+    if (section !== 'summary' || !projectId) return
+    if (defenseSessionIdRef.current) {
+      setDefenseSessionId(defenseSessionIdRef.current)
+      return
+    }
+    supabase
+      .from('defense_sessions')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.id) {
+          defenseSessionIdRef.current = data.id
+          setDefenseSessionId(data.id)
+        }
+      })
+  }, [section]) // eslint-disable-line
 
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {
@@ -653,6 +690,31 @@ export default function DefensePrep() {
     }
   }
 
+  // ── defense session DB record ─────────────────────────────────────────────
+  // Creates a defense_sessions row so the certificate endpoint can verify the score.
+  // Fire-and-forget: failure is silently swallowed — it must not block the simulator.
+
+  async function createDefenseSessionRecord() {
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession()
+      if (!authSession || !projectId) return null
+      const { data } = await supabase
+        .from('defense_sessions')
+        .insert({
+          project_id:       projectId,
+          user_id:          authSession.user.id,
+          examiner_persona: 'external_examiner',  // three-examiner panel
+          status:           'in_progress',
+          turns_count:      0,
+        })
+        .select('id')
+        .single()
+      return data?.id ?? null
+    } catch {
+      return null
+    }
+  }
+
   // ── enter defense mode ────────────────────────────────────────────────────
 
   async function enterDefenseMode() {
@@ -683,9 +745,20 @@ export default function DefensePrep() {
     setSessionTerminated(false)
     setTurnCount(0)
     setSessionComplete(false)
+    setDefenseSessionId(null)
+    defenseSessionIdRef.current = null
     setOverlayOpen(true)
 
     initRecognition()
+
+    // Create the defense_sessions row (best-effort — does not block the simulator)
+    createDefenseSessionRecord().then(id => {
+      if (id) {
+        defenseSessionIdRef.current = id
+        setDefenseSessionId(id)
+      }
+    })
+
     getFirstQuestion()
   }
 
@@ -870,6 +943,23 @@ export default function DefensePrep() {
       markStepComplete('defense_prep')
         .then(() => markDefenseSimulatorRun())
         .then(() => tryAwardDefenseReady())
+
+      // Update defense_sessions row with the final score and completion time
+      if (defenseSessionIdRef.current) {
+        supabase
+          .from('defense_sessions')
+          .update({
+            status:       'completed',
+            total_score:  Math.round(data.panel_score ?? 0),
+            turns_count:  questionCountRef.current,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', defenseSessionIdRef.current)
+          .then(({ error }) => {
+            if (error) console.warn('[defense] session update failed:', error.message)
+          })
+      }
+
       showToast('Defence session complete ✓')
 
       setVerdictLoading(false)
@@ -1171,6 +1261,7 @@ export default function DefensePrep() {
               onClose={handleCloseSummary}
               projectId={projectId}
               topic={state.validatedTopic || ''}
+              defenseSessionId={defenseSessionId}
             />
           )}
         </div>
@@ -1364,6 +1455,7 @@ export default function DefensePrep() {
                 onClose={closeDefenseOverlay}
                 projectId={projectId}
                 topic={state.validatedTopic || ''}
+                defenseSessionId={defenseSessionId}
               />
             )
           )}
