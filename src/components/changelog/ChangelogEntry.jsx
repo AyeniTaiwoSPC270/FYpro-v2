@@ -36,17 +36,17 @@ export default function ChangelogEntry({ entry }) {
   return (
     <article
       ref={ref}
-      className="changelog-entry"
       style={{
-        background: 'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
+        borderLeft: '3px solid #0066FF',
         borderRadius: 12,
         padding: '22px 24px',
         position: 'relative',
         overflow: 'hidden',
         opacity: 0,
         transform: 'translateY(20px)',
-        transition: 'opacity 0.5s ease, transform 0.5s ease',
+        transition: 'opacity 0.5s ease, transform 0.5s ease, border-left-color 0.2s ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -74,7 +74,7 @@ export default function ChangelogEntry({ entry }) {
                 fontFamily: "'DM Serif Display', serif",
                 fontSize: '1.05rem',
                 fontWeight: 400,
-                color: '#FFFFFF',
+                color: 'var(--color-text-primary)',
                 margin: 0,
                 lineHeight: 1.3,
               }}
@@ -86,7 +86,7 @@ export default function ChangelogEntry({ entry }) {
               style={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: '0.62rem',
-                color: 'rgba(255,255,255,0.28)',
+                color: 'var(--color-text-muted)',
                 flexShrink: 0,
                 letterSpacing: '0.02em',
               }}
@@ -100,7 +100,7 @@ export default function ChangelogEntry({ entry }) {
             style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: '0.84rem',
-              color: 'rgba(255,255,255,0.55)',
+              color: 'var(--color-text-secondary)',
               lineHeight: 1.65,
               margin: 0,
               maxWidth: '65ch',

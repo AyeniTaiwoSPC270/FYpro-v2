@@ -45,8 +45,8 @@ export default function RoadmapCard({ item }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: 'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
         borderLeft: `4px solid ${BORDER_COLOR[item.status]}`,
         borderRadius: 12,
         padding: '18px 20px',
@@ -74,7 +74,7 @@ export default function RoadmapCard({ item }) {
         style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.82rem',
-          color: 'rgba(255,255,255,0.5)',
+          color: 'var(--color-text-secondary)',
           lineHeight: 1.65,
           margin: 0,
         }}
@@ -132,7 +132,7 @@ export default function RoadmapCard({ item }) {
             marginTop: 12,
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '0.62rem',
-            color: 'rgba(255,255,255,0.28)',
+            color: 'var(--color-text-muted)',
             letterSpacing: '0.04em',
           }}
         >

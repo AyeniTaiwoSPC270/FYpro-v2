@@ -40,7 +40,7 @@ export default function RoadmapColumn({ status, items }) {
           gap: 10,
           marginBottom: 20,
           paddingBottom: 16,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid var(--border-color)',
         }}
       >
         <span style={{ fontSize: '1.05rem', lineHeight: 1 }} aria-hidden="true">
@@ -89,7 +89,7 @@ export default function RoadmapColumn({ status, items }) {
             style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: '0.82rem',
-              color: 'rgba(255,255,255,0.2)',
+              color: 'var(--color-text-muted)',
               textAlign: 'center',
               padding: '28px 0',
               margin: 0,
