@@ -466,7 +466,7 @@ export default function DefensePrep() {
           setDefenseSessionId(data.id)
         }
       })
-  }, [section]) // eslint-disable-line
+  }, [section, projectId]) // eslint-disable-line
 
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {
