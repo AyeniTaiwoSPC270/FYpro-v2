@@ -15,19 +15,26 @@ import { ImageResponse } from '@vercel/og'
 import { supabaseAdmin }  from './_lib/supabase-admin.js'
 import { rateLimitCheck } from './_lib/rate-limit.js'
 import * as React from 'react'
-import fs   from 'fs'
-import path from 'path'
 
 const WIDTH  = 1080
 const HEIGHT = 1350
 
-// Load logo once at cold start — same pattern as certificate.js
-let logoBase64 = null
-try {
-  const bytes = fs.readFileSync(path.join(process.cwd(), 'public', 'fypro-logo.png'))
-  logoBase64 = `data:image/png;base64,${bytes.toString('base64')}`
-} catch {
-  // Serverless context may not expose public/ — card falls back to text wordmark
+// Load logo from the public URL at request time.
+// fs.readFileSync is unreliable for Vercel API functions — public/ assets are
+// served from the CDN and are not on the function's filesystem. Fetching from
+// the request's own origin is reliable in both local dev and production.
+async function fetchLogoBase64(req) {
+  try {
+    const proto  = req.headers['x-forwarded-proto'] || 'http'
+    const host   = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000'
+    const url    = `${proto}://${host}/fypro-logo.png`
+    const resp   = await fetch(url)
+    if (!resp.ok) return null
+    const buf    = await resp.arrayBuffer()
+    return `data:image/png;base64,${Buffer.from(buf).toString('base64')}`
+  } catch {
+    return null
+  }
 }
 
 function scoreColor(score) {
@@ -42,7 +49,7 @@ function truncate(str, max) {
   return str.length <= max ? str : str.slice(0, max - 1) + '…'
 }
 
-function buildCardElement(score, scoreLabel, topic, studentName) {
+function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
   const color = scoreColor(score)
   const scoreDisplay = score != null ? String(score) : '?'
 
@@ -316,10 +323,13 @@ export default async function handler(req, res) {
   const topic       = project?.title || result.topic || ''
   const studentName = user.user_metadata?.full_name || ''
 
+  // Fetch logo from public URL — fs is not reliable for public/ assets in Vercel
+  const logoBase64 = await fetchLogoBase64(req)
+
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
   try {
     const imgResponse = new ImageResponse(
-      buildCardElement(score, scoreLabel, topic, studentName),
+      buildCardElement(score, scoreLabel, topic, studentName, logoBase64),
       { width: WIDTH, height: HEIGHT }
     )
 

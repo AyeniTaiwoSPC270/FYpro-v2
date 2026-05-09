@@ -2,9 +2,6 @@
 // The actual PNG is rendered server-side by /api/share-card.
 // This component shows the same design in-app for preview.
 
-const SHIELD_PATH =
-  'M224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
-
 function scoreColor(score) {
   if (score == null) return '#3B82F6'
   if (score >= 8) return '#16A34A'
@@ -54,17 +51,11 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
         padding: '16px 20px 0',
         position: 'relative',
       }}>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="18" height="18" fill="#0066FF" aria-hidden="true">
-          <path d={SHIELD_PATH} />
-        </svg>
-        <span style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
-          fontSize: '0.9rem',
-          color: '#FFFFFF',
-          letterSpacing: '0.01em',
-        }}>
-          FYPro
-        </span>
+        <img
+          src="/fypro-logo.png"
+          alt="FYPro"
+          style={{ height: 22, width: 'auto', objectFit: 'contain', display: 'block' }}
+        />
         <div style={{ flex: 1 }} />
         <span style={{
           fontFamily: "'JetBrains Mono', monospace",
