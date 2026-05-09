@@ -30,7 +30,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
     setError(null)
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/report-payment-issue', {
+      const res = await fetch('/api/admin?action=report-payment-issue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

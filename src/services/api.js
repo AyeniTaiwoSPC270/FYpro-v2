@@ -18,10 +18,10 @@ import {
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
 
-const ENDPOINT                  = '/api/claude';
-const TOPIC_VALIDATOR_ENDPOINT  = '/api/topic-validator';
-const LITERATURE_MAP_ENDPOINT   = '/api/literature-map';
-const DEFENSE_ENDPOINT          = '/api/defense-claude';
+const ENDPOINT                  = '/api/ai';
+const TOPIC_VALIDATOR_ENDPOINT  = '/api/research?action=validate';
+const LITERATURE_MAP_ENDPOINT   = '/api/research?action=lit-map';
+const DEFENSE_ENDPOINT          = '/api/ai?action=defense';
 const REVIEWER_ENDPOINT         = '/api/project-reviewer';
 
 async function getAccessToken() {

@@ -1,6 +1,8 @@
 import crypto           from 'crypto';
+import { Resend }         from 'resend';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
+import { rateLimitCheck } from './_lib/rate-limit.js';
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
@@ -679,6 +681,49 @@ async function handleResolvePaymentIssue(req, res) {
   }
 }
 
+// action: "report-payment-issue" — user-facing (no admin gate)
+async function handleReportPaymentIssue(req, res) {
+  const rl = await rateLimitCheck(req, { userDay: 3, ipDay: 10, prefix: 'payment-issue' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Too many reports. Please try again tomorrow or email hello@fypro.com.ng directly.' });
+
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  let userId, userEmail;
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Unauthorized' });
+    userId    = user.id;
+    userEmail = user.email;
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const { transactionRef, description } = req.body || {};
+  if (!transactionRef?.trim()) return res.status(400).json({ error: 'Transaction reference is required.' });
+
+  const { error: insertError } = await supabaseAdmin.from('payment_issues').insert({
+    user_id:         userId,
+    user_email:      userEmail,
+    transaction_ref: transactionRef.trim(),
+    description:     description?.trim() || null,
+  });
+  if (insertError) {
+    console.error('[admin/report-payment-issue] insert error:', insertError.message);
+    return res.status(500).json({ error: 'Failed to save report. Please email hello@fypro.com.ng directly.' });
+  }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  resend.emails.send({
+    from:    'FYPro Alerts <hello@fypro.com.ng>',
+    to:      'hello@fypro.com.ng',
+    subject: `URGENT: Payment issue — ${userEmail}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;"><h2 style="color:#DC2626;">⚠️ Payment Issue Report</h2><table style="width:100%;border-collapse:collapse;"><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User email:</strong></td><td style="padding:8px 0;font-size:14px;">${userEmail}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User ID:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${userId}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Transaction ref:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${transactionRef.trim()}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Description:</strong></td><td style="padding:8px 0;font-size:14px;">${description?.trim() || '(none)'}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Reported at:</strong></td><td style="padding:8px 0;font-size:14px;">${new Date().toISOString()}</td></tr></table><p style="margin-top:24px;color:#333;font-size:14px;">Resolve in the <a href="https://fypro.vercel.app/admin/health">admin dashboard</a>.</p></div>`,
+  }).catch(e => console.error('[admin/report-payment-issue] resend error:', e.message));
+
+  return res.status(200).json({ ok: true });
+}
+
 // action: "sentry_webhook"
 // No admin auth — access is controlled by HMAC-SHA256 signature verification.
 // Sentry webhook URL: https://fypro.com.ng/api/admin?action=sentry_webhook
@@ -836,7 +881,8 @@ export default async function handler(req, res) {
   if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
   if (action === 'system_logs')        return handleSystemLogs(req, res);
   if (action === 'resolve_log')        return handleResolveLog(req, res);
-  if (action === 'feedback-summary')   return handleFeedbackSummary(req, res);
+  if (action === 'feedback-summary')        return handleFeedbackSummary(req, res);
+  if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
