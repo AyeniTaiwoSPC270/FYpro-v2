@@ -38,7 +38,7 @@ export default function FeedbackThumbs({ feature, contextId }) {
       <p style={{
         fontFamily:  "'Poppins', sans-serif",
         fontSize:    '0.75rem',
-        color:       'rgba(13, 27, 42, 0.65)',
+        color:       'var(--text-secondary)',
         margin:      '12px 0 0',
         userSelect:  'none',
       }}>
@@ -52,7 +52,7 @@ export default function FeedbackThumbs({ feature, contextId }) {
       <span style={{
         fontFamily: "'Poppins', sans-serif",
         fontSize:   '0.75rem',
-        color:      'rgba(13, 27, 42, 0.65)',
+        color:      'var(--text-secondary)',
         marginRight: 2,
       }}>
         Was this helpful?
@@ -104,7 +104,7 @@ function btnStyle(hovered) {
     borderRadius:    '8px',
     border:          `1.5px solid ${hovered ? 'rgba(13,27,42,0.3)' : 'rgba(13,27,42,0.12)'}`,
     background:      hovered ? 'rgba(13,27,42,0.06)' : 'transparent',
-    color:           hovered ? '#0D1B2A' : 'rgba(13,27,42,0.4)',
+    color:           hovered ? 'var(--text-primary)' : 'var(--text-muted)',
     cursor:          'pointer',
     transition:      'all 0.15s ease',
     padding:         0,

@@ -8321,14 +8321,14 @@ body {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-sm, 0.75rem);
   font-weight: 500;
-  color: var(--color-text-primary, #0D1B2A);
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
 .lm-paper-meta {
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--text-xs, 0.65rem);
-  color: var(--color-text-secondary, rgba(13,27,42,0.6));
+  color: var(--text-secondary);
   letter-spacing: 0.01em;
 }
 
@@ -8349,7 +8349,7 @@ body {
 .lm-citation-item {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-sm, 0.75rem);
-  color: var(--color-text-secondary, rgba(13,27,42,0.6));
+  color: var(--text-secondary);
   line-height: 1.6;
   padding: 8px 12px;
   background: var(--color-bg-surface, #F0F4F8);
@@ -8358,16 +8358,16 @@ body {
 
 .lm-citation-author {
   font-weight: 600;
-  color: var(--color-text-primary, #0D1B2A);
+  color: var(--text-primary);
 }
 
 .lm-citation-year {
-  color: var(--color-text-secondary, rgba(13,27,42,0.6));
+  color: var(--text-secondary);
 }
 
 .lm-citation-title {
   font-style: italic;
-  color: var(--color-text-primary, #0D1B2A);
+  color: var(--text-primary);
 }
 
 .lm-citation-doi {
