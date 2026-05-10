@@ -271,6 +271,45 @@ async function handleVerify(req, res) {
   }
 }
 
+// ─── Consume project_reset entitlement ───────────────────────────────────────
+
+async function handleConsumeReset(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const { data: current, error: fetchErr } = await supabaseAdmin
+    .from('user_entitlements')
+    .select('paid_features')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (fetchErr) return res.status(500).json({ error: 'Failed to fetch entitlements' });
+
+  const features = Array.isArray(current?.paid_features) ? current.paid_features : [];
+  if (!features.includes('project_reset')) {
+    return res.status(403).json({ error: 'No project_reset entitlement to consume' });
+  }
+
+  const updated = features.filter(f => f !== 'project_reset');
+
+  const { error: updateErr } = await supabaseAdmin
+    .from('user_entitlements')
+    .update({ paid_features: updated, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id);
+
+  if (updateErr) {
+    console.error('[payments/consume-reset] update failed', updateErr.message);
+    return res.status(500).json({ error: 'Failed to consume entitlement' });
+  }
+
+  return res.status(200).json({ success: true });
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -315,6 +354,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     return handleVerify(req, res);
   }
+  if (action === 'consume-reset') return handleConsumeReset(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }

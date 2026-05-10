@@ -97,6 +97,7 @@ async function grantEntitlement(userId, tier, amountKobo) {
   if (tier === 'student_pack') features.add('student_pack');
   if (tier === 'defense_pack') {
     features.add('defense_pack');
+    features.add('project_reset'); // defense plan includes one project reset credit
     defensePacks += 1;
   }
   if (tier === 'project_reset') features.add('project_reset');

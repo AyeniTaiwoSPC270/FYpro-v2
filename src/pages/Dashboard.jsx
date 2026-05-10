@@ -1508,7 +1508,7 @@ function ProjectCard({ project, onContinue }) {
 function NewProjectCard({ features, featuresLoading, onStartNew, onPay }) {
   const hasProjectReset = !featuresLoading &&
     Array.isArray(features) &&
-    (features.includes('project_reset') || features.includes('defense_pack'))
+    features.includes('project_reset')
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -1715,9 +1715,25 @@ export default function Dashboard() {
   }
 
   async function handleStartNewProject() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const consumeRes = await fetch('/api/payments?action=consume-reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+    if (!consumeRes.ok) {
+      const err = await consumeRes.json().catch(() => ({}))
+      showToastMessage(err.error || 'Could not start new project. Please try again.')
+      return
+    }
+
+    window.dispatchEvent(new Event('fypro_entitlements_updated'))
+
     await archiveAllActiveProjects()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
     const newProject = await createProject({
       faculty: state.faculty || null,
       department: state.department || null,
