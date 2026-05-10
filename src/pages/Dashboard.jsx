@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import { resetUser } from '../lib/analytics'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
+import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import Footer from '../components/Footer'
 import OnboardingNudge from '../components/onboarding/OnboardingNudge'
 import { useOnboardingState } from '../hooks/useOnboardingState'
@@ -1477,6 +1478,12 @@ export default function Dashboard() {
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
 
+  const { handlePay, payError } = usePaystackCheckout({ loginReturnUrl: '/dashboard' })
+
+  useEffect(() => {
+    if (payError) showToastMessage(payError)
+  }, [payError])
+
   const completedCount = state.stepsCompleted.filter(Boolean).length
   // FIX 1 — activeStepId: state.currentStep is 0-indexed count; step IDs are 1-indexed
   const activeStepId = Math.min(6, (state.currentStep ?? 0) + 1)
@@ -1512,7 +1519,7 @@ export default function Dashboard() {
 
   function handleModalConfirm() {
     setShowNewSessionModal(false)
-    navigate('/payment')
+    handlePay('project_reset')
   }
 
   return (
