@@ -1505,8 +1505,9 @@ function ProjectCard({ project, onContinue }) {
   )
 }
 
-function NewProjectCard({ features, onStartNew, onPay }) {
-  const hasProjectReset = Array.isArray(features) &&
+function NewProjectCard({ features, featuresLoading, onStartNew, onPay }) {
+  const hasProjectReset = !featuresLoading &&
+    Array.isArray(features) &&
     (features.includes('project_reset') || features.includes('defense_pack'))
   return (
     <motion.div
@@ -1574,7 +1575,7 @@ function NewProjectCard({ features, onStartNew, onPay }) {
   )
 }
 
-function ProjectsGrid({ projects, features, onContinue, onStartNew, onPay }) {
+function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay }) {
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
@@ -1589,7 +1590,7 @@ function ProjectsGrid({ projects, features, onContinue, onStartNew, onPay }) {
         {projects.map(p => (
           <ProjectCard key={p.id} project={p} onContinue={onContinue} />
         ))}
-        <NewProjectCard features={features} onStartNew={onStartNew} onPay={onPay} />
+        <NewProjectCard features={features} featuresLoading={featuresLoading} onStartNew={onStartNew} onPay={onPay} />
       </div>
     </div>
   )
@@ -1861,6 +1862,7 @@ export default function Dashboard() {
             <ProjectsGrid
               projects={projects}
               features={features}
+              featuresLoading={featuresLoading}
               onContinue={handleContinueProject}
               onStartNew={handleStartNewProject}
               onPay={() => handlePay('project_reset')}
