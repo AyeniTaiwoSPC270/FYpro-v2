@@ -8,6 +8,8 @@ Sentry.init({
   beforeSend(event) {
     if (event.user) {
       delete event.user.ip_address;
+      delete event.user.email;
+      delete event.user.username;
     }
     return event;
   },

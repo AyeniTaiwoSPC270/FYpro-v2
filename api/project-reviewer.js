@@ -5,11 +5,10 @@ import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
+import { setCorsHeaders } from './_lib/cors.js';
 
 const handler = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -70,6 +69,30 @@ const handler = async (req, res) => {
       max_tokens = 2000,
       model = 'claude-sonnet-4-6',
     } = req.body || {};
+
+    // Server-side file validation: find the PDF source block (if any) and check
+    // magic bytes + size. The frontend encodes PDFs as base64 and embeds them in
+    // the messages array as { type:'document', source:{ type:'base64', data:'...' } }.
+    if (Array.isArray(messages)) {
+      for (const msg of messages) {
+        const content = Array.isArray(msg.content) ? msg.content : [];
+        for (const block of content) {
+          if (block?.type === 'document' && block?.source?.type === 'base64') {
+            const b64 = block.source.data || '';
+            // 10 MB decoded → ~13.3 MB base64 chars
+            const MAX_B64_CHARS = 14_000_000;
+            if (b64.length > MAX_B64_CHARS) {
+              return res.status(400).json({ error: 'File too large. Maximum size is 10 MB.' });
+            }
+            // Magic-byte check: first 4 bytes of a PDF must be %PDF (25 50 44 46)
+            const headerBytes = Buffer.from(b64.slice(0, 8), 'base64');
+            if (headerBytes.slice(0, 4).toString('ascii') !== '%PDF') {
+              return res.status(400).json({ error: 'Invalid file type. Only PDF files are accepted.' });
+            }
+          }
+        }
+      }
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

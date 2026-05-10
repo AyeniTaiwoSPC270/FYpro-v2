@@ -4,6 +4,7 @@
 import { rateLimitCheck }             from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage }  from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
+import { setCorsHeaders }             from './_lib/cors.js';
 
 const SUPERVISOR_PREP_TTL = 21600; // 6 hours
 
@@ -15,9 +16,7 @@ Questions must be concrete and actionable — not generic.
 Format: return ONLY a JSON array of 8 strings. No preamble. No markdown.`;
 
 const handler = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin',  '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });

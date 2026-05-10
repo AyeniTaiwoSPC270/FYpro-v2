@@ -8,6 +8,7 @@
 //   3. Cross-user access blocked: .eq('user_id', user.id) on every DB fetch.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
+import { setCorsHeaders } from './_lib/cors.js';
 import { jsPDF } from 'jspdf';
 import fs from 'fs';
 import path from 'path';
@@ -217,9 +218,7 @@ function drawWordmark(doc, cx, font, y) {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin',  '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });

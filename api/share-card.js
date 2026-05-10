@@ -14,6 +14,7 @@
 import { ImageResponse }    from '@vercel/og'
 import { supabaseAdmin }    from './_lib/supabase-admin.js'
 import { rateLimitCheck }   from './_lib/rate-limit.js'
+import { setCorsHeaders }   from './_lib/cors.js'
 import * as React           from 'react'
 
 const WIDTH  = 1080
@@ -258,9 +259,7 @@ function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  setCorsHeaders(req, res)
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

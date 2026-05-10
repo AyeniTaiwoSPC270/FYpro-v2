@@ -1,5 +1,6 @@
 import crypto, { randomBytes } from 'crypto';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
+import { setCorsHeaders } from './_lib/cors.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
 import { Resend } from 'resend';
@@ -273,9 +274,7 @@ async function handleVerify(req, res) {
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 

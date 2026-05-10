@@ -5,6 +5,7 @@
 // environment and never exposed to the browser.
 
 import { rateLimitCheck } from './_lib/rate-limit.js';
+import { setCorsHeaders } from './_lib/cors.js';
 
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
@@ -36,10 +37,7 @@ function resolveVoiceKey(examiner) {
  * the audio/mpeg binary back to the browser as a blob response.
  */
 const handler = async (req, res) => {
-  // CORS headers — mirrors the pattern used in api/claude.js
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res);
 
   // Handle CORS preflight so browsers don't block the POST
   if (req.method === 'OPTIONS') return res.status(200).end();

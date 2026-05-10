@@ -3,6 +3,7 @@ import { Resend }         from 'resend';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
+import { setCorsHeaders }  from './_lib/cors.js';
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
@@ -855,9 +856,7 @@ async function handleFeedbackSummary(req, res) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET' && req.method !== 'POST') {

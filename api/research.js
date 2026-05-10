@@ -3,6 +3,7 @@
 // ?action=lit-map  → Literature Map  (20 papers, clusters into themes)
 
 import { rateLimitCheck }                 from './_lib/rate-limit.js';
+import { setCorsHeaders }                 from './_lib/cors.js';
 import { checkDailyCap, trackUsage }      from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
@@ -199,9 +200,7 @@ async function handleLitMap(req, res) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin',  '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
