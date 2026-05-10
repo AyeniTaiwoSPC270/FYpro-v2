@@ -32,7 +32,7 @@ export interface Project {
   id: string
   user_id: string
   title: string | null
-  status: 'draft' | 'in_progress' | 'defense_ready' | 'archived'
+  status: 'draft' | 'active' | 'in_progress' | 'defense_ready' | 'archived'
   current_step: string
   faculty: string | null
   department: string | null
@@ -109,7 +109,7 @@ export async function createProject(data: {
     .from('projects')
     .insert({
       user_id: user.id,
-      status: 'draft',
+      status: 'active',
       current_step: 'topic_validator',
       faculty: data.faculty,
       department: data.department,
@@ -165,6 +165,31 @@ export async function saveStep(
     console.error('[supabase-client] saveStep:', error.message)
     throw error
   }
+}
+
+// ─── Fetch all projects for the current user ─────────────────────────────────
+
+export async function getAllUserProjects(): Promise<Project[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+  if (error) { console.error('[supabase-client] getAllUserProjects:', error.message); return [] }
+  return (data as Project[]) ?? []
+}
+
+export async function archiveAllActiveProjects(): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const { error } = await supabase
+    .from('projects')
+    .update({ status: 'archived', updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .neq('status', 'archived')
+  if (error) console.error('[supabase-client] archiveAllActiveProjects:', error.message)
 }
 
 // ─── Project delete ──────────────────────────────────────────────────────────
