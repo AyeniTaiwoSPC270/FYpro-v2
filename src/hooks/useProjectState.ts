@@ -83,6 +83,7 @@ interface ProjectStateValue {
   saveStep: (stepType: string, resultJson: Record<string, unknown>, inputSummary?: string) => Promise<void>
   ensureProject: () => Promise<string | null>
   resetProject: () => Promise<void>
+  selectProject: (projectId: string) => Promise<void>
 }
 
 const ProjectStateContext = createContext<ProjectStateValue | null>(null)
@@ -306,6 +307,41 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Load a specific project by ID and hydrate AppContext.
+  // Called when the user picks a project from the dashboard grid.
+  const selectProject = useCallback(async (pid: string): Promise<void> => {
+    const [projectRes, stepsRes] = await Promise.all([
+      supabase.from('projects').select('*').eq('id', pid).single(),
+      supabase.from('project_steps').select('*').eq('project_id', pid),
+    ])
+    if (projectRes.error || !projectRes.data) {
+      console.error('[useProjectState] selectProject: project not found', pid)
+      return
+    }
+
+    const project = projectRes.data as import('../lib/supabase-client').Project
+    const steps = (stepsRes.data as import('../lib/supabase-client').ProjectStep[]) ?? []
+
+    const hydration: Record<string, unknown> = {}
+    if (project.title) hydration.validatedTopic = project.title
+
+    const completed = [false, false, false, false, false, false]
+    for (const step of steps) {
+      const key = STEP_TO_STATE[step.step_type]
+      if (key) hydration[key] = step.result_json
+      const idx = STEP_TO_IDX[step.step_type]
+      if (idx !== undefined) completed[idx] = true
+    }
+    hydration.stepsCompleted = completed
+    const last = completed.lastIndexOf(true)
+    hydration.currentStep = last !== -1 ? Math.min(last + 1, 5) : 0
+
+    set(hydration)
+    setProjectId(pid)
+    subscribeToProject(pid)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable refs
+  }, [])
+
   function dismissMigrationModal() {
     setShowMigrationModal(false)
   }
@@ -364,6 +400,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     saveStep,
     ensureProject,
     resetProject,
+    selectProject,
   }
 
   return React.createElement(ProjectStateContext.Provider, { value }, children)

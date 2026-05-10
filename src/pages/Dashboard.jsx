@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment } from 'react'
 import PaymentIssueModal from '../components/PaymentIssueModal'
 import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
@@ -13,6 +13,7 @@ import { resetUser } from '../lib/analytics'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
+import { useProjectState } from '../hooks/useProjectState'
 import Footer from '../components/Footer'
 import OnboardingNudge from '../components/onboarding/OnboardingNudge'
 import { useOnboardingState } from '../hooks/useOnboardingState'
@@ -1614,6 +1615,20 @@ export default function Dashboard() {
     return () => { cancelled = true }
   }, [])
 
+  // URL-based project selection
+  const [searchParams, setSearchParams] = useSearchParams()
+  const projectParam = searchParams.get('project')
+  const { selectProject } = useProjectState()
+  const [selectingProject, setSelectingProject] = useState(false)
+
+  useEffect(() => {
+    if (!projectParam) return
+    let cancelled = false
+    setSelectingProject(true)
+    selectProject(projectParam).finally(() => { if (!cancelled) setSelectingProject(false) })
+    return () => { cancelled = true }
+  }, [projectParam]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -1695,8 +1710,7 @@ export default function Dashboard() {
 
   async function handleContinueProject(projectId) {
     await updateProject(projectId, { status: 'active' })
-    sessionStorage.setItem('intentional_app_entry', 'true')
-    navigate('/app')
+    setSearchParams({ project: projectId })
   }
 
   async function handleStartNewProject() {
@@ -1804,6 +1818,44 @@ export default function Dashboard() {
                 )}
               </motion.div>
             </div>
+          ) : projectParam ? (
+            /* Specific project dashboard — existing components, data hydrated by selectProject */
+            selectingProject ? (
+              <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)' }}>
+                <div style={{ width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: '#0066FF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-muted)', fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.8rem', fontWeight: 500, padding: '0 0 20px',
+                    transition: 'color 0.15s ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                  </svg>
+                  My Projects
+                </button>
+                <BadgeRow />
+                <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
+                <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
+                <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} onPaymentIssue={() => setShowPaymentIssueModal(true)} />
+                <DashQuickActions
+                  STEPS={STEPS}
+                  allComplete={allComplete}
+                  showToastMessage={showToastMessage}
+                  onDownloadReport={() => downloadProgressReport(state)}
+                />
+              </>
+            )
           ) : (
             /* Returning user — multi-project cards grid */
             <ProjectsGrid
