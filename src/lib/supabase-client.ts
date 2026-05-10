@@ -195,17 +195,19 @@ export async function archiveAllActiveProjects(): Promise<void> {
 // ─── Project delete ──────────────────────────────────────────────────────────
 
 export async function deleteProject(projectId: string, userId: string): Promise<void> {
-  await supabase
+  const { error: stepsErr } = await supabase
     .from('project_steps')
     .delete()
     .eq('project_id', projectId)
     .eq('user_id', userId)
+  if (stepsErr) throw stepsErr
 
-  await supabase
+  const { error: projectErr } = await supabase
     .from('projects')
     .delete()
     .eq('id', projectId)
     .eq('user_id', userId)
+  if (projectErr) throw projectErr
 }
 
 export async function deleteAllUserData(userId: string): Promise<void> {

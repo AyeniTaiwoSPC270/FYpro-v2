@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext'
 import { showToast } from '../components/Toast'
 import { downloadProgressReport } from '../utils/generateReport'
 import { supabase } from '../lib/supabase'
-import { getAllUserProjects, createProject, archiveAllActiveProjects, updateProject } from '../lib/supabase-client'
+import { getAllUserProjects, createProject, archiveAllActiveProjects, updateProject, deleteProject } from '../lib/supabase-client'
 import { resetUser } from '../lib/analytics'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
@@ -114,6 +114,15 @@ const PlusIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+)
+
+const TrashIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 )
 
@@ -258,6 +267,48 @@ function NewSessionModal({ onClose, onConfirm }) {
             className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-6 py-2 font-sans text-sm font-semibold transition-colors duration-150"
           >
             Continue to Payment
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Delete Project Modal ─────────────────────────────────────────────────────
+
+function DeleteProjectModal({ onCancel, onConfirm, deleting }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center">
+      <div
+        className="mt-[20vh] w-full max-w-md mx-4 rounded-2xl p-8"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+      >
+        <h2 className="font-sans font-semibold text-lg" style={{ color: 'var(--text-primary)', margin: '0 0 8px' }}>
+          Delete this project?
+        </h2>
+        <p className="font-sans text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          This cannot be undone. All your progress will be permanently lost.
+        </p>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            className="flex-1 rounded-xl px-6 py-2 font-sans text-sm font-medium transition-colors duration-150 disabled:opacity-50"
+            style={{ border: '1px solid var(--border-color)', color: 'var(--text-muted)', background: 'none' }}
+            onMouseEnter={e => { if (!deleting) e.currentTarget.style.borderColor = 'rgba(100,116,139,0.6)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="flex-1 rounded-xl px-6 py-2 font-sans text-sm font-semibold text-white transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: deleting ? '#991B1B' : '#DC2626', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => { if (!deleting) e.currentTarget.style.background = '#B91C1C' }}
+            onMouseLeave={e => { if (!deleting) e.currentTarget.style.background = '#DC2626' }}
+          >
+            {deleting ? 'Deleting…' : 'Delete Forever'}
           </button>
         </div>
       </div>
@@ -1448,7 +1499,7 @@ function statusBadge(status) {
   return { label: 'Draft', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.22)' }
 }
 
-function ProjectCard({ project, onContinue }) {
+function ProjectCard({ project, onContinue, onDelete }) {
   const badge = statusBadge(project.status)
   const dateStr = new Date(project.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })
   return (
@@ -1472,15 +1523,32 @@ function ProjectCard({ project, onContinue }) {
         <h3 className="font-serif" style={{ fontSize: '1.05rem', color: 'var(--text-primary)', lineHeight: 1.3, flex: 1, margin: 0 }}>
           {project.title || 'Untitled Project'}
         </h3>
-        <span style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '0.66rem', fontWeight: 600, letterSpacing: '0.04em',
-          color: badge.color, background: badge.bg,
-          border: `1px solid ${badge.border}`,
-          borderRadius: 999, padding: '3px 10px', flexShrink: 0,
-        }}>
-          {badge.label}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.66rem', fontWeight: 600, letterSpacing: '0.04em',
+            color: badge.color, background: badge.bg,
+            border: `1px solid ${badge.border}`,
+            borderRadius: 999, padding: '3px 10px',
+          }}>
+            {badge.label}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(project.id) }}
+            aria-label="Delete project"
+            title="Delete project"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(220,38,38,0.4)', padding: '4px 3px',
+              borderRadius: 6, display: 'flex', alignItems: 'center',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#DC2626' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(220,38,38,0.4)' }}
+          >
+            <TrashIcon size={14} />
+          </button>
+        </div>
       </div>
       <p className="font-mono" style={{ fontSize: '0.71rem', color: 'var(--text-muted)', margin: 0 }}>
         Created {dateStr}
@@ -1575,7 +1643,7 @@ function NewProjectCard({ features, featuresLoading, onStartNew, onPay }) {
   )
 }
 
-function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay }) {
+function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay, onDelete }) {
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
@@ -1588,7 +1656,7 @@ function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStart
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
         {projects.map(p => (
-          <ProjectCard key={p.id} project={p} onContinue={onContinue} />
+          <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} />
         ))}
         <NewProjectCard features={features} featuresLoading={featuresLoading} onStartNew={onStartNew} onPay={onPay} />
       </div>
@@ -1619,7 +1687,7 @@ export default function Dashboard() {
   // URL-based project selection
   const [searchParams, setSearchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
-  const { selectProject } = useProjectState()
+  const { selectProject, projectId: activeProjectId } = useProjectState()
   const [selectingProject, setSelectingProject] = useState(false)
 
   useEffect(() => {
@@ -1743,6 +1811,33 @@ export default function Dashboard() {
     clearState()
     sessionStorage.setItem('intentional_app_entry', 'true')
     navigate('/app')
+  }
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  function handleDeleteProject(projectId) {
+    if (projectId === activeProjectId) {
+      showToastMessage('Switch projects before deleting this one.')
+      return
+    }
+    setDeleteConfirmId(projectId)
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteConfirmId) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setDeleting(true)
+    try {
+      await deleteProject(deleteConfirmId, user.id)
+      setProjects(prev => prev.filter(p => p.id !== deleteConfirmId))
+      setDeleteConfirmId(null)
+    } catch {
+      showToastMessage('Failed to delete project. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -1882,6 +1977,7 @@ export default function Dashboard() {
               onContinue={handleContinueProject}
               onStartNew={handleStartNewProject}
               onPay={() => handlePay('project_reset')}
+              onDelete={handleDeleteProject}
             />
           )}
         </main>
@@ -1898,6 +1994,24 @@ export default function Dashboard() {
             transition={{ duration: 0.2 }}
           >
             <NewSessionModal onClose={handleModalClose} onConfirm={handleModalConfirm} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete project confirmation modal */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DeleteProjectModal
+              onCancel={() => { if (!deleting) setDeleteConfirmId(null) }}
+              onConfirm={handleConfirmDelete}
+              deleting={deleting}
+            />
           </motion.div>
         )}
       </AnimatePresence>
