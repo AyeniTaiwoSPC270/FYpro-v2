@@ -1,9 +1,10 @@
 import crypto           from 'crypto';
-import { Resend }         from 'resend';
-import { supabaseAdmin }  from './_lib/supabase-admin.js';
-import { writeSystemLog } from './_lib/system-log.js';
-import { rateLimitCheck } from './_lib/rate-limit.js';
-import { setCorsHeaders }  from './_lib/cors.js';
+import { Resend }              from 'resend';
+import { supabaseAdmin }       from './_lib/supabase-admin.js';
+import { writeSystemLog }      from './_lib/system-log.js';
+import { rateLimitCheck }      from './_lib/rate-limit.js';
+import { setCorsHeaders }       from './_lib/cors.js';
+import { sendTelegramAlert }   from './_lib/telegram.js';
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
@@ -903,6 +904,109 @@ async function handleFeedbackSummary(req, res) {
   }
 }
 
+// action: "daily-report"
+// Triggered by cron-job.org. Gate: ?secret=CRON_SECRET query param.
+// Aggregates today's key metrics and posts a summary to Telegram.
+async function handleDailyReport(req, res) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
+  if (!req.query.secret || req.query.secret !== cronSecret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const today      = new Date().toISOString().slice(0, 10);
+    const todayStart = `${today}T00:00:00.000Z`;
+    const cap        = parseFloat(process.env.DAILY_CAP_USD || '10');
+
+    const [
+      authRes,
+      paymentsAllRes,
+      paymentsTodayRes,
+      usageRes,
+      failedGenRes,
+      defenseRes,
+      projectsRes,
+      stepFeaturesRes,
+      cacheHits,
+      newUsersRes,
+      totalUsersRes,
+    ] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+      supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
+      supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayStart),
+      supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
+      supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('defense_sessions').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('projects').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('project_steps').select('step_name').gte('completed_at', todayStart),
+      readCacheHits(),
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+    ]);
+
+    const authUsers   = authRes.data?.users || [];
+    const activeToday = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
+    const totalUsers  = totalUsersRes.count || 0;
+    const newUsers    = newUsersRes.count   || 0;
+
+    const allPayments   = paymentsAllRes.data  || [];
+    const todayPayments = paymentsTodayRes.data || [];
+    const totalRevNgn   = allPayments.reduce((s, p)   => s + Math.round((p.amount_kobo || 0) / 100), 0);
+    const todayRevNgn   = todayPayments.reduce((s, p) => s + Math.round((p.amount_kobo || 0) / 100), 0);
+
+    const usageRow         = usageRes.data;
+    const spentUsd         = parseFloat(usageRow?.total_cost_usd || 0);
+    const generationsToday = usageRow?.request_count || 0;
+    const failedToday      = failedGenRes.count || 0;
+
+    const totalCalls  = cacheHits + generationsToday;
+    const cacheHitPct = totalCalls > 0 ? Math.round((cacheHits / totalCalls) * 100) : 0;
+
+    const defensesToday = defenseRes.count  || 0;
+    const projectsToday = projectsRes.count || 0;
+
+    // Top feature today from completed project_steps
+    const stepRows   = stepFeaturesRes.data || [];
+    const stepCounts = {};
+    for (const row of stepRows) {
+      if (row.step_name) stepCounts[row.step_name] = (stepCounts[row.step_name] || 0) + 1;
+    }
+    const topEntry = Object.entries(stepCounts).sort((a, b) => b[1] - a[1])[0];
+    const topFeatureLabel = topEntry
+      ? `${topEntry[0].replace(/_/g, ' ')} (${topEntry[1]} runs)`
+      : 'None yet';
+
+    const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now     = new Date();
+    const dateStr = `${now.getUTCDate()} ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
+
+    const message = [
+      `📊 FYPro Daily Report — ${dateStr}`,
+      ``,
+      `👥 Users`,
+      `- Total: ${totalUsers} | New today: ${newUsers} | Active: ${activeToday}`,
+      ``,
+      `💰 Revenue`,
+      `- Today: ₦${todayRevNgn.toLocaleString()} | Total: ₦${totalRevNgn.toLocaleString()} | Payments: ${todayPayments.length}`,
+      ``,
+      `🤖 AI Usage`,
+      `- Runs: ${generationsToday} | Failed: ${failedToday} | Spend: $${spentUsd.toFixed(2)}/$${cap.toFixed(0)} | Cache: ${cacheHitPct}%`,
+      ``,
+      `🎓 Academic`,
+      `- Defenses: ${defensesToday} | Projects: ${projectsToday}`,
+      ``,
+      `📈 Top feature: ${topFeatureLabel}`,
+    ].join('\n');
+
+    await sendTelegramAlert(message);
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/daily-report] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -941,6 +1045,7 @@ export default async function handler(req, res) {
   if (action === 'feedback-summary')        return handleFeedbackSummary(req, res);
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
+  if (action === 'daily-report')            return handleDailyReport(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
