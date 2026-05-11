@@ -57,7 +57,7 @@ const BellIcon = () => (
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-function ProfileNavbar({ initials, name }) {
+function ProfileNavbar({ initials, name, avatarUrl }) {
   const navigate = useNavigate()
   const { clearState } = useApp()
   const { features } = usePaidFeatures()
@@ -120,13 +120,15 @@ function ProfileNavbar({ initials, name }) {
             }}
           >
             <div
-              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold text-white flex-shrink-0"
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold text-white flex-shrink-0 overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
                 border: '2px solid rgba(0,102,255,0.35)',
               }}
             >
-              {initials}
+              {avatarUrl
+                ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+                : initials}
             </div>
             <span className="font-sans text-[0.8rem] font-medium text-slate-300 max-w-[120px] truncate hidden sm:block">
               {name}
@@ -462,7 +464,7 @@ export default function Profile() {
       }}
     >
       <style>{PROFILE_KEYFRAMES}</style>
-      <ProfileNavbar initials={initials} name={form.name} />
+      <ProfileNavbar initials={initials} name={form.name} avatarUrl={avatarUrl} />
 
       <div className="max-w-3xl mx-auto px-6 py-12">
 

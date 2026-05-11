@@ -14,6 +14,7 @@ import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { useProjectState } from '../hooks/useProjectState'
+import { useUser } from '../hooks/useUser'
 import Footer from '../components/Footer'
 import BadgeRow from '../components/badges/BadgeRow'
 
@@ -619,7 +620,7 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
             aria-label={`Profile: ${STUDENT.name}`}
             aria-expanded={avatarOpen}
             onClick={() => setAvatarOpen((v) => !v)}
-            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-white cursor-pointer"
+            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-white cursor-pointer overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
               border: '2px solid rgba(0,102,255,0.35)',
@@ -627,7 +628,9 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
               fontFamily: "'DM Serif Display', serif",
             }}
           >
-            {STUDENT.initials}
+            {STUDENT.avatarUrl
+              ? <img src={STUDENT.avatarUrl} alt={STUDENT.name} className="w-full h-full object-cover" />
+              : STUDENT.initials}
           </motion.button>
 
           <AnimatePresence>
@@ -1796,6 +1799,7 @@ export default function Dashboard() {
   const allComplete = state.stepsCompleted.every(Boolean)
 
   // FIX 1 + FIX 2 — derive name and initials from state.name (hydrated from Supabase users.full_name)
+  const { user } = useUser()
   const fullName = state.name || ''
   const initials = fullName
     ? fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -1804,6 +1808,7 @@ export default function Dashboard() {
   const STUDENT = {
     name:           fullName,
     initials,
+    avatarUrl:      user?.user_metadata?.avatar_url || null,
     university:     state.university  || '',
     department:     state.department  || '',
     level:          state.level       || '',
