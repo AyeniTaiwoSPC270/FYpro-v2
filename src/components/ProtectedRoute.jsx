@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import WhatsAppButton from './WhatsAppButton'
 
 // SQL required (run once in Supabase SQL Editor):
 //   ALTER TABLE user_entitlements
@@ -59,5 +60,10 @@ export default function ProtectedRoute({ children }) {
     )
   }
 
-  return children
+  return (
+    <>
+      {children}
+      <WhatsAppButton />
+    </>
+  )
 }
