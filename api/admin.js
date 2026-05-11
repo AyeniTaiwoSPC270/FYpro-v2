@@ -820,6 +820,54 @@ async function handleResolveLog(req, res) {
   }
 }
 
+// action: "test-all-alerts" — fires one test message per alert type so you can
+// verify the Telegram connection and all 10 wired events in one shot.
+// Uses direct Telegram API calls (not sendTelegramAlert) so each result is
+// individually reported even if the helper would swallow the error.
+async function handleTestAllAlerts(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const token  = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) {
+    return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured on server.' });
+  }
+
+  const ALERTS = [
+    { key: 'signup',                 message: '👤 [TEST] New signup: test@example.com (free)' },
+    { key: 'payment_success',        message: '💰 [TEST] Payment received: test@example.com paid ₦3,500 for Defense Pack' },
+    { key: 'payment_failed',         message: '❌ [TEST] Payment failed: test@example.com — card declined' },
+    { key: 'spend_warning_80pct',    message: '🔶 [TEST] Spend warning: 80% of daily cap used ($8.00/$10.00)' },
+    { key: 'spend_cap_hit',          message: '⚠️ [TEST] Spend cap hit: $10.00 spent today. Claude requests blocked.' },
+    { key: 'gen_failed_general',     message: '🔴 [TEST] Generation failed: topic-validator for anonymous — timeout' },
+    { key: 'gen_failed_defense',     message: '🔴 [TEST] Generation failed: defense-simulator for test@example.com — timeout' },
+    { key: 'gen_failed_supervisor',  message: '🔴 [TEST] Generation failed: supervisor-prep — timeout' },
+    { key: 'defense_completed',      message: '🎓 [TEST] Defense completed: test@example.com scored 7/10' },
+    { key: 'project_created',        message: '📁 [TEST] New project: test@example.com started \'My Research Project\'' },
+  ];
+
+  const results = await Promise.all(
+    ALERTS.map(async ({ key, message }) => {
+      try {
+        const r    = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ chat_id: chatId, text: message }),
+        });
+        const data = await r.json();
+        return { key, ok: r.ok && data.ok === true, http_status: r.status };
+      } catch (err) {
+        return { key, ok: false, error: err.message };
+      }
+    })
+  );
+
+  const allOk    = results.every(r => r.ok);
+  const failures = results.filter(r => !r.ok);
+  return res.status(200).json({ all_ok: allOk, sent: results.length, failures: failures.length, results });
+}
+
 // action: "feedback-summary" — per-feature thumbs aggregates, last 30 days
 async function handleFeedbackSummary(req, res) {
   const caller = await verifyAdmin(req, res);
@@ -892,6 +940,7 @@ export default async function handler(req, res) {
   if (action === 'resolve_log')        return handleResolveLog(req, res);
   if (action === 'feedback-summary')        return handleFeedbackSummary(req, res);
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
+  if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
