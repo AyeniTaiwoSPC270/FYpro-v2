@@ -282,17 +282,20 @@ function cmdHelp() {
 // ─── Telegram bot handler ─────────────────────────────────────────────────────
 
 async function handleTelegramBot(req, res) {
-  // Respond 200 immediately so Telegram does not retry on slow queries.
-  res.status(200).end()
+  console.log('[notify/bot] incoming body:', JSON.stringify(req.body).slice(0, 500))
 
   const message = req.body?.message
-  if (!message?.text) return
+  if (!message?.text) return res.status(200).end()
 
   // Security: ignore any chat that is not the admin chat.
-  if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) return
+  if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) {
+    console.log('[notify/bot] ignored: chat', message.chat.id, '!== expected', process.env.TELEGRAM_CHAT_ID)
+    return res.status(200).end()
+  }
 
   const chatId = message.chat.id
   const text   = (message.text || '').trim().toLowerCase().split('@')[0]
+  console.log('[notify/bot] command:', text, 'from chat:', chatId)
 
   try {
     let reply
@@ -304,13 +307,17 @@ async function handleTelegramBot(req, res) {
     else if (text.startsWith('/payments')) reply = await cmdPayments()
     else if (text.startsWith('/health'))   reply = await cmdHealth()
     else if (text.startsWith('/help'))     reply = cmdHelp()
-    else return
+    else return res.status(200).end()
 
     await sendReply(chatId, reply)
   } catch (err) {
     console.error('[notify/bot] command error:', err.message)
     await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`)
   }
+
+  // Respond AFTER sendReply completes — Vercel freezes the function on res.end(),
+  // so responding first would kill the outbound Telegram fetch before it fires.
+  return res.status(200).end()
 }
 
 // ─── Outbound notify handler (JWT-authenticated, client-side events) ──────────
