@@ -15,8 +15,6 @@ import { useRunLimit, resolveLimit } from '../hooks/useRunLimit'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { useProjectState } from '../hooks/useProjectState'
 import Footer from '../components/Footer'
-import OnboardingNudge from '../components/onboarding/OnboardingNudge'
-import { useOnboardingState } from '../hooks/useOnboardingState'
 import BadgeRow from '../components/badges/BadgeRow'
 
 const STEP_DEFS = [
@@ -159,6 +157,14 @@ const SunIcon = () => (
 const MoonIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+)
+
+const DotsHorizontalIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="5" cy="12" r="1.5" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    <circle cx="19" cy="12" r="1.5" fill="currentColor" />
   </svg>
 )
 
@@ -1488,20 +1494,25 @@ function DashUsageSection({ features, runCounts, loading, onPaymentIssue }) {
 
 // ─── Multi-project cards ──────────────────────────────────────────────────────
 
-function statusBadge(status) {
-  if (status === 'active' || status === 'in_progress' || status === 'defense_ready')
-    return {
-      label: status === 'defense_ready' ? 'Defense Ready' : status === 'in_progress' ? 'In Progress' : 'Active',
-      color: '#16A34A', bg: 'rgba(22,163,74,0.12)', border: 'rgba(22,163,74,0.25)',
-    }
-  if (status === 'archived')
-    return { label: 'Archived', color: '#64748B', bg: 'rgba(100,116,139,0.10)', border: 'rgba(100,116,139,0.22)' }
-  return { label: 'Draft', color: '#F59E0B', bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.22)' }
-}
-
 function ProjectCard({ project, onContinue, onDelete }) {
-  const badge = statusBadge(project.status)
-  const dateStr = new Date(project.created_at).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  const title = project.title || 'Untitled Project'
+  const truncatedTitle = title.length > 60 ? title.slice(0, 60) + '…' : title
+  const lastActive = new Date(project.updated_at || project.created_at).toLocaleDateString('en-NG', {
+    year: 'numeric', month: 'short', day: 'numeric',
+  })
+  const stepNum = Math.min(6, (project.current_step ?? 0) + 1)
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [menuOpen])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -1511,61 +1522,100 @@ function ProjectCard({ project, onContinue, onDelete }) {
         background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
         border: '1px solid var(--border-color)',
         borderRadius: 16,
-        padding: '28px 28px 24px',
+        padding: '24px 24px 20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: 12,
         boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+        position: 'relative',
       }}
       whileHover={{ boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <h3 className="font-serif" style={{ fontSize: '1.05rem', color: 'var(--text-primary)', lineHeight: 1.3, flex: 1, margin: 0 }}>
-          {project.title || 'Untitled Project'}
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <span style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.66rem', fontWeight: 600, letterSpacing: '0.04em',
-            color: badge.color, background: badge.bg,
-            border: `1px solid ${badge.border}`,
-            borderRadius: 999, padding: '3px 10px',
-          }}>
-            {badge.label}
-          </span>
+      {/* Faculty + options menu */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.62rem', letterSpacing: '0.06em', textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+        }}>
+          {project.faculty || '—'}
+        </span>
+        <div style={{ position: 'relative' }} ref={menuRef}>
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete(project.id) }}
-            aria-label="Delete project"
-            title="Delete project"
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
+            aria-label="Project options"
+            aria-expanded={menuOpen}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'rgba(220,38,38,0.4)', padding: '4px 3px',
-              borderRadius: 6, display: 'flex', alignItems: 'center',
-              transition: 'color 0.15s ease',
+              color: 'var(--text-muted)', padding: '4px 6px', borderRadius: 6,
+              display: 'flex', alignItems: 'center', transition: 'color 0.15s ease',
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#DC2626' }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(220,38,38,0.4)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
           >
-            <TrashIcon size={14} />
+            <DotsHorizontalIcon />
           </button>
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+              background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+              borderRadius: 10, overflow: 'hidden', zIndex: 20,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.25)', minWidth: 130,
+            }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(project.id) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '10px 14px', fontFamily: "'Poppins', sans-serif",
+                  fontSize: '0.8rem', color: '#DC2626', textAlign: 'left',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.06)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+              >
+                <TrashIcon size={13} /> Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
-      <p className="font-mono" style={{ fontSize: '0.71rem', color: 'var(--text-muted)', margin: 0 }}>
-        Created {dateStr}
-      </p>
+
+      {/* Topic title */}
+      <h3 className="font-serif" style={{ fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.35, margin: 0 }}>
+        {truncatedTitle}
+      </h3>
+
+      {/* Last active + step progress */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.64rem', color: 'var(--text-muted)' }}>
+          {lastActive}
+        </span>
+        <span style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: '0.61rem', fontWeight: 600,
+          color: '#3B82F6', background: 'rgba(59,130,246,0.10)',
+          border: '1px solid rgba(59,130,246,0.22)',
+          borderRadius: 999, padding: '2px 9px', whiteSpace: 'nowrap',
+        }}>
+          Step {stepNum} of 6
+        </span>
+      </div>
+
+      {/* Continue button */}
       <motion.button
         whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.35)' }}
         whileTap={{ scale: 0.97 }}
         onClick={() => onContinue(project.id)}
         style={{
-          alignSelf: 'flex-start',
-          background: '#16A34A', color: '#fff',
-          border: 'none', borderRadius: 10,
-          padding: '9px 20px',
-          fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.82rem',
+          width: '100%', background: '#16A34A', color: '#fff',
+          border: 'none', borderRadius: 10, padding: '11px 20px',
+          fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.85rem',
           cursor: 'pointer', transition: 'background 0.15s ease',
-          display: 'flex', alignItems: 'center', gap: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          marginTop: 4,
         }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#15803D' }}
+        onMouseLeave={e => { e.currentTarget.style.background = '#16A34A' }}
       >
         Continue <ArrowRightIcon size={13} />
       </motion.button>
@@ -1728,8 +1778,6 @@ export default function Dashboard() {
     toastTimer.current = setTimeout(() => setToastVisible(false), 3000)
   }
 
-  const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
-
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
 
@@ -1858,6 +1906,35 @@ export default function Dashboard() {
         <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={() => setSidebarOpen(o => !o)} />
         <AnnouncementBanner />
 
+        {!projectsLoading && projects.length > 0 && !state.stepsCompleted[0] && (
+          <div
+            className="flex-shrink-0 flex items-center justify-between gap-3 px-4 md:px-8"
+            style={{
+              background: 'rgba(245,158,11,0.06)',
+              borderBottom: '1px solid rgba(245,158,11,0.18)',
+              padding: '10px 32px',
+            }}
+          >
+            <p className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>
+              You haven't validated your topic yet. That's the most important first step.
+            </p>
+            <button
+              onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
+              className="font-sans font-semibold cursor-pointer"
+              style={{
+                background: 'none', border: 'none',
+                color: '#F59E0B', fontSize: '0.82rem',
+                whiteSpace: 'nowrap', padding: '6px 0',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#D97706' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#F59E0B' }}
+            >
+              Validate my topic →
+            </button>
+          </div>
+        )}
+
         <main
           className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"
           style={{
@@ -1866,20 +1943,6 @@ export default function Dashboard() {
             backgroundSize: '28px 28px',
           }}
         >
-          <AnimatePresence>
-            {!nudgeLoading && showNudge && (
-              <motion.div
-                key="onboarding-nudge"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: 'hidden' }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <OnboardingNudge onDismiss={dismiss} />
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {projectsLoading ? (
             <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)' }}>
@@ -1893,21 +1956,29 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-lg text-center"
+                style={{
+                  background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 20,
+                  padding: '56px 48px 48px',
+                  width: '100%', maxWidth: 480,
+                  textAlign: 'center',
+                  boxShadow: '0 8px 48px rgba(0,0,0,0.18)',
+                }}
               >
                 <motion.div
                   animate={{ y: [0, -9, 0] }}
                   transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
                   className="flex justify-center mb-7"
                 >
-                  <ShieldIcon size={72} color="#0066FF" />
+                  <ShieldIcon size={64} color="#0066FF" />
                 </motion.div>
 
-                <h1 className="font-serif text-white mb-3" style={{ fontSize: '2rem', lineHeight: 1.2 }}>
-                  Welcome{STUDENT.name ? `, ${STUDENT.name.split(' ')[0]}` : ''}!
+                <h1 className="font-serif text-white mb-3" style={{ fontSize: '1.85rem', lineHeight: 1.2 }}>
+                  Let's start your FYP journey
                 </h1>
-                <p className="font-sans text-slate-400 mb-8 leading-relaxed" style={{ fontSize: '0.92rem', maxWidth: '38ch', margin: '0 auto 32px' }}>
-                  Your research companion is ready. Start by validating your topic — it only takes a minute and stops you wasting weeks on an unresearchable idea.
+                <p className="font-sans text-slate-400 leading-relaxed" style={{ fontSize: '0.9rem', maxWidth: '38ch', margin: '0 auto 32px' }}>
+                  Most students spend weeks on a topic their supervisor rejects. FYPro helps you validate yours in 2 minutes.
                 </p>
 
                 <motion.button
@@ -1920,14 +1991,8 @@ export default function Dashboard() {
                   className="inline-flex items-center gap-2 px-8 py-4 bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans font-semibold cursor-pointer transition-all duration-200"
                   style={{ fontSize: '0.95rem' }}
                 >
-                  <PlusIcon /> Create New Project
+                  Validate My Topic <ArrowRightIcon size={14} />
                 </motion.button>
-
-                {(STUDENT.university || STUDENT.department) && (
-                  <p className="font-mono text-slate-600 mt-7" style={{ fontSize: '0.68rem' }}>
-                    {[STUDENT.university, STUDENT.department, STUDENT.level ? `Level ${STUDENT.level}` : ''].filter(Boolean).join(' · ')}
-                  </p>
-                )}
               </motion.div>
             </div>
           ) : projectParam ? (

@@ -11,6 +11,7 @@ import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { callCreditReferral } from '../../lib/referral'
 import { trackEvent } from '../../lib/analytics'
+import { useOnboardingState } from '../../hooks/useOnboardingState'
 
 const LOADING_MESSAGES = [
   'Analyzing your topic...',
@@ -44,6 +45,8 @@ export default function TopicValidator() {
     restored ? (state.topicValidation?.refined_topic || '') : ''
   )
   const [typewriterActive, setTypewriterActive] = useState(false)
+
+  const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
 
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('topic_validator')
@@ -131,6 +134,7 @@ export default function TopicValidator() {
     localStorage.setItem('fypro_autosave_topic_validator', JSON.stringify({ topic: trimmed }))
     setBtnDisabled(true)
     setHasSubmitted(true)
+    if (showNudge) dismiss()
     setSection('loading')
 
     validateTopic(studentContext, trimmed)
@@ -226,6 +230,45 @@ export default function TopicValidator() {
 
       {/* ── Input section ──────────────────────────────────────────────────── */}
       <div id="tv-input-section" className={`tv-input-section ${section === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}>
+
+        {!nudgeLoading && showNudge && !restored && (
+          <div style={{
+            background: 'rgba(0,102,255,0.06)',
+            border: '1px solid rgba(0,102,255,0.2)',
+            borderLeft: '3px solid #0066FF',
+            borderRadius: 10,
+            padding: '14px 16px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <div>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                Welcome to FYPro 👋
+              </p>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                Start by entering your project topic idea — even if it's rough or vague. We'll analyze it and help you refine it into something your supervisor will approve.
+              </p>
+            </div>
+            <button
+              onClick={dismiss}
+              aria-label="Dismiss welcome banner"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'rgba(0,102,255,0.5)', fontSize: '1.15rem', lineHeight: 1,
+                padding: '2px 4px', flexShrink: 0, fontFamily: 'monospace',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#0066FF' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(0,102,255,0.5)' }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <p className="tv-step-label">Step 1: Topic Validator</p>
         <p className="tv-description">
           Edit your topic if needed, then validate it. FYPro will check scope, originality,
