@@ -5,6 +5,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
+import { sendTelegramAlert } from './_lib/telegram.js';
 
 const redis = new Redis({
   url:   process.env.UPSTASH_REDIS_REST_URL,
@@ -110,6 +111,10 @@ async function handleSignup(req, res) {
   const success = response.ok && !!userId;
 
   logAttempt(email, ip, 'signup', success);
+
+  if (success) {
+    sendTelegramAlert(`👤 New signup: ${email} (free)`)
+  }
 
   if (!response.ok) {
     const msg = data.msg || data.error_description || data.error || 'Sign up failed. Please try again.';

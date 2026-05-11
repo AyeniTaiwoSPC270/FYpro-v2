@@ -3,9 +3,11 @@ import posthog from 'posthog-js'
 import * as Sentry from "@sentry/react";
 
 if (import.meta.env.VITE_POSTHOG_KEY) {
+  const cookieConsent = localStorage.getItem('cookie_consent')
   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: 'https://app.posthog.com',
     capture_pageview: false,
+    opt_out_capturing_by_default: cookieConsent !== 'accepted',
   })
 }
 import { StrictMode } from 'react'

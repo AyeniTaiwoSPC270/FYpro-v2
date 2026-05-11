@@ -122,6 +122,17 @@ export async function createProject(data: {
     console.error('[supabase-client] createProject:', error.message)
     return null
   }
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.access_token && project) {
+      fetch('/api/notify', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ action: 'project_created', payload: { title: (project as Project).title || '' } }),
+      }).catch(() => {})
+    }
+  })
+
   return project as Project
 }
 

@@ -499,7 +499,7 @@ export async function panelSummary(system, apiMessages) {
 
 // ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────
 export async function prepareSupervisorMeeting(stage, lastFeedback, stuckOn) {
-  const res = await fetch('/api/supervisor-prep', {
+  const res = await fetch('/api/ai?action=supervisor-prep', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stage, lastFeedback: lastFeedback || '', stuckOn: stuckOn || '' }),

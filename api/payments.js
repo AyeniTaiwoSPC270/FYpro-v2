@@ -3,6 +3,7 @@ import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
+import { sendTelegramAlert } from './_lib/telegram.js';
 import { Resend } from 'resend';
 
 // bodyParser disabled so the webhook handler can access the raw body for HMAC.
@@ -104,9 +105,17 @@ async function handleWebhook(req, res, rawBody) {
           paystackCurrency:   event.data.currency,
           source:             'webhook',
         });
+        if (result.status === 'success') {
+          const email     = event.data.customer?.email || 'unknown'
+          const amountNGN = (event.data.amount / 100).toLocaleString('en-NG')
+          const planName  = PLAN_DISPLAY_NAMES[result.tier] || result.tier
+          sendTelegramAlert(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`)
+        }
         return res.status(200).json({ received: true, status: result.status });
       } catch (err) {
         if (err.code === 'KNOWN_REJECTION') {
+          const email = event.data.customer?.email || 'unknown'
+          sendTelegramAlert(`❌ Payment failed: ${email} - ${err.message}`)
           console.warn('[webhook] known rejection', { reference: event.data.reference, reason: err.message });
           return res.status(200).json({ received: true, rejected: err.message });
         }
@@ -253,6 +262,7 @@ async function handleVerify(req, res) {
             const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
             const amountNGN = payment.amount_kobo / 100;
             await sendReceiptEmail(user.email, planName, amountNGN, reference);
+            sendTelegramAlert(`💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`)
           }
         }
       } catch (emailErr) {
@@ -263,6 +273,7 @@ async function handleVerify(req, res) {
     return res.status(200).json({ status: result.status, tier: result.tier });
   } catch (err) {
     if (err.code === 'KNOWN_REJECTION') {
+      sendTelegramAlert(`❌ Payment failed: ${user.email} - ${err.message}`)
       console.warn('[payments/verify] known rejection', { reference, reason: err.message });
       return res.status(400).json({ error: 'Payment could not be verified' });
     }

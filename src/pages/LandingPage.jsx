@@ -1185,6 +1185,7 @@ function Footer() {
           <div className="flex gap-[18px]">
             <a href="/privacy" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Privacy</a>
             <a href="/terms" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Terms</a>
+            <a href="/cookie-policy" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Cookie Policy</a>
             {authed && <a href="/account/email-preferences" className="text-[0.76rem] text-white/[0.28] hover:text-white/55 transition-colors duration-150 no-underline">Email preferences</a>}
           </div>
         </div>

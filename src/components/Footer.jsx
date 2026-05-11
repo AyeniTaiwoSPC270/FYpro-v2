@@ -48,6 +48,13 @@ export default function Footer() {
           >
             Terms
           </Link>
+          <Link
+            to="/cookie-policy"
+            className="font-sans text-xs no-underline hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Cookie Policy
+          </Link>
           {authed && (
             <Link
               to="/account/email-preferences"

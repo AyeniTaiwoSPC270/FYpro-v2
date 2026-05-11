@@ -954,6 +954,18 @@ export default function DefensePrep() {
       newCompleted[5] = true
       set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
       saveStep('defense_prep', data)
+
+      // Fire-and-forget admin notification
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          fetch('/api/notify', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body:    JSON.stringify({ action: 'defense_completed', payload: { score: Math.round(data.panel_score ?? 0) } }),
+          }).catch(() => {})
+        }
+      })
+
       // Fire-and-forget progress tracking; await in sequence so tryAwardDefenseReady
       // sees the updated defense_prep + defense_simulator rows before checking.
       markStepComplete('defense_prep')

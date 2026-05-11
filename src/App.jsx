@@ -30,6 +30,8 @@ import RoadmapPage from './pages/roadmap/RoadmapPage'
 import EmailPreferences from './pages/account/EmailPreferences'
 import MyCertificates from './pages/account/MyCertificates'
 import MyReferrals from './pages/account/MyReferrals'
+import CookieBanner from './components/CookieBanner'
+import CookiePolicy from './pages/CookiePolicy'
 
 export default function App() {
   return (
@@ -39,6 +41,7 @@ export default function App() {
         <ProjectStateProvider>
         <RouteProgressBar />
         <ToastProvider />
+        <CookieBanner />
         <Routes>
           {/* Public marketing */}
           <Route path="/" element={<LandingPage />} />
@@ -47,6 +50,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
