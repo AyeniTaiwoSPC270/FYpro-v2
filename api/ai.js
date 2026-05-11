@@ -88,7 +88,7 @@ async function handleGeneral(req, res) {
     console.error('[ai/general] error:', err.message);
     const feature  = req.body?.step || 'general'
     const userId   = extractUserId(req) || 'anonymous'
-    sendTelegramAlert(`🔴 Generation failed: ${feature} for ${userId} - ${err.message}`)
+    await sendTelegramAlert(`🔴 Generation failed: ${feature} for ${userId} - ${err.message}`)
     return res.status(500).json({ error: err.message });
   }
 }
@@ -163,14 +163,16 @@ async function handleDefense(req, res) {
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[ai/defense] error:', err.message);
-    sendTelegramAlert(`🔴 Generation failed: defense-simulator for ${user.email} - ${err.message}`)
-    writeSystemLog({
-      severity:      'error',
-      feature:       'Defense Simulator',
-      source:        'ai',
-      plain_message: 'A defense session failed — the AI did not respond in time or hit the token limit',
-      raw_detail:    { error: err.message, userId: user.id },
-    });
+    await Promise.all([
+      sendTelegramAlert(`🔴 Generation failed: defense-simulator for ${user.email} - ${err.message}`),
+      writeSystemLog({
+        severity:      'error',
+        feature:       'Defense Simulator',
+        source:        'ai',
+        plain_message: 'A defense session failed — the AI did not respond in time or hit the token limit',
+        raw_detail:    { error: err.message, userId: user.id },
+      }),
+    ]);
     return res.status(500).json({ error: err.message });
   }
 }
@@ -257,6 +259,7 @@ async function handleSupervisorPrep(req, res) {
     return res.status(200).json(result);
   } catch (err) {
     console.error('[supervisor-prep] error:', err.message);
+    await sendTelegramAlert(`🔴 Generation failed: supervisor-prep - ${err.message}`)
     return res.status(500).json({ error: err.message });
   }
 }
