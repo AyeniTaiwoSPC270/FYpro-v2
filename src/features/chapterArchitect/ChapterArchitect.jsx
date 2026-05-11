@@ -7,9 +7,22 @@ import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
 import LiteratureMap from '../literatureMap/LiteratureMap'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+
+const CHAPTER_LOADING_MESSAGES = [
+  'Building your chapter structure...',
+  'Mapping content to your methodology...',
+  'Almost done...',
+]
+
+const GENERIC_LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 
 const CHEVRON_PATH = 'M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'
 
@@ -169,6 +182,20 @@ export default function ChapterArchitect() {
   const [editDrafts, setEditDrafts]       = useState({})
   const bodyRefs = useRef([])
 
+  // Restore autosaved inputs on mount if form is empty
+  useEffect(() => {
+    if (wordCount) return
+    try {
+      const saved = localStorage.getItem('fypro_autosave_chapter_architect')
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.wordCount) setWordCount(data.wordCount)
+        if (data.structureType) setStructureType(data.structureType)
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ── Abstract Generator state ──────────────────────────────────────────────
   const [agSection, setAgSection]         = useState('input')
   const [agData, setAgData]               = useState(null)
@@ -314,6 +341,7 @@ export default function ChapterArchitect() {
     if (!allowed) return
 
     trackEvent('workflow_step_started', { step: 'chapter_architect' })
+    localStorage.setItem('fypro_autosave_chapter_architect', JSON.stringify({ wordCount, structureType }))
     setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
@@ -506,7 +534,7 @@ export default function ChapterArchitect() {
             disabled={btnDisabled || overLimit}
             style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            {btnDisabled ? 'Generating…' : 'Generate Chapters'}
+            {btnDisabled ? 'Working…' : 'Generate Chapters'}
           </button>
           {overLimit && (
             <p className="ca-error-text" style={{ marginTop: 8 }}>
@@ -524,7 +552,7 @@ export default function ChapterArchitect() {
               <div className="skeleton-bar" style={{ width: '90%' }} />
               <div className="skeleton-bar" style={{ width: '60%' }} />
             </div>
-            <p className="tv-loading-text">Mapping your chapters…</p>
+            <LoadingMessages messages={CHAPTER_LOADING_MESSAGES} />
           </div>
         )}
 
@@ -588,7 +616,7 @@ export default function ChapterArchitect() {
                 disabled={agBtnDisabled || agOverLimit}
                 style={agOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
               >
-                {agBtnDisabled ? 'Generating Abstract…' : 'Generate Abstract'}
+                {agBtnDisabled ? 'Working…' : 'Generate Abstract'}
               </button>
               {agOverLimit && (
                 <p className="ca-error-text" style={{ marginTop: 8 }}>
@@ -606,7 +634,7 @@ export default function ChapterArchitect() {
                 <div className="skeleton-bar" style={{ width: '90%' }} />
                 <div className="skeleton-bar" style={{ width: '60%' }} />
               </div>
-              <p className="tv-loading-text">Drafting your abstract scaffold…</p>
+              <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
             </div>
           )}
 

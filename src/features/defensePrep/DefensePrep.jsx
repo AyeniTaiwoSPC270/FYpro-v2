@@ -8,6 +8,13 @@ import {
   handleApiError,
   logFailure,
 } from '../../services/api'
+import LoadingMessages from '../../components/LoadingMessages'
+
+const GENERIC_LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 import {
   THREE_EXAMINER_FIRST_QUESTION_PROMPT,
   buildThreeExaminerFollowUpPrompt,
@@ -1240,7 +1247,7 @@ export default function DefensePrep() {
             onClick={startRedFlagScan}
             style={rfOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            Scan for Red Flags
+            {isScanning ? 'Working…' : 'Scan for Red Flags'}
           </button>
           {rfOverLimit && (
             <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
@@ -1259,7 +1266,7 @@ export default function DefensePrep() {
               <div className="skeleton-bar" style={{ width: '60%' }} />
             </div>
             <p className="dp-step-label">Step 6: Defence Prep</p>
-            <p className="dp-scan-subtext">Scanning your project for vulnerabilities…</p>
+            <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
           </div>
         )}
 
@@ -1415,7 +1422,7 @@ export default function DefensePrep() {
                       <div className="skeleton-bar" style={{ width: '75%' }} />
                       <div className="skeleton-bar" style={{ width: '90%' }} />
                     </div>
-                    <p className="dp-verdict-loading-text">Generating your verdict…</p>
+                    <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
                   </div>
                 ) : (
                   <>

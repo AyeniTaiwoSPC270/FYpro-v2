@@ -5,10 +5,23 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+
+const MA_LOADING_MESSAGES = [
+  'Evaluating research approaches...',
+  'Matching methods to your topic...',
+  'Almost done...',
+]
+
+const GENERIC_LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
@@ -253,7 +266,7 @@ export default function MethodologyAdvisor() {
             disabled={maBtnDisabled || maOverLimit}
             style={maOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            {maBtnDisabled ? 'Analysing…' : 'Analyse Methodology'}
+            {maBtnDisabled ? 'Working…' : 'Analyse Methodology'}
           </button>
           {maOverLimit && (
             <p className="ma-error-text" style={{ marginTop: 8 }}>
@@ -271,7 +284,7 @@ export default function MethodologyAdvisor() {
               <div className="skeleton-bar" style={{ width: '90%' }} />
               <div className="skeleton-bar" style={{ width: '60%' }} />
             </div>
-            <p className="tv-loading-text">Weighing your methodology options…</p>
+            <LoadingMessages messages={MA_LOADING_MESSAGES} />
           </div>
         )}
 
@@ -435,7 +448,7 @@ export default function MethodologyAdvisor() {
               disabled={diGenBtnDisabled || diOverLimit}
               style={diOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
             >
-              Generate Instrument
+              {diGenBtnDisabled ? 'Working…' : 'Generate Instrument'}
             </button>
             {diOverLimit && (
               <p className="di-error-text" style={{ marginTop: 8 }}>
@@ -453,7 +466,7 @@ export default function MethodologyAdvisor() {
                 <div className="skeleton-bar" style={{ width: '90%' }} />
                 <div className="skeleton-bar" style={{ width: '60%' }} />
               </div>
-              <p className="tv-loading-text">Drafting your research instrument…</p>
+              <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
             </div>
           )}
 

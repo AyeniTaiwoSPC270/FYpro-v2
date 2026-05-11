@@ -5,11 +5,19 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { callCreditReferral } from '../../lib/referral'
 import { trackEvent } from '../../lib/analytics'
+
+const LOADING_MESSAGES = [
+  'Analyzing your topic...',
+  'Checking scope and feasibility...',
+  'Reviewing for Nigerian research context...',
+  'Almost done...',
+]
 
 function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -44,6 +52,19 @@ export default function TopicValidator() {
   const twIntervalRef   = useRef(null)
   const animateRef      = useRef(false)  // true only after a fresh API response
   const loadingTimerRef = useRef(null)
+
+  // Restore autosaved input on mount if form is empty
+  useEffect(() => {
+    if (topic) return
+    try {
+      const saved = localStorage.getItem('fypro_autosave_topic_validator')
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.topic) setTopic(data.topic)
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
@@ -107,6 +128,7 @@ export default function TopicValidator() {
 
     trackEvent('workflow_step_started', { step: 'topic_validator' })
     set({ roughTopic: trimmed })
+    localStorage.setItem('fypro_autosave_topic_validator', JSON.stringify({ topic: trimmed }))
     setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
@@ -233,7 +255,7 @@ export default function TopicValidator() {
           disabled={btnDisabled || overLimit || wordCount > 500}
           style={(overLimit || wordCount > 500) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
-          {btnDisabled ? 'Validating…' : 'Validate Topic'}
+          {btnDisabled ? 'Working…' : 'Validate Topic'}
         </button>
         {overLimit && (
           <p className="tv-error-text" style={{ marginTop: 8 }}>
@@ -251,7 +273,7 @@ export default function TopicValidator() {
             <div className="skeleton-bar" style={{ width: '90%' }} />
             <div className="skeleton-bar" style={{ width: '60%' }} />
           </div>
-          <p className="tv-loading-text">Analysing your topic…</p>
+          <LoadingMessages messages={LOADING_MESSAGES} />
         </div>
       )}
 

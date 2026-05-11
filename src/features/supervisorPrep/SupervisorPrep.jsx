@@ -5,6 +5,13 @@ import { checkAndRecord } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
+
+const LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 
 const STAGES = [
   'Just starting',
@@ -39,6 +46,21 @@ export default function SupervisorPrep() {
 
   const loadingTimerRef = useRef(null)
 
+  // Restore autosaved inputs on mount if form is empty
+  useEffect(() => {
+    if (stage || lastFeedback || stuckOn) return
+    try {
+      const saved = localStorage.getItem('fypro_autosave_supervisor_prep')
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.stage) setStage(data.stage)
+        if (data.lastFeedback) setLastFeedback(data.lastFeedback)
+        if (data.stuckOn) setStuckOn(data.stuckOn)
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
@@ -61,6 +83,7 @@ export default function SupervisorPrep() {
     const allowed = await checkAndRecord('meeting_prep', features)
     if (!allowed) return
     setError(null)
+    localStorage.setItem('fypro_autosave_supervisor_prep', JSON.stringify({ stage, lastFeedback, stuckOn }))
     setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
@@ -181,7 +204,7 @@ export default function SupervisorPrep() {
               onClick={handleSubmit}
               disabled={btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500}
             >
-              {btnDisabled ? 'Preparing…' : 'Prepare Me'}
+              {btnDisabled ? 'Working…' : 'Prepare Me'}
             </button>
           </>
         )}
@@ -195,7 +218,7 @@ export default function SupervisorPrep() {
               <div className="skeleton-bar" style={{ width: '67%' }} />
               <div className="skeleton-bar" style={{ width: '88%' }} />
             </div>
-            <p className="sp-loading-text">Generating your meeting questions…</p>
+            <LoadingMessages messages={LOADING_MESSAGES} />
           </div>
         )}
 

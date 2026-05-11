@@ -5,7 +5,14 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
+
+const LOADING_MESSAGES = [
+  'Searching academic databases...',
+  'Mapping research themes...',
+  'Almost done...',
+]
 
 export default function LiteratureMap({ chapters }) {
   const { state, studentContext } = useApp()
@@ -128,7 +135,7 @@ export default function LiteratureMap({ chapters }) {
             disabled={btnDisabled || overLimit}
             style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            {btnDisabled ? 'Mapping…' : 'Generate Literature Map'}
+            {btnDisabled ? 'Working…' : 'Generate Literature Map'}
           </button>
           {overLimit && (
             <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
@@ -146,7 +153,7 @@ export default function LiteratureMap({ chapters }) {
             <div className="skeleton-bar" style={{ width: '90%' }} />
             <div className="skeleton-bar" style={{ width: '60%' }} />
           </div>
-          <p className="tv-loading-text">Fetching real papers and mapping your literature…</p>
+          <LoadingMessages messages={LOADING_MESSAGES} />
         </div>
       )}
 

@@ -5,10 +5,17 @@ import { buildWritingPlan, handleApiError, logFailure } from '../../services/api
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+
+const LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 
 function computeUrgency(dateStr) {
   if (!dateStr) return null
@@ -37,6 +44,22 @@ export default function WritingPlanner() {
   const [error, setError]           = useState(null)
   const [btnDisabled, setBtnDisabled] = useState(false)
   const [urgency, setUrgency]       = useState(() => computeUrgency(state.submissionDeadline || ''))
+
+  // Restore autosaved deadline on mount if form is empty
+  useEffect(() => {
+    if (dateValue) return
+    try {
+      const saved = localStorage.getItem('fypro_autosave_writing_planner')
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.dateValue) {
+          setDateValue(data.dateValue)
+          setUrgency(computeUrgency(data.dateValue))
+        }
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleDateChange(e) {
     const value = e.target.value
@@ -83,6 +106,7 @@ export default function WritingPlanner() {
     if (!allowed) return
 
     trackEvent('workflow_step_started', { step: 'writing_planner' })
+    localStorage.setItem('fypro_autosave_writing_planner', JSON.stringify({ dateValue }))
     setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
@@ -189,7 +213,7 @@ export default function WritingPlanner() {
           disabled={!generateEnabled}
           style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
-          {btnDisabled ? 'Generating…' : 'Generate Writing Plan'}
+          {btnDisabled ? 'Working…' : 'Generate Writing Plan'}
         </button>
         {overLimit && (
           <p className="wp-error-text" style={{ marginTop: 8 }}>
@@ -207,7 +231,7 @@ export default function WritingPlanner() {
             <div className="skeleton-bar" style={{ width: '90%' }} />
             <div className="skeleton-bar" style={{ width: '60%' }} />
           </div>
-          <p className="tv-loading-text">Building your writing plan…</p>
+          <LoadingMessages messages={LOADING_MESSAGES} />
         </div>
       )}
 

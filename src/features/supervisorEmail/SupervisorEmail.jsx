@@ -3,6 +3,13 @@ import { generateEmail, handleApiError } from '../../services/api'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
+import LoadingMessages from '../../components/LoadingMessages'
+
+const LOADING_MESSAGES = [
+  'Generating your analysis...',
+  'Reviewing the details...',
+  'Almost done...',
+]
 
 export default function SupervisorEmail({ onClose }) {
   const { state, studentContext } = useApp()
@@ -118,17 +125,25 @@ export default function SupervisorEmail({ onClose }) {
         </p>
         <ApiErrorBox error={error} onRetry={handleGenerate} />
         <button className="se-btn-generate" onClick={handleGenerate} disabled={section === 'loading'}>
-          {section === 'loading' ? 'Generating…' : 'Generate Email'}
+          {section === 'loading' ? 'Working…' : 'Generate Email'}
         </button>
       </div>
 
       {/* ── Loading Section ─────────────────────────────────── */}
-      <div
-        id="se-loading-section"
-        className={`se-loading-section ${section === 'loading' ? 'tv-section--visible' : 'tv-section--hidden'}`}
-      >
-        <p className="tv-loading-text">Drafting your email&hellip;</p>
-      </div>
+      {section === 'loading' && (
+        <div
+          id="se-loading-section"
+          className="se-loading-section tv-section--visible"
+        >
+          <div className="skeleton-loader">
+            <div className="skeleton-bar" style={{ width: '100%' }} />
+            <div className="skeleton-bar" style={{ width: '78%' }} />
+            <div className="skeleton-bar" style={{ width: '90%' }} />
+            <div className="skeleton-bar" style={{ width: '62%' }} />
+          </div>
+          <LoadingMessages messages={LOADING_MESSAGES} />
+        </div>
+      )}
 
       {/* ── Result Section ──────────────────────────────────── */}
       <div
@@ -186,7 +201,7 @@ export default function SupervisorEmail({ onClose }) {
                 onClick={handleGenerate}
                 disabled={section === 'loading'}
               >
-                {section === 'loading' ? 'Generating…' : 'Regenerate'}
+                {section === 'loading' ? 'Working…' : 'Regenerate'}
               </button>
             </div>
 
