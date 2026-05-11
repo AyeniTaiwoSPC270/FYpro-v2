@@ -351,6 +351,9 @@ export default function AdminHealth() {
   const [page, setPage]       = useState(0)
   const [actionState, setActionState] = useState({}) // { userId: 'pending' | 'banned' | 'deleted' | 'error' }
 
+  const [testAlertsBusy,   setTestAlertsBusy]   = useState(false)
+  const [testAlertsResult, setTestAlertsResult] = useState(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(true) // optimistic; server corrects to false on 403
@@ -551,6 +554,23 @@ export default function AdminHealth() {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('desc') }
     setPage(0)
+  }
+
+  async function handleTestAlerts() {
+    if (testAlertsBusy || !session?.access_token) return
+    setTestAlertsBusy(true)
+    setTestAlertsResult(null)
+    try {
+      const res  = await fetch('/api/admin?action=test-all-alerts', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const data = await res.json()
+      setTestAlertsResult(data)
+    } catch (err) {
+      setTestAlertsResult({ all_ok: false, error: err.message, results: [] })
+    } finally {
+      setTestAlertsBusy(false)
+    }
   }
 
   async function handleDeleteUser(userId, email) {
@@ -760,8 +780,65 @@ export default function AdminHealth() {
           >
             Test Sentry
           </button>
+          <button
+            onClick={handleTestAlerts}
+            disabled={testAlertsBusy}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: testAlertsBusy
+                ? 'rgba(255,255,255,0.08)'
+                : testAlertsResult?.all_ok === true  ? '#16A34A'
+                : testAlertsResult?.all_ok === false ? '#DC2626'
+                : '#0D4DB3',
+              color: testAlertsBusy ? MUTED : 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: testAlertsBusy ? 'not-allowed' : 'pointer',
+              fontSize: '12px',
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              transition: 'background 0.2s ease',
+            }}
+          >
+            {testAlertsBusy
+              ? 'Sending…'
+              : testAlertsResult
+                ? testAlertsResult.all_ok
+                  ? `✓ ${testAlertsResult.sent}/10 sent`
+                  : `⚠ ${testAlertsResult.failures} failed`
+                : '🔔 Test Alerts'}
+          </button>
         </div>
       </div>
+
+      {/* ── Test Alerts result panel ─────────────────────────────── */}
+      {testAlertsResult && (
+        <div style={{
+          marginBottom: 16,
+          padding: '12px 16px',
+          background: testAlertsResult.all_ok ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
+          border: `1px solid ${testAlertsResult.all_ok ? 'rgba(22,163,74,0.3)' : 'rgba(220,38,38,0.3)'}`,
+          borderRadius: 10,
+        }}>
+          {testAlertsResult.error ? (
+            <p style={{ margin: 0, fontSize: 13, color: RED, fontFamily: "'Poppins', sans-serif" }}>
+              Network error: {testAlertsResult.error}
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
+              {(testAlertsResult.results || []).map(r => (
+                <span key={r.key} style={{
+                  fontSize: 12,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: r.ok ? '#4ade80' : RED,
+                }}>
+                  {r.ok ? '✓' : '✗'} {r.key}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Widget 4: System Vitals ──────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>
