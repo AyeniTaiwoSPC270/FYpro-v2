@@ -1101,7 +1101,7 @@ function LandingFAQSection() {
 function useLiveCount() {
   const [count, setCount] = useState(null)
   useEffect(() => {
-    fetch('/api/user-count')
+    fetch('/api/research?action=user-count')
       .then(r => r.json())
       .then(d => setCount(typeof d.count === 'number' ? d.count : null))
       .catch(() => setCount(null))

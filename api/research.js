@@ -7,6 +7,7 @@ import { setCorsHeaders }                 from './_lib/cors.js';
 import { checkDailyCap, trackUsage }      from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
+import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 
 const CLAUDE_TTL = 86400; // 24h
 
@@ -199,14 +200,32 @@ async function handleLitMap(req, res) {
   }
 }
 
+async function handleUserCount(req, res) {
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=3600');
+  try {
+    const { count, error } = await supabaseAdmin
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+    if (error) throw error;
+    return res.status(200).json({ count: count ?? 0 });
+  } catch (err) {
+    console.error('[research/user-count]', err.message);
+    return res.status(200).json({ count: 0 });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { action } = req.query;
+
+  if (action === 'user-count') return handleUserCount(req, res);
+
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   if (action === 'validate') return handleValidate(req, res);
   if (action === 'lit-map')  return handleLitMap(req, res);
-  return res.status(400).json({ error: 'Unknown action. Use ?action=validate or ?action=lit-map' });
+  return res.status(400).json({ error: 'Unknown action. Use ?action=validate, ?action=lit-map, or ?action=user-count' });
 }
