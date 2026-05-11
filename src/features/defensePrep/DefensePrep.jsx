@@ -31,6 +31,7 @@ import DefenseShareCard from '../../components/share/DefenseShareCard'
 import CertificateUnlock from '../../components/defense/CertificateUnlock'
 import { supabase } from '../../lib/supabase'
 import { trackEvent } from '../../lib/analytics'
+import Sentry from '../../lib/sentry'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,30 @@ function resolveExaminerVoice(name) {
   return                            { rate: 0.9,  pitch: 0.85 }
 }
 
+function logElevenLabsFailure(err, examinerName, errorType) {
+  const sentryErr = err instanceof Error ? err : new Error(String(err))
+  supabase.auth.getUser()
+    .then(({ data }) => {
+      Sentry.withScope(scope => {
+        scope.setTag('feature', 'tts_elevenlabs')
+        scope.setTag('error_type', errorType)
+        scope.setTag('examiner_persona', examinerName || 'unknown')
+        scope.setExtra('timestamp', new Date().toISOString())
+        if (data?.user?.id) scope.setUser({ id: data.user.id })
+        Sentry.captureException(sentryErr)
+      })
+    })
+    .catch(() => {
+      Sentry.withScope(scope => {
+        scope.setTag('feature', 'tts_elevenlabs')
+        scope.setTag('error_type', errorType)
+        scope.setTag('examiner_persona', examinerName || 'unknown')
+        scope.setExtra('timestamp', new Date().toISOString())
+        Sentry.captureException(sentryErr)
+      })
+    })
+}
+
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function TypingIndicator() {
@@ -74,7 +99,7 @@ function TypingIndicator() {
   )
 }
 
-function ExaminerBubble({ examiner, text, onReady }) {
+function ExaminerBubble({ examiner, text, onReady, voicePaused, onRetry }) {
   const [labelText, setLabelText]       = useState('')
   const [bubbleVisible, setBubbleVisible] = useState(false)
 
@@ -96,7 +121,24 @@ function ExaminerBubble({ examiner, text, onReady }) {
 
   return (
     <div className="dp-examiner-wrap">
-      <p className={`dp-examiner-label ${examinerNameToClass(examiner)}`}>{labelText}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+        <p className={`dp-examiner-label ${examinerNameToClass(examiner)}`} style={{ margin: 0 }}>{labelText}</p>
+        {voicePaused && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+            🔇 Voice paused
+            <button
+              onClick={onRetry}
+              aria-label="Retry audio"
+              title="Retry audio"
+              style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px', color: 'rgba(255,255,255,0.45)', fontSize: '0.7rem', lineHeight: 1.4, transition: 'border-color 0.15s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)' }}
+            >
+              ↻ Retry
+            </button>
+          </span>
+        )}
+      </div>
       <div className={`dp-examiner-bubble${bubbleVisible ? ' dp-examiner-bubble--visible' : ''}`}>
         <p className="dp-examiner-text">{text}</p>
       </div>
@@ -473,6 +515,7 @@ export default function DefensePrep() {
   const [summaryData, setSummaryData]         = useState(state.defenseSummary || null)
   const [exitModalOpen, setExitModalOpen]     = useState(false)
   const [micActive, setMicActive]             = useState(false)
+  const [voicePausedMsgIds, setVoicePausedMsgIds] = useState(() => new Set())
 
   // ── circuit breaker state ─────────────────────────────────────────────────
   const [briefAnswerWarning, setBriefAnswerWarning] = useState(false)
@@ -593,7 +636,7 @@ export default function DefensePrep() {
 
   // ── voice — TTS ───────────────────────────────────────────────────────────
 
-  function speakAsExaminer(text, examinerName) {
+  function speakAsExaminer(text, examinerName, msgId) {
     if (!text) return
     if (currentAudioRef.current) {
       currentAudioRef.current.pause()
@@ -603,12 +646,27 @@ export default function DefensePrep() {
     if (elevenLabsInFlightRef.current) return
     elevenLabsInFlightRef.current = true
 
+    // Clear paused indicator for this message (covers retry clicks)
+    if (msgId != null) {
+      setVoicePausedMsgIds(prev => {
+        if (!prev.has(msgId)) return prev
+        const next = new Set(prev)
+        next.delete(msgId)
+        return next
+      })
+    }
+
+    const controller = new AbortController()
+    const timeoutId  = setTimeout(() => controller.abort(), 10000)
+
     fetch('/api/speak', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, examiner: examinerName }),
+      body:    JSON.stringify({ text, examiner: examinerName }),
+      signal:  controller.signal,
     })
       .then(res => {
+        clearTimeout(timeoutId)
         if (!res.ok) throw new Error('speak-api-' + res.status)
         return res.blob()
       })
@@ -621,9 +679,17 @@ export default function DefensePrep() {
         audio.addEventListener('error', () => { currentAudioRef.current = null }, { once: true })
         audio.play().catch(() => { currentAudioRef.current = null })
       })
-      .catch(() => {
+      .catch(err => {
+        clearTimeout(timeoutId)
         elevenLabsInFlightRef.current = false
-        fallbackSpeak(text, examinerName)
+        const isTimeout  = err?.name === 'AbortError'
+        const errorType  = isTimeout
+          ? 'timeout'
+          : err?.message?.startsWith('speak-api-') ? 'api_error' : 'network_error'
+        logElevenLabsFailure(err, examinerName, errorType)
+        if (msgId != null) {
+          setVoicePausedMsgIds(prev => new Set([...prev, msgId]))
+        }
       })
   }
 
@@ -815,6 +881,7 @@ export default function DefensePrep() {
     setTurnCount(0)
     setSessionComplete(false)
     setDefenseSessionId(null)
+    setVoicePausedMsgIds(new Set())
     defenseSessionIdRef.current = null
     setOverlayOpen(true)
 
@@ -1252,7 +1319,9 @@ export default function DefensePrep() {
             key={msg.id}
             examiner={msg.examiner}
             text={msg.text}
-            onReady={() => speakAsExaminer(msg.text, msg.examiner)}
+            onReady={() => speakAsExaminer(msg.text, msg.examiner, msg.id)}
+            voicePaused={voicePausedMsgIds.has(msg.id)}
+            onRetry={() => speakAsExaminer(msg.text, msg.examiner, msg.id)}
           />
         )
       case 'student':

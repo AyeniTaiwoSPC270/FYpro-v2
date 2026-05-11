@@ -259,6 +259,14 @@ export default async function handler(req, res) {
     });
   }
 
+  // Record that a certificate was requested for this session (fire-and-forget)
+  supabaseAdmin
+    .from('defense_sessions')
+    .update({ certificate_requested_at: new Date().toISOString() })
+    .eq('id', defense_session_id)
+    .then()
+    .catch(err => console.warn('[certificate] certificate_requested_at update failed:', err.message));
+
   // Idempotency: return the same certificate if this session was already processed
   const { data: existing } = await supabaseAdmin
     .from('defense_certificates')

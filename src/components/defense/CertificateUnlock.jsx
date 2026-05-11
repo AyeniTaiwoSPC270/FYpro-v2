@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { downloadCertificate } from '../../lib/certificate'
 import { supabase } from '../../lib/supabase'
+import Sentry from '../../lib/sentry'
 
 const SCORE_THRESHOLD = 7
 
@@ -27,7 +28,25 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
       if (err.message === 'NAME_REQUIRED') {
         setCertError('NAME_REQUIRED')
       } else {
-        setCertError(err.message || 'Failed to generate certificate. Please try again.')
+        const sentryErr = err instanceof Error ? err : new Error(String(err))
+        supabase.auth.getUser()
+          .then(({ data }) => {
+            Sentry.withScope(scope => {
+              scope.setTag('feature', 'certificate_generation')
+              scope.setExtra('defense_session_id', defenseSessionId)
+              scope.setExtra('timestamp', new Date().toISOString())
+              if (data?.user?.id) scope.setUser({ id: data.user.id })
+              Sentry.captureException(sentryErr)
+            })
+          })
+          .catch(() => {
+            Sentry.withScope(scope => {
+              scope.setTag('feature', 'certificate_generation')
+              scope.setExtra('timestamp', new Date().toISOString())
+              Sentry.captureException(sentryErr)
+            })
+          })
+        setCertError(err.message || 'certificate_failed')
       }
     } finally {
       setCertLoading(false)
@@ -192,15 +211,58 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         </p>
       )}
       {certError && certError !== 'NAME_REQUIRED' && (
-        <p style={{
-          fontFamily:   "'Poppins', sans-serif",
-          fontSize:     '0.75rem',
-          color:        '#F87171',
-          marginBottom: 10,
-          lineHeight:   1.5,
+        <div style={{
+          background:   'rgba(220,38,38,0.08)',
+          border:       '1px solid rgba(220,38,38,0.22)',
+          borderRadius: 12,
+          padding:      '16px 20px',
+          marginBottom: 14,
+          width:        '100%',
+          maxWidth:     340,
+          textAlign:    'left',
         }}>
-          {certError}
-        </p>
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.875rem', color: '#F87171', margin: '0 0 6px' }}>
+            Certificate generation failed
+          </p>
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: '0 0 14px' }}>
+            Don't worry — your completion is saved. Try again below, or contact us on WhatsApp and we'll sort it manually.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleDownload}
+              disabled={certLoading}
+              style={{
+                flex: 1, padding: '9px 14px', borderRadius: 8,
+                fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.78rem',
+                background: 'rgba(220,38,38,0.15)', color: '#F87171',
+                border: '1px solid rgba(220,38,38,0.3)',
+                cursor: certLoading ? 'not-allowed' : 'pointer', transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { if (!certLoading) e.currentTarget.style.background = 'rgba(220,38,38,0.25)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.15)' }}
+            >
+              Retry
+            </button>
+            <a
+              href="https://wa.me/2348029061967"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1, padding: '9px 14px', borderRadius: 8,
+                fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.78rem',
+                background: 'rgba(37,211,102,0.1)', color: '#4ADE80',
+                border: '1px solid rgba(37,211,102,0.2)',
+                textDecoration: 'none', textAlign: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.18)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)' }}
+            >
+              WhatsApp
+            </a>
+          </div>
+        </div>
       )}
       {shareError && (
         <p style={{
@@ -235,7 +297,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
           onMouseEnter={e => { if (!certLoading) e.currentTarget.style.boxShadow = '0 0 20px rgba(22,163,74,0.35)' }}
           onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}
         >
-          {certLoading ? 'Generating…' : '⬇ Download certificate'}
+          {certLoading ? 'Generating your certificate…' : '⬇ Download certificate'}
         </button>
         <button
           onClick={handleShare}
