@@ -24,13 +24,13 @@ export default async function handler(req, res) {
   if (action === 'defense_completed') {
     const score = Number(payload?.score)
     if (!isNaN(score)) {
-      sendTelegramAlert(`🎓 Defense completed: ${email} scored ${score}/10`)
+      await sendTelegramAlert(`🎓 Defense completed: ${email} scored ${score}/10`)
     }
   }
 
   if (action === 'project_created') {
     const title = String(payload?.title || 'untitled').slice(0, 80)
-    sendTelegramAlert(`📁 New project: ${email} started '${title}'`)
+    await sendTelegramAlert(`📁 New project: ${email} started '${title}'`)
   }
 
   return res.status(200).json({ ok: true })

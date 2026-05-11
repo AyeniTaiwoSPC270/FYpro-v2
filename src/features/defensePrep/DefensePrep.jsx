@@ -962,9 +962,9 @@ export default function DefensePrep() {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
             body:    JSON.stringify({ action: 'defense_completed', payload: { score: Math.round(data.panel_score ?? 0) } }),
-          }).catch(() => {})
+          }).catch(err => console.error('[notify] defense_completed failed:', err))
         }
-      })
+      }).catch(err => console.error('[notify] getSession failed:', err))
 
       // Fire-and-forget progress tracking; await in sequence so tryAwardDefenseReady
       // sees the updated defense_prep + defense_simulator rows before checking.

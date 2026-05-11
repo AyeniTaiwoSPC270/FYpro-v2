@@ -129,9 +129,9 @@ export async function createProject(data: {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body:    JSON.stringify({ action: 'project_created', payload: { title: (project as Project).title || '' } }),
-      }).catch(() => {})
+      }).catch(err => console.error('[notify] project_created failed:', err))
     }
-  })
+  }).catch(err => console.error('[notify] getSession failed:', err))
 
   return project as Project
 }
