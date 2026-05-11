@@ -1096,6 +1096,61 @@ function LandingFAQSection() {
   )
 }
 
+// ─── TRUSTED COUNTER ─────────────────────────────────────────────────────────
+
+function useLiveCount() {
+  const [count, setCount] = useState(null)
+  useEffect(() => {
+    fetch('/api/user-count')
+      .then(r => r.json())
+      .then(d => setCount(typeof d.count === 'number' ? d.count : null))
+      .catch(() => setCount(null))
+  }, [])
+  return count
+}
+
+function TrustedCounter() {
+  const count = useLiveCount()
+
+  let label
+  if (count === null) {
+    label = null
+  } else if (count < 10) {
+    label = 'Join the first students using FYPro'
+  } else {
+    label = `Trusted by ${count.toLocaleString()} students`
+  }
+
+  if (!label) return null
+
+  return (
+    <div className="py-8 relative" style={{ background: '#060E18' }}>
+      <Reveal className="flex justify-center">
+        <div
+          className="inline-flex items-center gap-3 rounded-full px-6 py-2.5"
+          style={{
+            background: 'rgba(0,102,255,0.07)',
+            border: '1px solid rgba(0,102,255,0.2)',
+          }}
+        >
+          <motion.span
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 2.4, ease: 'easeInOut', repeat: Infinity }}
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: '#60A5FA' }}
+          />
+          <span
+            className="font-mono text-[0.72rem] tracking-[0.06em]"
+            style={{ color: '#60A5FA' }}
+          >
+            {label}
+          </span>
+        </div>
+      </Reveal>
+    </div>
+  )
+}
+
 // ─── FINAL CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
@@ -1225,6 +1280,7 @@ export default function LandingPage() {
       <PricingSection />
       <SectionDivider />
       <LandingFAQSection />
+      <TrustedCounter />
       <FinalCTA />
       <Footer />
       <BackToTop />
