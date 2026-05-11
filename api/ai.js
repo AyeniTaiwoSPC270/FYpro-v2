@@ -55,7 +55,7 @@ async function handleGeneral(req, res) {
     const cached = await getCached(cacheKey);
     if (cached) {
       const userId = extractUserId(req);
-      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }).catch(() => {});
+      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }) } catch {} })();
       res.setHeader('X-Cache', 'HIT');
       return res.status(200).json(cached);
     }
@@ -78,7 +78,7 @@ async function handleGeneral(req, res) {
     if (response.ok) {
       const duration = Date.now() - start;
       const userId   = extractUserId(req);
-      supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId }).catch(() => {});
+      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId }) } catch {} })();
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
 
