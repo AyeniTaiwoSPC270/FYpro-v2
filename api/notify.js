@@ -43,18 +43,32 @@ function bar(value, max, len = 10) {
 
 // ─── Telegram send ────────────────────────────────────────────────────────────
 
-async function sendReply(chatId, text) {
+async function sendReply(chatId, text, keyboard = null) {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return
+  const payload = { chat_id: chatId, text, parse_mode: 'HTML' }
+  if (keyboard) payload.reply_markup = keyboard
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+      body:    JSON.stringify(payload),
     })
   } catch (err) {
     console.error('[notify/bot] sendReply failed:', err.message)
   }
+}
+
+async function answerCallbackQuery(callbackQueryId) {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) return
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ callback_query_id: callbackQueryId }),
+    })
+  } catch {}
 }
 
 // ─── Bot commands ─────────────────────────────────────────────────────────────
@@ -266,51 +280,94 @@ async function cmdHealth() {
 }
 
 function cmdHelp() {
-  return `🤖 <b>FYPro Admin Bot</b>
+  return `🛡️ <b>FYPro Admin Bot</b>\n\nTap a button or type a command:`
+}
 
-<b>Commands:</b>
-/stats — users, signups, conversion, spend
-/revenue — revenue breakdown by tier
-/users — last 5 signups with plan
-/spend — API usage and cost today
-/errors — last 5 unresolved errors
-/payments — last 5 payment records
-/health — Supabase, Redis, spend cap
-/help — this message`
+const KEYBOARD = {
+  inline_keyboard: [
+    [
+      { text: '📊 Stats',    callback_data: 'stats'    },
+      { text: '💰 Revenue',  callback_data: 'revenue'  },
+    ],
+    [
+      { text: '👥 Users',    callback_data: 'users'    },
+      { text: '💸 Spend',    callback_data: 'spend'    },
+    ],
+    [
+      { text: '🔴 Errors',   callback_data: 'errors'   },
+      { text: '💳 Payments', callback_data: 'payments' },
+    ],
+    [
+      { text: '🏥 Health',   callback_data: 'health'   },
+    ],
+  ],
 }
 
 // ─── Telegram bot handler ─────────────────────────────────────────────────────
 
+async function runCommand(key) {
+  if      (key === 'stats'    ) return cmdStats()
+  else if (key === 'revenue'  ) return cmdRevenue()
+  else if (key === 'users'    ) return cmdUsers()
+  else if (key === 'spend'    ) return cmdSpend()
+  else if (key === 'errors'   ) return cmdErrors()
+  else if (key === 'payments' ) return cmdPayments()
+  else if (key === 'health'   ) return cmdHealth()
+  else if (key === 'help'     ) return cmdHelp()
+  return null
+}
+
 async function handleTelegramBot(req, res) {
-  const message = req.body?.message
+  const body = req.body
+
+  // ── Button tap (callback_query) ──────────────────────────────────────────
+  if (body?.callback_query) {
+    const cq     = body.callback_query
+    const chatId = cq.message?.chat?.id
+    const admId  = String(process.env.TELEGRAM_CHAT_ID)
+
+    if (String(chatId) !== admId) return res.status(200).end()
+
+    try {
+      const reply = await runCommand(cq.data)
+      if (reply) await sendReply(chatId, reply, KEYBOARD)
+      await answerCallbackQuery(cq.id) // dismiss loading spinner
+    } catch (err) {
+      console.error('[notify/bot] callback error:', err.message)
+      await answerCallbackQuery(cq.id)
+      await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`, KEYBOARD)
+    }
+
+    return res.status(200).end()
+  }
+
+  // ── Typed command (message) ──────────────────────────────────────────────
+  const message = body?.message
   if (!message?.text) return res.status(200).end()
 
-  // Security: ignore any chat that is not the admin chat.
   if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) return res.status(200).end()
 
   const chatId = message.chat.id
-  const text   = (message.text || '').trim().toLowerCase().split('@')[0]
+  const raw    = (message.text || '').trim().toLowerCase().split('@')[0]
+
+  // Map typed /command to the same key used by callback_data
+  const key = raw.startsWith('/') ? raw.slice(1).split(' ')[0] : null
+  if (!key) return res.status(200).end()
+
+  // /start → same as /help
+  const cmdKey = key === 'start' ? 'help' : key
 
   try {
-    let reply
-    if      (text.startsWith('/stats'))    reply = await cmdStats()
-    else if (text.startsWith('/revenue'))  reply = await cmdRevenue()
-    else if (text.startsWith('/users'))    reply = await cmdUsers()
-    else if (text.startsWith('/spend'))    reply = await cmdSpend()
-    else if (text.startsWith('/errors'))   reply = await cmdErrors()
-    else if (text.startsWith('/payments')) reply = await cmdPayments()
-    else if (text.startsWith('/health'))   reply = await cmdHealth()
-    else if (text.startsWith('/help'))     reply = cmdHelp()
-    else return res.status(200).end()
-
-    await sendReply(chatId, reply)
+    const reply = await runCommand(cmdKey)
+    if (!reply) return res.status(200).end()
+    await sendReply(chatId, reply, KEYBOARD)
   } catch (err) {
     console.error('[notify/bot] command error:', err.message)
-    await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`)
+    await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`, KEYBOARD)
   }
 
-  // Respond AFTER sendReply completes — Vercel freezes the function on res.end(),
-  // so responding first would kill the outbound Telegram fetch before it fires.
+  // Respond AFTER sendReply — Vercel freezes the function on res.end(),
+  // so responding first kills the outbound Telegram fetch.
   return res.status(200).end()
 }
 
