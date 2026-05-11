@@ -282,20 +282,14 @@ function cmdHelp() {
 // ─── Telegram bot handler ─────────────────────────────────────────────────────
 
 async function handleTelegramBot(req, res) {
-  console.log('[notify/bot] incoming body:', JSON.stringify(req.body).slice(0, 500))
-
   const message = req.body?.message
   if (!message?.text) return res.status(200).end()
 
   // Security: ignore any chat that is not the admin chat.
-  if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) {
-    console.log('[notify/bot] ignored: chat', message.chat.id, '!== expected', process.env.TELEGRAM_CHAT_ID)
-    return res.status(200).end()
-  }
+  if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) return res.status(200).end()
 
   const chatId = message.chat.id
   const text   = (message.text || '').trim().toLowerCase().split('@')[0]
-  console.log('[notify/bot] command:', text, 'from chat:', chatId)
 
   try {
     let reply
