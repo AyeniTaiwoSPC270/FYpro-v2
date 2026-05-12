@@ -7467,13 +7467,13 @@ html, body {
 
 /* Individual Examiner Verdicts section label */
 .dp-summary-verdicts .dp-summary-section-label {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
   letter-spacing: 2px;
 }
 
 /* Section labels — default muted, then per-list colour */
 .dp-summary-section .dp-summary-section-label {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
   letter-spacing: 2px;
 }
 .dp-summary-section:has(.dp-summary-list--strengths) .dp-summary-section-label {
@@ -10249,6 +10249,12 @@ body {
 [data-theme="light"] .dp-share-section .dp-summary-section-label,
 .light .dp-share-section .dp-summary-section-label {
   color: rgba(13,27,42,0.4) !important;
+}
+
+/* ── Dark mode: dp-share-section "Download Result Card" label ─────────────── */
+[data-theme="dark"] .dp-share-section .dp-summary-section-label,
+.dark .dp-share-section .dp-summary-section-label {
+  color: #ffffff !important;
 }
 
 /* ── Light mode: dp-results-bar ──────────────────────────────────────────── */
