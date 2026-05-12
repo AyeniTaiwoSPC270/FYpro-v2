@@ -328,6 +328,7 @@ export default function AdminHealth() {
   const [resolvingLogId, setResolvingLogId]       = useState(null)
   const [expandedLogIds, setExpandedLogIds]       = useState(new Set())
   const systemLogsTimerRef                        = useRef(null)
+  const [sentryIssues, setSentryIssues]           = useState([])
 
   const [feedbackData, setFeedbackData]             = useState(null)
   const [feedbackLoading, setFeedbackLoading]       = useState(true)
@@ -424,7 +425,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setSystemLogs(d.logs); setSystemLogsError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setSystemLogs(d.logs); setSentryIssues(d.sentry_issues || []); setSystemLogsError(null) })
       .catch(e => setSystemLogsError(e.message || 'Failed to load'))
       .finally(() => setSystemLogsLoading(false))
   }, [session?.access_token])
@@ -1683,6 +1684,81 @@ export default function AdminHealth() {
           </div>
         )}
       </div>
+
+      {/* ── Sentry Issues ─────────────────────────────────────────── */}
+      {!systemLogsLoading && sentryIssues.length > 0 && (
+        <div style={{ marginTop: 40, marginBottom: 64 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginBottom: 16, paddingBottom: 12,
+            borderBottom: `1px solid ${BORDER}`,
+          }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
+              Sentry Issues
+            </h2>
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
+              background: 'rgba(220,38,38,0.15)', color: RED,
+              border: '1px solid rgba(220,38,38,0.3)',
+              borderRadius: 999, padding: '2px 10px',
+            }}>
+              {sentryIssues.length} unresolved
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {sentryIssues.map(issue => {
+              const levelColor = issue.level === 'error' ? RED : issue.level === 'warning' ? AMBER : BLUE
+              return (
+                <div key={issue.id} style={{
+                  background: CARD,
+                  border: `1px solid ${BORDER}`,
+                  borderLeft: `3px solid ${levelColor}`,
+                  borderRadius: 10,
+                  padding: '14px 18px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10, fontWeight: 700, color: WHITE,
+                      background: `${levelColor}33`,
+                      border: `1px solid ${levelColor}55`,
+                      borderRadius: 999, padding: '2px 8px',
+                      textTransform: 'uppercase',
+                    }}>
+                      {issue.level}
+                    </span>
+                    <span style={{
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
+                      color: MUTED,
+                    }}>
+                      ×{issue.count}
+                    </span>
+                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 'auto' }}>
+                      {timeAgo(issue.last_seen)}
+                    </span>
+                    <a
+                      href={issue.permalink}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
+                        color: WHITE, background: 'rgba(255,255,255,0.08)',
+                        border: `1px solid ${BORDER}`, borderRadius: 6,
+                        padding: '4px 12px', textDecoration: 'none', flexShrink: 0,
+                      }}
+                    >
+                      View in Sentry ↗
+                    </a>
+                  </div>
+                  <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM, margin: 0 }}>
+                    {issue.title}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Feature Feedback Widget ───────────────────────────────── */}
       <FeatureFeedbackWidget
