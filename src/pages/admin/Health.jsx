@@ -330,6 +330,7 @@ export default function AdminHealth() {
   const systemLogsTimerRef                        = useRef(null)
   const [sentryIssues, setSentryIssues]           = useState([])
   const [resolvingAllSentry, setResolvingAllSentry] = useState(false)
+  const [sentryResolveError, setSentryResolveError] = useState(null)
 
   const [feedbackData, setFeedbackData]             = useState(null)
   const [feedbackLoading, setFeedbackLoading]       = useState(true)
@@ -657,6 +658,7 @@ export default function AdminHealth() {
   async function handleResolveAllSentryIssues() {
     if (sentryIssues.length === 0) return
     setResolvingAllSentry(true)
+    setSentryResolveError(null)
     const ids = sentryIssues.map(i => i.id)
     setSentryIssues([])
     try {
@@ -666,9 +668,10 @@ export default function AdminHealth() {
         body:    JSON.stringify({ ids }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
+      if (!res.ok) throw new Error(json.error || `Sentry API returned ${res.status}`)
     } catch (err) {
       console.error('[admin] resolve sentry issues failed:', err.message)
+      setSentryResolveError(err.message)
       loadSystemLogs()
     } finally {
       setResolvingAllSentry(false)
@@ -1744,6 +1747,11 @@ export default function AdminHealth() {
               {resolvingAllSentry ? 'Resolving…' : 'Resolve All'}
             </button>
           </div>
+          {sentryResolveError && (
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: RED, margin: '0 0 12px 0' }}>
+              Failed to resolve: {sentryResolveError}
+            </p>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sentryIssues.map(issue => {
               const levelColor = issue.level === 'error' ? RED : issue.level === 'warning' ? AMBER : BLUE
