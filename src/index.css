@@ -8133,7 +8133,8 @@ body {
 /* ── Sidebar (AppShell) ──────────────────────────────────────── */
 [data-theme="light"] .sidebar,
 .light .sidebar {
-  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%);
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%) !important;
+  border-right: 1px solid var(--border-color) !important;
 }
 [data-theme="light"] .sidebar__context-card,
 .light .sidebar__context-card {
@@ -8389,6 +8390,134 @@ body {
 
 .lm-citation-doi:hover {
   text-decoration: underline;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LIGHT MODE — DARK SHELL OVERHAUL COUNTERS
+   These !important rules beat the unconditional dark-shell
+   overrides added in "DARK SHELL OVERHAUL — 2026-04-17".
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── App content workspace ────────────────────────────────────── */
+[data-theme="light"] .app-content,
+.light .app-content {
+  background-color: #F0F4F8 !important;
+  background-image: radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px) !important;
+  --color-text-primary:   #0D1B2A;
+  --color-text-secondary: rgba(13,27,42,0.6);
+  --color-text-muted:     rgba(13,27,42,0.4);
+  --text-primary:         #0D1B2A;
+  --text-secondary:       rgba(13,27,42,0.6);
+  --text-muted:           rgba(13,27,42,0.4);
+  --color-border:         rgba(13,27,42,0.1);
+  --color-border-strong:  rgba(13,27,42,0.2);
+  --color-bg-card:        #FFFFFF;
+}
+
+/* ── Step headings (DM Serif step labels) ─────────────────────── */
+[data-theme="light"] .app-content .tv-step-label,
+[data-theme="light"] .app-content .ca-step-label,
+[data-theme="light"] .app-content .ma-step-label,
+[data-theme="light"] .app-content .di-step-label,
+[data-theme="light"] .app-content .wp-step-label,
+[data-theme="light"] .app-content .dp-step-label,
+[data-theme="light"] .app-content .se-step-label,
+.light .app-content .tv-step-label,
+.light .app-content .ca-step-label,
+.light .app-content .ma-step-label,
+.light .app-content .di-step-label,
+.light .app-content .wp-step-label,
+.light .app-content .dp-step-label,
+.light .app-content .se-step-label {
+  color: #0D1B2A !important;
+}
+
+/* ── Step descriptions ────────────────────────────────────────── */
+[data-theme="light"] .app-content .tv-description,
+[data-theme="light"] .app-content .ca-description,
+[data-theme="light"] .app-content .ma-description,
+[data-theme="light"] .app-content .wp-description,
+[data-theme="light"] .app-content .dp-scan-subtext,
+[data-theme="light"] .app-content .se-description,
+.light .app-content .tv-description,
+.light .app-content .ca-description,
+.light .app-content .ma-description,
+.light .app-content .wp-description,
+.light .app-content .dp-scan-subtext,
+.light .app-content .se-description {
+  color: rgba(13,27,42,0.6) !important;
+}
+
+/* ── Step Navigator ───────────────────────────────────────────── */
+[data-theme="light"] .step-navigator,
+.light .step-navigator {
+  background: rgba(248,250,252,0.97) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-bottom: 1px solid rgba(13,27,42,0.1) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] .nav-pill,
+.light .nav-pill {
+  background: rgba(0,0,0,0.05) !important;
+  border-color: rgba(13,27,42,0.15) !important;
+  color: rgba(13,27,42,0.45) !important;
+}
+[data-theme="light"] .nav-pill__label,
+.light .nav-pill__label {
+  color: rgba(13,27,42,0.45) !important;
+}
+[data-theme="light"] .nav-pill--current .nav-pill__label,
+.light .nav-pill--current .nav-pill__label {
+  color: #0066FF !important;
+  font-weight: 600 !important;
+}
+[data-theme="light"] .nav-pill--completed .nav-pill__label,
+.light .nav-pill--completed .nav-pill__label {
+  color: rgba(13,27,42,0.55) !important;
+}
+
+/* ── Defense Simulator — Summary / Result Cards ───────────────── */
+[data-theme="light"] .dp-summary-card,
+.light .dp-summary-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(13,27,42,0.1) !important;
+}
+[data-theme="light"] .dp-summary-verdict-row,
+.light .dp-summary-verdict-row {
+  border-bottom-color: rgba(13,27,42,0.08) !important;
+}
+[data-theme="light"] .dp-summary-verdict-text,
+.light .dp-summary-verdict-text {
+  color: rgba(13,27,42,0.65) !important;
+}
+[data-theme="light"] .dp-summary-verdicts .dp-summary-section-label,
+.light .dp-summary-verdicts .dp-summary-section-label {
+  color: rgba(13,27,42,0.4) !important;
+}
+[data-theme="light"] .dp-summary-section .dp-summary-section-label,
+.light .dp-summary-section .dp-summary-section-label {
+  color: rgba(13,27,42,0.4) !important;
+}
+[data-theme="light"] .dp-summary-section:has(.dp-summary-list--strengths) .dp-summary-section-label,
+.light .dp-summary-section:has(.dp-summary-list--strengths) .dp-summary-section-label {
+  color: #16A34A !important;
+}
+[data-theme="light"] .dp-summary-section:has(.dp-summary-list--gaps) .dp-summary-section-label,
+.light .dp-summary-section:has(.dp-summary-list--gaps) .dp-summary-section-label {
+  color: #DC2626 !important;
+}
+[data-theme="light"] .dp-summary-list li,
+.light .dp-summary-list li {
+  color: rgba(13,27,42,0.75) !important;
+  border-bottom-color: rgba(13,27,42,0.07) !important;
+}
+[data-theme="light"] .dp-summary-verdict,
+[data-theme="light"] .dp-summary-advice,
+.light .dp-summary-verdict,
+.light .dp-summary-advice {
+  color: rgba(13,27,42,0.8) !important;
+  border-left-color: #0066FF !important;
 }
 
 /* Dark-theme overrides */
@@ -9977,6 +10106,64 @@ body {
   .pr-btn-confirm {
     min-height: 44px;
   }
+}
+
+/* ── Dashboard: db-sidebar light mode ────────────────────────── */
+[data-theme="light"] .db-sidebar,
+.light .db-sidebar {
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+[data-theme="light"] .db-sidebar__brand,
+.light .db-sidebar__brand {
+  border-bottom-color: var(--border-color);
+}
+[data-theme="light"] .db-sidebar__wordmark,
+.light .db-sidebar__wordmark {
+  color: var(--text-primary);
+}
+[data-theme="light"] .db-sidebar__nav-label,
+.light .db-sidebar__nav-label {
+  color: rgba(13,27,42,0.3);
+}
+[data-theme="light"] .db-step-item:hover,
+.light .db-step-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+[data-theme="light"] .db-step-item__num,
+.light .db-step-item__num {
+  color: rgba(13,27,42,0.3);
+}
+[data-theme="light"] .db-step-item--active .db-step-item__num,
+.light .db-step-item--active .db-step-item__num {
+  color: #2563EB;
+}
+[data-theme="light"] .db-step-item__label,
+.light .db-step-item__label {
+  color: rgba(13,27,42,0.55);
+}
+[data-theme="light"] .db-step-item--active .db-step-item__label,
+.light .db-step-item--active .db-step-item__label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+[data-theme="light"] .db-step-item--completed .db-step-item__label,
+.light .db-step-item--completed .db-step-item__label {
+  color: rgba(13,27,42,0.38);
+}
+[data-theme="light"] .db-sidebar__context,
+.light .db-sidebar__context {
+  border-top-color: var(--border-color);
+}
+[data-theme="light"] .db-context__uni,
+.light .db-context__uni {
+  color: rgba(13,27,42,0.72);
+}
+[data-theme="light"] .db-context__dept,
+[data-theme="light"] .db-context__level,
+.light .db-context__dept,
+.light .db-context__level {
+  color: rgba(13,27,42,0.45);
 }
 
 /* ── FYPro Shared Loading Messages ───────────────────────────────────────── */

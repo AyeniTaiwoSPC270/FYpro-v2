@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { changelog } from '../../data/changelog'
+import { useTheme } from '../../context/ThemeContext'
 
 const LS_KEY = 'fypro_dismissed_changelog'
 
@@ -15,6 +16,8 @@ function getDismissed() {
 
 export default function AnnouncementBanner() {
   const prefersReducedMotion = useReducedMotion()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const entry = changelog[0]
   const [visible, setVisible] = useState(false)
 
@@ -54,11 +57,15 @@ export default function AnnouncementBanner() {
           aria-label="Product announcement"
           {...motionProps}
           style={{
-            background: 'linear-gradient(135deg, #0F2235 0%, #0D1B2A 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: isLight
+              ? 'linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 100%)'
+              : 'linear-gradient(135deg, #0F2235 0%, #0D1B2A 100%)',
+            border: isLight ? '1px solid #BFDBFE' : '1px solid rgba(255,255,255,0.08)',
             borderLeft: '3px solid #0066FF',
             borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 1px 6px rgba(0,0,0,0.2)',
+            boxShadow: isLight
+              ? '0 2px 12px rgba(0,0,0,0.06)'
+              : '0 4px 20px rgba(0,0,0,0.4), 0 1px 6px rgba(0,0,0,0.2)',
             padding: '10px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -83,7 +90,7 @@ export default function AnnouncementBanner() {
                 fontFamily: "'DM Serif Display', Georgia, serif",
                 fontWeight: 400,
                 fontSize: '0.9rem',
-                color: '#FFFFFF',
+                color: isLight ? '#0F172A' : '#FFFFFF',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -93,7 +100,7 @@ export default function AnnouncementBanner() {
               style={{
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: '0.875rem',
-                color: 'rgba(255,255,255,0.7)',
+                color: isLight ? 'rgba(13,27,42,0.6)' : 'rgba(255,255,255,0.7)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -136,7 +143,7 @@ export default function AnnouncementBanner() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: 'rgba(255,255,255,0.35)',
+                color: isLight ? 'rgba(13,27,42,0.35)' : 'rgba(255,255,255,0.35)',
                 padding: '4px 2px',
                 display: 'flex',
                 alignItems: 'center',
@@ -147,10 +154,10 @@ export default function AnnouncementBanner() {
                 minWidth: 28,
                 minHeight: 28,
               }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
-              onFocus={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
-              onBlur={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = isLight ? 'rgba(13,27,42,0.75)' : 'rgba(255,255,255,0.75)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = isLight ? 'rgba(13,27,42,0.35)' : 'rgba(255,255,255,0.35)' }}
+              onFocus={e => { e.currentTarget.style.color = isLight ? 'rgba(13,27,42,0.75)' : 'rgba(255,255,255,0.75)' }}
+              onBlur={e => { e.currentTarget.style.color = isLight ? 'rgba(13,27,42,0.35)' : 'rgba(255,255,255,0.35)' }}
             >
               <svg
                 width="13"
