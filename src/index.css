@@ -10244,3 +10244,30 @@ body {
 .light .hover\:text-white:hover {
   color: var(--color-text-primary, #0D1B2A) !important;
 }
+
+/* ── Light mode: dp-share-section labels ─────────────────────────────────── */
+[data-theme="light"] .dp-share-section .dp-summary-section-label,
+.light .dp-share-section .dp-summary-section-label {
+  color: rgba(13,27,42,0.4) !important;
+}
+
+/* ── Light mode: dp-results-bar ──────────────────────────────────────────── */
+[data-theme="light"] .dp-results-bar,
+.light .dp-results-bar {
+  background: rgba(240,244,248,0.97) !important;
+  border-bottom-color: rgba(13,27,42,0.1) !important;
+}
+[data-theme="light"] .dp-results-bar__text,
+.light .dp-results-bar__text { color: rgba(13,27,42,0.45) !important; }
+[data-theme="light"] .dp-results-bar__divider,
+.light .dp-results-bar__divider { color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] .dp-results-bar__score,
+.light .dp-results-bar__score { color: #0D1B2A !important; }
+[data-theme="light"] .dp-results-bar--fail .dp-results-bar__label,
+.light .dp-results-bar--fail .dp-results-bar__label { color: #DC2626 !important; }
+[data-theme="light"] .dp-results-bar--pass .dp-results-bar__label,
+.light .dp-results-bar--pass .dp-results-bar__label { color: #16A34A !important; }
+[data-theme="light"] .dp-results-bar--merit .dp-results-bar__label,
+.light .dp-results-bar--merit .dp-results-bar__label { color: #2563EB !important; }
+[data-theme="light"] .dp-results-bar--distinction .dp-results-bar__label,
+.light .dp-results-bar--distinction .dp-results-bar__label { color: #059669 !important; }

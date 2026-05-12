@@ -22,6 +22,7 @@ import {
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
+import { useTheme } from '../../context/ThemeContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
@@ -362,10 +363,10 @@ function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
           {/* ── Celebratory share prompt ────────────────────────────────────── */}
           <div className="dp-share-section">
             <div style={{ marginBottom: 16 }}>
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.95rem', fontWeight: 600, color: 'rgba(255,255,255,0.92)', margin: '0 0 6px' }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.95rem', fontWeight: 600, color: isLight ? '#0D1B2A' : 'rgba(255,255,255,0.92)', margin: '0 0 6px' }}>
                 You just survived a practice defense 💪
               </p>
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: isLight ? 'rgba(13,27,42,0.55)' : 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.6 }}>
                 Share this with your coursemates who still need to prepare:
               </p>
             </div>
@@ -397,15 +398,22 @@ function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
                 rel="noopener noreferrer"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.85)',
-                  border: '1px solid rgba(255,255,255,0.14)',
+                  background: isLight ? 'rgba(13,27,42,0.05)' : 'rgba(255,255,255,0.07)',
+                  color: isLight ? '#0D1B2A' : 'rgba(255,255,255,0.85)',
+                  border: isLight ? '1px solid rgba(13,27,42,0.15)' : '1px solid rgba(255,255,255,0.14)',
                   textDecoration: 'none', borderRadius: 10,
                   padding: '10px 18px',
                   fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.82rem',
                   transition: 'background 0.2s ease, border-color 0.2s ease', flex: 1, justifyContent: 'center',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.11)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = isLight ? 'rgba(13,27,42,0.09)' : 'rgba(255,255,255,0.11)'
+                  e.currentTarget.style.borderColor = isLight ? 'rgba(13,27,42,0.25)' : 'rgba(255,255,255,0.26)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = isLight ? 'rgba(13,27,42,0.05)' : 'rgba(255,255,255,0.07)'
+                  e.currentTarget.style.borderColor = isLight ? 'rgba(13,27,42,0.15)' : 'rgba(255,255,255,0.14)'
+                }}
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.261 5.631 5.903-5.631zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -422,7 +430,7 @@ function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
                 topic={topic || ''}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 180 }}>
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: isLight ? 'rgba(13,27,42,0.55)' : 'rgba(255,255,255,0.55)', lineHeight: 1.6, margin: 0 }}>
                   Download your result card and share it on WhatsApp.
                 </p>
                 {shareError && (
@@ -487,6 +495,8 @@ export default function DefensePrep() {
   const { saveStep, projectId, ensureProject } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
 
