@@ -1040,6 +1040,46 @@ async function handleDailyReport(req, res) {
   }
 }
 
+// action: "test-sentry-api" — debug endpoint to verify Sentry env vars and API connectivity
+async function handleTestSentryApi(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const token   = process.env.SENTRY_AUTH_TOKEN   || '';
+  const org     = process.env.SENTRY_ORG           || '';
+  const project = process.env.SENTRY_PROJECT       || '';
+
+  const result = {
+    token_set:   token.length > 0,
+    token_prefix: token ? token.slice(0, 6) + '...' : null,
+    org:         org     ? org.slice(0, 3)     + '...' : '(not set)',
+    project:     project ? project.slice(0, 3) + '...' : '(not set)',
+    url:         org && project
+      ? `https://sentry.io/api/0/projects/${org}/${project}/issues/?query=is:unresolved&limit=10`
+      : null,
+    status:      null,
+    body:        null,
+    error:       null,
+  };
+
+  if (!token || !org || !project) {
+    result.error = 'One or more env vars missing: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT';
+    return res.status(200).json(result);
+  }
+
+  try {
+    const r    = await fetch(result.url, { headers: { Authorization: `Bearer ${token}` } });
+    result.status = r.status;
+    result.body   = await r.text();
+    // Try to parse as JSON for readability; keep raw string on failure
+    try { result.body = JSON.parse(result.body); } catch {}
+  } catch (err) {
+    result.error = err.message;
+  }
+
+  return res.status(200).json(result);
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -1079,6 +1119,7 @@ export default async function handler(req, res) {
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
+  if (action === 'test-sentry-api')         return handleTestSentryApi(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
