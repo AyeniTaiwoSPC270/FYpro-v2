@@ -1,21 +1,6 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 
 export default function Footer() {
-  const [authed, setAuthed] = useState(false)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthed(!!session)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
   return (
     <footer
       className="py-8 px-6 border-t"
@@ -55,15 +40,6 @@ export default function Footer() {
           >
             Cookie Policy
           </Link>
-          {authed && (
-            <Link
-              to="/account/email-preferences"
-              className="font-sans text-xs no-underline hover:opacity-80 transition-opacity"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Email preferences
-            </Link>
-          )}
         </nav>
       </div>
     </footer>
