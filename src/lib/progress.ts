@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
 
+async function sessionUser() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
+}
+
 export type StepKey =
   | 'topic_validator'
   | 'chapter_architect'
@@ -22,7 +27,7 @@ function emitProgressUpdated() {
 }
 
 export async function markStepComplete(step: StepKey): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return
 
   const col = STEP_COLUMN[step]
@@ -44,7 +49,7 @@ export async function markStepComplete(step: StepKey): Promise<void> {
 }
 
 export async function markDefenseSimulatorRun(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return
 
   const now = new Date().toISOString()
@@ -82,7 +87,7 @@ export async function markDefenseSimulatorRun(): Promise<void> {
 }
 
 export async function tryAwardDefenseReady(): Promise<boolean> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return false
 
   const { data: progress } = await supabase

@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
 
+async function sessionUser() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
+}
+
 const LS_KEY = 'fypro_feedback_given'
 
 function storageKey(feature: string, contextId?: string): string {
@@ -36,7 +41,7 @@ export async function submitFeedback(
   rating: 1 | -1,
   contextId?: string,
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase.from('feature_feedback').insert({

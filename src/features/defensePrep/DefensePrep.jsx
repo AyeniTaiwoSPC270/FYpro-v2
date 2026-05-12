@@ -63,14 +63,14 @@ function resolveExaminerVoice(name) {
 
 function logElevenLabsFailure(err, examinerName, errorType) {
   const sentryErr = err instanceof Error ? err : new Error(String(err))
-  supabase.auth.getUser()
+  supabase.auth.getSession()
     .then(({ data }) => {
       Sentry.withScope(scope => {
         scope.setTag('feature', 'tts_elevenlabs')
         scope.setTag('error_type', errorType)
         scope.setTag('examiner_persona', examinerName || 'unknown')
         scope.setExtra('timestamp', new Date().toISOString())
-        if (data?.user?.id) scope.setUser({ id: data.user.id })
+        if (data?.session?.user?.id) scope.setUser({ id: data.session.user.id })
         Sentry.captureException(sentryErr)
       })
     })
@@ -1128,7 +1128,8 @@ export default function DefensePrep() {
         // endpoint can verify the score and the recovery useEffect finds it.
         const pid = projectId || await ensureProject()
         if (pid) {
-          const { data: { user } } = await supabase.auth.getUser()
+          const { data: { session: _ds } } = await supabase.auth.getSession()
+          const user = _ds?.user ?? null
           if (user) {
             const { data: row, error: rowErr } = await supabase
               .from('defense_sessions')

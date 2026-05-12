@@ -133,7 +133,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
     async function load() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user ?? null
         if (!user) { loadedUserIdRef.current = null; setIsLoading(false); return }
         loadedUserIdRef.current = user.id
 
@@ -238,7 +239,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
   const ensureProject = useCallback(async (): Promise<string | null> => {
     if (projectId) return projectId
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (!user) return null
 
     const current = stateRef.current
@@ -292,7 +294,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   }, [projectId, ensureProject])
 
   async function resetProject() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (user) {
       try {
         await deleteAllUserData(user.id)

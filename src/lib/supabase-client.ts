@@ -60,10 +60,18 @@ export interface UserState {
   steps: ProjectStep[]
 }
 
+// ─── Session helper ──────────────────────────────────────────────────────────
+// getSession() reads the cached token without acquiring a lock.
+// Use this instead of getUser() anywhere we only need the user ID.
+async function sessionUser() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
+}
+
 // ─── Load all state on app init ─────────────────────────────────────────────
 
 export async function loadUserState(): Promise<UserState> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return { profile: null, entitlements: null, project: null, steps: [] }
 
   const [profileRes, entitlementsRes, projectRes] = await Promise.all([
@@ -102,7 +110,7 @@ export async function createProject(data: {
   department: string | null
   level: string | null
 }): Promise<Project | null> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return null
 
   const { data: project, error } = await supabase
@@ -156,7 +164,7 @@ export async function saveStep(
   resultJson: Record<string, unknown>,
   inputSummary?: string
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) throw new Error('Not authenticated')
 
   const { error } = await supabase
@@ -181,7 +189,7 @@ export async function saveStep(
 // ─── Fetch all projects for the current user ─────────────────────────────────
 
 export async function getAllUserProjects(): Promise<Project[]> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return []
   const { data, error } = await supabase
     .from('projects')
@@ -193,7 +201,7 @@ export async function getAllUserProjects(): Promise<Project[]> {
 }
 
 export async function archiveAllActiveProjects(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return
   const { error } = await supabase
     .from('projects')
@@ -242,7 +250,7 @@ export async function deleteAllUserData(userId: string): Promise<void> {
 export async function updateUserProfile(
   updates: Partial<Pick<UserProfile, 'full_name' | 'faculty' | 'department' | 'level'>>
 ): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await sessionUser()
   if (!user) return
 
   const { error } = await supabase

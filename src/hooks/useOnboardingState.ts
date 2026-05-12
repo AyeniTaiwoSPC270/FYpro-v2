@@ -55,7 +55,8 @@ export function useOnboardingState(): UseOnboardingStateReturn {
   const dismiss = useCallback(async () => {
     setShowNudge(false) // Optimistic: hide immediately in UI
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (!user) return
 
     const success = await dismissTopicValidatorNudge(user.id)

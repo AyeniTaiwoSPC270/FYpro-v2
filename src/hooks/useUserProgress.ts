@@ -28,7 +28,8 @@ export function useUserProgress() {
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user ?? null
     if (!user) { setLoading(false); return }
 
     const { data } = await supabase
