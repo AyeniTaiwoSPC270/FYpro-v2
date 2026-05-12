@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from '../../context/ThemeContext'
 
 const SHIELD_PATH =
   'M224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
@@ -17,6 +18,8 @@ function formatDate(iso) {
 
 export default function DefenseReadyBadge({ awardedAt }) {
   const unlocked = Boolean(awardedAt)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
 
   const prevUnlockedRef = useRef(unlocked)
   const [justUnlocked, setJustUnlocked] = useState(false)
@@ -97,10 +100,10 @@ export default function DefenseReadyBadge({ awardedAt }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: `2.5px solid ${unlocked ? '#0066FF' : 'rgba(255,255,255,0.12)'}`,
+          border: `2.5px solid ${unlocked ? '#0066FF' : isLight ? 'rgba(13,27,42,0.15)' : 'rgba(255,255,255,0.12)'}`,
           background: unlocked
             ? 'radial-gradient(circle at 35% 35%, rgba(0,102,255,0.2), rgba(0,102,255,0.06))'
-            : 'rgba(255,255,255,0.04)',
+            : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
           filter: unlocked ? 'none' : 'grayscale(1)',
           opacity: unlocked ? 1 : 0.35,
           boxShadow: unlocked ? '0 0 24px rgba(0,102,255,0.35)' : 'none',
@@ -115,11 +118,11 @@ export default function DefenseReadyBadge({ awardedAt }) {
           </svg>
         ) : (
           <div style={{ position: 'relative', width: 30, height: 30 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="30" height="30" fill="rgba(255,255,255,0.2)" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="30" height="30" fill={isLight ? 'rgba(13,27,42,0.2)' : 'rgba(255,255,255,0.2)'} aria-hidden="true">
               <path d={SHIELD_PATH} />
             </svg>
             {/* Padlock overlay */}
-            <div style={{ position: 'absolute', bottom: -2, right: -2, background: '#0D1B2A', borderRadius: '50%', padding: 2 }}>
+            <div style={{ position: 'absolute', bottom: -2, right: -2, background: isLight ? '#E2E8F0' : '#0D1B2A', borderRadius: '50%', padding: 2 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -163,7 +166,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
           fontSize: '0.6rem',
           fontWeight: 600,
           textAlign: 'center',
-          color: unlocked ? '#0066FF' : 'rgba(255,255,255,0.2)',
+          color: unlocked ? '#0066FF' : isLight ? 'rgba(13,27,42,0.3)' : 'rgba(255,255,255,0.2)',
           maxWidth: 70,
           lineHeight: 1.3,
           textTransform: 'uppercase',
@@ -187,20 +190,23 @@ export default function DefenseReadyBadge({ awardedAt }) {
               bottom: '110%',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: '#0D1B2A',
-              border: `1px solid ${unlocked ? 'rgba(0,102,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              background: isLight ? '#FFFFFF' : '#0D1B2A',
+              border: isLight
+                ? `1px solid ${unlocked ? 'rgba(0,102,255,0.2)' : '#E2E8F0'}`
+                : `1px solid ${unlocked ? 'rgba(0,102,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
               borderRadius: 10,
               padding: '8px 12px',
               width: 220,
               zIndex: 9999,
               pointerEvents: 'none',
               textAlign: 'center',
+              boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : 'none',
             }}
           >
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: unlocked ? '#3B82F6' : 'rgba(255,255,255,0.7)', margin: 0 }}>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: unlocked ? '#3B82F6' : isLight ? '#0F172A' : 'rgba(255,255,255,0.7)', margin: 0 }}>
               {unlocked ? 'Defense Ready' : '🔒 Defense Ready'}
             </p>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.62rem', color: isLight ? 'rgba(13,27,42,0.5)' : 'rgba(255,255,255,0.45)', margin: '4px 0 0', lineHeight: 1.5 }}>
               {unlocked
                 ? `Awarded ${formatDate(awardedAt)} — all 6 steps completed + defense session run`
                 : 'Complete all 6 steps and run one Defense Simulator session to unlock.'}

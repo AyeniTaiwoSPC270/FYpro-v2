@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from '../../context/ThemeContext'
 
 const STEP_META = [
   {
@@ -92,6 +93,8 @@ function formatDate(iso) {
 export default function StepBadge({ index, completedAt }) {
   const meta = STEP_META[index] ?? STEP_META[0]
   const completed = Boolean(completedAt)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
 
   // Detect the moment this badge flips from incomplete → complete in this session
   const prevCompletedRef = useRef(completed)
@@ -129,11 +132,11 @@ export default function StepBadge({ index, completedAt }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: `2px solid ${completed ? meta.color : 'rgba(255,255,255,0.12)'}`,
+          border: `2px solid ${completed ? meta.color : isLight ? 'rgba(13,27,42,0.15)' : 'rgba(255,255,255,0.12)'}`,
           background: completed
             ? `radial-gradient(circle at 35% 35%, ${meta.color}22, ${meta.color}08)`
-            : 'rgba(255,255,255,0.04)',
-          color: completed ? meta.color : 'rgba(255,255,255,0.25)',
+            : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+          color: completed ? meta.color : isLight ? 'rgba(13,27,42,0.25)' : 'rgba(255,255,255,0.25)',
           filter: completed ? 'none' : 'grayscale(1)',
           opacity: completed ? 1 : 0.4,
           boxShadow: completed && justCompleted ? `0 0 18px ${meta.glow}` : 'none',
@@ -179,7 +182,9 @@ export default function StepBadge({ index, completedAt }) {
           fontSize: '0.58rem',
           fontWeight: 500,
           textAlign: 'center',
-          color: completed ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)',
+          color: completed
+            ? isLight ? 'rgba(13,27,42,0.6)' : 'rgba(255,255,255,0.7)'
+            : isLight ? 'rgba(13,27,42,0.3)' : 'rgba(255,255,255,0.25)',
           maxWidth: 60,
           lineHeight: 1.3,
           transition: 'color 0.4s ease',
@@ -201,19 +206,20 @@ export default function StepBadge({ index, completedAt }) {
               bottom: '110%',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: '#0D1B2A',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: isLight ? '#FFFFFF' : '#0D1B2A',
+              border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.1)',
               borderRadius: 8,
               padding: '6px 10px',
               whiteSpace: 'nowrap',
               zIndex: 9999,
               pointerEvents: 'none',
+              boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : 'none',
             }}
           >
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.68rem', color: 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.68rem', color: isLight ? '#0F172A' : 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
               {meta.label}
             </p>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: 'rgba(255,255,255,0.45)', margin: '2px 0 0', }}>
+            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: isLight ? 'rgba(13,27,42,0.45)' : 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
               Completed {formatDate(completedAt)}
             </p>
           </motion.div>
