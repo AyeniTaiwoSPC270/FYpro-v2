@@ -1060,6 +1060,8 @@ async function handleResolveSentryIssues(req, res) {
   }
 
   const query = ids.map(id => `id=${encodeURIComponent(id)}`).join('&');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const r = await fetch(
       `https://sentry.io/api/0/projects/${org}/${project}/issues/?${query}`,
@@ -1067,17 +1069,21 @@ async function handleResolveSentryIssues(req, res) {
         method:  'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body:    JSON.stringify({ status: 'resolved' }),
+        signal:  controller.signal,
       }
     );
+    clearTimeout(timeout);
+    const responseText = await r.text();
     if (!r.ok) {
-      const text = await r.text();
-      console.error('[admin/resolve-sentry-issues] Sentry API error', r.status, text);
-      return res.status(502).json({ error: `Sentry API returned ${r.status}` });
+      console.error('[admin/resolve-sentry-issues] Sentry API error', r.status, responseText.slice(0, 300));
+      return res.status(502).json({ error: `Sentry returned ${r.status} — check token has Issues: Write scope` });
     }
     return res.status(200).json({ ok: true, resolved: ids.length });
   } catch (err) {
-    console.error('[admin/resolve-sentry-issues] fetch error:', err.message);
-    return res.status(500).json({ error: err.message });
+    clearTimeout(timeout);
+    const msg = err.name === 'AbortError' ? 'Sentry API timed out (8s)' : err.message;
+    console.error('[admin/resolve-sentry-issues] error:', msg);
+    return res.status(500).json({ error: msg });
   }
 }
 
@@ -1091,9 +1097,14 @@ export default async function handler(req, res) {
 
   const action = req.query.action;
 
-  // Read raw body once. sentry_webhook uses the raw bytes for HMAC; every other
-  // action gets the body re-parsed as JSON and assigned back to req.body.
-  const rawBody = await readRawBody(req);
+  let rawBody;
+  try {
+    rawBody = await readRawBody(req);
+  } catch (err) {
+    console.error('[admin] readRawBody failed:', err.message);
+    return res.status(500).json({ error: 'Failed to read request body' });
+  }
+
   if (action === 'sentry_webhook') return handleSentryWebhook(req, res, rawBody);
 
   try {
