@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import posthog from 'posthog-js'
+import { useTheme } from '../context/ThemeContext'
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
 
   useEffect(() => {
     if (!localStorage.getItem('cookie_consent')) setVisible(true)
@@ -33,20 +36,20 @@ export default function CookieBanner() {
         left: 0,
         right: 0,
         zIndex: 9999,
-        background: '#060E18',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
+        background: isLight ? '#FFFFFF' : '#060E18',
+        borderTop: isLight ? '1px solid rgba(13,27,42,0.12)' : '1px solid rgba(255,255,255,0.1)',
         padding: '14px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+        boxShadow: isLight ? '0 -4px 24px rgba(0,0,0,0.08)' : '0 -4px 24px rgba(0,0,0,0.5)',
       }}
     >
       <p
         style={{
-          color: 'rgba(255,255,255,0.75)',
+          color: isLight ? 'rgba(13,27,42,0.7)' : 'rgba(255,255,255,0.75)',
           fontSize: '0.8125rem',
           fontFamily: 'Poppins, sans-serif',
           margin: 0,
@@ -70,8 +73,8 @@ export default function CookieBanner() {
           style={{
             padding: '7px 18px',
             background: 'transparent',
-            color: 'rgba(255,255,255,0.65)',
-            border: '1px solid rgba(255,255,255,0.22)',
+            color: isLight ? 'rgba(13,27,42,0.55)' : 'rgba(255,255,255,0.65)',
+            border: isLight ? '1px solid rgba(13,27,42,0.2)' : '1px solid rgba(255,255,255,0.22)',
             borderRadius: '10px',
             fontSize: '0.8125rem',
             fontFamily: 'Poppins, sans-serif',

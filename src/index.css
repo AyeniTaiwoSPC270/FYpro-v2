@@ -8422,14 +8422,24 @@ body {
 [data-theme="light"] .app-content .wp-step-label,
 [data-theme="light"] .app-content .dp-step-label,
 [data-theme="light"] .app-content .se-step-label,
+[data-theme="light"] .app-content .lm-step-label,
+[data-theme="light"] .app-content .ag-step-label,
+[data-theme="light"] .app-content .pr-step-label,
 .light .app-content .tv-step-label,
 .light .app-content .ca-step-label,
 .light .app-content .ma-step-label,
 .light .app-content .di-step-label,
 .light .app-content .wp-step-label,
 .light .app-content .dp-step-label,
-.light .app-content .se-step-label {
+.light .app-content .se-step-label,
+.light .app-content .lm-step-label,
+.light .app-content .ag-step-label,
+.light .app-content .pr-step-label {
   color: #0D1B2A !important;
+  -webkit-text-fill-color: #0D1B2A !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
 }
 
 /* ── Step descriptions ────────────────────────────────────────── */
@@ -9670,13 +9680,25 @@ body {
 [data-theme="light"] .app-content .wp-step-label,
 [data-theme="light"] .app-content .dp-step-label,
 [data-theme="light"] .app-content .se-step-label,
+[data-theme="light"] .app-content .lm-step-label,
+[data-theme="light"] .app-content .ag-step-label,
+[data-theme="light"] .app-content .pr-step-label,
 .light .app-content .tv-step-label,
 .light .app-content .ca-step-label,
 .light .app-content .ma-step-label,
 .light .app-content .di-step-label,
 .light .app-content .wp-step-label,
 .light .app-content .dp-step-label,
-.light .app-content .se-step-label { color: #0D1B2A !important; }
+.light .app-content .se-step-label,
+.light .app-content .lm-step-label,
+.light .app-content .ag-step-label,
+.light .app-content .pr-step-label {
+  color: #0D1B2A !important;
+  -webkit-text-fill-color: #0D1B2A !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
 
 /* ── 6. Descriptions ──────────────────────────────────────── */
 [data-theme="light"] .app-content .tv-description,

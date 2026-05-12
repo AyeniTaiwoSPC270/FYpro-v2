@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTheme } from '../context/ThemeContext'
 
 const ShieldIcon = ({ className }) => (
   <svg
@@ -53,6 +54,9 @@ const blurFade = {
 
 export default function NotFound() {
   const navigate = useNavigate()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
+  const headingColor = isLight ? '#0D1B2A' : '#ffffff'
 
   return (
     <div
@@ -117,7 +121,7 @@ export default function NotFound() {
                 fontFamily: "'DM Serif Display', serif",
                 fontSize: '8rem',
                 lineHeight: 1,
-                color: '#ffffff',
+                color: headingColor,
                 letterSpacing: '-0.05em',
                 position: 'relative',
               }}
@@ -160,7 +164,7 @@ export default function NotFound() {
                 fontFamily: "'DM Serif Display', serif",
                 fontSize: '8rem',
                 lineHeight: 1,
-                color: '#ffffff',
+                color: headingColor,
                 letterSpacing: '-0.05em',
                 position: 'relative',
               }}
@@ -175,7 +179,7 @@ export default function NotFound() {
             style={{
               fontFamily: "'DM Serif Display', serif",
               fontSize: '2rem',
-              color: '#ffffff',
+              color: headingColor,
               marginTop: '32px',
               marginBottom: 0,
               letterSpacing: '-0.02em',
