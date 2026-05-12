@@ -329,6 +329,7 @@ export default function AdminHealth() {
   const [expandedLogIds, setExpandedLogIds]       = useState(new Set())
   const systemLogsTimerRef                        = useRef(null)
   const [sentryIssues, setSentryIssues]           = useState([])
+  const [resolvingAllSentry, setResolvingAllSentry] = useState(false)
 
   const [feedbackData, setFeedbackData]             = useState(null)
   const [feedbackLoading, setFeedbackLoading]       = useState(true)
@@ -650,6 +651,27 @@ export default function AdminHealth() {
       loadSystemLogs()
     } finally {
       setResolvingLogId(null)
+    }
+  }
+
+  async function handleResolveAllSentryIssues() {
+    if (sentryIssues.length === 0) return
+    setResolvingAllSentry(true)
+    const ids = sentryIssues.map(i => i.id)
+    setSentryIssues([])
+    try {
+      const res = await fetch('/api/admin?action=resolve-sentry-issues', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ ids }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+    } catch (err) {
+      console.error('[admin] resolve sentry issues failed:', err.message)
+      loadSystemLogs()
+    } finally {
+      setResolvingAllSentry(false)
     }
   }
 
@@ -1704,6 +1726,23 @@ export default function AdminHealth() {
             }}>
               {sentryIssues.length} unresolved
             </span>
+            <button
+              onClick={handleResolveAllSentryIssues}
+              disabled={resolvingAllSentry}
+              style={{
+                marginLeft: 'auto',
+                fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600,
+                color: WHITE,
+                background: resolvingAllSentry ? 'rgba(22,163,74,0.4)' : GREEN,
+                border: 'none', borderRadius: 8,
+                padding: '6px 16px',
+                cursor: resolvingAllSentry ? 'not-allowed' : 'pointer',
+                transition: 'background 0.15s ease',
+                flexShrink: 0,
+              }}
+            >
+              {resolvingAllSentry ? 'Resolving…' : 'Resolve All'}
+            </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {sentryIssues.map(issue => {

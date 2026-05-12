@@ -1040,6 +1040,47 @@ async function handleDailyReport(req, res) {
   }
 }
 
+// action: "resolve-sentry-issues"
+// Resolves specific Sentry issues by ID using the bulk update API.
+// Body: { ids: string[] }
+async function handleResolveSentryIssues(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { ids } = req.body || {};
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids array required' });
+  }
+
+  const token   = process.env.SENTRY_AUTH_TOKEN;
+  const org     = process.env.SENTRY_ORG;
+  const project = process.env.SENTRY_PROJECT;
+  if (!token || !org || !project) {
+    return res.status(500).json({ error: 'Sentry env vars not configured' });
+  }
+
+  const query = ids.map(id => `id=${encodeURIComponent(id)}`).join('&');
+  try {
+    const r = await fetch(
+      `https://sentry.io/api/0/projects/${org}/${project}/issues/?${query}`,
+      {
+        method:  'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status: 'resolved' }),
+      }
+    );
+    if (!r.ok) {
+      const text = await r.text();
+      console.error('[admin/resolve-sentry-issues] Sentry API error', r.status, text);
+      return res.status(502).json({ error: `Sentry API returned ${r.status}` });
+    }
+    return res.status(200).json({ ok: true, resolved: ids.length });
+  } catch (err) {
+    console.error('[admin/resolve-sentry-issues] fetch error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -1079,5 +1120,7 @@ export default async function handler(req, res) {
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
+  if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);
+
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
