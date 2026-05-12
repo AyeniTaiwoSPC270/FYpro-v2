@@ -335,6 +335,8 @@ function DeleteProjectModal({ onCancel, onConfirm, deleting }) {
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
+  const navigate = useNavigate()
+  const { navigateStep } = useApp()
   return (
     <aside
       className={`flex flex-col flex-shrink-0 border-r border-slate-800/60 db-sidebar${isOpen ? ' db-sidebar--open' : ''}`}
@@ -374,6 +376,8 @@ function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
               role="button"
               tabIndex={isLocked ? -1 : 0}
               aria-disabled={isLocked}
+              onClick={!isLocked ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(i); navigate('/app') } : undefined}
+              onKeyDown={!isLocked ? (e) => { if (e.key === 'Enter' || e.key === ' ') { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(i); navigate('/app') } } : undefined}
               className={`db-sidebar-item flex items-center gap-[11px] pl-3 pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
                 isActive ? 'db-sidebar-active' : ''
               } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -544,7 +548,9 @@ function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           {greeting}, {firstName}
         </div>
         <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
-          {STUDENT.stepsCompleted > 0
+          {STUDENT.stepsCompleted === STUDENT.totalSteps
+            ? 'All 6 steps complete — you\'re defense ready.'
+            : STUDENT.stepsCompleted > 0
             ? `${STUDENT.stepsCompleted} step${STUDENT.stepsCompleted === 1 ? '' : 's'} done — Step ${STUDENT.currentStepId} is waiting.`
             : 'Your research journey is ready to begin.'}
         </div>
@@ -821,13 +827,13 @@ function DashStatCards({ STUDENT, STEPS }) {
 
         <div className="relative z-10">
           <div className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-green-400 mb-2">
-            Current Step
+            {activeStep ? 'Current Step' : 'Status'}
           </div>
           <div className="font-serif text-[1.22rem] text-white leading-[1.25] mb-[9px]">
-            {activeStep?.name}
+            {activeStep?.name ?? 'All Steps Complete'}
           </div>
           <p className="font-sans text-[0.73rem] text-slate-400 leading-[1.58] max-w-[38ch]">
-            {activeStep?.desc}
+            {activeStep?.desc ?? 'Review your results or run the Defense Simulator again.'}
           </p>
         </div>
 
@@ -1200,7 +1206,7 @@ const QUICK_ACTIONS_BASE = [
 
 function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadReport }) {
   const navigate = useNavigate()
-  const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[0]
+  const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[STEPS.length - 1]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
     a.pathKey === 'active'
       ? { ...a, path: '/app', sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
