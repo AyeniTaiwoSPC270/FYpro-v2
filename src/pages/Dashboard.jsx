@@ -27,6 +27,15 @@ const STEP_DEFS = [
   { id: 6, name: 'Defense Prep',       desc: 'Face three AI examiners in a full panel simulation. Receive a readiness score and know every question before the real thing.', path: '/app' },
 ]
 
+const STEP_NAME_TO_NUM = {
+  topic_validator:     1,
+  chapter_architect:   2,
+  methodology_advisor: 3,
+  writing_planner:     4,
+  project_reviewer:    5,
+  defense_prep:        6,
+}
+
 function buildSteps(stepsCompleted, activeStepId) {
   return STEP_DEFS.map((def, i) => ({
     ...def,
@@ -1387,6 +1396,8 @@ function UsageBar({ used, limit, visible = true, barIndex = 0 }) {
 
 function DashUsageSection({ features, runCounts, loading, onPaymentIssue }) {
   const [sectionRef, sectionVisible] = useReveal()
+  const { theme: usageTheme } = useTheme()
+  const isLightUsage = usageTheme === 'light'
 
   const isDefense = features.includes('defense_pack')
   const isStudent = !isDefense && features.includes('student_pack')
@@ -1484,7 +1495,7 @@ function DashUsageSection({ features, runCounts, loading, onPaymentIssue }) {
         onClick={onPaymentIssue}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem',
+          color: isLightUsage ? 'rgba(13,27,42,0.45)' : 'rgba(255,255,255,0.4)', fontSize: '0.72rem',
           fontFamily: "'Poppins', sans-serif", marginTop: 12,
           padding: 0, textDecoration: 'underline', display: 'block',
         }}
@@ -1506,7 +1517,7 @@ function ProjectCard({ project, onContinue, onDelete }) {
   const lastActive = new Date(project.updated_at || project.created_at).toLocaleDateString('en-NG', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
-  const stepNum = Math.min(6, (project.current_step ?? 0) + 1)
+  const stepNum = STEP_NAME_TO_NUM[project.current_step] ?? 1
 
   useEffect(() => {
     function handleOutside(e) {
