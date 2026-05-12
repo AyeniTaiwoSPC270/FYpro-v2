@@ -250,5 +250,8 @@ export async function updateUserProfile(
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', user.id)
 
-  if (error) console.error('[supabase-client] updateUserProfile:', error.message)
+  if (error) {
+    console.error('[supabase-client] updateUserProfile:', error.message)
+    throw error
+  }
 }

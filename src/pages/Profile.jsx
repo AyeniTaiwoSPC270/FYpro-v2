@@ -7,6 +7,7 @@ import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
 import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
+import { updateUserProfile } from '../lib/supabase-client'
 import { resetUser } from '../lib/analytics'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -391,11 +392,23 @@ export default function Profile() {
   }
 
   async function handleSaveChanges() {
-    set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
-    if (form.name) {
-      await supabase.auth.updateUser({ data: { full_name: form.name } })
+    try {
+      const profileUpdates = {
+        faculty:    form.faculty,
+        department: form.department,
+        level:      form.level,
+      }
+      if (form.name) {
+        profileUpdates.full_name = form.name
+        await supabase.auth.updateUser({ data: { full_name: form.name } })
+      }
+      await updateUserProfile(profileUpdates)
+      set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
+      showToast('Changes saved')
+    } catch (err) {
+      console.error('[Profile] handleSaveChanges failed:', err.message)
+      showToast('Failed to save changes. Please try again.')
     }
-    showToast('Changes saved')
   }
 
   async function handleDeleteProjects() {
