@@ -780,20 +780,53 @@ async function handleSentryWebhook(req, res, rawBody) {
   return res.status(200).json({ ok: true });
 }
 
+async function fetchSentryIssues() {
+  const token   = process.env.SENTRY_AUTH_TOKEN;
+  const org     = process.env.SENTRY_ORG;
+  const project = process.env.SENTRY_PROJECT;
+  if (!token || !org || !project) return [];
+  try {
+    const r = await fetch(
+      `https://sentry.io/api/0/projects/${org}/${project}/issues/?query=is:unresolved&limit=10`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) {
+      console.error('[admin/system_logs] Sentry API responded', r.status);
+      return [];
+    }
+    const issues = await r.json();
+    return Array.isArray(issues) ? issues.map(i => ({
+      id:         i.id,
+      title:      i.title,
+      level:      i.level,
+      count:      i.count,
+      first_seen: i.firstSeen,
+      last_seen:  i.lastSeen,
+      permalink:  i.permalink,
+    })) : [];
+  } catch (err) {
+    console.error('[admin/system_logs] Sentry fetch error:', err.message);
+    return [];
+  }
+}
+
 // action: "system_logs"
 async function handleSystemLogs(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
 
   try {
-    const { data, error } = await supabaseAdmin
-      .from('system_logs')
-      .select('*')
-      .eq('resolved', false)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) throw error;
-    return res.status(200).json({ logs: data || [] });
+    const [logsRes, sentryIssues] = await Promise.all([
+      supabaseAdmin
+        .from('system_logs')
+        .select('*')
+        .eq('resolved', false)
+        .order('created_at', { ascending: false })
+        .limit(50),
+      fetchSentryIssues(),
+    ]);
+    if (logsRes.error) throw logsRes.error;
+    return res.status(200).json({ logs: logsRes.data || [], sentry_issues: sentryIssues });
   } catch (err) {
     console.error('[admin/system_logs] error:', err.message);
     return res.status(500).json({ error: err.message });
