@@ -283,6 +283,8 @@ function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
   const panelLabel = (data.panel_score_label || '').toLowerCase()
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError]     = useState(null)
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
 
   async function handleShare() {
     if (!projectId) { setShareError('Project ID not available — please try again.'); return }
@@ -495,8 +497,6 @@ export default function DefensePrep() {
   const { saveStep, projectId, ensureProject } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
-  const { theme } = useTheme()
-  const isLight = theme === 'light'
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
 
