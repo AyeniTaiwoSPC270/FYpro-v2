@@ -1190,8 +1190,19 @@ function FinalCTA() {
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
-          <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>Your defense is coming.<br />Are you ready?</Reveal>
-          <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-9">Every question an examiner can ask, FYPro has already asked you first.<br />Start now — it's free, no account needed.</Reveal>
+          <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>
+            Your defense is coming.<br />Are you <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>actually</em> ready?
+          </Reveal>
+          <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-4">
+            Every question an examiner can ask, FYPro has already asked you first.<br />
+            Most students who fail their defense say the same thing: <em style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>"I thought I was prepared."</em>
+          </Reveal>
+          <Reveal delay={0.12}>
+            <div className="flex items-center justify-center gap-2 mb-7">
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F87171', animation: 'lp-pulse-red 1.4s ease-in-out infinite', flexShrink: 0 }} />
+              <span className="font-mono text-[0.7rem]" style={{ color: 'rgba(248,113,113,0.8)', letterSpacing: '0.04em' }}>Join students currently using FYPro to prepare</span>
+            </div>
+          </Reveal>
           <Reveal delay={0.15} className="flex justify-center gap-3 flex-wrap">
             <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free — No Sign Up</BtnLink>
             <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">See the 6 Steps</BtnLink>
