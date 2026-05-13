@@ -511,7 +511,7 @@ function HeroMockup() {
         <div className="flex gap-1.5">
           {[0,1,2].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/[0.08] border border-white/[0.14]" />)}
         </div>
-        <div className="flex-1 bg-white/5 rounded-lg py-[5px] px-3 font-mono text-[0.7rem] text-white/35 text-center">fypro.vercel.app — Step 6: Defense Simulator</div>
+        <div className="flex-1 bg-white/5 rounded-lg py-[5px] px-3 font-mono text-[0.7rem] text-white/35 text-center">www.fypro.com.ng — Step 6: Defense Simulator</div>
       </div>
 
       {/* Shell */}

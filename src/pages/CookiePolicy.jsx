@@ -66,7 +66,7 @@ const SECTIONS = [
     paras: [
       'When you first visit FYPro, you are shown a cookie consent banner. You can accept or decline analytics cookies at that point.',
       'If you decline, PostHog analytics will not capture any data from your session. Essential cookies (Supabase session) are still required for the service to function.',
-      'To change your preference at any time, clear your browser\'s localStorage for fypro.vercel.app and reload the page — the consent banner will reappear.',
+      'To change your preference at any time, clear your browser\'s localStorage for www.fypro.com.ng and reload the page — the consent banner will reappear.',
     ],
   },
   {

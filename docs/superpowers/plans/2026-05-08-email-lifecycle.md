@@ -514,7 +514,7 @@ import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { renderTemplate, EmailType } from '../src/emails/render'
 
-const BASE_URL        = 'https://fypro.vercel.app'
+const BASE_URL        = 'https://www.fypro.com.ng'
 const FROM            = 'FYPro <hello@fypro.com.ng>'
 const LIST_UNSUB      = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>'
 
@@ -626,7 +626,7 @@ This Deno function is the daily cron entrypoint. It calls the Postgres RPC to ge
 ```typescript
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const VERCEL_SEND_URL = 'https://fypro.vercel.app/api/send-nurture-email'
+const VERCEL_SEND_URL = 'https://www.fypro.com.ng/api/send-nurture-email'
 const CRON_SECRET     = Deno.env.get('CRON_SECRET') ?? ''
 const SUPABASE_URL    = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -777,7 +777,7 @@ enabled = true
 [auth]
 enabled = true
 site_url = "http://localhost:5173"
-additional_redirect_urls = ["https://fypro.vercel.app"]
+additional_redirect_urls = ["https://www.fypro.com.ng"]
 jwt_expiry = 3600
 enable_confirmations = true
 

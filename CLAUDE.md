@@ -489,7 +489,7 @@ These are the five rules. They do not bend for convenience.
 
 ## 16. LIVE URLS
 
-Production: https://fypro.vercel.app
+Production: https://www.fypro.com.ng
 Repo: https://github.com/AyeniTaiwoSPC270/fypro-app
 Target public launch: June 12, 2026
 v3 scaling: December 2026

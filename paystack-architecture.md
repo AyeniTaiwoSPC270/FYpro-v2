@@ -531,7 +531,7 @@ Run through this the night before payments go live (June 25 per the operations c
 - [ ] `payments` and `user_entitlements` have no client INSERT/UPDATE policies (verify with Test 6 in `security-policies.md`)
 
 **Paystack dashboard**
-- [ ] Webhook URL set to `https://fypro.vercel.app/api/paystack-webhook`
+- [ ] Webhook URL set to `https://www.fypro.com.ng/api/paystack-webhook`
 - [ ] Live secret key copied to Vercel env vars (not committed anywhere)
 - [ ] Test mode keys still present in a separate `.env.local` (never deployed)
 

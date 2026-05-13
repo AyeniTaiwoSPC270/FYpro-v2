@@ -15,7 +15,7 @@ const redis = new Redis({
 // SUPABASE_ANON_KEY must be set in Vercel env vars (same value as VITE_SUPABASE_ANON_KEY).
 const SUPABASE_URL  = process.env.SUPABASE_URL;
 const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const APP_URL       = process.env.APP_URL || 'https://fypro.vercel.app';
+const APP_URL       = process.env.APP_URL || 'https://www.fypro.com.ng';
 
 function getIp(req) {
   return String(

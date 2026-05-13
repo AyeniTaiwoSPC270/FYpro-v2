@@ -3,7 +3,7 @@
 // defence-in-depth — it prevents other origins from reading our responses.
 
 const ALLOWED_ORIGINS = [
-  process.env.APP_URL || 'https://fypro.vercel.app',
+  process.env.APP_URL || 'https://www.fypro.com.ng',
   'https://fypro.com.ng',
   'https://www.fypro.com.ng',
 ];

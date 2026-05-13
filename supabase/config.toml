@@ -27,7 +27,7 @@ enabled = true
 [auth]
 enabled = true
 site_url = "http://localhost:5173"
-additional_redirect_urls = ["https://fypro.vercel.app"]
+additional_redirect_urls = ["https://www.fypro.com.ng"]
 jwt_expiry = 3600
 enable_confirmations = true
 
