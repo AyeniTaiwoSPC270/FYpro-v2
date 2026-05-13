@@ -334,16 +334,16 @@ function TestimonialsTickerSection() {
 
 // ─── Stat Item (count-up) ─────────────────────────────────────────────────────
 
-function StatItem({ renderNumber, target, label, delay }) {
+function StatItem({ renderNumber, target, label, delay, urgent }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: false, amount: 0.5 })
-  const count = useCountUp(target, inView)
+  const count = useCountUp(target ?? 0, inView)
   return (
     <Reveal delay={delay} className="text-center">
-      <div ref={ref} className="lp-stat-num-wrap font-serif leading-none mb-2" style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: '#60A5FA' }}>
+      <div ref={ref} className="lp-stat-num-wrap font-serif leading-none mb-2" style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
         {renderNumber(count)}
       </div>
-      <div className="text-[0.82rem] text-white/65 font-medium">{label}</div>
+      <div className="text-[0.82rem] font-medium" style={{ color: urgent ? 'rgba(248,113,113,0.75)' : 'rgba(255,255,255,0.65)' }}>{label}</div>
     </Reveal>
   )
 }
@@ -746,7 +746,7 @@ function StatsBar() {
     { target: 500, renderNumber: (n) => <>{n}<em className="not-italic text-blue-brand">K+</em></>, label: 'Final year students in Nigeria', delay: 0 },
     { target: 6, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'Structured research steps', delay: 0.1 },
     { target: 3, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'AI examiners on your panel', delay: 0.2 },
-    { target: 1, renderNumber: (n) => <>₦<em className="not-italic text-blue-brand">{n}B+</em></>, label: 'Academic coaching market (NG)', delay: 0.3 },
+    { target: 0, renderNumber: () => <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '2.4rem', color: '#F87171' }}>1 in 3</span>, label: 'Students asked to repeat their defense due to poor preparation', delay: 0.3, urgent: true },
   ]
   return (
     <div className="bg-bg-dark border-t border-b border-white/5 py-11">
