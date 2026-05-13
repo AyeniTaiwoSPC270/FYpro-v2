@@ -1033,7 +1033,7 @@ const LANDING_FAQ_ITEMS = [
 
 function LandingFAQItem({ q, a, isOpen, onToggle }) {
   return (
-    <div className="border-b border-[var(--border-color)] py-5">
+    <div className="border-b border-white/[0.06] py-5">
       <button
         className="w-full flex items-center justify-between text-left bg-transparent border-0 cursor-pointer group"
         onClick={onToggle}
@@ -1071,23 +1071,30 @@ function LandingFAQSection() {
   return (
     <section id="faq" className="py-24 bg-bg-dark">
       <div className="max-w-3xl mx-auto px-5 md:px-10">
-        <Reveal>
-          <h2 className="font-serif text-4xl text-white text-center">Frequently asked questions</h2>
-        </Reveal>
-        <Reveal delay={0.06}>
-          <p className="text-slate-400 text-center mt-3 mb-12">Everything you need to know before you start.</p>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <div>
-            {LANDING_FAQ_ITEMS.map((item, i) => (
-              <LandingFAQItem
-                key={i}
-                q={item.q}
-                a={item.a}
-                isOpen={openIndex === i}
-                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-              />
-            ))}
+        <Reveal delay={0.05}>
+          <div style={{
+            background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px',
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '24px 24px 0' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#60A5FA', marginBottom: '8px' }}>Common Questions</div>
+              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'white', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
+              <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '20px' }}>Everything you need to know before you start.</p>
+            </div>
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+            <div style={{ padding: '0 24px' }}>
+              {LANDING_FAQ_ITEMS.map((item, i) => (
+                <LandingFAQItem
+                  key={i}
+                  q={item.q}
+                  a={item.a}
+                  isOpen={openIndex === i}
+                  onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+                />
+              ))}
+            </div>
           </div>
         </Reveal>
       </div>
