@@ -69,72 +69,178 @@ DNS/CDN:     Cloudflare (nameservers active, email routing hello@fypro.com.ng �
 ```
 fypro-v2/
 ├── src/
+│   ├── App.jsx                    # Root component — React Router routes defined here
+│   ├── main.jsx                   # Vite entry point
+│   ├── index.css                  # Global styles + Tailwind base
+│   ├── assets/                    # fypro-logo.png, hero.png
 │   ├── pages/
-│   │   ├── Landing.jsx
+│   │   ├── LandingPage.jsx        # Public landing page
 │   │   ├── Pricing.jsx
-│   │   ├── Dashboard.jsx          # Multi-project dashboard — shows project cards
+│   │   ├── About.jsx
+│   │   ├── Contact.jsx
+│   │   ├── Privacy.jsx
+│   │   ├── Terms.jsx
+│   │   ├── CookiePolicy.jsx
+│   │   ├── Dashboard.jsx          # Multi-project dashboard — project cards grid
+│   │   ├── SplashOnboarding.jsx   # First-time onboarding flow
 │   │   ├── Login.jsx
 │   │   ├── Signup.jsx
+│   │   ├── ForgotPassword.jsx
+│   │   ├── ResetPassword.jsx
+│   │   ├── VerifyEmail.jsx
 │   │   ├── Profile.jsx
 │   │   ├── Settings.jsx
 │   │   ├── PaymentSuccess.jsx
-│   │   ├── AdminHealth.jsx        # /admin/health — gated to VITE_ADMIN_EMAIL
-│   │   ├── Roadmap.jsx
-│   │   ├── Changelog.jsx
-│   │   ├── MyCertificates.jsx
-│   │   └── NotFound.jsx
+│   │   ├── NotFound.jsx
+│   │   ├── admin/
+│   │   │   └── Health.jsx         # /admin/health — gated to VITE_ADMIN_EMAIL
+│   │   ├── account/
+│   │   │   ├── MyCertificates.jsx
+│   │   │   ├── MyReferrals.jsx
+│   │   │   └── EmailPreferences.jsx
+│   │   ├── changelog/
+│   │   │   └── ChangelogPage.jsx
+│   │   └── roadmap/
+│   │       ├── RoadmapPage.jsx
+│   │       ├── RoadmapCard.jsx
+│   │       └── RoadmapColumn.jsx
 │   ├── features/
+│   │   ├── shell/
+│   │   │   └── AppShell.jsx       # Sidebar + layout wrapper for /app routes
 │   │   ├── topicValidator/
+│   │   │   └── TopicValidator.jsx
 │   │   ├── chapterArchitect/
-│   │   ├── methodologyAdvisor/
+│   │   │   └── ChapterArchitect.jsx
+│   │   ├── literatureMap/
+│   │   │   └── LiteratureMap.jsx
+│   │   ├── methodology/           # Folder is "methodology", NOT "methodologyAdvisor"
+│   │   │   └── MethodologyAdvisor.jsx
 │   │   ├── writingPlanner/
+│   │   │   └── WritingPlanner.jsx
 │   │   ├── projectReviewer/
-│   │   ├── defensePrep/           # Defense Simulator
-│   │   └── supervisorPrep/        # Supervisor Meeting Prep Agent
+│   │   │   └── ProjectReviewer.jsx
+│   │   ├── defensePrep/
+│   │   │   └── DefensePrep.jsx    # Defense Simulator
+│   │   ├── supervisorPrep/
+│   │   │   └── SupervisorPrep.jsx # Supervisor Meeting Prep Agent
+│   │   └── supervisorEmail/
+│   │       └── SupervisorEmail.jsx
 │   ├── components/
-│   │   ├── AppShell.jsx           # Sidebar + layout wrapper for /app
 │   │   ├── ProtectedRoute.jsx
-│   │   └── CookieConsent.jsx      # NDPA 2023 compliance banner
+│   │   ├── CookieBanner.jsx       # NDPA 2023 consent banner (NOT CookieConsent.jsx)
+│   │   ├── PaidFeatureGate.jsx    # Wrapper for paid-gated UI
+│   │   ├── PaymentIssueModal.jsx
+│   │   ├── Toast.jsx
+│   │   ├── Footer.jsx
+│   │   ├── ApiErrorBox.jsx
+│   │   ├── LoadingMessages.jsx
+│   │   ├── RouteProgressBar.jsx
+│   │   ├── WhatsAppButton.jsx
+│   │   ├── AnonymousMigrationModal.tsx
+│   │   ├── OfflineBanner.tsx
+│   │   ├── badges/                # BadgeRow, DefenseReadyBadge, StepBadge
+│   │   ├── changelog/             # AnnouncementBanner, ChangelogEntry
+│   │   ├── defense/               # CertificateUnlock
+│   │   ├── feedback/              # FeedbackThumbs
+│   │   ├── onboarding/            # OnboardingNudge, ReferralCapture
+│   │   └── share/                 # DefenseShareCard
 │   ├── hooks/
-│   │   ├── useProjectState.ts     # Loads most-recent project, manages workflow state
-│   │   ├── usePaidFeatures.ts     # Reads user_entitlements from Supabase
-│   │   └── usePaystackCheckout.js # Extracted Paystack inline popup hook
+│   │   ├── useProjectState.ts     # Loads project, manages workflow state
+│   │   ├── usePaidFeatures.js     # Reads user_entitlements from Supabase
+│   │   ├── usePaystackCheckout.js # Paystack inline popup hook
+│   │   ├── useUser.ts
+│   │   ├── useUserProgress.ts
+│   │   ├── useOnboardingState.ts
+│   │   └── useRunLimit.js
 │   ├── lib/
-│   │   ├── supabase-client.ts     # Supabase anon client + helper functions
-│   │   │                          # Includes: getAllUserProjects(), createProject(),
-│   │   │                          #           archiveAllActiveProjects(), deleteProject()
-│   │   └── analytics.js           # PostHog helpers: trackEvent, identifyUser, resetUser
+│   │   ├── supabase.ts            # Primary Supabase client (use this one)
+│   │   ├── supabase-client.ts     # Legacy — may overlap with supabase.ts; verify before use
+│   │   ├── analytics.js           # PostHog: trackEvent, identifyUser, resetUser
+│   │   ├── sentry.ts
+│   │   ├── certificate.ts
+│   │   ├── entitlements-cache.ts
+│   │   ├── feedback.ts
+│   │   ├── onboarding.ts
+│   │   ├── progress.ts
+│   │   ├── referral.ts
+│   │   ├── shareCard.ts
+│   │   └── sync-queue.ts
 │   ├── services/
-│   │   └── api.js                 # Frontend API call helpers
-│   └── context/
-│       └── AppContext.jsx         # Global state (project data, step results)
+│   │   ├── api.js                 # Frontend API call helpers
+│   │   └── prompts.js             # AI prompt builders
+│   ├── context/
+│   │   ├── AppContext.jsx         # Global state (project data, step results)
+│   │   └── ThemeContext.jsx       # Light/dark mode state
+│   ├── data/
+│   │   ├── changelog.ts
+│   │   ├── roadmap.ts
+│   │   └── universities.js        # Nigerian universities list
+│   ├── emails/                    # React Email templates (frontend copy — also in api/_emails/)
+│   │   ├── render.tsx
+│   │   └── templates/
+│   │       ├── welcome.tsx
+│   │       ├── defense-nudge.tsx
+│   │       └── urgency-reminder.tsx
+│   └── old files/                 # v1 vanilla JS — reference only, never import
 ├── api/                           # Vercel serverless functions (12 max on Hobby plan)
-│   ├── admin.js                   # Admin dashboard data + Sentry integration + Telegram test
-│   ├── ai.js                      # Claude proxy — general workflow + defense + supervisor-prep
+│   ├── admin.js                   # Admin dashboard data + Sentry + Telegram commands
+│   ├── ai.js                      # Claude proxy — workflow + defense + supervisor-prep
 │   ├── auth.js                    # Login/signup/forgot-password + rate limiting
 │   ├── certificate.js             # PDF certificate generation (score >= 7/10)
-│   ├── notify.js                  # Telegram outbound alerts + inbound bot webhook handler
+│   ├── notify.js                  # Telegram outbound alerts + inbound bot webhook
 │   ├── payments.js                # Paystack initiate/verify/webhook/consume-reset
 │   ├── project-reviewer.js        # PDF upload + Claude review (Defense Pack only)
 │   ├── referral.js                # Referral tracking + defense credit milestones
-│   ├── research.js                # Semantic Scholar + OpenAlex + Claude (topic-validate + lit-map)
-│   ├── send-nurture-email.ts      # Welcome + Day 3 + Day 7 email sequences via Resend
+│   ├── research.js                # Semantic Scholar + OpenAlex + Claude
+│   ├── send-nurture-email.ts      # Welcome + Day 3 + Day 7 email sequences
 │   ├── share-card.js              # Satori PNG share card generation
-│   └── speak.js                   # ElevenLabs TTS proxy
-│   └── _lib/                      # Shared utilities (not counted as functions)
-│       ├── telegram.js            # sendTelegramAlert(), sendTelegramAlertOnce()
-│       ├── pricing.js             # Plan definitions and amounts
-│       ├── papers.js              # Semantic Scholar + OpenAlex shared fetch logic
-│       └── credit-user.js        # Grant entitlements after verified payment
+│   ├── speak.js                   # ElevenLabs TTS proxy
+│   ├── _lib/                      # Shared utilities (not Vercel functions)
+│   │   ├── cors.js                # setCorsHeaders() — used by every endpoint
+│   │   ├── supabase-admin.js      # Service-role Supabase client
+│   │   ├── telegram.js            # sendTelegramAlert(), sendTelegramAlertOnce()
+│   │   ├── pricing.js             # Plan definitions and kobo amounts
+│   │   ├── papers.js              # Semantic Scholar + OpenAlex fetch logic
+│   │   ├── credit-user.js         # Grant entitlements after verified payment
+│   │   ├── cache.js               # Upstash response caching
+│   │   ├── rate-limit.js          # Upstash rate limiter helpers
+│   │   ├── usage-tracker.js       # Daily token/cost tracking
+│   │   ├── defense-credit-check.js
+│   │   └── system-log.js
+│   └── _emails/                   # Email templates used by send-nurture-email.ts
+│       ├── render.tsx
+│       └── templates/
+│           ├── welcome.tsx
+│           ├── defense-nudge.tsx
+│           └── urgency-reminder.tsx
+├── migrations/                    # SQL files — run in Supabase SQL Editor
+│   └── 0002 through 0014_*.sql
+├── scripts/                       # Dev/ops scripts — NOT deployed
+│   ├── verify-rls-after-refactor.js  # RLS regression test
+│   ├── flush-reviewer-rate-limits.js
+│   ├── load-env.js
+│   └── screenshot-*.mjs           # OG image / flyer screenshot scripts
+├── supabase/
+│   ├── config.toml                # Local dev config — additional_redirect_urls set to www.fypro.com.ng
+│   ├── functions/                 # Supabase Edge Functions
+│   └── migrations/                # Supabase-managed migrations
 ├── public/
-│   └── fypro-logo.png            # Real logo — use this everywhere
+│   ├── fypro-logo.png
+│   ├── fypro-og-image.png
+│   ├── favicon.svg / favicon-16x16.png / favicon-32x32.png
+│   ├── robots.txt
+│   ├── sitemap.xml
+│   └── flyers/
 ├── design-system/
 │   └── fypro/
-│       └── MASTER.md             # Design system — ALWAYS read before any UI work
-├── .env.local                    # LOCAL ONLY — never committed
-├── .env.example                  # Committed — shows required keys without values
-├── vercel.json                   # CSP headers, redirects, cron job config
-└── CLAUDE.md                     # This file
+│       └── MASTER.md              # Design system — ALWAYS read before any UI work
+├── .env.local                     # LOCAL ONLY — never committed
+├── .env.example                   # Committed — required keys without values
+├── vercel.json                    # CSP headers, function timeouts, SPA rewrite
+├── tailwind.config.js
+├── vite.config.js
+├── tsconfig.json
+└── CLAUDE.md                      # This file
 ```
 
 ---
@@ -576,7 +682,7 @@ Always use CSS variables. Never hardcode hex in component CSS.
 
 Production:       https://www.fypro.com.ng
 Supabase project: ayvunikgfwpylfrkpalj
-GitHub repo:      AyeniTaiwoSPC270/fypro-app
+GitHub repo:      AyeniTaiwoSPC270/FYpro-v2
 Telegram bot:     @fypro_admin_bot
 Support email:    hello@fypro.com.ng (forwards to ayenit381@gmail.com via Cloudflare)
 Admin dashboard:  https://www.fypro.com.ng/admin/health
