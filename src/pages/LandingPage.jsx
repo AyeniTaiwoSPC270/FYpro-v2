@@ -731,8 +731,8 @@ function Hero() {
       </div>
 
       {/* App Mockup */}
-      <div className="relative z-[1] w-full max-w-[880px]">
-        <div className="absolute pointer-events-none blur-[20px]" style={{ top: '30%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
+      <div className="relative z-[1] w-full max-w-[880px] overflow-hidden">
+        <div className="absolute pointer-events-none blur-[20px]" style={{ top: '10%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
         <HeroMockup />
       </div>
     </motion.section>
@@ -1093,7 +1093,7 @@ function LandingFAQItem({ q, a, isOpen, onToggle }) {
 function LandingFAQSection() {
   const [openIndex, setOpenIndex] = useState(null)
   return (
-    <section id="faq" className="py-24 bg-bg-dark">
+    <section id="faq" className="pt-24 pb-14 bg-bg-dark">
       <div className="max-w-3xl mx-auto px-5 md:px-10">
         <Reveal delay={0.05}>
           <div style={{
@@ -1185,7 +1185,7 @@ function TrustedCounter() {
 
 function FinalCTA() {
   return (
-    <section className="py-24 relative overflow-hidden" style={{ background: '#060E18' }}>
+    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: '#060E18' }}>
       <div className="lp-cta-glow" aria-hidden="true" />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
