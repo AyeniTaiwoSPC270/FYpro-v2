@@ -778,9 +778,9 @@ const FEATURES = [
 
 const FEAT_COLOR_MAP = {
   blue:  { kicker: '#60A5FA', iconBg: 'rgba(0,102,255,0.12)', border: '#0066FF' },
-  green: { kicker: '#4ADE80', iconBg: 'rgba(22,163,74,0.12)', border: '#0066FF' },
-  amber: { kicker: '#FCD34D', iconBg: 'rgba(245,158,11,0.12)', border: '#0066FF' },
-  red:   { kicker: '#F87171', iconBg: 'rgba(220,38,38,0.12)', border: '#0066FF' },
+  green: { kicker: '#4ADE80', iconBg: 'rgba(22,163,74,0.12)', border: '#16A34A' },
+  amber: { kicker: '#FCD34D', iconBg: 'rgba(245,158,11,0.12)', border: '#F59E0B' },
+  red:   { kicker: '#F87171', iconBg: 'rgba(220,38,38,0.12)', border: '#DC2626' },
 }
 
 function FeatureCardWrapper({ f, i }) {
