@@ -891,7 +891,7 @@ function HowItWorks() {
       <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Six steps. One defensible project.</Reveal>
-        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[60px] leading-[1.75]">Designed around the exact journey Nigerian final year students go through — with or without a present supervisor.</Reveal>
+        <Reveal delay={0.1} as="p" className="text-center text-white/65 text-[0.975rem] max-w-[500px] mx-auto mb-[28px] leading-[1.75]">Designed around the exact journey Nigerian final year students go through — with or without a present supervisor.</Reveal>
 
         <div className="max-w-[760px] mx-auto relative" style={{ paddingLeft: '20px' }}>
           {/* Vertical connector */}
