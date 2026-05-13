@@ -470,9 +470,6 @@ function Navbar() {
 
 function HeroMockup() {
   const [hoveredCard, setHoveredCard] = useState(null)
-  const [card1Ref, card1Visible] = useReveal()
-  const [card2Ref, card2Visible] = useReveal()
-  const [card3Ref, card3Visible] = useReveal()
 
   const steps = [
     { label: 'Topic Validator', done: true },
@@ -493,105 +490,132 @@ function HeroMockup() {
     {
       av: 'SE', avCls: 'bg-[rgba(245,158,11,0.2)] border-[1.5px] border-[rgba(245,158,11,0.5)]',
       name: 'The Subject Expert', role: 'INTERNAL EXAMINER',
-      q: '"What makes your contribution original? Every paper you cited arrived at a similar conclusion. Where is the gap you are filling?"',
+      q: 'Waiting for your answer...',
       asking: false,
     },
     {
       av: 'EE', avCls: 'bg-[rgba(22,163,74,0.2)] border-[1.5px] border-[rgba(22,163,74,0.5)]',
-      name: "The External Examiner", role: 'EXT. UNIVERSITY · PANEL',
-      q: '"If your supervisor had never seen this project before today, what is the one thing they would reject immediately?"',
+      name: 'The External Examiner', role: 'EXT. UNIVERSITY · PANEL',
+      q: 'Watching your response...',
       asking: false,
     },
   ]
 
   return (
-    <div className="relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
-      {/* Chrome */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-white/[0.03]">
-        <div className="flex gap-1.5">
-          {[0,1,2].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/[0.08] border border-white/[0.14]" />)}
-        </div>
-        <div className="flex-1 bg-white/5 rounded-lg py-[5px] px-3 font-mono text-[0.7rem] text-white/35 text-center">www.fypro.com.ng — Step 6: Defense Simulator</div>
-      </div>
-
-      {/* Shell */}
-      <div className="grid min-h-[370px] grid-cols-1 md:grid-cols-[220px_1fr]">
-        {/* Sidebar */}
-        <div className="hidden md:block border-r border-white/5 py-5 bg-black/20">
-          <div className="flex items-center gap-2 px-5 pb-4 border-b border-white/5 mb-3">
-            <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
+    <>
+      <style>{`
+        @keyframes lp-drain { from { width: 90%; } to { width: 15%; } }
+        @keyframes lp-blink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
+        @keyframes lp-pulse-red { 0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(248,113,113,0.5); } 50% { opacity:0.7; box-shadow:0 0 0 4px rgba(248,113,113,0); } }
+        .lp-timer-fill { height: 100%; background: linear-gradient(90deg, #F87171, #DC2626); border-radius: 2px; animation: lp-drain 8s linear infinite; }
+        .lp-typing-dot { width: 4px; height: 4px; border-radius: 50%; background: #60A5FA; }
+        .lp-typing-dot:nth-child(1) { animation: lp-blink 1.2s ease-in-out infinite 0s; }
+        .lp-typing-dot:nth-child(2) { animation: lp-blink 1.2s ease-in-out infinite 0.2s; }
+        .lp-typing-dot:nth-child(3) { animation: lp-blink 1.2s ease-in-out infinite 0.4s; }
+        .lp-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #F87171; animation: lp-pulse-red 1.4s ease-in-out infinite; flex-shrink: 0; }
+      `}</style>
+      <div className="relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
+        {/* Chrome */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-white/[0.03]">
+          <div className="flex gap-1.5">
+            {[0,1,2].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/[0.08] border border-white/[0.14]" />)}
           </div>
-          {steps.map(({ label, done, active }) => (
-            <div key={label} className={`flex items-center gap-2 px-5 py-[9px] text-[0.72rem] font-medium border-l-2 ${active ? 'text-white bg-[rgba(0,102,255,0.12)] border-blue-brand' : done ? 'text-[rgba(22,163,74,0.8)] border-transparent' : 'text-white/40 border-transparent'}`}>
-              <div className="w-[7px] h-[7px] rounded-full bg-current flex-shrink-0" />{label}
+          <div className="flex-1 bg-white/5 rounded-lg py-[5px] px-3 font-mono text-[0.7rem] text-white/35 text-center">www.fypro.com.ng — Step 6: Defense Simulator</div>
+          <div className="flex items-center gap-1.5 rounded-full px-2.5 py-1 flex-shrink-0" style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.35)' }}>
+            <div className="lp-live-dot" />
+            <span className="font-mono text-[0.6rem] tracking-[0.08em] whitespace-nowrap" style={{ color: 'rgba(248,113,113,0.95)' }}>LIVE SESSION</span>
+          </div>
+        </div>
+
+        {/* Shell */}
+        <div className="grid min-h-[370px] grid-cols-1 md:grid-cols-[220px_1fr]">
+          {/* Sidebar */}
+          <div className="hidden md:block border-r border-white/5 py-5 bg-black/20">
+            <div className="flex items-center gap-2 px-5 pb-4 border-b border-white/5 mb-3">
+              <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
             </div>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="p-6 flex flex-col gap-3.5">
-          <div className="border-b border-white/5 pb-3.5">
-            <div className="font-mono text-[0.62rem] tracking-[0.12em] uppercase text-blue-brand mb-1">Step 6 of 6 — Defense Prep</div>
-            <div className="font-serif text-[1.1rem] text-white">Three-Examiner Panel Simulation</div>
-          </div>
-
-          {/* Examiners — individual reveal */}
-          <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-3">
-            {examiners.map(({ av, avCls, name, role, q, asking }, i) => {
-              const cardKeys = ['methodologist', 'subject-expert', 'external-examiner']
-              const cardRefs = [card1Ref, card2Ref, card3Ref]
-              const cardVisibles = [card1Visible, card2Visible, card3Visible]
-              const cardKey = cardKeys[i]
-              const cardRef = cardRefs[i]
-              const cardVisible = cardVisibles[i]
-              const hovered = hoveredCard === cardKey
-              return (
-                <div
-                  key={name}
-                  ref={cardRef}
-                  onMouseEnter={() => setHoveredCard(cardKey)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                  className={`rounded-xl p-3.5 cursor-default ${asking ? 'bg-[rgba(0,102,255,0.07)]' : 'bg-white/[0.03]'}`}
-                  style={{
-                    border: hovered ? '1px solid rgba(59,130,246,0.5)' : asking ? '1px solid rgba(0,102,255,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                    boxShadow: hovered ? '0 0 24px rgba(59,130,246,0.2)' : 'none',
-                    transform: cardVisible ? (hovered ? 'translateY(-4px)' : 'translateY(0)') : 'translateY(24px)',
-                    opacity: cardVisible ? 1 : 0,
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <motion.div
-                    className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.6rem] font-bold text-white mb-2 cursor-default ${avCls}`}
-                    whileHover={{ boxShadow: asking ? '0 0 14px rgba(0,102,255,0.75), 0 0 30px rgba(0,102,255,0.35)' : undefined }}
-                  >{av}</motion.div>
-                  <div className="text-[0.68rem] font-bold text-white mb-0.5">{name}</div>
-                  <div className="font-mono text-[0.58rem] text-white/35 mb-2">{role}</div>
-                  <div className="text-[0.66rem] text-white/65 leading-[1.5] text-left">{q}</div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Vulnerabilities */}
-          <div className="bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.22)] rounded-xl p-3 px-3.5">
-            <div className="font-mono text-[0.6rem] tracking-[0.1em] uppercase text-[rgba(248,113,113,0.9)] mb-2">PROJECT VULNERABILITIES DETECTED</div>
-            {[
-              '⚠ Sampling frame excludes postgraduate respondents — representativeness risk',
-              '⚠ Chapter 2 theoretical framework not linked to research objectives',
-              '⚠ No triangulation strategy declared for mixed-methods design',
-            ].map((v, i) => (
-              <div key={i} className={`text-[0.68rem] text-white/[0.62] leading-[1.6] py-[3px] ${i > 0 ? 'border-t border-[rgba(220,38,38,0.1)]' : ''}`}>{v}</div>
+            {steps.map(({ label, done, active }) => (
+              <div key={label} className={`flex items-center gap-2 px-5 py-[9px] text-[0.72rem] font-medium border-l-2 ${active ? 'text-white bg-[rgba(0,102,255,0.12)] border-blue-brand' : done ? 'text-[rgba(22,163,74,0.8)] border-transparent' : 'text-white/40 border-transparent'}`}>
+                <div className="w-[7px] h-[7px] rounded-full bg-current flex-shrink-0" />{label}
+              </div>
             ))}
           </div>
 
-          {/* Chips */}
-          <div className="flex gap-2 flex-wrap">
-            <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(22,163,74,0.12)] border border-[rgba(22,163,74,0.3)] text-[#4ADE80]">Readiness Score: 84 / 100</div>
-            <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(0,102,255,0.12)] border border-[rgba(0,102,255,0.3)] text-[#60A5FA]">3 questions remaining</div>
+          {/* Content */}
+          <div className="p-6 flex flex-col gap-3.5">
+            <div className="border-b border-white/5 pb-3.5">
+              <div className="font-mono text-[0.62rem] tracking-[0.12em] uppercase text-blue-brand mb-1">Step 6 of 6 — Defense Prep</div>
+              <div className="font-serif text-[1.1rem] text-white">Three-Examiner Panel Simulation</div>
+            </div>
+
+            {/* Timer bar */}
+            <div className="flex items-center gap-2.5">
+              <div className="font-mono text-[0.6rem] whitespace-nowrap" style={{ color: 'rgba(248,113,113,0.8)' }}>⏱ 01:23 remaining</div>
+              <div className="flex-1 h-[3px] rounded-[2px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <div className="lp-timer-fill" />
+              </div>
+              <div className="font-mono text-[0.6rem] whitespace-nowrap" style={{ color: 'rgba(248,113,113,0.8)' }}>respond now</div>
+            </div>
+
+            {/* Examiners */}
+            <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-3">
+              {examiners.map(({ av, avCls, name, role, q, asking }) => {
+                const hovered = hoveredCard === name
+                return (
+                  <div
+                    key={name}
+                    onMouseEnter={() => setHoveredCard(name)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    className="rounded-xl p-3.5 cursor-default"
+                    style={{
+                      background: asking ? 'rgba(0,102,255,0.07)' : 'rgba(255,255,255,0.03)',
+                      border: hovered ? '1px solid rgba(59,130,246,0.5)' : asking ? '1px solid rgba(0,102,255,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: asking ? '0 0 20px rgba(0,102,255,0.15)' : 'none',
+                      opacity: asking ? 1 : 0.5,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.6rem] font-bold text-white mb-2 ${avCls}`}>{av}</div>
+                    <div className="text-[0.68rem] font-bold text-white mb-0.5">{name}</div>
+                    <div className="font-mono text-[0.58rem] text-white/35 mb-2">{role}</div>
+                    {asking ? (
+                      <>
+                        <div className="text-[0.66rem] text-white/65 leading-[1.5] italic">{q}</div>
+                        <div className="flex gap-[3px] mt-2">
+                          <div className="lp-typing-dot" />
+                          <div className="lp-typing-dot" />
+                          <div className="lp-typing-dot" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-[0.66rem] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.3)' }}>{q}</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Vulnerabilities */}
+            <div className="bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.22)] rounded-xl p-3 px-3.5">
+              <div className="font-mono text-[0.6rem] tracking-[0.1em] uppercase text-[rgba(248,113,113,0.9)] mb-2">PROJECT VULNERABILITIES DETECTED</div>
+              {[
+                '⚠ Sampling frame excludes postgraduate respondents — representativeness risk',
+                '⚠ Chapter 2 theoretical framework not linked to research objectives',
+                '⚠ No triangulation strategy declared for mixed-methods design',
+              ].map((v, i) => (
+                <div key={i} className={`text-[0.68rem] text-white/[0.62] leading-[1.6] py-[3px] ${i > 0 ? 'border-t border-[rgba(220,38,38,0.1)]' : ''}`}>{v}</div>
+              ))}
+            </div>
+
+            {/* Chips */}
+            <div className="flex gap-2 flex-wrap">
+              <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(22,163,74,0.12)] border border-[rgba(22,163,74,0.3)] text-[#4ADE80]">Readiness Score: 71 / 100</div>
+              <div className="font-mono text-[0.62rem] px-2.5 py-1 rounded-lg bg-[rgba(0,102,255,0.12)] border border-[rgba(0,102,255,0.3)] text-[#60A5FA]">4 questions remaining</div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -626,8 +650,6 @@ function HeroSub() {
 function Hero() {
   const heroRef = useRef(null)
   const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
-  const [mockupRef, mockupVisible] = useReveal()
-
   useEffect(() => {
     const el = heroRef.current
     if (!el) return
@@ -703,11 +725,7 @@ function Hero() {
       </div>
 
       {/* App Mockup */}
-      <div
-        ref={mockupRef}
-        className="relative z-[1] w-full max-w-[880px]"
-        style={{ opacity: mockupVisible ? 1 : 0, transform: mockupVisible ? 'translateY(0)' : 'translateY(24px)', transition: 'opacity 0.5s ease, transform 0.5s ease' }}
-      >
+      <div className="relative z-[1] w-full max-w-[880px]">
         <div className="absolute pointer-events-none blur-[20px]" style={{ top: '30%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
         <HeroMockup />
       </div>
