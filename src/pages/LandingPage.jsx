@@ -714,14 +714,20 @@ function Hero() {
 
       {/* Actions */}
       <div
-        className="lp-hero-cta relative z-[1] flex gap-3 items-center justify-center flex-wrap mb-[72px]"
+        className="lp-hero-cta relative z-[1] flex flex-col items-center gap-4 mb-[72px]"
         style={{ animationDelay: '1800ms' }}
       >
-        <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
-        <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
-          See How It Works
-        </BtnLink>
+        <div className="flex gap-3 items-center justify-center flex-wrap">
+          <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
+          <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
+            See How It Works
+          </BtnLink>
+        </div>
+        <div className="flex items-center gap-2">
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F87171', animation: 'lp-pulse-red 1.4s ease-in-out infinite', flexShrink: 0 }} />
+          <span className="font-mono text-[0.7rem]" style={{ color: 'rgba(248,113,113,0.85)', letterSpacing: '0.04em' }}>Most students start 3 weeks before their defense. The earlier, the better.</span>
+        </div>
       </div>
 
       {/* App Mockup */}
