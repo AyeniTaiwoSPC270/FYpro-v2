@@ -1771,21 +1771,24 @@ function ProjectCard({ project, onContinue, onDelete }) {
   )
 }
 
-function NewProjectCard({ features, featuresLoading, onStartNew, onPay }) {
+function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay }) {
   const hasProjectReset = !featuresLoading &&
     Array.isArray(features) &&
     features.includes('project_reset')
+  const isDefense = Array.isArray(features) && features.includes('defense_pack')
+  const hasDefenseFreeSlot = !featuresLoading && isDefense && Array.isArray(projects) && projects.length === 0
+  const canStartNew = hasProjectReset || hasDefenseFreeSlot
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-      onClick={hasProjectReset ? undefined : onPay}
+      onClick={canStartNew ? undefined : onPay}
       style={{
-        background: hasProjectReset
+        background: canStartNew
           ? 'linear-gradient(145deg, rgba(22,163,74,0.06) 0%, rgba(22,163,74,0.02) 100%)'
           : 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
-        border: hasProjectReset ? '1.5px dashed rgba(22,163,74,0.4)' : '1.5px dashed var(--border-color)',
+        border: canStartNew ? '1.5px dashed rgba(22,163,74,0.4)' : '1.5px dashed var(--border-color)',
         borderRadius: 16,
         padding: '28px 28px 24px',
         display: 'flex',
@@ -1794,12 +1797,12 @@ function NewProjectCard({ features, featuresLoading, onStartNew, onPay }) {
         justifyContent: 'center',
         gap: 12,
         minHeight: 160,
-        cursor: hasProjectReset ? 'default' : 'pointer',
+        cursor: canStartNew ? 'default' : 'pointer',
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
       }}
-      whileHover={!hasProjectReset ? { boxShadow: '0 4px 20px rgba(0,0,0,0.1)' } : {}}
+      whileHover={!canStartNew ? { boxShadow: '0 4px 20px rgba(0,0,0,0.1)' } : {}}
     >
-      {hasProjectReset ? (
+      {canStartNew ? (
         <>
           <div style={{
             width: 40, height: 40, borderRadius: '50%',
@@ -1856,7 +1859,7 @@ function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStart
         {projects.map(p => (
           <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} />
         ))}
-        <NewProjectCard features={features} featuresLoading={featuresLoading} onStartNew={onStartNew} onPay={onPay} />
+        <NewProjectCard features={features} featuresLoading={featuresLoading} projects={projects} onStartNew={onStartNew} onPay={onPay} />
       </div>
     </div>
   )
@@ -1987,20 +1990,26 @@ export default function Dashboard() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    const consumeRes = await fetch('/api/payments?action=consume-reset', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    })
-    if (!consumeRes.ok) {
-      const err = await consumeRes.json().catch(() => ({}))
-      showToastMessage(err.error || 'Could not start new project. Please try again.')
-      return
-    }
+    const isDefenseFreeSlot = Array.isArray(features) &&
+      features.includes('defense_pack') &&
+      Array.isArray(projects) &&
+      projects.length === 0
 
-    window.dispatchEvent(new Event('fypro_entitlements_updated'))
+    if (!isDefenseFreeSlot) {
+      const consumeRes = await fetch('/api/payments?action=consume-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+      if (!consumeRes.ok) {
+        const err = await consumeRes.json().catch(() => ({}))
+        showToastMessage(err.error || 'Could not start new project. Please try again.')
+        return
+      }
+      window.dispatchEvent(new Event('fypro_entitlements_updated'))
+    }
 
     await archiveAllActiveProjects()
     const newProject = await createProject({

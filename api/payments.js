@@ -303,6 +303,14 @@ async function handleConsumeReset(req, res) {
 
   const features = Array.isArray(current?.paid_features) ? current.paid_features : [];
   if (!features.includes('project_reset')) {
+    // Defense Pack users with zero existing projects don't need a paid reset slot
+    if (features.includes('defense_pack')) {
+      const { count } = await supabaseAdmin
+        .from('projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if (count === 0) return res.status(200).json({ success: true });
+    }
     return res.status(403).json({ error: 'No project_reset entitlement to consume' });
   }
 
