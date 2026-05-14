@@ -35,3 +35,21 @@ dist-ssr
 .worktrees
 .vercel
 .env*.local
+
+# Claude Code dev tools — local only, not production
+.agents/
+.claude/projects/
+.claude/skills/
+.superpowers/
+.playwright-mcp/
+
+# Design reference screenshots — never commit loose images to root
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/*.gif
+
+# Temporary/local docs
+PRODUCT.md
+supabase/.temp/
