@@ -1,11 +1,20 @@
 import crypto           from 'crypto';
 import { Resend }              from 'resend';
+import { Redis }               from '@upstash/redis';
 import { supabaseAdmin }       from './_lib/supabase-admin.js';
 import { writeSystemLog }      from './_lib/system-log.js';
 import { rateLimitCheck }      from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
+
+// Redis client used exclusively by admin actions (key inspection, reset)
+function getAdminRedis() {
+  return new Redis({
+    url:   process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+}
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
@@ -568,8 +577,7 @@ async function handleDeleteUser(req, res) {
 }
 
 // action: "reset-usage" — clears Upstash rate limit keys for a user so they can make requests again
-// Key format: rl:user:{prefix}:{userId}:{utcDate}:{dayBucket}
-// dayBucket = Math.floor(Date.now() / 86400000) — matches @upstash/ratelimit fixedWindow internals
+// Uses redis.keys() to find the actual stored key format rather than guessing it.
 async function handleResetUsage(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
@@ -577,39 +585,46 @@ async function handleResetUsage(req, res) {
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
-  const redisUrl   = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!redisUrl || !redisToken) return res.status(500).json({ error: 'Redis not configured' });
-
-  // All prefixes used in rateLimitCheck calls across the codebase
-  const RATE_PREFIXES = [
-    'claude', 'defense', 'supervisor-prep', 'reviewer',
-    'topic-validator', 'literature-map', 'share-card', 'speak', 'payment-issue',
-  ];
-
-  // Build all possible keys for today (and yesterday as a safety net for cross-midnight sessions)
-  const now    = Date.now();
-  const today  = new Date(now).toISOString().slice(0, 10);
-  const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
-  const todayBucket     = Math.floor(now / 86400000);
-  const yesterdayBucket = todayBucket - 1;
-
-  const keys = [
-    ...RATE_PREFIXES.map(p => `rl:user:${p}:${userId}:${today}:${todayBucket}`),
-    ...RATE_PREFIXES.map(p => `rl:user:${p}:${userId}:${yesterday}:${yesterdayBucket}`),
-  ];
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return res.status(500).json({ error: 'Redis not configured' });
+  }
 
   try {
-    const delRes  = await fetch(`${redisUrl}/pipeline`, {
-      method:  'POST',
-      headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify(keys.map(k => ['DEL', k])),
-    });
-    const delData = await delRes.json();
-    const deleted = Array.isArray(delData) ? delData.filter(r => r.result === 1).length : 0;
-    return res.status(200).json({ ok: true, keys_deleted: deleted });
+    const redis = getAdminRedis();
+    // redis.keys() returns ALL keys matching the pattern — no pagination needed
+    const found = await redis.keys(`*${userId}*`);
+    const rlKeys = (found || []).filter(k => k.startsWith('rl:'));
+
+    let deleted = 0;
+    if (rlKeys.length > 0) {
+      deleted = await redis.del(...rlKeys);
+    }
+
+    return res.status(200).json({ ok: true, keys_deleted: deleted, keys_found: rlKeys });
   } catch (err) {
     console.error('[admin/reset-usage]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "debug-redis-keys" — lists all rl: keys for a userId (admin diagnostics only)
+async function handleDebugRedisKeys(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return res.status(500).json({ error: 'Redis not configured' });
+  }
+
+  try {
+    const redis  = getAdminRedis();
+    const found  = await redis.keys(`*${userId}*`);
+    const allRl  = await redis.keys('rl:*');
+    return res.status(200).json({ keys_for_user: found || [], all_rl_keys_sample: (allRl || []).slice(0, 20) });
+  } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 }
@@ -1305,6 +1320,7 @@ export default async function handler(req, res) {
   if (action === 'ban-user')           return handleBanUser(req, res);
   if (action === 'reset-usage')        return handleResetUsage(req, res);
   if (action === 'grant-entitlement')  return handleGrantEntitlement(req, res);
+  if (action === 'debug-redis-keys')   return handleDebugRedisKeys(req, res);
   if (action === 'self-delete')            return handleSelfDelete(req, res);
   if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
