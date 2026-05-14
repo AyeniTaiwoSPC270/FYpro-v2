@@ -713,6 +713,7 @@ export default function DefensePrep() {
         if (msgId != null) {
           setVoicePausedMsgIds(prev => new Set([...prev, msgId]))
         }
+        fallbackSpeak(text, examinerName)
       })
   }
 
