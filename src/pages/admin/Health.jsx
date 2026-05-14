@@ -353,6 +353,8 @@ export default function AdminHealth() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage]       = useState(0)
   const [actionState, setActionState] = useState({}) // { userId: 'pending' | 'banned' | 'deleted' | 'error' }
+  const [userActionToast,  setUserActionToast]  = useState(null)  // { type: 'success'|'error', message }
+  const userActionToastTimer                    = useRef(null)
 
   const [testAlertsBusy,   setTestAlertsBusy]   = useState(false)
   const [testAlertsResult, setTestAlertsResult] = useState(null)
@@ -641,6 +643,62 @@ export default function AdminHealth() {
     } catch (err) {
       setActionState(s => ({ ...s, [userId]: 'error' }))
       window.alert('Ban failed: ' + err.message)
+    }
+  }
+
+  function showUserToast(type, message) {
+    clearTimeout(userActionToastTimer.current)
+    setUserActionToast({ type, message })
+    userActionToastTimer.current = setTimeout(() => setUserActionToast(null), 4000)
+  }
+
+  async function handleResetUsage(userId, email) {
+    if (!window.confirm(`Reset usage limits for ${email}?`)) return
+    setActionState(s => ({ ...s, [userId]: 'pending' }))
+    try {
+      const res  = await fetch('/api/admin?action=reset-usage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('success', `Usage limits reset for ${email}`)
+    } catch (err) {
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('error', 'Reset failed: ' + err.message)
+    }
+  }
+
+  async function handleGrantPlan(userId, email, plan) {
+    const label = plan === 'student' ? 'Student Plan' : 'Defense Plan'
+    if (!window.confirm(`Grant ${label} to ${email}?`)) return
+    setActionState(s => ({ ...s, [userId]: 'pending' }))
+    try {
+      const res  = await fetch('/api/admin?action=grant-entitlement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId, plan }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('success', `${label} granted to ${email}`)
+      const newPlan = plan === 'defense' ? 'Defense' : 'Student'
+      setData(prev => ({
+        ...prev,
+        users: prev.users.map(u => {
+          if (u.id !== userId) return u
+          // Defense > Student > Free — only upgrade, never downgrade
+          if (newPlan === 'Defense') return { ...u, plan: 'Defense' }
+          if (u.plan === 'Free') return { ...u, plan: 'Student' }
+          return u
+        }),
+      }))
+    } catch (err) {
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('error', `Grant failed: ${err.message}`)
     }
   }
 
@@ -1226,6 +1284,18 @@ export default function AdminHealth() {
 
       {/* ── SECTION 2: User Table ──────────────────────────────────── */}
       <SectionHeading title={`Users (${filteredUsers.length})`} />
+      {userActionToast && (
+        <div style={{
+          marginBottom: 12, padding: '8px 14px',
+          background: userActionToast.type === 'error' ? 'rgba(220,38,38,0.1)' : 'rgba(22,163,74,0.1)',
+          border:     `1px solid ${userActionToast.type === 'error' ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
+          borderRadius: 8, fontSize: 12,
+          color: userActionToast.type === 'error' ? '#F87171' : '#4ade80',
+          fontFamily: "'Poppins', sans-serif",
+        }}>
+          {userActionToast.message}
+        </div>
+      )}
       <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24 }}>
         <input
           type="text"
@@ -1282,8 +1352,8 @@ export default function AdminHealth() {
                     <td style={{ ...tdMono, textAlign: 'center' }}>{u.project_count}</td>
                     <td style={td}><StatusBadge status={u.status} /></td>
                     <td style={tdMono}>{u.paid_amount > 0 ? `₦${u.paid_amount.toLocaleString()}` : '—'}</td>
-                    <td style={{ ...td, padding: '6px 12px' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                    <td style={{ ...td, padding: '6px 12px', minWidth: 220 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                         <button
                           disabled={isPending || aState === 'banned'}
                           onClick={() => handleBanUser(u.id, u.email)}
@@ -1315,6 +1385,54 @@ export default function AdminHealth() {
                           }}
                         >
                           {aState === 'error' ? 'Retry' : 'Delete'}
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => handleResetUsage(u.id, u.email)}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: 'rgba(255,255,255,0.6)',
+                            background: 'transparent',
+                            border: `1px solid rgba(255,255,255,0.18)`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: isPending ? 'not-allowed' : 'pointer',
+                            opacity: isPending ? 0.5 : 1,
+                          }}
+                        >
+                          Reset Limits
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => handleGrantPlan(u.id, u.email, 'student')}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: '#60a5fa',
+                            background: 'transparent',
+                            border: `1px solid rgba(96,165,250,0.35)`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: isPending ? 'not-allowed' : 'pointer',
+                            opacity: isPending ? 0.5 : 1,
+                          }}
+                        >
+                          Grant Student
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => handleGrantPlan(u.id, u.email, 'defense')}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: WHITE,
+                            background: `${BLUE}33`,
+                            border: `1px solid ${BLUE}66`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: isPending ? 'not-allowed' : 'pointer',
+                            opacity: isPending ? 0.5 : 1,
+                          }}
+                        >
+                          Grant Defense
                         </button>
                       </div>
                     </td>

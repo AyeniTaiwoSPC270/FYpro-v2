@@ -559,6 +559,93 @@ async function handleDeleteUser(req, res) {
   }
 }
 
+// action: "reset-usage" — clears Upstash rate limit keys for a user so they can make requests again
+async function handleResetUsage(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  const redisUrl   = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!redisUrl || !redisToken) return res.status(500).json({ error: 'Redis not configured' });
+
+  try {
+    // Scan for all rate-limit keys that contain this userId (covers all prefixes and dates)
+    const scanRes  = await fetch(`${redisUrl}/pipeline`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify([['SCAN', '0', 'MATCH', `rl:user:*${userId}*`, 'COUNT', '200']]),
+    });
+    const scanData = await scanRes.json();
+    const keys     = scanData[0]?.result?.[1] ?? [];
+
+    let deleted = 0;
+    if (keys.length > 0) {
+      const delRes  = await fetch(`${redisUrl}/pipeline`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify(keys.map(k => ['DEL', k])),
+      });
+      const delData = await delRes.json();
+      deleted = Array.isArray(delData) ? delData.filter(r => r.result === 1).length : 0;
+    }
+
+    return res.status(200).json({ ok: true, keys_deleted: deleted });
+  } catch (err) {
+    console.error('[admin/reset-usage]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "grant-entitlement" — admin grants student or defense plan to a user at no charge
+async function handleGrantEntitlement(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId, plan } = req.body || {};
+  if (!userId || !['student', 'defense'].includes(plan)) {
+    return res.status(400).json({ error: 'userId and plan (student|defense) required' });
+  }
+
+  try {
+    const { data: current } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('paid_features, defense_packs_remaining, total_lifetime_paid_ngn')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const features      = new Set(Array.isArray(current?.paid_features) ? current.paid_features : []);
+    let   defensePacks  = typeof current?.defense_packs_remaining === 'number' ? current.defense_packs_remaining : 0;
+    const lifetimeTotal = typeof current?.total_lifetime_paid_ngn  === 'number' ? current.total_lifetime_paid_ngn  : 0;
+
+    if (plan === 'student') {
+      features.add('student_pack');
+    } else {
+      features.add('defense_pack');
+      features.add('project_reset');
+      defensePacks += 1;
+    }
+
+    const { error } = await supabaseAdmin
+      .from('user_entitlements')
+      .upsert({
+        user_id:                 userId,
+        paid_features:           Array.from(features),
+        defense_packs_remaining: defensePacks,
+        total_lifetime_paid_ngn: lifetimeTotal,
+        updated_at:              new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/grant-entitlement]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 // action: "ban-user"
 // SQL required (run once in Supabase SQL Editor):
 //   ALTER TABLE user_entitlements
@@ -1199,8 +1286,10 @@ export default async function handler(req, res) {
   if (action === 'vitals')           return handleVitals(req, res);
   if (action === 'failures')         return handleFailures(req, res);
   if (action === 'resolve-failure')  return handleResolveFailure(req, res);
-  if (action === 'delete-user')      return handleDeleteUser(req, res);
-  if (action === 'ban-user')         return handleBanUser(req, res);
+  if (action === 'delete-user')        return handleDeleteUser(req, res);
+  if (action === 'ban-user')           return handleBanUser(req, res);
+  if (action === 'reset-usage')        return handleResetUsage(req, res);
+  if (action === 'grant-entitlement')  return handleGrantEntitlement(req, res);
   if (action === 'self-delete')            return handleSelfDelete(req, res);
   if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
