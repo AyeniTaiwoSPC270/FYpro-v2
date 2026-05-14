@@ -3776,8 +3776,8 @@ html, body {
 /* ── Component body text ─────────────────────────────────── */
 .ag-component-text {
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  color: #0D1B2A;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
   line-height: 1.75;
   margin: 0;
 }

@@ -206,12 +206,14 @@ export default function ChapterArchitect() {
     if (state.abstractData && !agData) {
       setAgData(state.abstractData)
       setAgSection('result')
+      setAgVisible(AG_COMPONENTS.map((_, i) => i))
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.abstractData])
   const [agError, setAgError]             = useState(null)
   const [agCopied, setAgCopied]           = useState(false)
-  const [agVisible, setAgVisible]         = useState([])
+  // If abstract data already exists (restored session), make all blocks visible immediately
+  const [agVisible, setAgVisible]         = useState(() => state.abstractData ? AG_COMPONENTS.map((_, i) => i) : [])
   const agTimers        = useRef([])
   const loadingTimerRef = useRef(null)
   const agLoadingTimerRef = useRef(null)

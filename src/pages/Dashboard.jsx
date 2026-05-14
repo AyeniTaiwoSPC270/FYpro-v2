@@ -1060,11 +1060,23 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                   {/* FIX 7 — Description: text-slate-700 for locked, text-slate-500 otherwise */}
                   <p
                     className={`font-sans text-[0.77rem] leading-[1.62] max-w-[58ch] ${
-                      isLocked ? 'text-slate-700 mb-0' : 'text-slate-500 mb-[14px]'
+                      isLocked ? 'text-slate-700 mb-0' : 'text-slate-500 mb-[10px]'
                     }`}
                   >
                     {step.desc}
                   </p>
+
+                  {/* Project Reviewer grade badge — shown when completed and grade is available */}
+                  {i === 4 && isCompleted && state.uploadedProject?.reviewData?.grade && (
+                    <div className="flex items-center gap-2 mb-[14px]">
+                      <span
+                        className="font-mono text-[0.62rem] font-bold tracking-[0.08em] uppercase px-3 py-[4px] rounded-full"
+                        style={{ background: 'rgba(22,163,74,0.12)', color: '#16A34A', border: '1px solid rgba(22,163,74,0.25)' }}
+                      >
+                        Grade: {state.uploadedProject.reviewData.grade}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Action button — only for non-locked steps */}
                   {!isLocked && (
@@ -1089,6 +1101,119 @@ function DashProgressJourney({ STEPS, STUDENT }) {
                   )}
                 </div>
               </div>
+
+              {/* ── Companion cards after Chapter Architect ───────────────── */}
+              {i === 1 && state.stepsCompleted[1] && state.literatureMap && (
+                <div className="flex gap-5">
+                  <div className="flex flex-col items-center w-11 flex-shrink-0">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 font-mono text-[0.8rem] font-bold"
+                      style={{ background: 'rgba(8,145,178,0.1)', border: '1.5px solid rgba(8,145,178,0.3)', color: '#0891B2' }}
+                    >
+                      ⬦
+                    </div>
+                    <div className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]" style={{ background: 'rgba(8,145,178,0.15)' }} />
+                  </div>
+                  <div className="flex-1 pb-[26px]">
+                    <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
+                      <span className="font-sans text-[0.92rem] font-semibold text-white">Literature Map</span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full" style={{ background: 'rgba(8,145,178,0.12)', color: '#0891B2' }}>
+                        Companion Card
+                      </span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400" style={{ background: 'rgba(22,163,74,0.12)' }}>
+                        Completed
+                      </span>
+                    </div>
+                    <p className="font-sans text-[0.77rem] leading-[1.62] text-slate-500 mb-[14px] max-w-[58ch]">
+                      Clustered your relevant literature into research themes with real academic papers.
+                    </p>
+                    <motion.button
+                      whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
+                      className="inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 bg-transparent border"
+                      style={{ color: '#0891B2', borderColor: 'rgba(8,145,178,0.35)' }}
+                    >
+                      Review <ArrowRightIcon size={12} />
+                    </motion.button>
+                  </div>
+                </div>
+              )}
+
+              {i === 1 && state.stepsCompleted[1] && state.abstractData && (
+                <div className="flex gap-5">
+                  <div className="flex flex-col items-center w-11 flex-shrink-0">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 font-mono text-[0.8rem] font-bold"
+                      style={{ background: 'rgba(8,145,178,0.1)', border: '1.5px solid rgba(8,145,178,0.3)', color: '#0891B2' }}
+                    >
+                      ⬦
+                    </div>
+                    <div className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]" style={{ background: 'rgba(8,145,178,0.15)' }} />
+                  </div>
+                  <div className="flex-1 pb-[26px]">
+                    <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
+                      <span className="font-sans text-[0.92rem] font-semibold text-white">Abstract Generator</span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full" style={{ background: 'rgba(8,145,178,0.12)', color: '#0891B2' }}>
+                        Companion Card
+                      </span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400" style={{ background: 'rgba(22,163,74,0.12)' }}>
+                        Completed
+                      </span>
+                    </div>
+                    <p className="font-sans text-[0.77rem] leading-[1.62] text-slate-500 mb-[14px] max-w-[58ch]">
+                      Generated a five-section abstract scaffold calibrated to your topic and chapter structure.
+                    </p>
+                    <motion.button
+                      whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
+                      className="inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 bg-transparent border"
+                      style={{ color: '#0891B2', borderColor: 'rgba(8,145,178,0.35)' }}
+                    >
+                      Review <ArrowRightIcon size={12} />
+                    </motion.button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Companion card after Methodology Advisor ──────────────── */}
+              {i === 2 && state.stepsCompleted[2] && state.instrumentBuilder && (
+                <div className="flex gap-5">
+                  <div className="flex flex-col items-center w-11 flex-shrink-0">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 font-mono text-[0.8rem] font-bold"
+                      style={{ background: 'rgba(8,145,178,0.1)', border: '1.5px solid rgba(8,145,178,0.3)', color: '#0891B2' }}
+                    >
+                      ⬦
+                    </div>
+                    <div className="w-0.5 flex-1 min-h-6 mt-1 mb-1 rounded-[1px]" style={{ background: 'rgba(8,145,178,0.15)' }} />
+                  </div>
+                  <div className="flex-1 pb-[26px]">
+                    <div className="flex items-center flex-wrap gap-2.5 mb-[7px] pt-2">
+                      <span className="font-sans text-[0.92rem] font-semibold text-white">Instrument Builder</span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full" style={{ background: 'rgba(8,145,178,0.12)', color: '#0891B2' }}>
+                        Companion Card
+                      </span>
+                      <span className="font-mono text-[0.58rem] font-medium tracking-[0.08em] uppercase px-2.5 py-[3px] rounded-full text-green-400" style={{ background: 'rgba(22,163,74,0.12)' }}>
+                        Completed
+                      </span>
+                    </div>
+                    <p className="font-sans text-[0.77rem] leading-[1.62] text-slate-500 mb-[14px] max-w-[58ch]">
+                      Built a tailored data collection instrument aligned to your methodology and research questions.
+                    </p>
+                    <motion.button
+                      whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
+                      className="inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 bg-transparent border"
+                      style={{ color: '#0891B2', borderColor: 'rgba(8,145,178,0.35)' }}
+                    >
+                      Review <ArrowRightIcon size={12} />
+                    </motion.button>
+                  </div>
+                </div>
+              )}
 
               {/* Supervisor Meeting Prep bonus card — shown after Writing Planner completes */}
               {i === 3 && state.stepsCompleted[3] && (
