@@ -47,9 +47,8 @@ async function isMaintenanceActive() {
 export default async function middleware(request) {
   const { pathname } = new URL(request.url);
 
-  // Always pass through: maintenance page, admin routes, all API calls, static assets
+  // Always pass through: admin routes, all API calls, static assets
   if (
-    pathname === '/maintenance' ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/assets/') ||
@@ -59,7 +58,13 @@ export default async function middleware(request) {
   }
 
   const active = await isMaintenanceActive();
-  if (!active) return;
+  const isMaintenancePage = pathname === '/maintenance';
 
-  return Response.redirect(new URL('/maintenance', request.url), 302);
+  if (active && !isMaintenancePage) {
+    return Response.redirect(new URL('/maintenance', request.url), 302);
+  }
+
+  if (!active && isMaintenancePage) {
+    return Response.redirect(new URL('/', request.url), 302);
+  }
 }
