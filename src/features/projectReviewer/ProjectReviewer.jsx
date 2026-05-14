@@ -226,7 +226,8 @@ export default function ProjectReviewer() {
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('project_reviewer')
 
-  const savedData = state.uploadedProject?.reviewData
+  const savedData = state.uploadedProject?.reviewData ??
+    (state.uploadedProject?.grade ? state.uploadedProject : null)
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [section, setSection]         = useState(savedData ? 'result' : 'input')
   const [reviewData, setReviewData]   = useState(savedData || null)
@@ -402,7 +403,7 @@ export default function ProjectReviewer() {
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
-      saveStep('project_reviewer', data)
+      saveStep('project_reviewer', { reviewData: data })
     } catch (err) {
       logFailure('Project Reviewer', err, selectedFile?.name || '')
       setIsProcessing(false)
@@ -422,7 +423,7 @@ export default function ProjectReviewer() {
       ? (selectedFile.name || '').split('.').pop().toLowerCase()
       : (state.uploadedProject?.fileType || 'unknown')
     completeStep(4, { uploadedProject: { fileName, fileType, reviewData } })
-    saveStep('project_reviewer', { ...reviewData, file_name: fileName, file_type: fileType })
+    saveStep('project_reviewer', { reviewData, file_name: fileName, file_type: fileType })
     markStepComplete('project_reviewer')
     showToast('Project reviewed ✓')
   }
