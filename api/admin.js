@@ -559,6 +559,32 @@ async function handleResolveFailure(req, res) {
 // generation_failures and payment_issues use ON DELETE SET NULL, so their rows
 // are preserved with user_id=null for admin review.
 // Run migrations/0007_cascade_audit.sql to verify cascades are in place.
+// action: "reset-run-counts" — clears a user's per-feature usage counters so they can use features again
+// Sets run_counts to { _reset_at: ISO } — the _reset_at key signals the client to discard its
+// localStorage cache instead of merging with Math.max (which local would otherwise win).
+async function handleResetRunCounts(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('user_entitlements')
+      .upsert({
+        user_id:    userId,
+        run_counts: { _reset_at: new Date().toISOString() },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/reset-run-counts]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 async function handleDeleteUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
@@ -1398,6 +1424,7 @@ export default async function handler(req, res) {
   if (action === 'delete-user')        return handleDeleteUser(req, res);
   if (action === 'ban-user')           return handleBanUser(req, res);
   if (action === 'reset-usage')        return handleResetUsage(req, res);
+  if (action === 'reset-run-counts')   return handleResetRunCounts(req, res);
   if (action === 'grant-entitlement')  return handleGrantEntitlement(req, res);
   if (action === 'debug-redis-keys')   return handleDebugRedisKeys(req, res);
   if (action === 'diagnose-user')      return handleDiagnoseUser(req, res);

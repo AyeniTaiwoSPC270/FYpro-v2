@@ -654,6 +654,25 @@ export default function AdminHealth() {
     userActionToastTimer.current = setTimeout(() => setUserActionToast(null), 4000)
   }
 
+  async function handleResetRunCounts(userId, email) {
+    if (!window.confirm(`Reset usage run counts for ${email}? They will be able to use all features again from zero.`)) return
+    setActionState(s => ({ ...s, [userId]: 'pending' }))
+    try {
+      const res  = await fetch('/api/admin?action=reset-run-counts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('success', `Run counts reset for ${email}`)
+    } catch (err) {
+      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+      showUserToast('error', 'Reset failed: ' + err.message)
+    }
+  }
+
   async function handleResetUsage(userId, email) {
     if (!window.confirm(`Reset usage limits for ${email}?`)) return
     setActionState(s => ({ ...s, [userId]: 'pending' }))
@@ -1400,7 +1419,7 @@ export default function AdminHealth() {
                         </button>
                         <button
                           disabled={isPending}
-                          onClick={() => handleResetUsage(u.id, u.email)}
+                          onClick={() => handleResetRunCounts(u.id, u.email)}
                           style={{
                             fontFamily: "'Poppins', sans-serif",
                             fontSize: 11, fontWeight: 600,
@@ -1412,7 +1431,7 @@ export default function AdminHealth() {
                             opacity: isPending ? 0.5 : 1,
                           }}
                         >
-                          Reset Limits
+                          Reset Runs
                         </button>
                         <button
                           disabled={isPending}

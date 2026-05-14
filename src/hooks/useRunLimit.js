@@ -37,10 +37,42 @@ const STORAGE_KEY = 'fypro_run_counts'
 function getRunCounts() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : {}
+    const parsed = raw ? JSON.parse(raw) : {}
+    // Strip internal metadata so _reset_at is never treated as a step count
+    const { _reset_at, ...counts } = parsed
+    return counts
   } catch {
     return {}
   }
+}
+
+// Merges remote run_counts (from Supabase) into localStorage.
+// If remote carries a newer _reset_at than local, admin has reset this user —
+// discard local counts entirely and start fresh from the server value.
+function mergeRemoteIntoLocal(remote) {
+  const raw       = localStorage.getItem(STORAGE_KEY)
+  const localFull = raw ? (() => { try { return JSON.parse(raw) } catch { return {} } })() : {}
+
+  const remoteResetAt = remote?._reset_at ? new Date(remote._reset_at).getTime() : 0
+  const localResetAt  = localFull?._reset_at ? new Date(localFull._reset_at).getTime() : 0
+
+  if (remoteResetAt > localResetAt) {
+    // Admin reset is newer — discard local counts, accept server state
+    const fresh = { _reset_at: remote._reset_at }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh))
+    window.dispatchEvent(new Event('fypro_run_counts_updated'))
+    return fresh
+  }
+
+  // Normal merge: take the higher of the two for each key
+  const { _reset_at: _r, ...remoteCounts } = remote || {}
+  const { _reset_at: _l, ...localCounts  } = localFull
+  const merged = { ...remoteCounts, ...(localResetAt > 0 ? { _reset_at: localFull._reset_at } : {}) }
+  for (const k of Object.keys(localCounts)) {
+    merged[k] = Math.max(localCounts[k] || 0, merged[k] || 0)
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+  return merged
 }
 
 export function resolveLimit(stepKey, features) {
@@ -69,13 +101,7 @@ const { data: { subscription: _signedInSyncSub } } = supabase.auth.onAuthStateCh
     .single()
     .then(({ data, error }) => {
       if (error || !data?.run_counts) return
-      const local  = getRunCounts()
-      const remote = data.run_counts
-      const merged = { ...remote }
-      for (const k of Object.keys(local)) {
-        merged[k] = Math.max(local[k] || 0, merged[k] || 0)
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+      mergeRemoteIntoLocal(data.run_counts)
       window.dispatchEvent(new Event('fypro_run_counts_updated'))
     })
 })
@@ -140,14 +166,8 @@ export function useRunLimit(features) {
       if (!session?.user?.id) return
       getCachedEntitlements(session.user.id).then((data) => {
         if (!data?.run_counts) return
-        const remote = data.run_counts
-        const local = getRunCounts()
-        const merged = { ...remote }
-        for (const k of Object.keys(local)) {
-          merged[k] = Math.max(local[k] || 0, merged[k] || 0)
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
-        setRunCounts(merged)
+        const merged = mergeRemoteIntoLocal(data.run_counts)
+        setRunCounts(getRunCounts()) // getRunCounts strips _reset_at before passing to UI
       }).catch(() => {})
     })
   }, [])
