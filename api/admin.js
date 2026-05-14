@@ -577,7 +577,7 @@ async function handleDeleteUser(req, res) {
 }
 
 // action: "reset-usage" — clears Upstash rate limit keys for a user so they can make requests again
-// Uses redis.keys() to find the actual stored key format rather than guessing it.
+// Clears both user-day keys (matched by userId) and IP keys (matched by last known IP from auth_attempts)
 async function handleResetUsage(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
@@ -591,18 +591,97 @@ async function handleResetUsage(req, res) {
 
   try {
     const redis = getAdminRedis();
-    // redis.keys() returns ALL keys matching the pattern — no pagination needed
-    const found = await redis.keys(`*${userId}*`);
-    const rlKeys = (found || []).filter(k => k.startsWith('rl:'));
 
-    let deleted = 0;
-    if (rlKeys.length > 0) {
-      deleted = await redis.del(...rlKeys);
+    // 1. User-day rate limit keys (contain the UUID)
+    const userFound = await redis.keys(`*${userId}*`);
+    const userRlKeys = (userFound || []).filter(k => k.startsWith('rl:'));
+
+    // 2. IP rate limit keys — look up last known IP from auth_attempts
+    let ipRlKeys = [];
+    const { data: attempts } = await supabaseAdmin
+      .from('auth_attempts')
+      .select('ip')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const lastIp = attempts?.[0]?.ip ?? null;
+    if (lastIp) {
+      const ipFound = await redis.keys(`*${lastIp}*`);
+      // Only clear Claude-API IP keys, not auth login keys
+      ipRlKeys = (ipFound || []).filter(k => k.startsWith('rl:ip:') && !k.includes(':auth:'));
     }
 
-    return res.status(200).json({ ok: true, keys_deleted: deleted, keys_found: rlKeys });
+    const allKeys = [...new Set([...userRlKeys, ...ipRlKeys])];
+    let deleted = 0;
+    if (allKeys.length > 0) {
+      deleted = await redis.del(...allKeys);
+    }
+
+    return res.status(200).json({ ok: true, keys_deleted: deleted, user_keys: userRlKeys, ip_keys: ipRlKeys, last_ip: lastIp });
   } catch (err) {
     console.error('[admin/reset-usage]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "diagnose-user" — checks all three possible blocking conditions for a user
+// Returns a plain-English status for each: user-day limit, IP limit, global spend cap
+async function handleDiagnoseUser(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const cap   = parseFloat(process.env.DAILY_CAP_USD || '10');
+
+  try {
+    // 1. Check user-day Redis rate limit keys
+    const redis       = getAdminRedis();
+    const userRlKeys  = ((await redis.keys(`*${userId}*`)) || []).filter(k => k.startsWith('rl:'));
+
+    // 2. Find user's last known IP from auth_attempts, then check IP limit keys
+    const { data: attempts } = await supabaseAdmin
+      .from('auth_attempts')
+      .select('ip, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    const lastIp   = attempts?.[0]?.ip ?? null;
+    let   ipRlKeys = [];
+    if (lastIp) {
+      ipRlKeys = ((await redis.keys(`*${lastIp}*`)) || []).filter(k => k.startsWith('rl:'));
+    }
+
+    // 3. Check global daily spend cap
+    const { data: usage } = await supabaseAdmin
+      .from('daily_usage')
+      .select('total_cost_usd, request_count')
+      .eq('date', today)
+      .maybeSingle();
+    const spent      = parseFloat(usage?.total_cost_usd || 0);
+    const capHit     = spent >= cap;
+    const capPct     = cap > 0 ? Math.round((spent / cap) * 100) : 0;
+
+    const blocks = [];
+    if (userRlKeys.length > 0) blocks.push(`user-day limit (${userRlKeys.length} key${userRlKeys.length > 1 ? 's' : ''})`);
+    if (ipRlKeys.length  > 0) blocks.push(`IP limit for ${lastIp} (${ipRlKeys.length} key${ipRlKeys.length > 1 ? 's' : ''})`);
+    if (capHit)               blocks.push(`global spend cap ($${spent.toFixed(2)} / $${cap.toFixed(2)}, ${capPct}%)`);
+
+    return res.status(200).json({
+      user_rl_keys:  userRlKeys,
+      ip_rl_keys:    ipRlKeys,
+      last_ip:       lastIp,
+      cap_hit:       capHit,
+      cap_pct:       capPct,
+      spent_usd:     spent,
+      cap_usd:       cap,
+      is_blocked:    blocks.length > 0,
+      block_reasons: blocks,
+    });
+  } catch (err) {
+    console.error('[admin/diagnose-user]', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
@@ -1321,6 +1400,7 @@ export default async function handler(req, res) {
   if (action === 'reset-usage')        return handleResetUsage(req, res);
   if (action === 'grant-entitlement')  return handleGrantEntitlement(req, res);
   if (action === 'debug-redis-keys')   return handleDebugRedisKeys(req, res);
+  if (action === 'diagnose-user')      return handleDiagnoseUser(req, res);
   if (action === 'self-delete')            return handleSelfDelete(req, res);
   if (action === 'auth-attempts')          return handleAuthAttempts(req, res);
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);

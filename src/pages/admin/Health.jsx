@@ -355,6 +355,8 @@ export default function AdminHealth() {
   const [actionState, setActionState] = useState({}) // { userId: 'pending' | 'banned' | 'deleted' | 'error' }
   const [userActionToast,  setUserActionToast]  = useState(null)  // { type: 'success'|'error', message }
   const userActionToastTimer                    = useRef(null)
+  const [diagnoseModal,    setDiagnoseModal]    = useState(null)  // { email, loading, result, error }
+  const [diagnoseBusy,     setDiagnoseBusy]     = useState({})
 
   const [testAlertsBusy,   setTestAlertsBusy]   = useState(false)
   const [testAlertsResult, setTestAlertsResult] = useState(null)
@@ -690,6 +692,25 @@ export default function AdminHealth() {
     } catch (err) {
       setActionState(s => { const n = { ...s }; delete n[userId]; return n })
       showUserToast('error', `Grant failed: ${err.message}`)
+    }
+  }
+
+  async function handleDiagnose(userId, email) {
+    setDiagnoseBusy(s => ({ ...s, [userId]: true }))
+    setDiagnoseModal({ email, userId, loading: true, result: null, error: null })
+    try {
+      const res  = await fetch('/api/admin?action=diagnose-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setDiagnoseModal({ email, userId, loading: false, result: json, error: null })
+    } catch (err) {
+      setDiagnoseModal({ email, userId, loading: false, result: null, error: err.message })
+    } finally {
+      setDiagnoseBusy(s => ({ ...s, [userId]: false }))
     }
   }
 
@@ -1425,6 +1446,22 @@ export default function AdminHealth() {
                         >
                           Grant Defense
                         </button>
+                        <button
+                          disabled={diagnoseBusy[u.id]}
+                          onClick={() => handleDiagnose(u.id, u.email)}
+                          style={{
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            color: AMBER,
+                            background: 'transparent',
+                            border: `1px solid ${AMBER}55`,
+                            borderRadius: 6, padding: '4px 10px',
+                            cursor: diagnoseBusy[u.id] ? 'not-allowed' : 'pointer',
+                            opacity: diagnoseBusy[u.id] ? 0.5 : 1,
+                          }}
+                        >
+                          {diagnoseBusy[u.id] ? '…' : 'Diagnose'}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1450,6 +1487,127 @@ export default function AdminHealth() {
           </div>
         )}
       </div>
+
+      {/* ── Diagnose Modal ───────────────────────────────────────── */}
+      {diagnoseModal && (
+        <div
+          onClick={() => setDiagnoseModal(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: SURFACE, border: `1px solid ${BORDER}`,
+              borderRadius: 14, padding: 28, width: 480, maxWidth: '94vw',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: WHITE }}>
+                Diagnose User
+              </span>
+              <button onClick={() => setDiagnoseModal(null)} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 20, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED, marginBottom: 16 }}>
+              {diagnoseModal.email}
+            </div>
+
+            {diagnoseModal.loading && (
+              <div style={{ color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>Checking…</div>
+            )}
+
+            {diagnoseModal.error && (
+              <div style={{ color: '#F87171', fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
+                Error: {diagnoseModal.error}
+              </div>
+            )}
+
+            {diagnoseModal.result && (() => {
+              const r = diagnoseModal.result
+              return (
+                <>
+                  {/* Overall verdict */}
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 8, marginBottom: 16,
+                    background: r.is_blocked ? 'rgba(220,38,38,0.12)' : 'rgba(22,163,74,0.12)',
+                    border: `1px solid ${r.is_blocked ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
+                    fontFamily: "'Poppins', sans-serif", fontSize: 13,
+                    color: r.is_blocked ? '#F87171' : '#4ade80',
+                    fontWeight: 600,
+                  }}>
+                    {r.is_blocked ? `🔴 Blocked — ${r.block_reasons.join(', ')}` : '🟢 Not currently blocked by any known limit'}
+                  </div>
+
+                  {/* Three checks */}
+                  {[
+                    {
+                      label: 'User-day rate limit',
+                      ok: r.user_rl_keys.length === 0,
+                      detail: r.user_rl_keys.length > 0
+                        ? `${r.user_rl_keys.length} active key(s) — Reset Limits will clear these`
+                        : 'No keys found',
+                    },
+                    {
+                      label: `IP rate limit${r.last_ip ? ` (${r.last_ip})` : ' (no IP on record)'}`,
+                      ok: r.ip_rl_keys.length === 0,
+                      detail: r.ip_rl_keys.length > 0
+                        ? `${r.ip_rl_keys.length} active key(s) — Reset Limits will clear these`
+                        : r.last_ip ? 'No keys found' : 'No IP recorded in auth_attempts',
+                    },
+                    {
+                      label: 'Global daily spend cap',
+                      ok: !r.cap_hit,
+                      detail: `$${r.spent_usd.toFixed(2)} / $${r.cap_usd.toFixed(2)} (${r.cap_pct}%)${r.cap_hit ? ' — raise DAILY_CAP_USD in Vercel env to fix' : ''}`,
+                    },
+                  ].map(({ label, ok, detail }) => (
+                    <div key={label} style={{ marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: ok ? GREEN : RED }}>
+                          {ok ? '✓' : '✗'}
+                        </span>
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, fontWeight: 600 }}>
+                          {label}
+                        </span>
+                      </div>
+                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 22, marginTop: 2 }}>
+                        {detail}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Action button if blocked by resettable keys */}
+                  {(r.user_rl_keys.length > 0 || r.ip_rl_keys.length > 0) && (
+                    <button
+                      onClick={async () => {
+                        await handleResetUsage(diagnoseModal.userId, diagnoseModal.email)
+                        setDiagnoseModal(null)
+                      }}
+                      style={{
+                        marginTop: 16, width: '100%',
+                        background: GREEN, color: WHITE,
+                        border: 'none', borderRadius: 8,
+                        padding: '10px 0', fontFamily: "'Poppins', sans-serif",
+                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      Reset Rate Limits Now
+                    </button>
+                  )}
+
+                  {r.cap_hit && (
+                    <div style={{ marginTop: 12, fontFamily: "'Poppins', sans-serif", fontSize: 12, color: AMBER }}>
+                      ⚠ Spend cap is hit — go to Vercel → Settings → Environment Variables and increase DAILY_CAP_USD
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* ── Most Active Today ─────────────────────────────────────── */}
       {top_active_users && top_active_users.length > 0 && (
