@@ -62,30 +62,17 @@ function resolveExaminerVoice(name) {
   return                            { rate: 0.9,  pitch: 0.85 }
 }
 
-function logElevenLabsFailure(err, examinerName, errorType) {
+function logElevenLabsFailure(err, examinerName, errorType, userId) {
   const sentryErr = err instanceof Error ? err : new Error(String(err))
-  supabase.auth.getSession()
-    .then(({ data }) => {
-      Sentry.withScope(scope => {
-        scope.setTag('feature', 'tts_elevenlabs')
-        scope.setTag('error_type', errorType)
-        scope.setTag('examiner_persona', examinerName || 'unknown')
-        scope.setExtra('timestamp', new Date().toISOString())
-        if (err?.elevenlabsDetail) scope.setExtra('elevenlabs_detail', err.elevenlabsDetail)
-        if (data?.session?.user?.id) scope.setUser({ id: data.session.user.id })
-        Sentry.captureException(sentryErr)
-      })
-    })
-    .catch(() => {
-      Sentry.withScope(scope => {
-        scope.setTag('feature', 'tts_elevenlabs')
-        scope.setTag('error_type', errorType)
-        scope.setTag('examiner_persona', examinerName || 'unknown')
-        scope.setExtra('timestamp', new Date().toISOString())
-        if (err?.elevenlabsDetail) scope.setExtra('elevenlabs_detail', err.elevenlabsDetail)
-        Sentry.captureException(sentryErr)
-      })
-    })
+  Sentry.withScope(scope => {
+    scope.setTag('feature', 'tts_elevenlabs')
+    scope.setTag('error_type', errorType)
+    scope.setTag('examiner_persona', examinerName || 'unknown')
+    scope.setExtra('timestamp', new Date().toISOString())
+    if (err?.elevenlabsDetail) scope.setExtra('elevenlabs_detail', err.elevenlabsDetail)
+    if (userId) scope.setUser({ id: userId })
+    Sentry.captureException(sentryErr)
+  })
 }
 
 // ── sub-components ────────────────────────────────────────────────────────────
@@ -708,13 +695,15 @@ export default function DefensePrep() {
         audio.play().catch(() => { currentAudioRef.current = null })
       })
       .catch(err => {
-        clearTimeout(timeoutId)
         elevenLabsInFlightRef.current = false
+        clearTimeout(timeoutId)
         const isTimeout  = err?.name === 'AbortError'
         const errorType  = isTimeout
           ? 'timeout'
           : err?.message?.startsWith('speak-api-') ? 'api_error' : 'network_error'
-        logElevenLabsFailure(err, examinerName, errorType)
+        try {
+          logElevenLabsFailure(err, examinerName, errorType, authUserRef.current?.id)
+        } catch { /* sentry logging must never crash the simulator */ }
         // All failure paths (401/403/429/500/network/timeout) silently fall back
         // to text-only mode — show 🔇 beside the examiner name, no error message.
         if (!hasWarnedSpeakFallback.current) {
