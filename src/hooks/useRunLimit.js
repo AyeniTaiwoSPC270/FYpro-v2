@@ -80,7 +80,7 @@ export function resolveLimit(stepKey, features) {
   const hasDefense = Array.isArray(features) && features.includes('defense_pack')
 
   if (hasStudent || hasDefense) {
-    if (hasDefense && stepKey in DEFENSE_LIMITS) return DEFENSE_LIMITS[stepKey]
+    if (hasDefense) return DEFENSE_LIMITS[stepKey] ?? null
     if (hasStudent && stepKey in STUDENT_LIMITS) return STUDENT_LIMITS[stepKey]
     return null
   }
