@@ -549,7 +549,8 @@ export default function DefensePrep() {
   const justScannedRef        = useRef(false)
   const recognitionRef        = useRef(null)
   const currentAudioRef       = useRef(null)
-  const elevenLabsInFlightRef = useRef(false)
+  const elevenLabsInFlightRef   = useRef(false)
+  const hasWarnedSpeakFallback  = useRef(false)
   const micActiveRef          = useRef(false)
   const chatAreaRef           = useRef(null)
   const textareaRef           = useRef(null)
@@ -716,6 +717,10 @@ export default function DefensePrep() {
         logElevenLabsFailure(err, examinerName, errorType)
         // All failure paths (401/403/429/500/network/timeout) silently fall back
         // to text-only mode — show 🔇 beside the examiner name, no error message.
+        if (!hasWarnedSpeakFallback.current) {
+          hasWarnedSpeakFallback.current = true
+          console.warn('[speak] Voice unavailable, using text fallback')
+        }
         if (msgId != null) {
           setVoicePausedMsgIds(prev => new Set([...prev, msgId]))
         }
