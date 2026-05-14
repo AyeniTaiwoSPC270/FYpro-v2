@@ -1414,10 +1414,10 @@ export default function DefensePrep() {
           </div>
         )}
 
-        {/* Flags section */}
+        {/* Flags section — visible while reviewing flags OR as context above the summary */}
         <div
           id="dp-flags-section"
-          className={`dp-flags-section ${section === 'flags' ? 'dp-section--visible' : 'dp-section--hidden'}`}
+          className={`dp-flags-section ${(section === 'flags' || (section === 'summary' && redFlags && redFlags.length > 0)) ? 'dp-section--visible' : 'dp-section--hidden'}`}
         >
           <p className="dp-flags-header">Project Vulnerabilities Detected</p>
           <div id="dp-flags-list">

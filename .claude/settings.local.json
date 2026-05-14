@@ -142,7 +142,12 @@
       "mcp__playwright__browser_snapshot",
       "Bash(vercel integration *)",
       "Bash(xargs grep -l \"\\\\/api\\\\/\")",
-      "Bash(xargs grep -l \"supabase.from.*users.*update\\\\|supabase.from.*users.*select\")"
+      "Bash(xargs grep -l \"supabase.from.*users.*update\\\\|supabase.from.*users.*select\")",
+      "mcp__plugin_vercel_vercel__list_deployments",
+      "mcp__plugin_vercel_vercel__get_project",
+      "mcp__plugin_vercel_vercel__deploy_to_vercel",
+      "Bash(npm i *)",
+      "Skill(brainstorming)"
     ]
   }
 }

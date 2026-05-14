@@ -306,14 +306,16 @@ const CONTACT_KEYFRAMES = `
   }
 `
 
-function SubmitButton({ children }) {
+function SubmitButton({ children, disabled }) {
   const { handleClick, rippleEls } = useRipple()
   return (
     <button
       type="submit"
-      onClick={handleClick}
-      className="relative overflow-hidden btn-shimmer w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-4 transition-all duration-200 hover:-translate-y-0.5 font-sans text-sm mt-2 cursor-pointer border-0"
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(59,130,246,0.4)' }}
+      onClick={disabled ? undefined : handleClick}
+      disabled={disabled}
+      className="relative overflow-hidden btn-shimmer w-full bg-blue-600 text-white font-semibold rounded-xl py-4 transition-all duration-200 font-sans text-sm mt-2 border-0"
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.65 : 1 }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.boxShadow = '0 8px 20px rgba(59,130,246,0.4)' }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = '' }}
     >
       {children}
@@ -341,12 +343,32 @@ export default function Contact() {
     message: '',
   })
   const [toastVisible, setToastVisible] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setToastVisible(true)
-    setTimeout(() => setToastVisible(false), 4000)
-    setFormData({ name: '', email: '', subject: 'General Question', message: '' })
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'contact', ...formData }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong. Please try again.')
+        return
+      }
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 4000)
+      setFormData({ name: '', email: '', subject: 'General Question', message: '' })
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -446,7 +468,14 @@ export default function Contact() {
                     onBlur={FIELD_FOCUS.onBlur}
                   />
                 </div>
-                <SubmitButton>Send Message</SubmitButton>
+                {error && (
+                  <div className="rounded-xl px-4 py-3 text-sm font-sans" style={{ background: 'rgba(220,38,38,0.1)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.25)' }}>
+                    {error}
+                  </div>
+                )}
+                <SubmitButton disabled={loading}>
+                  {loading ? 'Sending…' : 'Send Message'}
+                </SubmitButton>
               </form>
             </div>
           </Reveal>

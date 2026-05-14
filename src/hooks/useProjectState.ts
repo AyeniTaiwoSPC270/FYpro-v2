@@ -35,7 +35,17 @@ const STEP_TO_STATE: Record<string, string> = {
   literature_map:      'literatureMap',
   abstract_generator:  'abstractData',
   project_reviewer:    'uploadedProject',
+  red_flag_detector:   'redFlags',
   defense_prep:        'defenseSummary',
+}
+
+// Steps whose result_json shape differs from the AppContext state value.
+// red_flag_detector is saved as { flags: [...] } but state.redFlags is the array.
+function resolveStepResult(stepType: string, resultJson: Record<string, unknown>): unknown {
+  if (stepType === 'red_flag_detector') {
+    return Array.isArray(resultJson?.flags) ? resultJson.flags : null
+  }
+  return resultJson
 }
 
 // Maps step_type → stepsCompleted[] index
@@ -121,7 +131,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         const row = payload.new
         if (!row || typeof row !== 'object') return
         const stateKey = STEP_TO_STATE[row.step_type as string]
-        if (stateKey) set({ [stateKey]: row.result_json })
+        if (stateKey) set({ [stateKey]: resolveStepResult(row.step_type as string, row.result_json as Record<string, unknown>) })
       }
     ).subscribe()
     channelRef.current = ch
@@ -176,7 +186,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         const completed = [false, false, false, false, false, false]
         for (const step of userState.steps) {
           const key = STEP_TO_STATE[step.step_type]
-          if (key) hydration[key] = step.result_json
+          if (key) hydration[key] = resolveStepResult(step.step_type, step.result_json)
           const idx = STEP_TO_IDX[step.step_type]
           if (idx !== undefined) completed[idx] = true
         }
@@ -307,7 +317,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     const completed = [false, false, false, false, false, false]
     for (const step of steps) {
       const key = STEP_TO_STATE[step.step_type]
-      if (key) hydration[key] = step.result_json
+      if (key) hydration[key] = resolveStepResult(step.step_type, step.result_json)
       const idx = STEP_TO_IDX[step.step_type]
       if (idx !== undefined) completed[idx] = true
     }

@@ -1,8 +1,10 @@
 // FYPro — notifications + Telegram bot
 //
-// POST with { update_id, message, ... }  → Telegram bot (inbound from Telegram servers)
-// POST with { action, payload } + JWT    → outbound admin alerts (defense complete, project created)
+// POST with { update_id, message, ... }         → Telegram bot (inbound from Telegram servers)
+// POST with { action: 'contact', ... }          → contact form (public, no JWT required)
+// POST with { action, payload } + JWT           → outbound admin alerts (defense complete, project created)
 
+import { Resend } from 'resend'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
@@ -398,6 +400,100 @@ async function handleNotify(req, res) {
   return res.status(200).json({ ok: true })
 }
 
+// ─── Contact form handler (public — no JWT required) ─────────────────────────
+
+async function handleContact(req, res) {
+  const ip = String(
+    req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown'
+  ).split(',')[0].trim()
+
+  // Simple per-IP daily cap to prevent abuse
+  const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL
+  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    const key = `rl:contact:${ip}:${new Date().toISOString().slice(0, 10)}`
+    const r = await fetch(`${UPSTASH_URL}/incr/${key}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    }).then(x => x.json()).catch(() => null)
+    if (r?.result > 10) {
+      return res.status(429).json({ error: 'Too many requests. Please try again tomorrow.' })
+    }
+    // Set TTL on first increment so key auto-expires after 25 hours
+    if (r?.result === 1) {
+      fetch(`${UPSTASH_URL}/expire/${key}/90000`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      }).catch(() => null)
+    }
+  }
+
+  const { name, email, subject, message } = req.body || {}
+
+  if (!name || typeof name !== 'string' || name.trim().length < 2) {
+    return res.status(400).json({ error: 'Name is required (minimum 2 characters).' })
+  }
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: 'A valid email address is required.' })
+  }
+  if (!message || typeof message !== 'string' || message.trim().length < 10) {
+    return res.status(400).json({ error: 'Message is required (minimum 10 characters).' })
+  }
+
+  const safeName    = name.trim().slice(0, 120)
+  const safeEmail   = email.trim().slice(0, 254)
+  const safeSubject = (subject || 'General Question').slice(0, 120)
+  const safeMessage = message.trim().slice(0, 5000)
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
+  const html = `<!DOCTYPE html><html><head>
+    <style>
+      body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
+      .wrapper { max-width:560px; margin:32px auto; }
+      .header { background:#0f172a; border-radius:12px 12px 0 0; padding:24px; text-align:center; }
+      .header img { height:36px; width:auto; }
+      .box { background:#fff; border-radius:0 0 12px 12px; padding:40px; }
+      h1 { font-size:20px; font-weight:700; color:#0D1B2A; margin:0 0 20px; }
+      .row { margin-bottom:14px; }
+      .label { font-size:12px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.05em; }
+      .value { font-size:15px; color:#111827; margin-top:2px; white-space:pre-wrap; }
+      hr { border:none; border-top:1px solid #E5E7EB; margin:24px 0; }
+      .foot { font-size:12px; color:#9CA3AF; }
+    </style>
+  </head><body>
+    <div class="wrapper">
+      <div class="header">
+        <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" />
+      </div>
+      <div class="box">
+        <h1>New Contact Form Submission</h1>
+        <div class="row"><div class="label">From</div><div class="value">${safeName} &lt;${safeEmail}&gt;</div></div>
+        <div class="row"><div class="label">Subject</div><div class="value">${safeSubject}</div></div>
+        <div class="row"><div class="label">Message</div><div class="value">${safeMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>
+        <hr>
+        <p class="foot">Sent via fypro.com.ng/contact · Reply directly to respond to ${safeName}.</p>
+      </div>
+    </div>
+  </body></html>`
+
+  try {
+    const { error } = await resend.emails.send({
+      from:     'FYPro <hello@fypro.com.ng>',
+      to:       'hello@fypro.com.ng',
+      replyTo:  safeEmail,
+      subject:  `[FYPro Contact] ${safeSubject}`,
+      html,
+    })
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    console.error('[notify/contact] Resend failed:', err.message)
+    return res.status(500).json({ error: 'Failed to send message. Please email us directly at hello@fypro.com.ng.' })
+  }
+
+  await sendTelegramAlert(`📬 Contact form: ${safeName} (${safeEmail})\nSubject: ${safeSubject}`).catch(() => null)
+
+  return res.status(200).json({ ok: true })
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -407,6 +503,9 @@ export default async function handler(req, res) {
 
   // Telegram updates always carry update_id; our notify calls never do.
   if (req.body?.update_id !== undefined) return handleTelegramBot(req, res)
+
+  // Contact form — public, no JWT required
+  if (req.body?.action === 'contact') return handleContact(req, res)
 
   return handleNotify(req, res)
 }
