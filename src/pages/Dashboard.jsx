@@ -1307,7 +1307,7 @@ const QUICK_ACTIONS_BASE = [
     ctaBorder: '1.5px solid rgba(0,102,255,0.38)',
     Icon: ZapIcon,
     breathe: false,
-    path: '/workflow/defense-simulator',
+    onClickKey: 'defense',
   },
   {
     label: 'Download Progress Report',
@@ -1331,6 +1331,7 @@ const QUICK_ACTIONS_BASE = [
 
 function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadReport }) {
   const navigate = useNavigate()
+  const { navigateStep } = useApp()
   const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[STEPS.length - 1]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
     a.pathKey === 'active'
@@ -1372,6 +1373,8 @@ function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadRepo
                     ? () => showToastMessage('Complete all 6 steps to unlock this feature')
                     : action.onClickKey === 'download'
                     ? onDownloadReport
+                    : action.onClickKey === 'defense'
+                    ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(5); navigate('/app') }
                     : action.path
                     ? () => { if (action.path === '/app') sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined

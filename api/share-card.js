@@ -307,7 +307,15 @@ export default async function handler(req, res) {
   const studentName = user.user_metadata?.full_name || ''
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
-  const logoSrc = LOGO_SRC
+  let logoSrc = null
+  try {
+    const logoRes = await fetch('https://www.fypro.com.ng/fypro-logo.png')
+    const logoBuffer = await logoRes.arrayBuffer()
+    const logoBase64 = Buffer.from(logoBuffer).toString('base64')
+    logoSrc = `data:image/png;base64,${logoBase64}`
+  } catch (_) {
+    // logo fetch failed — card renders without it
+  }
 
   try {
     const imgResponse = new ImageResponse(
