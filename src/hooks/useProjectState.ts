@@ -41,9 +41,19 @@ const STEP_TO_STATE: Record<string, string> = {
 
 // Steps whose result_json shape differs from the AppContext state value.
 // red_flag_detector is saved as { flags: [...] } but state.redFlags is the array.
+// project_reviewer is saved flat but AppContext expects { fileName, reviewData }.
 function resolveStepResult(stepType: string, resultJson: Record<string, unknown>): unknown {
   if (stepType === 'red_flag_detector') {
     return Array.isArray(resultJson?.flags) ? resultJson.flags : null
+  }
+  if (stepType === 'project_reviewer') {
+    if (resultJson?.skipped) return null
+    // Support both the old nested format { reviewData, file_name } and the new flat format { fileName, grade, ... }
+    const reviewData = (resultJson?.reviewData as Record<string, unknown>) ?? resultJson
+    const fileName = (resultJson?.fileName as string)
+      || (resultJson?.file_name as string)
+      || 'Uploaded document'
+    return { fileName, reviewData }
   }
   return resultJson
 }

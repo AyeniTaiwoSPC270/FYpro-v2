@@ -423,7 +423,15 @@ export default function ProjectReviewer() {
       ? (selectedFile.name || '').split('.').pop().toLowerCase()
       : (state.uploadedProject?.fileType || 'unknown')
     completeStep(4, { uploadedProject: { fileName, fileType, reviewData } })
-    saveStep('project_reviewer', { reviewData, file_name: fileName, file_type: fileType })
+    saveStep('project_reviewer', {
+      fileName,
+      grade:               reviewData.grade,
+      score_estimate:      reviewData.score_estimate,
+      grade_justification: reviewData.grade_justification,
+      strengths:           reviewData.strengths,
+      weaknesses:          reviewData.weaknesses,
+      examiner_questions:  reviewData.examiner_questions,
+    })
     markStepComplete('project_reviewer')
     showToast('Project reviewed ✓')
   }

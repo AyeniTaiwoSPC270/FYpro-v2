@@ -273,8 +273,10 @@ function buildStep4(state) {
 }
 
 function buildStep5(state) {
-  const up = state.uploadedProject
-  const rd = up.reviewData
+  const up = state.uploadedProject || {}
+  const rd = up.reviewData || state.projectReview || null
+
+  if (!rd && !up.fileName) return ''  // nothing to show
 
   const gColorMap = { 'Distinction': '#16A34A', 'Merit': '#0066FF', 'Pass': '#F59E0B' }
   const gColor    = gColorMap[rd?.grade] || '#DC2626'
@@ -560,7 +562,7 @@ function buildReportHTML(state, logoDataUrl) {
     stepsHTML += buildInstrumentBuilder(state)
   if (state.stepsCompleted?.[3] && state.writingPlan)
     stepsHTML += buildStep4(state)
-  if (state.stepsCompleted?.[4] && state.uploadedProject)
+  if (state.stepsCompleted?.[4])
     stepsHTML += buildStep5(state)
   if (state.stepsCompleted?.[5])
     stepsHTML += buildStep6(state)
