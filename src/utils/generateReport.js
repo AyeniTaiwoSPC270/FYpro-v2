@@ -133,6 +133,19 @@ function subsectionLabel(text, color = '#0D1B2A') {
   ">${esc(text)}</p>`
 }
 
+function companionSectionHeading(label) {
+  return `
+    <h2 style="
+      font-family:'DM Serif Display',Georgia,serif;
+      font-size:20px;font-weight:400;
+      color:#0D1B2A;
+      border-left:4px solid #0891B2;
+      padding-left:16px;
+      margin:0 0 16px 0;
+      line-height:1.2;
+    ">${label}</h2>`
+}
+
 // ── Step section builders ─────────────────────────────────────────────────────
 
 function buildStep1(state) {
@@ -392,6 +405,132 @@ function buildExaminerQs(examinerQs) {
     </div>`
 }
 
+function buildLiteratureMap(state) {
+  const lm = state.literatureMap
+  if (!lm) return ''
+
+  const thematicHTML = lm.thematic_areas?.length ? lm.thematic_areas.map(area => `
+    <div style="
+      background:#F0FDFA;border-left:3px solid #0891B2;
+      border-radius:0 6px 6px 0;
+      padding:10px 14px;margin:6px 0;
+    ">
+      <p style="font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:#0D1B2A;margin:0 0 4px 0;">
+        ${esc(area.theme || '')}
+      </p>
+      ${area.search_terms?.length ? `<p style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;color:#0891B2;margin:0;">
+        ${area.search_terms.map(t => esc(t)).join(' · ')}
+      </p>` : ''}
+    </div>`).join('') : ''
+
+  const sourceHTML = lm.source_types?.length ? lm.source_types.map(src => `
+    <div style="
+      display:flex;gap:12px;margin:6px 0;
+      font-family:'Poppins',sans-serif;font-size:12px;line-height:1.5;
+    ">
+      <span style="font-weight:600;color:#0891B2;min-width:130px;flex-shrink:0;">${esc(src.type || '')}</span>
+      <span style="color:#374151;flex:1;">${esc(src.rationale || '')}${src.access ? ` · ${esc(src.access)}` : ''}</span>
+    </div>`).join('') : ''
+
+  const papersHTML = lm.papers?.length ? lm.papers.slice(0, 8).map(p => {
+    const authors = Array.isArray(p.authors)
+      ? p.authors.slice(0, 3).join(', ') + (p.authors.length > 3 ? ' et al.' : '')
+      : ''
+    return `<div style="
+      padding:8px 0;border-bottom:1px solid rgba(13,27,42,0.06);
+      font-family:'Poppins',sans-serif;
+    ">
+      <p style="font-size:12px;font-weight:500;color:#0D1B2A;margin:0 0 2px 0;line-height:1.4;">${esc(p.title || '')}</p>
+      <p style="font-size:11px;color:#6B7280;margin:0;">
+        ${authors ? esc(authors) : ''}${p.year ? ` · ${esc(String(p.year))}` : ''}${p.doi ? ` · doi:${esc(p.doi)}` : ''}
+      </p>
+    </div>`
+  }).join('') : ''
+
+  return `
+    <div class="step-section" style="margin-bottom:40px;">
+      ${companionSectionHeading('Companion — Literature Map')}
+      ${thematicHTML ? `${subsectionLabel('Thematic Areas')}${thematicHTML}` : ''}
+      ${sourceHTML   ? `${subsectionLabel('Source Types')}${sourceHTML}` : ''}
+      ${lm.synthesis_guide ? `${subsectionLabel('Synthesis Guide')}${infoBox(lm.synthesis_guide)}` : ''}
+      ${papersHTML ? `
+        ${subsectionLabel(`Real Papers (${Math.min(lm.papers.length, 8)} of ${lm.papers.length} shown)`)}
+        <div style="margin-top:4px;">${papersHTML}</div>
+      ` : ''}
+    </div>
+    ${DIVIDER}`
+}
+
+function buildAbstractGenerator(state) {
+  const ag = state.abstractData
+  if (!ag) return ''
+
+  const LABELS = [
+    ['background',            'Background'],
+    ['problem_statement',     'Problem Statement'],
+    ['objectives',            'Objectives'],
+    ['methodology',           'Methodology'],
+    ['expected_contribution', 'Expected Contribution'],
+  ]
+
+  const sectionsHTML = LABELS.map(([key, label]) => {
+    const text = ag[key]
+    if (!text) return ''
+    return `${subsectionLabel(label)}${bodyText(text)}`
+  }).join('')
+
+  return `
+    <div class="step-section" style="margin-bottom:40px;">
+      ${companionSectionHeading('Companion — Abstract Generator')}
+      ${sectionsHTML}
+    </div>
+    ${DIVIDER}`
+}
+
+function buildInstrumentBuilder(state) {
+  const ib = state.instrumentBuilder
+  if (!ib) return ''
+
+  const sectionsHTML = ib.sections?.length ? ib.sections.map(sec => `
+    <div style="margin:16px 0;">
+      <p style="
+        font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;
+        color:#0D1B2A;text-transform:uppercase;letter-spacing:0.5px;
+        margin:0 0 8px 0;border-bottom:1px solid rgba(13,27,42,0.08);padding-bottom:6px;
+      ">${esc(sec.section_title || '')}</p>
+      ${sec.questions?.length ? sec.questions.map(q => `
+        <div style="
+          display:flex;gap:10px;padding:7px 0;
+          border-bottom:1px solid rgba(13,27,42,0.04);
+          font-family:'Poppins',sans-serif;
+        ">
+          <span style="
+            font-family:'JetBrains Mono','Courier New',monospace;
+            font-size:10px;font-weight:700;color:#0891B2;
+            min-width:28px;flex-shrink:0;padding-top:2px;
+          ">Q${esc(String(q.number || ''))}</span>
+          <div style="flex:1;">
+            <p style="font-size:12px;color:#0D1B2A;margin:0 0 2px 0;line-height:1.5;">${esc(q.text || '')}</p>
+            <p style="font-size:10px;color:#6B7280;margin:0;font-style:italic;">
+              ${esc(q.type || '')}${q.scale ? ` · ${esc(q.scale)}` : ''}
+            </p>
+          </div>
+        </div>`).join('') : ''}
+    </div>`).join('') : ''
+
+  return `
+    <div class="step-section" style="margin-bottom:40px;">
+      ${companionSectionHeading('Companion — Instrument Builder')}
+      ${ib.instrument_title ? `<p style="
+        font-family:'DM Serif Display',Georgia,serif;
+        font-size:16px;color:#0D1B2A;margin:0 0 12px 0;
+      ">${esc(ib.instrument_title)}</p>` : ''}
+      ${ib.methodology ? badge(ib.methodology.toUpperCase(), '#0891B2') : ''}
+      ${sectionsHTML}
+    </div>
+    ${DIVIDER}`
+}
+
 // ── Full HTML assembly ────────────────────────────────────────────────────────
 
 function buildReportHTML(state, logoDataUrl) {
@@ -411,8 +550,14 @@ function buildReportHTML(state, logoDataUrl) {
     stepsHTML += buildStep1(state)
   if (state.stepsCompleted?.[1] && state.chapterStructure)
     stepsHTML += buildStep2(state)
+  if (state.literatureMap)
+    stepsHTML += buildLiteratureMap(state)
+  if (state.abstractData)
+    stepsHTML += buildAbstractGenerator(state)
   if (state.stepsCompleted?.[2] && (state.chosenMethodology || state.methodology))
     stepsHTML += buildStep3(state)
+  if (state.instrumentBuilder)
+    stepsHTML += buildInstrumentBuilder(state)
   if (state.stepsCompleted?.[3] && state.writingPlan)
     stepsHTML += buildStep4(state)
   if (state.stepsCompleted?.[4] && state.uploadedProject)
