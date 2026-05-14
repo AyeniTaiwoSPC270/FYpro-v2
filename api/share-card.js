@@ -95,7 +95,7 @@ function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
       logoBase64
         ? React.createElement('img', {
             src: logoBase64,
-            style: { height: 48, width: 'auto', objectFit: 'contain' },
+            style: { height: 48, width: 160, objectFit: 'contain' },
           })
         : React.createElement('span', {
             style: {
@@ -307,19 +307,20 @@ export default async function handler(req, res) {
   const studentName = user.user_metadata?.full_name || ''
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
-  let logoSrc = null
+  let logoBase64 = null
   try {
     const logoRes = await fetch('https://www.fypro.com.ng/fypro-logo.png')
+    if (!logoRes.ok) throw new Error('logo fetch failed')
     const logoBuffer = await logoRes.arrayBuffer()
-    const logoBase64 = Buffer.from(logoBuffer).toString('base64')
-    logoSrc = `data:image/png;base64,${logoBase64}`
+    const logoData = Buffer.from(logoBuffer).toString('base64')
+    logoBase64 = `data:image/png;base64,${logoData}`
   } catch (_) {
     // logo fetch failed — card renders without it
   }
 
   try {
     const imgResponse = new ImageResponse(
-      buildCardElement(score, scoreLabel, topic, studentName, logoSrc),
+      buildCardElement(score, scoreLabel, topic, studentName, logoBase64),
       { width: WIDTH, height: HEIGHT }
     )
 
