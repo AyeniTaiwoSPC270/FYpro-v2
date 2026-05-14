@@ -71,6 +71,7 @@ function logElevenLabsFailure(err, examinerName, errorType) {
         scope.setTag('error_type', errorType)
         scope.setTag('examiner_persona', examinerName || 'unknown')
         scope.setExtra('timestamp', new Date().toISOString())
+        if (err?.elevenlabsDetail) scope.setExtra('elevenlabs_detail', err.elevenlabsDetail)
         if (data?.session?.user?.id) scope.setUser({ id: data.session.user.id })
         Sentry.captureException(sentryErr)
       })
@@ -81,6 +82,7 @@ function logElevenLabsFailure(err, examinerName, errorType) {
         scope.setTag('error_type', errorType)
         scope.setTag('examiner_persona', examinerName || 'unknown')
         scope.setExtra('timestamp', new Date().toISOString())
+        if (err?.elevenlabsDetail) scope.setExtra('elevenlabs_detail', err.elevenlabsDetail)
         Sentry.captureException(sentryErr)
       })
     })
@@ -681,9 +683,18 @@ export default function DefensePrep() {
       body:    JSON.stringify({ text, examiner: examinerName }),
       signal:  controller.signal,
     })
-      .then(res => {
+      .then(async res => {
         clearTimeout(timeoutId)
-        if (!res.ok) throw new Error('speak-api-' + res.status)
+        // Treat any non-2xx status (401 bad key, 403 forbidden, 429 quota,
+        // 500 server error) as a fallback trigger — same as a network failure.
+        if (!res.ok) {
+          const err = new Error('speak-api-' + res.status)
+          try {
+            const body = await res.json()
+            err.elevenlabsDetail = body
+          } catch { /* non-JSON body — detail stays undefined */ }
+          throw err
+        }
         return res.blob()
       })
       .then(blob => {
@@ -703,6 +714,8 @@ export default function DefensePrep() {
           ? 'timeout'
           : err?.message?.startsWith('speak-api-') ? 'api_error' : 'network_error'
         logElevenLabsFailure(err, examinerName, errorType)
+        // All failure paths (401/403/429/500/network/timeout) silently fall back
+        // to text-only mode — show 🔇 beside the examiner name, no error message.
         if (msgId != null) {
           setVoicePausedMsgIds(prev => new Set([...prev, msgId]))
         }

@@ -48,8 +48,9 @@ const handler = async (req, res) => {
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   // Guard: EL_API_KEY must be set in Vercel environment variables.
-  // If it is missing the function returns 500 and the frontend falls back to
-  // browser speechSynthesis — the student session is never interrupted.
+  // (The env var name is EL_API_KEY — not ELEVENLABS_API_KEY.)
+  // If it is missing the function returns 500 and the frontend silently falls
+  // back to text-only mode — the student session is never interrupted.
   const apiKey = process.env.EL_API_KEY;
   if (!apiKey) {
     console.error('[speak] EL_API_KEY is not set in the Vercel environment');
@@ -92,11 +93,18 @@ const handler = async (req, res) => {
       }
     );
 
-    // If ElevenLabs returns non-2xx, forward the status so the browser can fall back.
-    // Common cases: 429 quota exceeded, 401 bad key, 400 text too long.
+    // If ElevenLabs returns non-2xx, log the full detail and forward the status
+    // so the frontend can fall back to text-only mode.
+    // Common causes: 401 invalid/expired key, 429 quota exceeded, 400 text too long.
     if (!ttsResponse.ok) {
       const errBody = await ttsResponse.text();
-      console.error('[speak] ElevenLabs error:', ttsResponse.status, errBody);
+      console.error('[speak] ElevenLabs API error', {
+        status:    ttsResponse.status,
+        voiceKey,
+        voiceId,
+        hasApiKey: !!apiKey,
+        detail:    errBody.slice(0, 500),
+      });
       return res.status(ttsResponse.status).json({ error: 'ElevenLabs error', detail: errBody });
     }
 
