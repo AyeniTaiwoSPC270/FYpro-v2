@@ -25,6 +25,7 @@ import { useApp } from '../../context/AppContext'
 import { useTheme } from '../../context/ThemeContext'
 import { showToast } from '../../components/Toast'
 import { useProjectState } from '../../hooks/useProjectState'
+import { useUser } from '../../hooks/useUser'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete, markDefenseSimulatorRun, tryAwardDefenseReady } from '../../lib/progress'
 import { fetchShareCardBlob, shareToWhatsApp } from '../../lib/shareCard'
@@ -495,6 +496,7 @@ function countWords(text) {
 export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set } = useApp()
   const { saveStep, projectId, ensureProject } = useProjectState()
+  const { user: authUser, session: authSession } = useUser()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
   const rfOverLimit = isOverLimit('red_flag_detector')
@@ -556,6 +558,10 @@ export default function DefensePrep() {
 
   const [defenseSessionId, setDefenseSessionId] = useState(null)
   const defenseSessionIdRef = useRef(null)
+  const authUserRef    = useRef(authUser)
+  const authSessionRef = useRef(authSession)
+  useEffect(() => { authUserRef.current = authUser }, [authUser])
+  useEffect(() => { authSessionRef.current = authSession }, [authSession])
 
   const voiceSupported    = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   const loadingTimerRef   = useRef(null)
@@ -836,8 +842,8 @@ export default function DefensePrep() {
 
   async function createDefenseSessionRecord() {
     try {
-      const { data: { session: authSession } } = await supabase.auth.getSession()
-      if (!authSession) return null
+      const currentUser = authUserRef.current
+      if (!currentUser) return null
       // projectId may still be loading; ensureProject() creates or fetches it
       const pid = projectId || await ensureProject()
       if (!pid) return null
@@ -845,7 +851,7 @@ export default function DefensePrep() {
         .from('defense_sessions')
         .insert({
           project_id:       pid,
-          user_id:          authSession.user.id,
+          user_id:          currentUser.id,
           examiner_persona: 'external_examiner',  // three-examiner panel
           status:           'in_progress',
           turns_count:      0,
@@ -1092,15 +1098,14 @@ export default function DefensePrep() {
       saveStep('defense_prep', data)
 
       // Fire-and-forget admin notification
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.access_token) {
-          fetch('/api/notify', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-            body:    JSON.stringify({ action: 'defense_completed', payload: { score: Math.round(data.panel_score ?? 0) } }),
-          }).catch(err => console.error('[notify] defense_completed failed:', err))
-        }
-      }).catch(err => console.error('[notify] getSession failed:', err))
+      const notifySession = authSessionRef.current
+      if (notifySession?.access_token) {
+        fetch('/api/notify', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${notifySession.access_token}` },
+          body:    JSON.stringify({ action: 'defense_completed', payload: { score: Math.round(data.panel_score ?? 0) } }),
+        }).catch(err => console.error('[notify] defense_completed failed:', err))
+      }
 
       // Fire-and-forget progress tracking; await in sequence so tryAwardDefenseReady
       // sees the updated defense_prep + defense_simulator rows before checking.
@@ -1128,14 +1133,13 @@ export default function DefensePrep() {
         // endpoint can verify the score and the recovery useEffect finds it.
         const pid = projectId || await ensureProject()
         if (pid) {
-          const { data: { session: _ds } } = await supabase.auth.getSession()
-          const user = _ds?.user ?? null
-          if (user) {
+          const fallbackUser = authUserRef.current
+          if (fallbackUser) {
             const { data: row, error: rowErr } = await supabase
               .from('defense_sessions')
               .insert({
                 project_id:       pid,
-                user_id:          user.id,
+                user_id:          fallbackUser.id,
                 examiner_persona: 'external_examiner',
                 status:           'completed',
                 total_score:      Math.round(data.panel_score ?? 0),

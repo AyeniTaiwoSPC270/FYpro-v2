@@ -33,9 +33,11 @@ import MyReferrals from './pages/account/MyReferrals'
 import CookieBanner from './components/CookieBanner'
 import CookiePolicy from './pages/CookiePolicy'
 import MaintenancePage from './pages/MaintenancePage'
+import { AuthProvider } from './context/AuthContext'
 
 export default function App() {
   return (
+    <AuthProvider>
     <ThemeProvider>
     <AppProvider>
       <BrowserRouter>
@@ -99,5 +101,6 @@ export default function App() {
       </BrowserRouter>
     </AppProvider>
     </ThemeProvider>
+    </AuthProvider>
   )
 }

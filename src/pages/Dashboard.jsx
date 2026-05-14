@@ -1744,15 +1744,18 @@ export default function Dashboard() {
     if (!isOnboarded) navigate('/start', { replace: true })
   }, [isOnboarded, navigate])
 
-  // All projects for this user
+  // All projects for this user — loaded reactively from AuthContext, no getSession() call
+  const { user: dashUser } = useUser()
   const [projects, setProjects] = useState([])
   const [projectsLoading, setProjectsLoading] = useState(true)
 
   useEffect(() => {
+    if (!dashUser?.id) { setProjectsLoading(false); return }
     let cancelled = false
-    getAllUserProjects().then(p => { if (!cancelled) { setProjects(p); setProjectsLoading(false) } })
+    setProjectsLoading(true)
+    getAllUserProjects(dashUser.id).then(p => { if (!cancelled) { setProjects(p); setProjectsLoading(false) } })
     return () => { cancelled = true }
-  }, [])
+  }, [dashUser?.id])
 
   // URL-based project selection
   const [searchParams, setSearchParams] = useSearchParams()

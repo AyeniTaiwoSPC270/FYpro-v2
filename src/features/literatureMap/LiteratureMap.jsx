@@ -22,8 +22,16 @@ export default function LiteratureMap({ chapters }) {
   const overLimit = isOverLimit('literature_map')
 
   const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [section, setSection]         = useState('input')
-  const [data, setData]               = useState(null)
+  const [section, setSection]         = useState(() => state.literatureMap ? 'result' : 'input')
+  const [data, setData]               = useState(() => state.literatureMap ?? null)
+
+  // Late hydration: Supabase data arrives after mount (e.g. on page refresh)
+  useEffect(() => {
+    if (state.literatureMap && !data) {
+      setData(state.literatureMap)
+      setSection('result')
+    }
+  }, [state.literatureMap])
   const [btnDisabled, setBtnDisabled] = useState(false)
   const [error, setError]             = useState(null)
   const [copied, setCopied]           = useState(false)

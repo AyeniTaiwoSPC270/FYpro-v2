@@ -197,9 +197,18 @@ export default function ChapterArchitect() {
   }, [])
 
   // ── Abstract Generator state ──────────────────────────────────────────────
-  const [agSection, setAgSection]         = useState('input')
-  const [agData, setAgData]               = useState(null)
+  const [agSection, setAgSection]         = useState(() => state.abstractData ? 'result' : 'input')
+  const [agData, setAgData]               = useState(() => state.abstractData ?? null)
   const [agBtnDisabled, setAgBtnDisabled] = useState(false)
+
+  // Late hydration: Supabase abstract data arrives after mount
+  useEffect(() => {
+    if (state.abstractData && !agData) {
+      setAgData(state.abstractData)
+      setAgSection('result')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.abstractData])
   const [agError, setAgError]             = useState(null)
   const [agCopied, setAgCopied]           = useState(false)
   const [agVisible, setAgVisible]         = useState([])

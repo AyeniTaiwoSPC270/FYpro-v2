@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { getCachedEntitlements, invalidateCachedEntitlements } from '../lib/entitlements-cache'
+import { useUser } from './useUser'
 
 const FREE_LIMITS = {
   topic_validator:     3,
@@ -156,21 +157,20 @@ export function recordStepRun(stepKey) {
 }
 
 export function useRunLimit(features) {
+  const { user } = useUser()
   const [runCounts, setRunCounts] = useState(getRunCounts)
 
-  // Sync from Supabase on mount — Supabase is source of truth.
+  // Sync from Supabase when the authenticated user is known.
   // Uses the shared entitlements cache so usePaidFeatures and useRunLimit
   // share one network call to user_entitlements instead of making two.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user?.id) return
-      getCachedEntitlements(session.user.id).then((data) => {
-        if (!data?.run_counts) return
-        const merged = mergeRemoteIntoLocal(data.run_counts)
-        setRunCounts(getRunCounts()) // getRunCounts strips _reset_at before passing to UI
-      }).catch(() => {})
-    })
-  }, [])
+    if (!user?.id) return
+    getCachedEntitlements(user.id).then((data) => {
+      if (!data?.run_counts) return
+      mergeRemoteIntoLocal(data.run_counts)
+      setRunCounts(getRunCounts()) // getRunCounts strips _reset_at before passing to UI
+    }).catch(() => {})
+  }, [user?.id])
 
   useEffect(() => {
     const handler = () => setRunCounts(getRunCounts())

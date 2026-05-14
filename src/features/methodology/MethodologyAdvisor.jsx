@@ -45,8 +45,17 @@ export default function MethodologyAdvisor() {
   // ── DI state ───────────────────────────────────────────────────────────────
   const [confirmDone, setConfirmDone]           = useState(state.stepsCompleted[2] || false)
   const [diVisible, setDiVisible]               = useState(state.stepsCompleted[2] || false)
-  const [diSection, setDiSection]               = useState('input')
-  const [diData, setDiData]                     = useState(null)
+  const [diSection, setDiSection]               = useState(() => state.instrumentBuilder ? 'result' : 'input')
+  const [diData, setDiData]                     = useState(() => state.instrumentBuilder ?? null)
+
+  // Late hydration: Supabase instrument data arrives after mount
+  useEffect(() => {
+    if (state.instrumentBuilder && !diData) {
+      setDiData(state.instrumentBuilder)
+      setDiSection('result')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.instrumentBuilder])
   const [diError, setDiError]                   = useState(null)
   const [diGenBtnDisabled, setDiGenBtnDisabled] = useState(false)
   const [instrumentCopied, setInstrumentCopied] = useState(false)

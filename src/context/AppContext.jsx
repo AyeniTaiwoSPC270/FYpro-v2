@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { AuthContext } from './AuthContext'
 
 const AppContext = createContext(null)
 
@@ -28,6 +29,11 @@ const DEFAULT_STATE = {
   // Step 4 — Writing Planner
   submissionDeadline: '',
   writingPlan:        null,
+
+  // Companion cards (embedded in steps — saved separately from main step results)
+  literatureMap:      null,
+  abstractData:       null,
+  instrumentBuilder:  null,
 
   // Step 5 — Project Reviewer
   uploadedProject:    null,   // { fileName, fileType, reviewData }
@@ -63,6 +69,7 @@ function loadFromStorage() {
 }
 
 export function AppProvider({ children }) {
+  const { session } = useContext(AuthContext)
   const [state, setState] = useState(() => {
     const saved = loadFromStorage()
     return saved ? { ...DEFAULT_STATE, ...saved } : DEFAULT_STATE
@@ -77,17 +84,13 @@ export function AppProvider({ children }) {
     }
   }, [state])
 
-  // Hydrate faculty/department/level from Supabase on mount.
-  // Checks user_metadata.onboarding_completed FIRST (works on new devices / incognito)
-  // then falls back to checking profile columns.
+  // Hydrate faculty/department/level from Supabase whenever the authenticated
+  // user changes. Reads session from AuthContext — no direct getSession() call.
   useEffect(() => {
-    async function hydrateFromSupabase() {
-      // getSession() reads from localStorage — no network round-trip.
-      // Token validity is verified separately by useUser via getUser().
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
-      const user = session.user
+    if (!session?.user) return
+    const user = session.user
 
+    async function hydrateFromSupabase() {
       const { data: profile } = await supabase
         .from('users')
         .select('full_name, faculty, department, level')
@@ -114,7 +117,7 @@ export function AppProvider({ children }) {
       }))
     }
     hydrateFromSupabase()
-  }, [])
+  }, [session?.user?.id])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   function set(partial) {

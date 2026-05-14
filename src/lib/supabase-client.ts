@@ -69,18 +69,16 @@ async function sessionUser() {
 }
 
 // ─── Load all state on app init ─────────────────────────────────────────────
+// userId is passed in from the auth context — no getSession() call needed here.
 
-export async function loadUserState(): Promise<UserState> {
-  const user = await sessionUser()
-  if (!user) return { profile: null, entitlements: null, project: null, steps: [] }
-
+export async function loadUserState(userId: string): Promise<UserState> {
   const [profileRes, entitlementsRes, projectRes] = await Promise.all([
-    supabase.from('users').select('*').eq('id', user.id).single(),
-    supabase.from('user_entitlements').select('*').eq('user_id', user.id).maybeSingle(),
+    supabase.from('users').select('*').eq('id', userId).single(),
+    supabase.from('user_entitlements').select('*').eq('user_id', userId).maybeSingle(),
     supabase
       .from('projects')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -96,7 +94,7 @@ export async function loadUserState(): Promise<UserState> {
       .from('project_steps')
       .select('*')
       .eq('project_id', project.id)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
     steps = (data as ProjectStep[]) ?? []
   }
 
@@ -188,13 +186,11 @@ export async function saveStep(
 
 // ─── Fetch all projects for the current user ─────────────────────────────────
 
-export async function getAllUserProjects(): Promise<Project[]> {
-  const user = await sessionUser()
-  if (!user) return []
+export async function getAllUserProjects(userId: string): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
   if (error) { console.error('[supabase-client] getAllUserProjects:', error.message); return [] }
   return (data as Project[]) ?? []

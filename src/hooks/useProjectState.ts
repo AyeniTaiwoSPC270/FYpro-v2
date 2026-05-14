@@ -22,6 +22,7 @@ import {
 } from '../lib/supabase-client'
 import { enqueue, getStatus } from '../lib/sync-queue'
 import { useApp } from '../context/AppContext'
+import { useUser } from './useUser'
 import { showToast } from '../components/Toast'
 
 // Maps step_type → AppContext state key (for hydration after Supabase load)
@@ -92,17 +93,16 @@ const ProjectStateContext = createContext<ProjectStateValue | null>(null)
 
 export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const { set, state } = useApp()
+  const { user, loading: authLoading } = useUser()
   const [projectId, setProjectId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showMigrationModal, setShowMigrationModal] = useState(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const stateRef = useRef(state)
-  const initializedRef = useRef(false)
-  // Tracks the user ID that was loaded. SIGNED_IN events with the same ID are
-  // token-refresh noise (tab return); a different/new ID is a genuine new session.
-  const loadedUserIdRef = useRef<string | null>(null)
+  const userRef = useRef(user)
 
   useEffect(() => { stateRef.current = state }, [state])
+  useEffect(() => { userRef.current = user }, [user])
 
   // Subscribe to realtime project_steps updates for two-tab sync
   function subscribeToProject(pid: string) {
@@ -127,25 +127,35 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     channelRef.current = ch
   }
 
-  // Initial load: fetch from Supabase and hydrate AppContext
+  // Initial load: triggered by AuthContext resolving the user identity.
+  // No getSession() call here — user comes from the single auth context instance,
+  // eliminating Web Lock contention with AuthProvider's own getSession() call.
   useEffect(() => {
+    if (authLoading) return  // wait for AuthProvider to finish its single getSession()
+
     let cancelled = false
 
-    async function load() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const user = session?.user ?? null
-        if (!user) { loadedUserIdRef.current = null; setIsLoading(false); return }
-        loadedUserIdRef.current = user.id
+    async function load(userId: string | null) {
+      if (!userId) {
+        setProjectId(null)
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current)
+          channelRef.current = null
+        }
+        setIsLoading(false)
+        return
+      }
 
-        const userState = await loadUserState()
+      setIsLoading(true)
+      try {
+        const userState = await loadUserState(userId)
         if (cancelled) return
 
         const hydration: Record<string, unknown> = {}
 
         if (userState.profile) {
           const name = userState.profile.full_name
-            ?? (user.user_metadata?.full_name as string | undefined)
+            ?? (userRef.current?.user_metadata?.full_name as string | undefined)
             ?? null
           if (name) hydration.name = name
           if (userState.profile.faculty)    hydration.faculty    = userState.profile.faculty
@@ -157,11 +167,12 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           setProjectId(userState.project.id)
           if (userState.project.title) hydration.validatedTopic = userState.project.title
           subscribeToProject(userState.project.id)
+        } else {
+          setProjectId(null)
         }
 
         // Always derive stepsCompleted from Supabase for authenticated users —
         // prevents stale localStorage values bleeding through on refresh.
-        // Non-sequential completion (e.g. skipping Project Reviewer) is valid.
         const completed = [false, false, false, false, false, false]
         for (const step of userState.steps) {
           const key = STEP_TO_STATE[step.step_type]
@@ -190,58 +201,25 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('[useProjectState] load error:', err)
       } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-          initializedRef.current = true
-        }
+        if (!cancelled) setIsLoading(false)
       }
     }
 
-    load()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Skip events that fire during the initial load (e.g. Supabase emits SIGNED_IN
-      // synchronously on subscription setup before our async load() finishes).
-      if (!initializedRef.current) return
-
-      if (event === 'SIGNED_OUT') {
-        loadedUserIdRef.current = null
-        setIsLoading(true)
-        setProjectId(null)
-        load()
-        return
-      }
-
-      if (event === 'SIGNED_IN') {
-        const incomingId = session?.user?.id ?? null
-        if (incomingId === loadedUserIdRef.current) {
-          // Same user — this is a token refresh firing SIGNED_IN on tab return.
-          // Do nothing: state is already loaded, no skeleton needed.
-          return
-        }
-        // Different (or previously null) user ID — genuine new session after logout.
-        setIsLoading(true)
-        setProjectId(null)
-        load()
-      }
-    })
+    load(user?.id ?? null)
 
     return () => {
       cancelled = true
-      subscription.unsubscribe()
-      if (channelRef.current) {
+      if (!user?.id && channelRef.current) {
         supabase.removeChannel(channelRef.current)
         channelRef.current = null
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable memoized refs whose identity never changes; re-running on every render would leak Realtime subscriptions
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable refs; authLoading only matters for the initial gate
+  }, [user?.id, authLoading])
 
   const ensureProject = useCallback(async (): Promise<string | null> => {
     if (projectId) return projectId
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user ?? null
-    if (!user) return null
+    if (!userRef.current) return null
 
     const current = stateRef.current
     const project: Project | null = await createProject({
@@ -294,11 +272,9 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   }, [projectId, ensureProject])
 
   async function resetProject() {
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user ?? null
-    if (user) {
+    if (userRef.current) {
       try {
-        await deleteAllUserData(user.id)
+        await deleteAllUserData(userRef.current.id)
       } catch (err) {
         console.error('[resetProject] delete failed', err)
       }

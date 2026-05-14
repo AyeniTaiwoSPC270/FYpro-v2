@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useUser } from './useUser'
 
 export interface UserProgress {
   topic_validator_completed_at:     string | null
@@ -24,18 +25,15 @@ const EMPTY: UserProgress = {
 }
 
 export function useUserProgress() {
+  const { user } = useUser()
   const [progress, setProgress] = useState<UserProgress>(EMPTY)
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user ?? null
-    if (!user) { setLoading(false); return }
-
+  const refresh = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('user_progress')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle()
 
     setProgress(data ? (data as UserProgress) : EMPTY)
@@ -43,15 +41,16 @@ export function useUserProgress() {
   }, [])
 
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    if (!user?.id) { setLoading(false); return }
+    refresh(user.id)
+  }, [user?.id, refresh])
 
-  // Re-fetch whenever a step is marked complete in the same tab
   useEffect(() => {
-    const handler = () => refresh()
+    if (!user?.id) return
+    const handler = () => refresh(user.id)
     window.addEventListener('fypro:progress-updated', handler)
     return () => window.removeEventListener('fypro:progress-updated', handler)
-  }, [refresh])
+  }, [user?.id, refresh])
 
-  return { progress, loading, refresh }
+  return { progress, loading, refresh: () => user?.id && refresh(user.id) }
 }

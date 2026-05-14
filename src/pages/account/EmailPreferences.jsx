@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
+import { useUser } from '../../hooks/useUser'
 import { showToast } from '../../components/Toast'
 
 // ─── ToggleSwitch ─────────────────────────────────────────────────────────────
@@ -82,16 +83,16 @@ const cardStyle = {
 }
 
 export default function EmailPreferences() {
+  const { user } = useUser()
   const [prefs,   setPrefs]   = useState(DEFAULTS)
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
   const [hasRow,  setHasRow]  = useState(false)
 
   useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+    if (!user?.id) { setLoading(false); return }
 
+    async function load() {
       const { data } = await supabase
         .from('email_preferences')
         .select('welcome_enabled, defense_nudge_enabled, urgency_reminder_enabled, unsubscribed_all')
@@ -110,12 +111,11 @@ export default function EmailPreferences() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [user?.id])
 
   async function persist(updated, previous) {
+    if (!user?.id) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
 
     const payload = { ...updated, updated_at: new Date().toISOString() }
 
