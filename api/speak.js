@@ -9,9 +9,30 @@ import { setCorsHeaders } from './_lib/cors.js';
 
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
-  methodologist:   'YGoleLoJg5Y6OkKrTexX',
-  subjectExpert:   'dwX6ydOD1vkI5xiHj677',
-  externalExaminer: 'quN8ZSreVm3LJ24tiFFX'
+  methodologist:    'k8FSF54xc37FsOoEA7IB',
+  subjectExpert:    'uo5MH4uAr7YWuzTN7BV5',
+  externalExaminer: 'MJ4KRCYkUZJJEOyUlY9o'
+};
+
+const VOICE_SETTINGS = {
+  methodologist: {
+    stability:         0.75,
+    similarity_boost:  0.75,
+    style:             0.20,
+    use_speaker_boost: true
+  },
+  subjectExpert: {
+    stability:         0.70,
+    similarity_boost:  0.80,
+    style:             0.30,
+    use_speaker_boost: true
+  },
+  externalExaminer: {
+    stability:         0.85,
+    similarity_boost:  0.70,
+    style:             0.15,
+    use_speaker_boost: true
+  }
 };
 
 /**
@@ -85,10 +106,7 @@ const handler = async (req, res) => {
         body: JSON.stringify({
           text:           text.trim(),
           model_id:       'eleven_multilingual_v2',
-          voice_settings: {
-            stability:        0.5,  // 0.5 = balanced naturalness/consistency
-            similarity_boost: 0.8   // 0.8 = strong voice character retention
-          }
+          voice_settings: VOICE_SETTINGS[voiceKey]
         })
       }
     );
