@@ -32,6 +32,7 @@ import MyCertificates from './pages/account/MyCertificates'
 import MyReferrals from './pages/account/MyReferrals'
 import CookieBanner from './components/CookieBanner'
 import CookiePolicy from './pages/CookiePolicy'
+import MaintenancePage from './pages/MaintenancePage'
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/roadmap" element={<RoadmapPage />} />
 

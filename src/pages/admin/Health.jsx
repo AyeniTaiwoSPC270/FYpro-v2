@@ -357,6 +357,14 @@ export default function AdminHealth() {
   const [testAlertsBusy,   setTestAlertsBusy]   = useState(false)
   const [testAlertsResult, setTestAlertsResult] = useState(null)
 
+  const [maintenanceMode,      setMaintenanceMode]      = useState(false)
+  const [maintenanceLoading,   setMaintenanceLoading]   = useState(true)
+  const [maintenanceBusy,      setMaintenanceBusy]      = useState(false)
+  const [maintenanceMessage,   setMaintenanceMessage]   = useState('')
+  const [maintenanceUpdatedAt, setMaintenanceUpdatedAt] = useState(null)
+  const [maintenanceToast,     setMaintenanceToast]     = useState(null)
+  const maintenanceToastTimer                           = useRef(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(true) // optimistic; server corrects to false on 403
@@ -443,7 +451,23 @@ export default function AdminHealth() {
       .finally(() => setFeedbackLoading(false))
   }, [session?.access_token])
 
-  // Fire all 7 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
+  const loadMaintenanceMode = useCallback(() => {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=get-maintenance-mode', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error)
+        setMaintenanceMode(d.maintenance_mode)
+        setMaintenanceMessage(d.maintenance_message || '')
+        setMaintenanceUpdatedAt(d.updated_at)
+      })
+      .catch(() => {})
+      .finally(() => setMaintenanceLoading(false))
+  }, [session?.access_token])
+
+  // Fire all 8 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.allSettled([
@@ -454,12 +478,13 @@ export default function AdminHealth() {
       loadPaymentIssues(),
       loadSystemLogs(),
       loadFeedbackSummary(),
+      loadMaintenanceMode(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
 
-  // Initial parallel fetch — all 7 widgets at once; one failure never blocks the rest
+  // Initial parallel fetch — all 8 widgets at once; one failure never blocks the rest
   useEffect(() => {
     if (!isAdmin || !session) return
     setInitialLoading(true)
@@ -471,8 +496,9 @@ export default function AdminHealth() {
       loadPaymentIssues(),
       loadSystemLogs(),
       loadFeedbackSummary(),
+      loadMaintenanceMode(),
     ]).finally(() => setInitialLoading(false))
-  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary])
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
 
   // Polling intervals — each widget on its own cadence (initial call handled above)
   useEffect(() => {
@@ -708,6 +734,54 @@ export default function AdminHealth() {
     }
   }
 
+  // ── Maintenance mode handlers ───────────────────────────────────
+  async function handleToggleMaintenance() {
+    const next = !maintenanceMode
+    if (next && !window.confirm('This will lock out all users. Continue?')) return
+    if (maintenanceBusy) return
+    setMaintenanceBusy(true)
+    clearTimeout(maintenanceToastTimer.current)
+    try {
+      const res  = await fetch('/api/admin?action=set-maintenance-mode', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ enabled: next, message: maintenanceMessage }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setMaintenanceMode(next)
+      setMaintenanceUpdatedAt(new Date().toISOString())
+      setMaintenanceToast({ type: 'success', message: `Maintenance mode ${next ? 'enabled' : 'disabled'} ✓` })
+    } catch (err) {
+      setMaintenanceToast({ type: 'error', message: err.message })
+    } finally {
+      setMaintenanceBusy(false)
+      maintenanceToastTimer.current = setTimeout(() => setMaintenanceToast(null), 4000)
+    }
+  }
+
+  async function handleSaveMaintenanceMessage() {
+    if (maintenanceBusy) return
+    setMaintenanceBusy(true)
+    clearTimeout(maintenanceToastTimer.current)
+    try {
+      const res  = await fetch('/api/admin?action=set-maintenance-mode', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ enabled: maintenanceMode, message: maintenanceMessage }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setMaintenanceUpdatedAt(new Date().toISOString())
+      setMaintenanceToast({ type: 'success', message: 'Message saved ✓' })
+    } catch (err) {
+      setMaintenanceToast({ type: 'error', message: err.message })
+    } finally {
+      setMaintenanceBusy(false)
+      maintenanceToastTimer.current = setTimeout(() => setMaintenanceToast(null), 4000)
+    }
+  }
+
   // ── Guard states ────────────────────────────────────────────────
   const shell = { minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }
   if (loading)             return <div className="admin-shell" style={shell}>Loading…</div>
@@ -865,6 +939,137 @@ export default function AdminHealth() {
           )}
         </div>
       )}
+
+      {/* ── System Controls ──────────────────────────────────────── */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{
+          background:  CARD,
+          border:      `1px solid ${BORDER}`,
+          borderTop:   `3px solid ${maintenanceMode ? AMBER : GREEN}`,
+          borderRadius: 12,
+          padding:     '20px 24px',
+        }}>
+          {/* Header row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+            <div>
+              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+                System Controls
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                  background: maintenanceLoading ? MUTED : maintenanceMode ? AMBER : GREEN,
+                  animation: !maintenanceLoading && maintenanceMode ? 'vitalPulse 1.5s ease-in-out infinite' : 'none',
+                }} />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: maintenanceLoading ? MUTED : maintenanceMode ? AMBER : GREEN }}>
+                  {maintenanceLoading ? '…' : maintenanceMode ? 'MAINTENANCE' : 'LIVE'}
+                </span>
+                {maintenanceUpdatedAt && (
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED }}>
+                    · Updated {timeAgo(maintenanceUpdatedAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM }}>Maintenance Mode</span>
+              <button
+                onClick={handleToggleMaintenance}
+                disabled={maintenanceBusy || maintenanceLoading}
+                aria-label={maintenanceMode ? 'Disable maintenance mode' : 'Enable maintenance mode'}
+                style={{
+                  width:       48,
+                  height:      26,
+                  borderRadius: 13,
+                  border:      'none',
+                  background:  maintenanceMode ? AMBER : 'rgba(255,255,255,0.12)',
+                  cursor:      maintenanceBusy || maintenanceLoading ? 'not-allowed' : 'pointer',
+                  position:    'relative',
+                  transition:  'background 0.2s ease',
+                  opacity:     maintenanceBusy ? 0.6 : 1,
+                  flexShrink:  0,
+                }}
+              >
+                <div style={{
+                  width:       20,
+                  height:      20,
+                  borderRadius: '50%',
+                  background:  WHITE,
+                  position:    'absolute',
+                  top:         3,
+                  left:        maintenanceMode ? 25 : 3,
+                  transition:  'left 0.2s ease',
+                  boxShadow:   '0 1px 4px rgba(0,0,0,0.3)',
+                }} />
+              </button>
+            </div>
+          </div>
+
+          {/* Message input */}
+          <div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 6 }}>
+              Maintenance message — shown on the maintenance page (optional)
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={maintenanceMessage}
+                onChange={e => setMaintenanceMessage(e.target.value)}
+                placeholder="FYPro is currently undergoing scheduled maintenance…"
+                style={{
+                  flex:        1,
+                  background:  SURFACE,
+                  border:      `1px solid ${BORDER}`,
+                  borderRadius: 8,
+                  padding:     '8px 14px',
+                  color:       WHITE,
+                  fontFamily:  "'Poppins', sans-serif",
+                  fontSize:    13,
+                  outline:     'none',
+                  minWidth:    0,
+                }}
+              />
+              <button
+                onClick={handleSaveMaintenanceMessage}
+                disabled={maintenanceBusy}
+                style={{
+                  fontFamily:  "'Poppins', sans-serif",
+                  fontSize:    13, fontWeight: 600,
+                  color:       WHITE,
+                  background:  maintenanceBusy ? 'rgba(255,255,255,0.1)' : BLUE,
+                  border:      'none',
+                  borderRadius: 8,
+                  padding:     '8px 18px',
+                  cursor:      maintenanceBusy ? 'not-allowed' : 'pointer',
+                  transition:  'background 0.15s ease',
+                  flexShrink:  0,
+                  whiteSpace:  'nowrap',
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+
+          {/* Inline toast */}
+          {maintenanceToast && (
+            <div style={{
+              marginTop:  12,
+              padding:    '8px 14px',
+              background: maintenanceToast.type === 'error' ? 'rgba(220,38,38,0.1)' : 'rgba(22,163,74,0.1)',
+              border:     `1px solid ${maintenanceToast.type === 'error' ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
+              borderRadius: 8,
+              fontFamily: "'Poppins', sans-serif",
+              fontSize:   12,
+              color:      maintenanceToast.type === 'error' ? '#F87171' : '#4ade80',
+            }}>
+              {maintenanceToast.message}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ── Widget 4: System Vitals ──────────────────────────────── */}
       <div style={{ marginBottom: 24 }}>

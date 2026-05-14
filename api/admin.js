@@ -5,6 +5,7 @@ import { writeSystemLog }      from './_lib/system-log.js';
 import { rateLimitCheck }      from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
+import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
@@ -1091,6 +1092,81 @@ async function handleResolveSentryIssues(req, res) {
   }
 }
 
+// action: "get-maintenance-mode" — admin only
+async function handleGetMaintenanceMode(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('app_config')
+      .select('key, value, updated_at')
+      .in('key', ['maintenance_mode', 'maintenance_message']);
+
+    if (error) throw error;
+
+    const rows    = data || [];
+    const modeRow = rows.find(r => r.key === 'maintenance_mode');
+    const msgRow  = rows.find(r => r.key === 'maintenance_message');
+
+    return res.status(200).json({
+      maintenance_mode:    modeRow?.value === 'true',
+      maintenance_message: msgRow?.value  || '',
+      updated_at:          modeRow?.updated_at || null,
+    });
+  } catch (err) {
+    console.error('[admin/get-maintenance-mode] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "set-maintenance-mode" — admin only
+async function handleSetMaintenanceMode(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { enabled, message } = req.body || {};
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled (boolean) required' });
+  }
+
+  try {
+    await setMaintenanceModeLib(enabled);
+
+    if (typeof message === 'string') {
+      await supabaseAdmin.from('app_config').upsert({
+        key:        'maintenance_message',
+        value:      message,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    sendTelegramAlert(
+      `🔧 Maintenance mode ${enabled ? 'ENABLED 🔴' : 'DISABLED 🟢'} by admin${message ? `\nMessage: ${message}` : ''}`
+    ).catch(() => {});
+
+    return res.status(200).json({ ok: true, maintenance_mode: enabled });
+  } catch (err) {
+    console.error('[admin/set-maintenance-mode] error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// action: "maintenance-info" — public, no auth, only exposes the maintenance message
+async function handleMaintenanceInfo(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const { data } = await supabaseAdmin
+      .from('app_config')
+      .select('value')
+      .eq('key', 'maintenance_message')
+      .maybeSingle();
+    return res.status(200).json({ maintenance_message: data?.value || '' });
+  } catch {
+    return res.status(200).json({ maintenance_message: '' });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -1136,6 +1212,9 @@ export default async function handler(req, res) {
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
   if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);
+  if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
+  if (action === 'set-maintenance-mode')    return handleSetMaintenanceMode(req, res);
+  if (action === 'maintenance-info')        return handleMaintenanceInfo(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
