@@ -206,7 +206,7 @@ async function handleDashboard(req, res) {
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
-      supabaseAdmin.from('user_entitlements').select('user_id, run_counts').not('run_counts', 'is', null),
+      supabaseAdmin.from('user_entitlements').select('user_id, run_counts, paid_features'),
       supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
       readCacheHits(),
       supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).neq('status', 'success').gte('created_at', todayStart),
@@ -240,11 +240,15 @@ async function handleDashboard(req, res) {
     const failedPaymentsToday = failedPaymentsRes.count || 0;
     const signupsYesterday    = signupsYesterdayRes.count || 0;
 
-    // build userId → run_counts map from entitlements
-    const runCountsByUser = {};
+    // build userId → run_counts map and userId → paid_features map from entitlements
+    const runCountsByUser   = {};
+    const paidFeaturesByUser = {};
     for (const ent of entitlements) {
       if (ent.run_counts && typeof ent.run_counts === 'object') {
         runCountsByUser[ent.user_id] = ent.run_counts;
+      }
+      if (Array.isArray(ent.paid_features) && ent.paid_features.length > 0) {
+        paidFeaturesByUser[ent.user_id] = ent.paid_features;
       }
     }
 
@@ -300,6 +304,10 @@ async function handleDashboard(req, res) {
       if (paid) {
         plan = paid.tiers.includes('defense_pack') ? 'Defense' : 'Student';
       }
+      // Also check admin-granted entitlements (not reflected in payments)
+      const grantedFeatures = paidFeaturesByUser[u.id] ?? [];
+      if (grantedFeatures.includes('defense_pack')) plan = 'Defense';
+      else if (grantedFeatures.includes('student_pack') && plan === 'Free') plan = 'Student';
 
       let status = 'never_used';
       if (projCount > 0 && lastActive) {
@@ -560,6 +568,8 @@ async function handleDeleteUser(req, res) {
 }
 
 // action: "reset-usage" — clears Upstash rate limit keys for a user so they can make requests again
+// Key format: rl:user:{prefix}:{userId}:{utcDate}:{dayBucket}
+// dayBucket = Math.floor(Date.now() / 86400000) — matches @upstash/ratelimit fixedWindow internals
 async function handleResetUsage(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
@@ -571,27 +581,32 @@ async function handleResetUsage(req, res) {
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!redisUrl || !redisToken) return res.status(500).json({ error: 'Redis not configured' });
 
+  // All prefixes used in rateLimitCheck calls across the codebase
+  const RATE_PREFIXES = [
+    'claude', 'defense', 'supervisor-prep', 'reviewer',
+    'topic-validator', 'literature-map', 'share-card', 'speak', 'payment-issue',
+  ];
+
+  // Build all possible keys for today (and yesterday as a safety net for cross-midnight sessions)
+  const now    = Date.now();
+  const today  = new Date(now).toISOString().slice(0, 10);
+  const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
+  const todayBucket     = Math.floor(now / 86400000);
+  const yesterdayBucket = todayBucket - 1;
+
+  const keys = [
+    ...RATE_PREFIXES.map(p => `rl:user:${p}:${userId}:${today}:${todayBucket}`),
+    ...RATE_PREFIXES.map(p => `rl:user:${p}:${userId}:${yesterday}:${yesterdayBucket}`),
+  ];
+
   try {
-    // Scan for all rate-limit keys that contain this userId (covers all prefixes and dates)
-    const scanRes  = await fetch(`${redisUrl}/pipeline`, {
+    const delRes  = await fetch(`${redisUrl}/pipeline`, {
       method:  'POST',
       headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify([['SCAN', '0', 'MATCH', `rl:user:*${userId}*`, 'COUNT', '200']]),
+      body:    JSON.stringify(keys.map(k => ['DEL', k])),
     });
-    const scanData = await scanRes.json();
-    const keys     = scanData[0]?.result?.[1] ?? [];
-
-    let deleted = 0;
-    if (keys.length > 0) {
-      const delRes  = await fetch(`${redisUrl}/pipeline`, {
-        method:  'POST',
-        headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify(keys.map(k => ['DEL', k])),
-      });
-      const delData = await delRes.json();
-      deleted = Array.isArray(delData) ? delData.filter(r => r.result === 1).length : 0;
-    }
-
+    const delData = await delRes.json();
+    const deleted = Array.isArray(delData) ? delData.filter(r => r.result === 1).length : 0;
     return res.status(200).json({ ok: true, keys_deleted: deleted });
   } catch (err) {
     console.error('[admin/reset-usage]', err.message);

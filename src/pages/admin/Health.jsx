@@ -685,17 +685,8 @@ export default function AdminHealth() {
       if (!res.ok) throw new Error(json.error)
       setActionState(s => { const n = { ...s }; delete n[userId]; return n })
       showUserToast('success', `${label} granted to ${email}`)
-      const newPlan = plan === 'defense' ? 'Defense' : 'Student'
-      setData(prev => ({
-        ...prev,
-        users: prev.users.map(u => {
-          if (u.id !== userId) return u
-          // Defense > Student > Free — only upgrade, never downgrade
-          if (newPlan === 'Defense') return { ...u, plan: 'Defense' }
-          if (u.plan === 'Free') return { ...u, plan: 'Student' }
-          return u
-        }),
-      }))
+      // Refresh the full user table from the server so the plan badge updates immediately
+      loadData()
     } catch (err) {
       setActionState(s => { const n = { ...s }; delete n[userId]; return n })
       showUserToast('error', `Grant failed: ${err.message}`)
