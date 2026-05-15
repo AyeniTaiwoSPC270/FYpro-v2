@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useMemo } from 
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { clearRoutingCache } from '../lib/routingCache'
 
 export interface AuthContextValue {
   user: User | null
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, updated) => {
       if (event === 'TOKEN_REFRESH_FAILED') return
+      if (event === 'SIGNED_OUT') clearRoutingCache()
       sessionRef.current = updated
       setSession(updated)
       setUser(updated?.user ?? null)

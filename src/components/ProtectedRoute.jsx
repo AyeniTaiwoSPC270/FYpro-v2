@@ -30,9 +30,26 @@ export default function ProtectedRoute({ children }) {
       .catch(() => {})
   }, [user?.id])
 
-  // Hold render only while Supabase is confirming the session token.
-  // Once loading is false, we know whether user exists — act immediately.
-  if (loading) return null
+  // Show a skeleton while Supabase confirms the session — prevents blank flash.
+  if (loading) return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#060E18',
+    }}>
+      <div style={{
+        width: 36,
+        height: 36,
+        border: '3px solid rgba(0,102,255,0.15)',
+        borderTopColor: '#0066FF',
+        borderRadius: '50%',
+        animation: 'pr-spin 0.7s linear infinite',
+      }} />
+      <style>{`@keyframes pr-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
 
   if (!user) return <Navigate to="/login" replace />
 

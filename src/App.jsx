@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
@@ -35,17 +36,22 @@ import CookiePolicy from './pages/CookiePolicy'
 import MaintenancePage from './pages/MaintenancePage'
 import { AuthProvider } from './context/AuthContext'
 
-export default function App() {
+// Route transitions — lives inside BrowserRouter so useLocation() works.
+// ToastProvider, CookieBanner, and RouteProgressBar sit outside so they
+// persist across navigations and are never caught by the AnimatePresence.
+function AppRoutes() {
+  const location = useLocation()
   return (
-    <AuthProvider>
-    <ThemeProvider>
-    <AppProvider>
-      <BrowserRouter>
-        <ProjectStateProvider>
-        <RouteProgressBar />
-        <ToastProvider />
-        <CookieBanner />
-        <Routes>
+    <AnimatePresence mode="sync" initial={false}>
+      <motion.div
+        key={location.key}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}
+        style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+      >
+        <Routes location={location}>
           {/* Public marketing */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -97,6 +103,22 @@ export default function App() {
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+    <ThemeProvider>
+    <AppProvider>
+      <BrowserRouter>
+        <ProjectStateProvider>
+        <RouteProgressBar />
+        <ToastProvider />
+        <CookieBanner />
+        <AppRoutes />
         </ProjectStateProvider>
       </BrowserRouter>
     </AppProvider>

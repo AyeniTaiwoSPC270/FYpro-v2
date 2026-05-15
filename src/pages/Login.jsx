@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { trackEvent, identifyUser } from '../lib/analytics'
+import { resolveRouteAfterLogin } from '../lib/routingCache'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -151,7 +152,16 @@ export default function Login() {
       }
       trackEvent('logged_in')
       const returnUrl = searchParams.get('returnUrl')
-      navigate(returnUrl?.startsWith('/') ? returnUrl : '/dashboard', { replace: true })
+      if (returnUrl?.startsWith('/')) {
+        navigate(returnUrl, { replace: true })
+      } else {
+        try {
+          const destination = await resolveRouteAfterLogin(sessionData.user.id)
+          navigate(destination, { replace: true })
+        } catch {
+          navigate('/dashboard', { replace: true })
+        }
+      }
     } catch {
       setAuthError('Invalid email or password')
     } finally {

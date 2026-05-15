@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import { resolveRouteAfterLogin } from '../lib/routingCache'
 
 function EnvelopeIcon() {
   return (
@@ -80,12 +81,22 @@ export default function VerifyEmail() {
     if (token_hash && type) {
       setPhase('verifying')
       supabase.auth.verifyOtp({ token_hash, type })
-        .then(({ error }) => {
+        .then(async ({ data, error }) => {
           if (error) {
             setPhase('error')
           } else {
             setPhase('success')
-            setTimeout(() => navigate('/dashboard'), 3000)
+            const userId = data?.user?.id
+            if (userId) {
+              try {
+                const destination = await resolveRouteAfterLogin(userId)
+                setTimeout(() => navigate(destination), 3000)
+              } catch {
+                setTimeout(() => navigate('/dashboard'), 3000)
+              }
+            } else {
+              setTimeout(() => navigate('/dashboard'), 3000)
+            }
           }
         })
     }

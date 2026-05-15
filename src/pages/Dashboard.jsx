@@ -1869,11 +1869,19 @@ function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStart
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { state, clearState, isOnboarded } = useApp()
+  const { state, clearState, clearProjectData, isOnboarded } = useApp()
+
+  // Gate the redirect on projectStateLoading: only fire after Supabase has
+  // hydrated AppContext. This prevents a flash to /start on new devices where
+  // localStorage doesn't yet have isOnboarded=true — by the time
+  // projectStateLoading turns false, the profile has been fetched and
+  // isOnboarded is already correct.
+  const { selectProject, projectId: activeProjectId, isLoading: projectStateLoading } = useProjectState()
 
   useEffect(() => {
+    if (projectStateLoading) return
     if (!isOnboarded) navigate('/start', { replace: true })
-  }, [isOnboarded, navigate])
+  }, [isOnboarded, navigate, projectStateLoading])
 
   // All projects for this user — loaded reactively from AuthContext, no getSession() call
   const { user: dashUser } = useUser()
@@ -1891,7 +1899,6 @@ export default function Dashboard() {
   // URL-based project selection
   const [searchParams, setSearchParams] = useSearchParams()
   const projectParam = searchParams.get('project')
-  const { selectProject, projectId: activeProjectId } = useProjectState()
   const [selectingProject, setSelectingProject] = useState(false)
 
   useEffect(() => {
@@ -2018,7 +2025,7 @@ export default function Dashboard() {
       level: state.level || null,
     })
     if (!newProject) { showToastMessage('Failed to create project. Please try again.'); return }
-    clearState()
+    clearProjectData()
     sessionStorage.setItem('intentional_app_entry', 'true')
     navigate('/app')
   }
