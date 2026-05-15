@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
+import { useApp } from '../../context/AppContext'
 import { supabase } from '../../lib/supabase'
 import { resetUser } from '../../lib/analytics'
 import { showToast } from '../../components/Toast'
@@ -11,6 +12,7 @@ import { BellIcon, GearIcon, SunIcon, MoonIcon, PlusIcon } from './_shared'
 export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
+  const { clearState } = useApp()
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const firstName = STUDENT.name ? STUDENT.name.split(' ')[0] : 'there'
@@ -26,12 +28,7 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
     setAvatarOpen(false)
     await supabase.auth.signOut()
     resetUser()
-    const cachedOnboarded = localStorage.getItem('isOnboarded')
-    const cachedRunCounts = localStorage.getItem('fypro_run_counts')
-    localStorage.clear()
-    if (cachedOnboarded) localStorage.setItem('isOnboarded', cachedOnboarded)
-    if (cachedRunCounts) localStorage.setItem('fypro_run_counts', cachedRunCounts)
-    sessionStorage.clear()
+    clearState()
     navigate('/')
   }
 

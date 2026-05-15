@@ -58,6 +58,30 @@ const DEFAULT_STATE = {
   stepResults: {},
 }
 
+// Every localStorage key the app writes for a specific user.
+// cookie_consent and fypro_theme are intentionally excluded — they're device preferences, not user data.
+const USER_STORAGE_KEYS = [
+  'fypro_session',
+  'isOnboarded',
+  'fypro_run_counts',
+  'fypro_autosave_topic_validator',
+  'fypro_autosave_chapter_architect',
+  'fypro_autosave_supervisor_prep',
+  'fypro_autosave_writing_planner',
+  'fypro_routing_v1',
+  'fypro_sync_queue',
+  'fypro_feedback_given',
+  'fypro_ref_code',
+  'fypro_ref_expiry',
+]
+
+export function clearUserLocalStorage() {
+  USER_STORAGE_KEYS.forEach(key => {
+    try { localStorage.removeItem(key) } catch {}
+  })
+  try { sessionStorage.clear() } catch {}
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem('fypro_session')
@@ -125,7 +149,7 @@ export function AppProvider({ children }) {
   }
 
   function clearState() {
-    localStorage.removeItem('fypro_session')
+    clearUserLocalStorage()
     setState(DEFAULT_STATE)
   }
 

@@ -811,10 +811,12 @@ async function handleBanUser(req, res) {
 // action: "self-delete"
 // Called by the authenticated user to permanently delete their own account.
 // Verifies the user's own JWT — does NOT require ADMIN_EMAIL.
-// Deletes auth.users, which cascades through:
-//   public.users → {user_entitlements, projects, project_steps,
-//                    defense_sessions, defense_turns, payments}
+// Deletes all user data across every table, then deletes auth.users.
+// Tables with CASCADE (handled automatically by deleteUser):
+//   public.users → user_entitlements, projects, project_steps,
+//                  defense_sessions, defense_turns, payments
 // generation_failures and payment_issues use ON DELETE SET NULL — rows kept for admin.
+// All other user-data tables are deleted explicitly before the auth delete.
 async function handleSelfDelete(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -829,8 +831,46 @@ async function handleSelfDelete(req, res) {
   }
 
   try {
+    // 1. Explicitly delete from tables not guaranteed to CASCADE.
+    //    Each delete is independent — a missing table or empty result is non-fatal.
+    const singleColumnTables = [
+      'defense_certificates',
+      'defense_credits',
+      'feature_feedback',
+      'email_preferences',
+      'user_onboarding',
+      'response_times',
+      'auth_attempts',
+      'email_log',
+    ];
+    await Promise.allSettled(
+      singleColumnTables.map(table =>
+        supabaseAdmin.from(table).delete().eq('user_id', userId)
+      )
+    );
+
+    // referrals may store user as referrer or referred party
+    await Promise.allSettled([
+      supabaseAdmin.from('referrals').delete().eq('referrer_user_id', userId),
+      supabaseAdmin.from('referrals').delete().eq('referred_user_id', userId),
+    ]);
+
+    // 2. Delete Upstash Redis rate-limit keys for this user (non-fatal if Redis unavailable).
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      try {
+        const redis = getAdminRedis();
+        const found = await redis.keys(`*${userId}*`);
+        const userKeys = (found || []).filter(k => k.startsWith('rl:user:'));
+        if (userKeys.length > 0) await redis.del(...userKeys);
+      } catch (redisErr) {
+        console.error('[admin/self-delete] Redis cleanup non-fatal:', redisErr.message);
+      }
+    }
+
+    // 3. Delete auth user — cascades through public.users to all dependent tables.
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/self-delete]', err.message);

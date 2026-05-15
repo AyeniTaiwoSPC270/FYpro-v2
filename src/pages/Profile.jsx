@@ -443,13 +443,16 @@ export default function Profile() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         showToast(body.error || 'Account deletion failed. Please try again.', 'error')
-        return
+        // Fall through — still sign out and wipe local data so stale state
+        // never bleeds into a re-signup with the same email.
       }
     } catch {
       showToast('Account deletion failed. Please check your connection.', 'error')
-      return
+      // Fall through — same reason as above.
     }
 
+    // Always sign out and clear ALL local storage after a deletion attempt,
+    // regardless of whether the server call succeeded or failed.
     await supabase.auth.signOut()
     resetUser()
     clearState()
