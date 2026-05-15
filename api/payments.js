@@ -199,7 +199,7 @@ async function handleInitiate(req, res) {
     });
   } catch (err) {
     console.error('[payments/initiate] error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 

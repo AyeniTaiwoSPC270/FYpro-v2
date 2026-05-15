@@ -121,7 +121,7 @@ const handler = async (req, res) => {
       plain_message: 'A project review failed — PDF may be too large or AI timed out',
       raw_detail: { error: err.message, userId: user.id },
     });
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 };
 

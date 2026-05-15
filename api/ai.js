@@ -10,6 +10,9 @@ import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
+const ALLOWED_MODELS   = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']);
+const MAX_TOKENS_LIMIT = 3000;
+
 const TTL_BY_STEP = {
   'topic-validator':     86400,
   'chapter-architect':   86400,
@@ -41,10 +44,13 @@ async function handleGeneral(req, res) {
     const {
       system,
       messages,
-      max_tokens = 2000,
-      model = 'claude-sonnet-4-6',
+      max_tokens: rawMaxTokens = 2000,
+      model: rawModel = 'claude-sonnet-4-6',
       step,
     } = req.body || {};
+
+    const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+    const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
     const prefix      = step || 'general';
     const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
@@ -89,7 +95,7 @@ async function handleGeneral(req, res) {
     const feature  = req.body?.step || 'general'
     const userId   = extractUserId(req) || 'anonymous'
     await sendTelegramAlert(`🔴 Generation failed: ${feature} for ${userId} - ${err.message}`)
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 
@@ -137,10 +143,13 @@ async function handleDefense(req, res) {
     const {
       system,
       messages,
-      max_tokens = 2000,
-      model = 'claude-sonnet-4-6',
+      max_tokens: rawMaxTokens = 2000,
+      model: rawModel = 'claude-sonnet-4-6',
       answerWordCount,
     } = req.body || {};
+
+    const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+    const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
     if (answerWordCount !== undefined && answerWordCount > 300) {
       return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
@@ -173,7 +182,7 @@ async function handleDefense(req, res) {
         raw_detail:    { error: err.message, userId: user.id },
       }),
     ]);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 
@@ -260,7 +269,7 @@ async function handleSupervisorPrep(req, res) {
   } catch (err) {
     console.error('[supervisor-prep] error:', err.message);
     await sendTelegramAlert(`🔴 Generation failed: supervisor-prep - ${err.message}`)
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 

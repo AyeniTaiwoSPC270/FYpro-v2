@@ -1165,12 +1165,13 @@ async function handleFeedbackSummary(req, res) {
 }
 
 // action: "daily-report"
-// Triggered by cron-job.org. Gate: ?secret=CRON_SECRET query param.
+// Triggered by cron-job.org. Gate: X-Cron-Secret header matching CRON_SECRET env var.
 // Aggregates today's key metrics and posts a summary to Telegram.
 async function handleDailyReport(req, res) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  if (!req.query.secret || req.query.secret !== cronSecret) {
+  const providedSecret = req.headers['x-cron-secret'];
+  if (!providedSecret || providedSecret !== cronSecret) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
