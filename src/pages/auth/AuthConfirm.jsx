@@ -48,6 +48,7 @@ export default function AuthConfirm() {
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
+    console.log('[AuthConfirm] mounted, href:', window.location.href)
     const params     = new URLSearchParams(window.location.search)
     const code       = params.get('code')
     const token_hash = params.get('token_hash')
@@ -63,7 +64,8 @@ export default function AuthConfirm() {
       } else {
         // No params — Supabase OTP flow authenticates before redirecting here.
         // Check whether a session was already established.
-        const { data: sessionData } = await supabase.auth.getSession()
+        const { data: sessionData, error } = await supabase.auth.getSession()
+        console.log('[AuthConfirm] session check:', JSON.stringify(sessionData?.session ? 'SESSION EXISTS' : 'NO SESSION'), 'error:', error?.message)
         if (sessionData?.session) {
           window.history.replaceState(null, '', window.location.pathname)
           navigate('/dashboard', { replace: true })
