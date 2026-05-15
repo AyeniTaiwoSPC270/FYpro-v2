@@ -96,15 +96,19 @@ async function handleSignup(req, res) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
-    body:    JSON.stringify({
-      email,
-      password,
-      data: { full_name, university },
-    }),
-  });
+  const redirectTo = `${APP_URL}/auth/confirm`;
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
+      body:    JSON.stringify({
+        email,
+        password,
+        data: { full_name, university },
+      }),
+    }
+  );
 
   const data    = await response.json();
   const userId  = data.id || data.user?.id;

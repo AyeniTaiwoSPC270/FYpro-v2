@@ -34,6 +34,7 @@ import MyReferrals from './pages/account/MyReferrals'
 import CookieBanner from './components/CookieBanner'
 import CookiePolicy from './pages/CookiePolicy'
 import MaintenancePage from './pages/MaintenancePage'
+import AuthConfirm from './pages/auth/AuthConfirm'
 import { AuthProvider } from './context/AuthContext'
 
 // Route transitions — lives inside BrowserRouter so useLocation() works.
@@ -67,6 +68,8 @@ function AppRoutes() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
+          <Route path="/auth/confirm" element={<AuthConfirm />} />
+          <Route path="/auth/callback" element={<AuthConfirm />} />
           <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/roadmap" element={<RoadmapPage />} />
 
