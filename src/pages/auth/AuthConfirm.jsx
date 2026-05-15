@@ -48,7 +48,7 @@ export default function AuthConfirm() {
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
+    const params     = new URLSearchParams(window.location.search)
     const code       = params.get('code')
     const token_hash = params.get('token_hash')
     const type       = params.get('type')
@@ -56,13 +56,21 @@ export default function AuthConfirm() {
     async function confirm() {
       let error = null
 
-      if (code) {
-        ;({ error } = await supabase.auth.exchangeCodeForSession(code))
-      } else if (token_hash && type) {
+      if (token_hash && type) {
         ;({ error } = await supabase.auth.verifyOtp({ token_hash, type }))
+      } else if (code) {
+        ;({ error } = await supabase.auth.exchangeCodeForSession(code))
       } else {
-        setErrorMsg('No confirmation token found. The link may be invalid or already used.')
-        setPhase('error')
+        // No params — Supabase OTP flow authenticates before redirecting here.
+        // Check whether a session was already established.
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (sessionData?.session) {
+          window.history.replaceState(null, '', window.location.pathname)
+          navigate('/dashboard', { replace: true })
+        } else {
+          setErrorMsg('No confirmation token found. The link may be invalid or already used.')
+          setPhase('error')
+        }
         return
       }
 
@@ -72,7 +80,7 @@ export default function AuthConfirm() {
         return
       }
 
-      window.history.replaceState(null, '', '/dashboard')
+      window.history.replaceState(null, '', window.location.pathname)
       navigate('/dashboard', { replace: true })
     }
 
