@@ -1,6 +1,7 @@
 // Auth proxy — adds IP rate limiting and attempt logging in front of Supabase GoTrue.
 // The frontend calls these endpoints instead of supabase.auth.* directly.
 
+import { createClient }   from '@supabase/supabase-js';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
@@ -16,6 +17,12 @@ const redis = new Redis({
 const SUPABASE_URL  = process.env.SUPABASE_URL;
 const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const APP_URL       = process.env.APP_URL || 'https://www.fypro.com.ng';
+
+// Anon client — used for signUp so email confirmation is not bypassed.
+// Never use supabaseAdmin for signUp: service-role key auto-confirms users.
+const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 function getIp(req) {
   return String(
@@ -96,33 +103,27 @@ async function handleSignup(req, res) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const redirectTo = `${APP_URL}/auth/confirm`;
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`,
-    {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
-      body:    JSON.stringify({
-        email,
-        password,
-        data: { full_name, university },
-      }),
-    }
-  );
+  const { data, error } = await supabaseAnon.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${APP_URL}/auth/confirm`,
+      data: { full_name, university },
+    },
+  });
 
-  const data    = await response.json();
-  const userId  = data.id || data.user?.id;
-  const success = response.ok && !!userId;
+  const userId  = data?.user?.id;
+  const success = !error && !!userId;
 
   logAttempt(email, ip, 'signup', success);
 
   if (success) {
-    sendTelegramAlert(`👤 New signup: ${email} (free)`)
+    sendTelegramAlert(`👤 New signup: ${email} (free)`);
   }
 
-  if (!response.ok) {
-    const msg = data.msg || data.error_description || data.error || 'Sign up failed. Please try again.';
-    return res.status(response.status).json({ error: msg });
+  if (error) {
+    const msg = error.message || 'Sign up failed. Please try again.';
+    return res.status(400).json({ error: msg });
   }
 
   // Update public.users row with full_name and university (created by DB trigger on signup).
