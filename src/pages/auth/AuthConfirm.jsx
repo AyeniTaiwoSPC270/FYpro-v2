@@ -48,14 +48,29 @@ export default function AuthConfirm() {
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    console.log('[AuthConfirm] mounted, href:', window.location.href)
-    const params     = new URLSearchParams(window.location.search)
-    const code       = params.get('code')
-    const token_hash = params.get('token_hash')
-    const type       = params.get('type')
+    const hash        = new URLSearchParams(window.location.hash.slice(1))
+    const params      = new URLSearchParams(window.location.search)
+    const access_token  = hash.get('access_token')
+    const refresh_token = hash.get('refresh_token')
+    const code          = params.get('code')
+    const token_hash    = params.get('token_hash')
+    const type          = params.get('type')
 
     async function confirm() {
       let error = null
+
+      if (access_token && refresh_token) {
+        // Implicit flow — tokens arrive in the URL hash fragment.
+        ;({ error } = await supabase.auth.setSession({ access_token, refresh_token }))
+        window.history.replaceState(null, '', window.location.pathname)
+        if (error) {
+          setErrorMsg(error.message || 'Confirmation failed. The link may have expired.')
+          setPhase('error')
+        } else {
+          navigate('/dashboard', { replace: true })
+        }
+        return
+      }
 
       if (token_hash && type) {
         ;({ error } = await supabase.auth.verifyOtp({ token_hash, type }))
@@ -64,8 +79,7 @@ export default function AuthConfirm() {
       } else {
         // No params — Supabase OTP flow authenticates before redirecting here.
         // Check whether a session was already established.
-        const { data: sessionData, error } = await supabase.auth.getSession()
-        console.log('[AuthConfirm] session check:', JSON.stringify(sessionData?.session ? 'SESSION EXISTS' : 'NO SESSION'), 'error:', error?.message)
+        const { data: sessionData } = await supabase.auth.getSession()
         if (sessionData?.session) {
           window.history.replaceState(null, '', window.location.pathname)
           navigate('/dashboard', { replace: true })
