@@ -61,13 +61,14 @@ export default function AuthConfirm() {
 
       if (access_token && refresh_token) {
         // Implicit flow — tokens arrive in the URL hash fragment.
+        const hashType = hash.get('type')
         ;({ error } = await supabase.auth.setSession({ access_token, refresh_token }))
         window.history.replaceState(null, '', window.location.pathname)
         if (error) {
           setErrorMsg(error.message || 'Confirmation failed. The link may have expired.')
           setPhase('error')
         } else {
-          navigate('/dashboard', { replace: true })
+          navigate(hashType === 'signup' ? '/start' : '/dashboard', { replace: true })
         }
         return
       }
