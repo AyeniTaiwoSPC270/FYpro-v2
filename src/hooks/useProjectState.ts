@@ -19,7 +19,7 @@ import {
   updateProject,
   deleteAllUserData,
   Project,
-} from '../lib/supabase-client'
+} from '../lib/db'
 import { enqueue, getStatus } from '../lib/sync-queue'
 import { useApp } from '../context/AppContext'
 import { useUser } from './useUser'
@@ -318,8 +318,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const project = projectRes.data as import('../lib/supabase-client').Project
-    const steps = (stepsRes.data as import('../lib/supabase-client').ProjectStep[]) ?? []
+    const project = projectRes.data as import('../lib/db').Project
+    const steps = (stepsRes.data as import('../lib/db').ProjectStep[]) ?? []
 
     const hydration: Record<string, unknown> = {}
     if (project.title) hydration.validatedTopic = project.title

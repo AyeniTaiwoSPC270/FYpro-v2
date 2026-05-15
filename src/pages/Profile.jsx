@@ -7,7 +7,7 @@ import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
 import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
-import { updateUserProfile } from '../lib/supabase-client'
+import { updateUserProfile } from '../lib/db'
 import { resetUser } from '../lib/analytics'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

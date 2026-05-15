@@ -2,7 +2,7 @@
 // localStorage-backed so writes survive page refresh.
 // Supabase is canonical. localStorage is write cache only.
 
-import { saveStep } from './supabase-client'
+import { saveStep } from './db'
 
 export type SyncStatus = 'online' | 'offline' | 'reconnecting'
 

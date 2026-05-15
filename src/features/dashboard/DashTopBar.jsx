@@ -1,0 +1,204 @@
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useTheme } from '../../context/ThemeContext'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
+import { supabase } from '../../lib/supabase'
+import { resetUser } from '../../lib/analytics'
+import { showToast } from '../../components/Toast'
+import { BellIcon, GearIcon, SunIcon, MoonIcon, PlusIcon } from './_shared'
+
+export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
+  const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const firstName = STUDENT.name ? STUDENT.name.split(' ')[0] : 'there'
+
+  const { features } = usePaidFeatures()
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
+
+  const [notifications] = useState([])
+  const [avatarOpen, setAvatarOpen] = useState(false)
+  const avatarRef = useRef(null)
+
+  async function handleLogout() {
+    setAvatarOpen(false)
+    await supabase.auth.signOut()
+    resetUser()
+    const cachedOnboarded = localStorage.getItem('isOnboarded')
+    const cachedRunCounts = localStorage.getItem('fypro_run_counts')
+    localStorage.clear()
+    if (cachedOnboarded) localStorage.setItem('isOnboarded', cachedOnboarded)
+    if (cachedRunCounts) localStorage.setItem('fypro_run_counts', cachedRunCounts)
+    sessionStorage.clear()
+    navigate('/')
+  }
+
+  useEffect(() => {
+    function handleOutside(e) {
+      if (avatarRef.current && !avatarRef.current.contains(e.target)) setAvatarOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
+  return (
+    <header
+      className="h-[68px] flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
+      style={{ background: 'var(--bg-sidebar)' }}
+    >
+      {/* Mobile hamburger */}
+      <button className="db-menu-toggle" onClick={onToggleSidebar} aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      {/* Greeting */}
+      <div className="db-header-enter">
+        <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
+          {greeting}, {firstName}
+        </div>
+        <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
+          {STUDENT.stepsCompleted === STUDENT.totalSteps
+            ? 'All 6 steps complete — you\'re defense ready.'
+            : STUDENT.stepsCompleted > 0
+            ? `${STUDENT.stepsCompleted} step${STUDENT.stepsCompleted === 1 ? '' : 's'} done — Step ${STUDENT.currentStepId} is waiting.`
+            : 'Your research journey is ready to begin.'}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="flex items-center gap-2.5"
+      >
+        <motion.button
+          whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
+          whileTap={{ scale: 0.96 }}
+          aria-label="Start a new project"
+          onClick={onNewSession}
+          className="flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 text-white border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
+        >
+          <PlusIcon /> New Session
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label="Notifications"
+          onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
+          className="db-header__icon-btn relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
+        >
+          <BellIcon />
+          {notifications.length > 0 && (
+            <span
+              aria-label={`${notifications.length} unread notifications`}
+              className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center font-mono font-bold"
+              style={{ fontSize: '0.55rem' }}
+            >
+              {notifications.length}
+            </span>
+          )}
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          onClick={toggleTheme}
+          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
+        >
+          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label="Settings"
+          onClick={() => navigate('/settings')}
+          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
+        >
+          <GearIcon />
+        </motion.button>
+
+        {/* Avatar + dropdown */}
+        <div className="relative" ref={avatarRef}>
+          <motion.button
+            whileHover={{ scale: 1.07, boxShadow: '0 0 18px rgba(0,102,255,0.3)' }}
+            aria-label={`Profile: ${STUDENT.name}`}
+            aria-expanded={avatarOpen}
+            onClick={() => setAvatarOpen((v) => !v)}
+            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-white cursor-pointer overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
+              border: '2px solid rgba(0,102,255,0.35)',
+              fontSize: '0.68rem',
+              fontFamily: "'DM Serif Display', serif",
+            }}
+          >
+            {STUDENT.avatarUrl
+              ? <img src={STUDENT.avatarUrl} alt={STUDENT.name} className="w-full h-full object-cover" />
+              : STUDENT.initials}
+          </motion.button>
+
+          <AnimatePresence>
+            {avatarOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="absolute right-0 mt-2 w-48 rounded-xl overflow-hidden"
+                style={{
+                  top: '100%',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--dropdown-border)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
+                }}
+              >
+                <div className="px-4 py-3 border-b border-slate-800/80">
+                  <div className="font-sans text-[0.8rem] font-semibold text-white truncate">{STUDENT.name}</div>
+                  <div className="font-mono text-[0.65rem] text-slate-500 mt-0.5">{planLabel}</div>
+                </div>
+                <div className="py-1.5">
+                  <Link to="/profile" onClick={() => setAvatarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150">
+                    <span className="font-sans text-[0.82rem] text-slate-300">Profile</span>
+                  </Link>
+                  <Link to="/settings" onClick={() => setAvatarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150">
+                    <span className="font-sans text-[0.82rem] text-slate-300">Settings</span>
+                  </Link>
+                  <Link to="/account/referrals" onClick={() => setAvatarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150">
+                    <span className="font-sans text-[0.82rem] text-slate-300">My Referrals</span>
+                  </Link>
+                  <div className="mx-3 my-1 h-px" style={{ background: 'var(--border-color)' }} />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-2.5 w-full text-left hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-red-400">Sign out</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Gradient border bottom */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+        style={{ background: 'linear-gradient(to right, transparent 0%, rgba(0,102,255,0.18) 20%, rgba(0,102,255,0.45) 50%, rgba(0,102,255,0.18) 80%, transparent 100%)' }}
+      />
+    </header>
+  )
+}

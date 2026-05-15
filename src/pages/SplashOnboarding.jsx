@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { UNIVERSITIES, getFaculties, getDepartments } from '../data/universities'
 import { motion, AnimatePresence } from 'framer-motion'
-import { updateUserProfile } from '../lib/supabase-client'
+import { updateUserProfile } from '../lib/db'
 import { supabase } from '../lib/supabase'
 
 
