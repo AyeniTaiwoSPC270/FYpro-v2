@@ -147,7 +147,10 @@
       "mcp__plugin_vercel_vercel__get_project",
       "mcp__plugin_vercel_vercel__deploy_to_vercel",
       "Bash(npm i *)",
-      "Skill(brainstorming)"
+      "Skill(brainstorming)",
+      "Bash(npx skillfish *)",
+      "Skill(security-review)",
+      "Skill(vercel:deploy)"
     ]
   }
 }

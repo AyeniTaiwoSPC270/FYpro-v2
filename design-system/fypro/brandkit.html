@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FYPro — Brand Identity System 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: #04060D;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 52px 24px 80px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* ════════════════════════════════
+       CANVAS
+    ════════════════════════════════ */
+    .brandkit {
+      width: 1200px;
+      max-width: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04),
+        0 40px 100px rgba(0,0,0,0.8),
+        0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    /* ════════════════════════════════
+       HEADER
+    ════════════════════════════════ */
+    .bk-header {
+      background: #08101C;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .bk-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bk-header-mark { width: 26px; height: auto; }
+
+    .bk-header-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    .bk-header-sep {
+      width: 1px;
+      height: 16px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 4px;
+    }
+
+    .bk-header-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .bk-header-right {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .bk-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* ════════════════════════════════
+       GRID
+    ════════════════════════════════ */
+    .bk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: #020408;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      height: 280px;
+    }
+
+    .p-label {
+      position: absolute;
+      bottom: 14px;
+      left: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.16);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .p-label.on-light { color: rgba(13,27,42,0.22); }
+
+    .p-num {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(255,255,255,0.1);
+      letter-spacing: 1px;
+    }
+
+    /* ════════════════════════════════
+       P1 — LOGO COVER
+    ════════════════════════════════ */
+    .panel-logo {
+      background: #060E18;
+      background-image: radial-gradient(circle, rgba(0,102,255,0.07) 1px, transparent 1px);
+      background-size: 24px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark-lg {
+      width: 76px;
+      height: auto;
+      margin-bottom: 22px;
+      filter: drop-shadow(0 0 28px rgba(0,102,255,0.55));
+    }
+
+    .logo-wordmark {
+      font-family: 'DM Serif Display', serif;
+      font-size: 42px;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .logo-wordmark .pro { color: #0066FF; }
+
+    .logo-tagline {
+      margin-top: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.38);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .logo-url {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      color: rgba(255,255,255,0.14);
+      letter-spacing: 1px;
+    }
+
+    /* ════════════════════════════════
+       P2 — MARK CONSTRUCTION
+    ════════════════════════════════ */
+    .panel-construction {
+      background: #0D1B2A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ════════════════════════════════
+       P3 — DIGITAL APP
+    ════════════════════════════════ */
+    .panel-app {
+      background: #0A1522;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-bar {
+      background: #060E18;
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+
+    .b-dots { display: flex; gap: 5px; }
+    .b-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .b-dot-r { background: #FF5F57; }
+    .b-dot-y { background: #FFBD2E; }
+    .b-dot-g { background: #28C840; }
+
+    .b-url {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .app-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .app-sb {
+      width: 54px;
+      background: linear-gradient(180deg, #0D1B2A 0%, #091420 100%);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 10px;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .sb-mark { width: 20px; height: auto; margin-bottom: 6px; }
+
+    .sb-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .sb-done { background: #0066FF; }
+    .sb-active { background: #0066FF; box-shadow: 0 0 8px rgba(0,102,255,0.7); }
+    .sb-off { background: rgba(255,255,255,0.14); }
+
+    .app-main {
+      flex: 1;
+      background-color: #F0F4F8;
+      background-image: radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px);
+      background-size: 18px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .mini-card {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid rgba(13,27,42,0.09);
+      padding: 14px 16px;
+      width: 100%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .mc-step {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: rgba(13,27,42,0.38);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .mc-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      color: #0D1B2A;
+      margin-bottom: 12px;
+    }
+
+    .mc-nav {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .mc-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .mc-done { background: #0066FF; }
+    .mc-act { background: #0066FF; box-shadow: 0 0 0 2.5px rgba(0,102,255,0.2); }
+    .mc-off { background: rgba(13,27,42,0.15); }
+    .mc-sep { height: 1px; width: 10px; background: rgba(13,27,42,0.12); }
+    .mc-sep-done { background: #0066FF; }
+
+    .mc-btn {
+      background: #0066FF;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* ════════════════════════════════
+       P4 — BRAND VOICE
+    ════════════════════════════════ */
+    .panel-voice {
+      background: #040A12;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 44px 38px;
+    }
+
+    .v-eye {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+      margin-bottom: 16px;
+    }
+
+    .v-l1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 38px;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.1;
+    }
+
+    .v-l2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 38px;
+      color: #0066FF;
+      line-height: 1.1;
+    }
+
+    .v-rule {
+      width: 36px;
+      height: 1.5px;
+      background: rgba(255,255,255,0.1);
+      margin: 22px 0 12px;
+    }
+
+    .v-sub {
+      font-family: 'Poppins', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.06em;
+    }
+
+    /* ════════════════════════════════
+       P5 — COLOR SYSTEM
+    ════════════════════════════════ */
+    .panel-colors {
+      background: #0D1B2A;
+      padding: 28px 28px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .c-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+      margin-bottom: 20px;
+    }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px 12px;
+      flex: 1;
+    }
+
+    .swatch { display: flex; flex-direction: column; gap: 8px; }
+
+    .sw-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+    }
+
+    .sw-name {
+      font-family: 'Poppins', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.2;
+    }
+
+    .sw-hex {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(255,255,255,0.28);
+    }
+
+    /* ════════════════════════════════
+       P6 — TYPOGRAPHY
+    ════════════════════════════════ */
+    .panel-type {
+      background: #060E18;
+      padding: 28px 28px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .t-row {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .t-row:first-child { padding-top: 0; }
+    .t-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .t-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+    }
+
+    .t-serif {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.1;
+    }
+
+    .t-sans {
+      font-family: 'Poppins', sans-serif;
+      font-size: 12.5px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.48);
+      line-height: 1.55;
+    }
+
+    .t-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: #16A34A;
+      letter-spacing: 0.04em;
+    }
+
+    /* ════════════════════════════════
+       P7 — CERTIFICATE
+    ════════════════════════════════ */
+    .panel-cert {
+      background: linear-gradient(140deg, #060E18 0%, #0D1B2A 55%, #0A1826 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+    }
+
+    .cert {
+      width: 256px;
+      background: linear-gradient(160deg, #0D1B2A 0%, #0F2235 100%);
+      border: 1px solid rgba(245,158,11,0.22);
+      border-radius: 14px;
+      padding: 22px 22px 18px;
+      box-shadow:
+        0 12px 40px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .cert-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .cert-logo { width: 22px; height: auto; }
+
+    .cert-brand {
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .cert-div {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(245,158,11,0.45), rgba(245,158,11,0.08));
+      margin-bottom: 14px;
+    }
+
+    .cert-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.5px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #F59E0B;
+      margin-bottom: 8px;
+    }
+
+    .cert-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 21px;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+
+    .cert-uni {
+      font-family: 'Poppins', sans-serif;
+      font-size: 10px;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 12px;
+    }
+
+    .cert-serial {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .cert-score-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .cert-score-label {
+      font-family: 'Poppins', sans-serif;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .cert-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      color: #16A34A;
+      line-height: 1;
+      filter: drop-shadow(0 0 8px rgba(22,163,74,0.4));
+    }
+
+    /* ════════════════════════════════
+       P8 — BRAND WORLD
+    ════════════════════════════════ */
+    .panel-world {
+      background: #030810;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .world-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 64'%3E%3Cpath d='M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z' fill='%230066FF'/%3E%3Cpath d='M17 20 L39 20' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M17 29 L31 29' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M17 20 L17 43' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='41' cy='43' r='5' fill='%2316A34A'/%3E%3C/svg%3E");
+      background-size: 42px 48px;
+      background-repeat: repeat;
+      opacity: 0.045;
+    }
+
+    .world-glow {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(0,102,255,0.18) 0%, transparent 65%);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .world-mark {
+      width: 82px;
+      height: auto;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 22px rgba(0,102,255,0.65));
+      margin-bottom: 18px;
+    }
+
+    .world-line {
+      position: relative;
+      z-index: 2;
+      font-family: 'Poppins', sans-serif;
+      font-size: 11.5px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.36);
+      letter-spacing: 0.06em;
+    }
+
+    /* ════════════════════════════════
+       P9 — UI SYSTEM
+    ════════════════════════════════ */
+    .panel-ui {
+      background-color: #F0F4F8;
+      background-image: radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px);
+      background-size: 20px 20px;
+      padding: 26px 24px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .ui-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(13,27,42,0.3);
+      margin-bottom: 6px;
+    }
+
+    .ui-block { display: flex; flex-direction: column; }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 2px;
+      background: #0D1B2A;
+      border-radius: 10px;
+      padding: 8px 16px;
+      width: fit-content;
+    }
+
+    .score-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px;
+      font-weight: 700;
+      color: #16A34A;
+      line-height: 1;
+    }
+
+    .score-denom {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .step-dots {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .s-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .s-done { background: #0066FF; }
+    .s-active { background: #0066FF; box-shadow: 0 0 0 3px rgba(0,102,255,0.22); }
+    .s-off { background: rgba(13,27,42,0.16); border: 1.5px solid rgba(13,27,42,0.2); }
+
+    .s-line {
+      height: 1.5px;
+      width: 18px;
+      background: rgba(13,27,42,0.14);
+    }
+
+    .s-line-done { background: #0066FF; }
+
+    .chips { display: flex; gap: 7px; flex-wrap: wrap; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .chip-ok {
+      background: rgba(22,163,74,0.1);
+      color: #16A34A;
+      border: 1px solid rgba(22,163,74,0.22);
+    }
+
+    .chip-blue {
+      background: rgba(0,102,255,0.09);
+      color: #0066FF;
+      border: 1px solid rgba(0,102,255,0.2);
+    }
+
+    .chip-red {
+      background: rgba(220,38,38,0.08);
+      color: #DC2626;
+      border: 1px solid rgba(220,38,38,0.18);
+    }
+
+    .chip-amber {
+      background: rgba(245,158,11,0.1);
+      color: #D97706;
+      border: 1px solid rgba(245,158,11,0.2);
+    }
+
+    .prog-wrap { display: flex; flex-direction: column; gap: 5px; }
+
+    .prog-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .prog-text {
+      font-family: 'Poppins', sans-serif;
+      font-size: 9.5px;
+      color: rgba(13,27,42,0.45);
+    }
+
+    .prog-track {
+      height: 4px;
+      background: rgba(13,27,42,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .prog-fill {
+      height: 100%;
+      background: #0066FF;
+      border-radius: 999px;
+    }
+
+    /* ════════════════════════════════
+       FOOTER
+    ════════════════════════════════ */
+    .bk-footer {
+      background: #08101C;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .bk-footer-l, .bk-footer-r {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      color: rgba(255,255,255,0.13);
+      letter-spacing: 1.2px;
+    }
+
+    /* ════════════════════════════════
+       LOGO SVG SHARED
+    ════════════════════════════════ */
+    .shield-svg { overflow: visible; }
+  </style>
+</head>
+<body>
+
+<div class="brandkit">
+
+  <!-- ── HEADER ── -->
+  <div class="bk-header">
+    <div class="bk-header-left">
+      <svg class="bk-header-mark shield-svg" viewBox="0 0 56 64" fill="none">
+        <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF"/>
+        <path d="M17 20 L39 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 29 L31 29" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 20 L17 43" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="41" cy="43" r="5" fill="#16A34A"/>
+      </svg>
+      <span class="bk-header-name">FYPro</span>
+      <div class="bk-header-sep"></div>
+      <span class="bk-header-sub">Brand Identity System</span>
+    </div>
+    <div class="bk-header-right">
+      <span class="bk-tag">Dark Academia × Precision Engineering × African Digital</span>
+      <span class="bk-tag" style="color:rgba(255,255,255,0.1)">v2.0 — 2026</span>
+    </div>
+  </div>
+
+  <!-- ── GRID ── -->
+  <div class="bk-grid">
+
+    <!-- ── P1 LOGO COVER ── -->
+    <div class="panel panel-logo">
+      <svg class="logo-mark-lg shield-svg" viewBox="0 0 56 64" fill="none">
+        <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF"/>
+        <path d="M17 20 L39 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 29 L31 29" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 20 L17 43" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="41" cy="43" r="5" fill="#16A34A"/>
+      </svg>
+      <div class="logo-wordmark">FY<span class="pro">Pro</span></div>
+      <div class="logo-tagline">Your Final Year Companion</div>
+      <span class="logo-url">fypro.com.ng</span>
+      <span class="p-label">01 — Primary Mark</span>
+    </div>
+
+    <!-- ── P2 MARK CONSTRUCTION ── -->
+    <div class="panel panel-construction">
+      <svg style="width:220px;height:auto;overflow:visible" viewBox="0 0 220 260" fill="none">
+        <!-- Grid -->
+        <defs>
+          <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0L0 0 0 20" stroke="rgba(255,255,255,0.05)" stroke-width="0.5" fill="none"/>
+          </pattern>
+        </defs>
+        <rect width="220" height="260" fill="url(#g)"/>
+        <!-- Construction geometry -->
+        <circle cx="110" cy="125" r="78" stroke="rgba(0,102,255,0.14)" stroke-width="0.75" stroke-dasharray="4 4" fill="none"/>
+        <circle cx="110" cy="125" r="56" stroke="rgba(0,102,255,0.1)" stroke-width="0.75" stroke-dasharray="3 5" fill="none"/>
+        <circle cx="110" cy="125" r="96" stroke="rgba(0,102,255,0.07)" stroke-width="0.75" stroke-dasharray="2 6" fill="none"/>
+        <!-- Crosshairs -->
+        <line x1="110" y1="8" x2="110" y2="248" stroke="rgba(255,255,255,0.06)" stroke-width="0.75"/>
+        <line x1="8" y1="125" x2="212" y2="125" stroke="rgba(255,255,255,0.06)" stroke-width="0.75"/>
+        <!-- Diagonal guides -->
+        <line x1="38" y1="53" x2="182" y2="197" stroke="rgba(255,255,255,0.04)" stroke-width="0.75"/>
+        <line x1="182" y1="53" x2="38" y2="197" stroke="rgba(255,255,255,0.04)" stroke-width="0.75"/>
+        <!-- Shield mark centered -->
+        <g transform="translate(82, 91)">
+          <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF" opacity="0.92"/>
+          <path d="M17 20 L39 20" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M17 29 L31 29" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M17 20 L17 43" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="41" cy="43" r="4.5" fill="#16A34A"/>
+        </g>
+        <!-- Dimension markers -->
+        <line x1="79" y1="93" x2="79" y2="155" stroke="rgba(255,255,255,0.1)" stroke-width="0.75"/>
+        <line x1="76" y1="93" x2="82" y2="93" stroke="rgba(255,255,255,0.18)" stroke-width="0.75"/>
+        <line x1="76" y1="155" x2="82" y2="155" stroke="rgba(255,255,255,0.18)" stroke-width="0.75"/>
+        <text x="62" y="128" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.25)" text-anchor="middle">64</text>
+        <!-- Width marker -->
+        <line x1="84" y1="160" x2="138" y2="160" stroke="rgba(255,255,255,0.1)" stroke-width="0.75"/>
+        <line x1="84" y1="157" x2="84" y2="163" stroke="rgba(255,255,255,0.18)" stroke-width="0.75"/>
+        <line x1="138" y1="157" x2="138" y2="163" stroke="rgba(255,255,255,0.18)" stroke-width="0.75"/>
+        <text x="111" y="172" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.25)" text-anchor="middle">56</text>
+        <!-- Corner labels -->
+        <text x="108" y="90" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(0,102,255,0.45)">▲</text>
+        <!-- Point labels -->
+        <text x="139" y="103" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.2)">B</text>
+        <text x="76"  y="103" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.2)">C</text>
+        <text x="106" y="160" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(22,163,74,0.55)">●</text>
+        <!-- Title -->
+        <text x="12" y="248" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="rgba(255,255,255,0.18)" letter-spacing="2">MARK GEOMETRY</text>
+      </svg>
+      <span class="p-label">02 — Construction</span>
+      <span class="p-num">02</span>
+    </div>
+
+    <!-- ── P3 DIGITAL APPLICATION ── -->
+    <div class="panel panel-app">
+      <div class="app-bar">
+        <div class="b-dots">
+          <div class="b-dot b-dot-r"></div>
+          <div class="b-dot b-dot-y"></div>
+          <div class="b-dot b-dot-g"></div>
+        </div>
+        <div class="b-url">fypro.com.ng/app</div>
+      </div>
+      <div class="app-body">
+        <div class="app-sb">
+          <svg class="sb-mark shield-svg" viewBox="0 0 56 64" fill="none">
+            <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF"/>
+            <path d="M17 20 L39 20" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <path d="M17 29 L31 29" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <path d="M17 20 L17 43" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="41" cy="43" r="6" fill="#16A34A"/>
+          </svg>
+          <div class="sb-dot sb-done"></div>
+          <div class="sb-dot sb-done"></div>
+          <div class="sb-dot sb-active"></div>
+          <div class="sb-dot sb-off"></div>
+          <div class="sb-dot sb-off"></div>
+          <div class="sb-dot sb-off"></div>
+        </div>
+        <div class="app-main">
+          <div class="mini-card">
+            <div class="mc-step">Step 03 · Methodology Advisor</div>
+            <div class="mc-title">Research Methodology</div>
+            <div class="mc-nav">
+              <div class="mc-dot mc-done"></div><div class="mc-sep mc-sep-done"></div>
+              <div class="mc-dot mc-done"></div><div class="mc-sep mc-sep-done"></div>
+              <div class="mc-dot mc-act"></div><div class="mc-sep"></div>
+              <div class="mc-dot mc-off"></div><div class="mc-sep"></div>
+              <div class="mc-dot mc-off"></div><div class="mc-sep"></div>
+              <div class="mc-dot mc-off"></div>
+            </div>
+            <button class="mc-btn">Analyse Framework →</button>
+          </div>
+        </div>
+      </div>
+      <span class="p-label">03 — Digital Application</span>
+    </div>
+
+    <!-- ── P4 BRAND VOICE ── -->
+    <div class="panel panel-voice">
+      <div class="v-eye">Brand Voice</div>
+      <div class="v-l1">Your Final Year</div>
+      <div class="v-l2">Companion.</div>
+      <div class="v-rule"></div>
+      <div class="v-sub">Built for Nigerian university students.</div>
+      <span class="p-label">04 — Brand Essence</span>
+      <span class="p-num" style="color:rgba(255,255,255,0.08)">04</span>
+    </div>
+
+    <!-- ── P5 COLOR SYSTEM ── -->
+    <div class="panel panel-colors">
+      <div class="c-title">Color System</div>
+      <div class="swatches">
+        <div class="swatch">
+          <div class="sw-circle" style="background:#060E18;border:1px solid rgba(255,255,255,0.08)"></div>
+          <div class="sw-name">Deep Navy</div>
+          <div class="sw-hex">#060E18</div>
+        </div>
+        <div class="swatch">
+          <div class="sw-circle" style="background:#0D1B2A"></div>
+          <div class="sw-name">Dark Navy</div>
+          <div class="sw-hex">#0D1B2A</div>
+        </div>
+        <div class="swatch">
+          <div class="sw-circle" style="background:#0066FF"></div>
+          <div class="sw-name">Brand Blue</div>
+          <div class="sw-hex">#0066FF</div>
+        </div>
+        <div class="swatch">
+          <div class="sw-circle" style="background:#16A34A"></div>
+          <div class="sw-name">Success</div>
+          <div class="sw-hex">#16A34A</div>
+        </div>
+        <div class="swatch">
+          <div class="sw-circle" style="background:#F59E0B"></div>
+          <div class="sw-name">Amber</div>
+          <div class="sw-hex">#F59E0B</div>
+        </div>
+        <div class="swatch">
+          <div class="sw-circle" style="background:#F0F4F8;border:1px solid rgba(13,27,42,0.14)"></div>
+          <div class="sw-name" style="color:rgba(255,255,255,0.4)">Surface</div>
+          <div class="sw-hex">#F0F4F8</div>
+        </div>
+      </div>
+      <span class="p-label">05 — Palette</span>
+    </div>
+
+    <!-- ── P6 TYPOGRAPHY ── -->
+    <div class="panel panel-type">
+      <div class="t-row">
+        <div class="t-label">DM Serif Display — Display &amp; Headings</div>
+        <div class="t-serif">Defense Ready.</div>
+      </div>
+      <div class="t-row">
+        <div class="t-label">Poppins — Body &amp; UI Text</div>
+        <div class="t-sans">Your methodology is strong and ready for committee review.</div>
+      </div>
+      <div class="t-row">
+        <div class="t-label">JetBrains Mono — Scores &amp; Technical Labels</div>
+        <div class="t-mono">SCORE 08/10</div>
+      </div>
+      <span class="p-label">06 — Typography</span>
+    </div>
+
+    <!-- ── P7 CERTIFICATE ── -->
+    <div class="panel panel-cert">
+      <div class="cert">
+        <div class="cert-head">
+          <svg class="cert-logo shield-svg" viewBox="0 0 56 64" fill="none">
+            <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF"/>
+            <path d="M17 20 L39 20" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <path d="M17 29 L31 29" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <path d="M17 20 L17 43" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="41" cy="43" r="6" fill="#16A34A"/>
+          </svg>
+          <span class="cert-brand">FYPro</span>
+        </div>
+        <div class="cert-div"></div>
+        <div class="cert-badge">Defense Ready Certificate</div>
+        <div class="cert-name">Taiwo Ayeni</div>
+        <div class="cert-uni">University of Lagos · Computer Science</div>
+        <div class="cert-serial">FYP-2026-000001</div>
+        <div class="cert-score-row">
+          <span class="cert-score-label">Panel Score</span>
+          <span class="cert-score">9/10</span>
+        </div>
+      </div>
+      <span class="p-label">07 — Certificate</span>
+    </div>
+
+    <!-- ── P8 BRAND WORLD ── -->
+    <div class="panel panel-world">
+      <div class="world-bg"></div>
+      <div class="world-glow"></div>
+      <svg class="world-mark shield-svg" viewBox="0 0 56 64" fill="none">
+        <path d="M28 2 L52 12 L52 35 Q52 52 28 62 Q4 52 4 35 L4 12 Z" fill="#0066FF"/>
+        <path d="M17 20 L39 20" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 29 L31 29" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <path d="M17 20 L17 43" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="41" cy="43" r="5" fill="#16A34A"/>
+      </svg>
+      <div class="world-line">Built for Nigerian students.</div>
+      <span class="p-label">08 — Brand World</span>
+    </div>
+
+    <!-- ── P9 UI SYSTEM ── -->
+    <div class="panel panel-ui">
+
+      <div class="ui-block">
+        <div class="ui-label">Defense Score</div>
+        <div class="score-badge">
+          <span class="score-val">8</span>
+          <span class="score-denom">/10</span>
+        </div>
+      </div>
+
+      <div class="ui-block">
+        <div class="ui-label">Step Progress — 3 of 6</div>
+        <div class="step-dots">
+          <div class="s-dot s-done"></div><div class="s-line s-line-done"></div>
+          <div class="s-dot s-done"></div><div class="s-line s-line-done"></div>
+          <div class="s-dot s-active"></div><div class="s-line"></div>
+          <div class="s-dot s-off"></div><div class="s-line"></div>
+          <div class="s-dot s-off"></div><div class="s-line"></div>
+          <div class="s-dot s-off"></div>
+        </div>
+      </div>
+
+      <div class="ui-block">
+        <div class="ui-label">Status Labels</div>
+        <div class="chips">
+          <span class="chip chip-ok">Validated</span>
+          <span class="chip chip-blue">Defense Pack</span>
+          <span class="chip chip-red">Red Flag</span>
+          <span class="chip chip-amber">Review</span>
+        </div>
+      </div>
+
+      <div class="ui-block">
+        <div class="prog-wrap">
+          <div class="prog-meta">
+            <span class="prog-text" style="font-family:'JetBrains Mono',monospace;font-size:9px;">Workflow Progress</span>
+            <span class="prog-text" style="font-family:'JetBrains Mono',monospace;font-size:9px;">50%</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-fill" style="width:50%"></div>
+          </div>
+        </div>
+      </div>
+
+      <span class="p-label on-light">09 — UI System</span>
+    </div>
+
+  </div><!-- end grid -->
+
+  <!-- ── FOOTER ── -->
+  <div class="bk-footer">
+    <span class="bk-footer-l">FYPro Brand Identity System — Confidential · Dark Academia × Precision Engineering × African Digital</span>
+    <span class="bk-footer-r">fypro.com.ng · CBC UNILAG Hackathon 2026 · v2.0</span>
+  </div>
+
+</div>
+
+</body>
+</html>

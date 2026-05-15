@@ -129,6 +129,19 @@ export function AppProvider({ children }) {
     setState(DEFAULT_STATE)
   }
 
+  // Resets project data only — preserves personal info (name, university, faculty,
+  // department, level). Use this when starting a new project, not when signing out.
+  function clearProjectData() {
+    setState(prev => ({
+      ...DEFAULT_STATE,
+      name:       prev.name,
+      university: prev.university,
+      faculty:    prev.faculty,
+      department: prev.department,
+      level:      prev.level,
+    }))
+  }
+
   // Navigate to any accessible step by 0-based index
   function navigateStep(stepIndex) {
     setState(prev => ({ ...prev, currentStep: stepIndex }))
@@ -180,6 +193,7 @@ export function AppProvider({ children }) {
       state,
       set,
       clearState,
+      clearProjectData,
       navigateStep,
       completeStep,
       studentContext,
