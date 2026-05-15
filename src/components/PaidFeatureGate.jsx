@@ -48,11 +48,11 @@ function UpgradeCard({ requiredPack }) {
       padding: '32px 16px',
     }}>
       <div style={{
-        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+        background: 'var(--bg-card)',
         borderRadius: '16px',
-        border: '1px solid rgba(13, 27, 42, 0.1)',
+        border: '1px solid rgba(255,255,255,0.08)',
         borderLeft: '4px solid #0066FF',
-        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
         padding: '40px',
         maxWidth: '480px',
         width: '100%',
@@ -84,7 +84,7 @@ function UpgradeCard({ requiredPack }) {
         <p style={{
           fontFamily: "'DM Serif Display', serif",
           fontSize: '1.5rem',
-          color: '#0D1B2A',
+          color: 'var(--text-primary)',
           marginBottom: '12px',
           lineHeight: 1.3,
         }}>
@@ -94,7 +94,7 @@ function UpgradeCard({ requiredPack }) {
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.875rem',
-          color: 'rgba(13, 27, 42, 0.6)',
+          color: 'var(--text-secondary)',
           lineHeight: 1.6,
           marginBottom: '24px',
         }}>
@@ -114,7 +114,7 @@ function UpgradeCard({ requiredPack }) {
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '0.75rem',
-            color: 'rgba(13, 27, 42, 0.5)',
+            color: 'rgba(255,255,255,0.4)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
@@ -124,7 +124,7 @@ function UpgradeCard({ requiredPack }) {
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '1rem',
             fontWeight: 600,
-            color: '#0D1B2A',
+            color: 'var(--text-primary)',
           }}>
             {meta.price}
           </span>

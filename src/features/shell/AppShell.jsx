@@ -56,8 +56,8 @@ function RunLimitBanner({ stepKey, onUpgrade }) {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '16px',
-      background: '#FFFBEB',
-      border: '1px solid rgba(245, 158, 11, 0.3)',
+      background: 'rgba(245,158,11,0.06)',
+      border: '1px solid rgba(245,158,11,0.2)',
       borderLeft: '4px solid #F59E0B',
       borderRadius: '12px',
       padding: '14px 20px',
@@ -66,7 +66,7 @@ function RunLimitBanner({ stepKey, onUpgrade }) {
       <p style={{
         fontFamily: "'Poppins', sans-serif",
         fontSize: '0.875rem',
-        color: '#0D1B2A',
+        color: 'var(--text-primary)',
         margin: 0,
         lineHeight: 1.5,
       }}>

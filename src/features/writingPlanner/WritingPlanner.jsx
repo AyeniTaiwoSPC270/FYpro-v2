@@ -269,9 +269,9 @@ export default function WritingPlanner() {
               <p style={{
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: '0.8125rem',
-                color: 'rgba(13, 27, 42, 0.55)',
-                background: '#FFFBEB',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
+                color: 'rgba(255,255,255,0.5)',
+                background: 'rgba(245,158,11,0.06)',
+                border: '1px solid rgba(245,158,11,0.2)',
                 borderRadius: '8px',
                 padding: '10px 14px',
                 margin: '12px 0',
