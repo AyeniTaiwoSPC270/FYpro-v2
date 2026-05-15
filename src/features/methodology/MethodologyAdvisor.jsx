@@ -71,7 +71,7 @@ export default function MethodologyAdvisor() {
         setMaSection('input')
         setMaBtnDisabled(false)
         setMaError('Request timed out. Please check your connection and try again.')
-      }, 30000)
+      }, 55000)
     } else {
       clearTimeout(maLoadingTimerRef.current)
     }
@@ -85,7 +85,7 @@ export default function MethodologyAdvisor() {
         setDiSection('input')
         setDiGenBtnDisabled(false)
         setDiError('Request timed out. Please check your connection and try again.')
-      }, 30000)
+      }, 55000)
     } else {
       clearTimeout(diLoadingTimerRef.current)
     }
