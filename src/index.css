@@ -10277,3 +10277,194 @@ body {
 .light .dp-results-bar--merit .dp-results-bar__label { color: #2563EB !important; }
 [data-theme="light"] .dp-results-bar--distinction .dp-results-bar__label,
 .light .dp-results-bar--distinction .dp-results-bar__label { color: #059669 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DEFENCE SIMULATOR — Academic Tribunal Redesign (May 2026)
+   All rules below override earlier dp- overlay rules only.
+   Logic, state, and handlers are unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. HEADER ──────────────────────────────────────────────────────────────── */
+
+/* Hide the old text title — replaced by shield SVG in JSX */
+.dp-defense-title { display: none !important; }
+
+/* Center panel label — absolutely positioned so logo+button stay at edges */
+.dp-defense-panel-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* End button — flat outlined red, no fill */
+.dp-defense-end-btn {
+  background: transparent !important;
+  border: 1px solid rgba(220, 38, 38, 0.4) !important;
+  color: rgba(220, 38, 38, 0.7) !important;
+  box-shadow: none !important;
+}
+.dp-defense-end-btn:hover {
+  background: transparent !important;
+  border-color: rgba(220, 38, 38, 0.8) !important;
+  color: #F87171 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* 2. QUESTION COUNTER ────────────────────────────────────────────────────── */
+
+.dp-counter-text {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dp-counter-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+.dp-counter-dot--active {
+  background: #0066FF !important;
+  box-shadow: 0 0 8px rgba(0, 102, 255, 0.6) !important;
+  transform: scale(1) !important;
+}
+.dp-counter-dot--done {
+  background: rgba(0, 102, 255, 0.4) !important;
+}
+
+/* 3. EXAMINER BUBBLE ─────────────────────────────────────────────────────── */
+
+.dp-examiner-label {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.6rem !important;
+  letter-spacing: 0.15em !important;
+}
+.dp-examiner-label--methodologist     { color: #0066FF !important; }
+.dp-examiner-label--subject-expert    { color: #7C3AED !important; }
+.dp-examiner-label--external-examiner { color: #DC2626 !important; }
+
+.dp-examiner-bubble {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 16px 20px !important;
+}
+.dp-examiner-bubble--methodologist     { border-left-color: #0066FF !important; }
+.dp-examiner-bubble--subject-expert    { border-left-color: #7C3AED !important; }
+.dp-examiner-bubble--external-examiner { border-left-color: #DC2626 !important; }
+
+.dp-examiner-text {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.05rem !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 1.6 !important;
+}
+
+/* 4. STUDENT INPUT AREA ──────────────────────────────────────────────────── */
+
+.dp-student-response-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+.dp-student-input {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.dp-student-input:focus {
+  border-color: rgba(0, 102, 255, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.08) !important;
+}
+
+.dp-send-btn {
+  background: #0066FF !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: none !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+.dp-send-btn::after { display: none !important; }
+.dp-send-btn:hover:not(:disabled) {
+  background: #0052CC !important;
+  transform: translateY(-1px) !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+.dp-send-btn:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+.dp-send-btn:disabled {
+  background: #0066FF !important;
+  opacity: 0.45 !important;
+}
+
+/* 5. SESSION COMPLETE STATE ──────────────────────────────────────────────── */
+
+.dp-circuit-complete {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+.dp-circuit-complete__heading {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.3rem !important;
+}
+
+/* 6. SESSION TERMINATED STATE ───────────────────────────────────────────── */
+
+.dp-circuit-terminated {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 2px solid rgba(220, 38, 38, 0.5) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+.dp-circuit-terminated__heading {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.3rem !important;
+}
+
+/* 7. PANEL WARNING — amber, left-accent, no red fill ────────────────────── */
+
+.dp-circuit-warning {
+  background: rgba(245, 158, 11, 0.06) !important;
+  border: none !important;
+  border-left: 3px solid #F59E0B !important;
+  border-radius: 0 8px 8px 0 !important;
+  padding: 12px 16px !important;
+}
+.dp-circuit-warning__icon {
+  font-size: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+}
+.dp-circuit-warning__heading { color: #F59E0B !important; }
+
+/* 8. OVERALL CHAT + INPUT MAX-WIDTH: 720px ──────────────────────────────── */
+
+.dp-chat-area  { max-width: 720px !important; }
+.dp-input-area { max-width: 720px !important; }

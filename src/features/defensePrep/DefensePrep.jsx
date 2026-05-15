@@ -130,7 +130,7 @@ function ExaminerBubble({ examiner, text, onReady, voicePaused, onRetry }) {
           </span>
         )}
       </div>
-      <div className={`dp-examiner-bubble${bubbleVisible ? ' dp-examiner-bubble--visible' : ''}`}>
+      <div className={['dp-examiner-bubble', examinerNameToSlug(examiner) ? `dp-examiner-bubble--${examinerNameToSlug(examiner)}` : '', bubbleVisible ? 'dp-examiner-bubble--visible' : ''].filter(Boolean).join(' ')}>
         <p className="dp-examiner-text">{text}</p>
       </div>
     </div>
@@ -1481,7 +1481,10 @@ export default function DefensePrep() {
 
           {/* Header */}
           <div className="dp-defense-header">
-            <span className="dp-defense-title">FYPro — Defence Simulator</span>
+            <svg width="28" height="28" viewBox="0 0 256 256" fill="none" aria-label="FYPro" style={{ flexShrink: 0 }}>
+              <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z" fill="#0066FF" />
+            </svg>
+            <span className="dp-defense-panel-label">DEFENCE EXAMINATION PANEL</span>
             <button
               className="dp-defense-end-btn"
               id="dp-end-btn"
@@ -1573,7 +1576,7 @@ export default function DefensePrep() {
                     {/* Layer 2 — 2 low scores: panel warning */}
                     {sessionWarned && (
                       <div className="dp-circuit-warning">
-                        <span className="dp-circuit-warning__icon">⚠️</span>
+                        <svg className="dp-circuit-warning__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         <div>
                           <p className="dp-circuit-warning__heading">Panel Warning Issued</p>
                           <p className="dp-circuit-warning__body">
@@ -1584,6 +1587,7 @@ export default function DefensePrep() {
                         </div>
                       </div>
                     )}
+                    <p className="dp-student-response-label">YOUR RESPONSE</p>
                     <textarea
                       ref={textareaRef}
                       className="dp-student-input"
