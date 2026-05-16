@@ -468,6 +468,22 @@ export default function ProjectReviewer() {
           questions from your actual work.
         </p>
 
+        {/* Empty state — shown before any file is selected */}
+        {!selectedFile && (
+          <p style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.8125rem',
+            color: 'var(--color-text-muted)',
+            marginBottom: '16px',
+            lineHeight: 1.6,
+            textAlign: 'center',
+          }}>
+            Upload your draft chapter or full project document. FYPro will review it for structural
+            gaps, argument clarity, and common examiner red flags — giving you targeted feedback
+            before your defense.
+          </p>
+        )}
+
         <div
           id="pr-upload-zone"
           className={`pr-upload-zone${isDragging ? ' pr-upload-zone--drag' : ''}`}

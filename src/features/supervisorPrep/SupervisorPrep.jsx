@@ -196,11 +196,31 @@ export default function SupervisorPrep() {
               </p>
             </div>
 
+            {/* Empty state — shown before questions are generated */}
+            {questions.length === 0 && (
+              <p style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: '0.8125rem',
+                color: 'var(--color-text-muted)',
+                marginBottom: '16px',
+                lineHeight: 1.6,
+                textAlign: 'center',
+              }}>
+                Fill in your meeting details above. FYPro will generate focused, professional
+                questions to help you make the most of your next supervisor session.
+              </p>
+            )}
+
             <ApiErrorBox error={error} onRetry={handleSubmit} />
 
             <button
               id="btn-prepare-me"
-              className="sp-btn-submit"
+              className={[
+                'sp-btn-submit',
+                (btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500)
+                  ? 'opacity-60 cursor-not-allowed'
+                  : '',
+              ].filter(Boolean).join(' ')}
               onClick={handleSubmit}
               disabled={btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500}
             >

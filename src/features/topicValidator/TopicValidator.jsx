@@ -305,6 +305,15 @@ export default function TopicValidator() {
             You've reached your limit for this feature. Start a new project or upgrade your plan.
           </p>
         )}
+
+        {/* Empty state — shown before first submission */}
+        {!data && section === 'input' && (
+          <div style={{ textAlign: 'center', padding: '24px 0 8px', color: 'var(--color-text-muted)' }}>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.875rem', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto' }}>
+              Enter your research topic above. FYPro will validate its scope, originality, and feasibility for a Nigerian university final year project.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Loading section ─────────────────────────────────────────────────── */}

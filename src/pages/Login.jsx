@@ -262,11 +262,11 @@ export default function Login() {
           <motion.button
             variants={fieldVariant}
             type="submit"
-            disabled={loading}
-            whileHover={!loading ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
-            whileTap={!loading ? { scale: 0.98 } : {}}
+            disabled={loading || !form.email.trim() || !form.password}
+            whileHover={!loading && form.email.trim() && form.password ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+            whileTap={!loading && form.email.trim() && form.password ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
-            className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
+            className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${(loading || !form.email.trim() || !form.password) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
           >
             {loading ? 'Signing in…' : 'Sign In'}
           </motion.button>

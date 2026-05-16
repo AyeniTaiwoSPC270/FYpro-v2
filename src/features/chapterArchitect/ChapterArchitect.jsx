@@ -552,6 +552,15 @@ export default function ChapterArchitect() {
               You've reached your limit for this feature. Start a new project or upgrade your plan.
             </p>
           )}
+
+          {/* Empty state — shown before chapter structure is generated */}
+          {!data && section === 'input' && (
+            <div style={{ textAlign: 'center', padding: '24px 0 8px', color: 'var(--color-text-muted)' }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.875rem', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto' }}>
+                Your validated topic is ready. Generate your recommended chapter structure — FYPro will map out a research-appropriate outline based on your discipline.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Loading section */}

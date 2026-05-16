@@ -396,12 +396,12 @@ export default function Signup() {
           <motion.button
             variants={fieldVariant}
             type="submit"
-            disabled={!agreed || loading}
-            whileHover={agreed && !loading ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
-            whileTap={agreed && !loading ? { scale: 0.98 } : {}}
+            disabled={loading || !agreed || !form.email.trim() || !form.password || !form.name.trim()}
+            whileHover={!loading && agreed && form.email.trim() && form.password && form.name.trim() ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+            whileTap={!loading && agreed && form.email.trim() && form.password && form.name.trim() ? { scale: 0.98 } : {}}
             transition={{ duration: 0.15 }}
             className={`mt-2 w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${
-              agreed && !loading ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'
+              !loading && agreed && form.email.trim() && form.password && form.name.trim() ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'
             }`}
           >
             {loading ? 'Creating account…' : 'Create Account'}

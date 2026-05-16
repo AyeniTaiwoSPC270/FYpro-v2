@@ -138,10 +138,10 @@ export default function LiteratureMap({ chapters }) {
           <ApiErrorBox error={error} onRetry={handleGenerate} />
           <button
             id="lm-btn-generate"
-            className="lm-btn-generate"
+            className={`lm-btn-generate${(!state.validatedTopic?.trim() || overLimit) ? ' opacity-60 cursor-not-allowed' : ''}`}
             onClick={handleGenerate}
-            disabled={btnDisabled || overLimit}
-            style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            disabled={!state.validatedTopic?.trim() || btnDisabled || overLimit}
+            style={(!state.validatedTopic?.trim() || overLimit) ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
           >
             {btnDisabled ? 'Working…' : 'Generate Literature Map'}
           </button>
@@ -149,6 +149,15 @@ export default function LiteratureMap({ chapters }) {
             <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
               You've reached your limit for this feature. Start a new project or upgrade your plan.
             </p>
+          )}
+
+          {/* Empty state — shown before map is generated */}
+          {!data && section === 'input' && (
+            <div style={{ textAlign: 'center', padding: '24px 0 8px', color: 'var(--color-text-muted)' }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.875rem', lineHeight: 1.6, maxWidth: '420px', margin: '0 auto' }}>
+                Enter your research topic and generate a thematic map of the existing literature. FYPro clusters real academic papers into key research themes.
+              </p>
+            </div>
           )}
         </div>
       )}

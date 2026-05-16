@@ -7,6 +7,7 @@ import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { supabase } from '../lib/supabase'
 import { resetUser } from '../lib/analytics'
+import { useUser } from '../hooks/useUser'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -411,6 +412,8 @@ export default function Settings() {
   const name     = 'Taiwo Ayeni'
   const initials = 'TA'
 
+  const { user } = useUser()
+
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' })
   function handlePasswordChange(e) {
     const { name: field, value } = e.target
@@ -419,6 +422,43 @@ export default function Settings() {
 
   const [notifs, setNotifs] = useState({ email: true, updates: true, defense: true })
   const [googleConnected, setGoogleConnected] = useState(false)
+
+  const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
+  // Load email preferences from Supabase on mount
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from('email_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setNotifs({
+            email:   data.welcome_enabled          ?? true,
+            updates: data.urgency_reminder_enabled ?? true,
+            defense: data.defense_nudge_enabled    ?? true,
+          })
+        }
+      })
+  }, [user?.id])
+
+  // Persist a single preference change to Supabase
+  async function saveNotifPref(updates) {
+    if (!user?.id) return
+    const { error } = await supabase
+      .from('email_preferences')
+      .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' })
+    if (error) showToast('Failed to save preference', 'error')
+  }
+
+  const SpinnerIcon = () => (
+    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  )
 
   async function handleUpdatePassword() {
     if (!passwords.current || !passwords.newPass || !passwords.confirm) {
@@ -433,20 +473,30 @@ export default function Settings() {
       showToast("New passwords don't match", 'error')
       return
     }
-    const { error } = await supabase.auth.updateUser({ password: passwords.newPass })
-    if (error) {
-      showToast(error.message || 'Password update failed. Please try again.', 'error')
-      return
+    setUpdatingPassword(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: passwords.newPass })
+      if (error) {
+        showToast(error.message || 'Password update failed. Please try again.', 'error')
+        return
+      }
+      showToast('Password updated successfully')
+      setPasswords({ current: '', newPass: '', confirm: '' })
+    } finally {
+      setUpdatingPassword(false)
     }
-    showToast('Password updated successfully')
-    setPasswords({ current: '', newPass: '', confirm: '' })
   }
 
   async function handleSignOutEverywhere() {
-    await supabase.auth.signOut({ scope: 'global' })
-    resetUser()
-    clearState()
-    navigate('/')
+    setSigningOut(true)
+    try {
+      await supabase.auth.signOut({ scope: 'global' })
+      resetUser()
+      clearState()
+      navigate('/')
+    } finally {
+      setSigningOut(false)
+    }
   }
 
   const motionDelay = (i) => ({ delay: i * 0.08 + 0.06, duration: 0.42, ease: [0.22, 1, 0.36, 1] })
@@ -509,13 +559,14 @@ export default function Settings() {
             />
 
             <motion.button
-              whileHover={{ y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleUpdatePassword}
-              className="font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0"
+              whileHover={!updatingPassword ? { y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' } : {}}
+              whileTap={!updatingPassword ? { scale: 0.97 } : {}}
+              onClick={!updatingPassword ? handleUpdatePassword : undefined}
+              disabled={updatingPassword}
+              className={`font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0 flex items-center gap-2 ${updatingPassword ? 'opacity-60 cursor-not-allowed' : ''}`}
               style={{ background: '#2563EB' }}
             >
-              Update Password
+              {updatingPassword ? <><SpinnerIcon />Updating…</> : 'Update Password'}
             </motion.button>
           </div>
         </motion.div>
@@ -535,21 +586,21 @@ export default function Settings() {
               title="Email reminders"
               desc="Get weekly reminders to keep your FYP on track"
               checked={notifs.email}
-              onChange={() => setNotifs((p) => ({ ...p, email: !p.email }))}
+              onChange={() => { const val = !notifs.email; setNotifs((p) => ({ ...p, email: val })); saveNotifPref({ welcome_enabled: val }) }}
             />
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow
               title="Product updates"
               desc="Hear about new FYPro features and improvements"
               checked={notifs.updates}
-              onChange={() => setNotifs((p) => ({ ...p, updates: !p.updates }))}
+              onChange={() => { const val = !notifs.updates; setNotifs((p) => ({ ...p, updates: val })); saveNotifPref({ urgency_reminder_enabled: val }) }}
             />
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow
               title="Defense tips"
               desc="Receive exam preparation tips before your defense date"
               checked={notifs.defense}
-              onChange={() => setNotifs((p) => ({ ...p, defense: !p.defense }))}
+              onChange={() => { const val = !notifs.defense; setNotifs((p) => ({ ...p, defense: val })); saveNotifPref({ defense_nudge_enabled: val }) }}
             />
           </div>
         </motion.div>
@@ -605,7 +656,7 @@ export default function Settings() {
           </div>
         </motion.div>
 
-        {/* ── Section 4: Connected Accounts ── */}
+        {/* Connected Accounts — Google OAuth not yet implemented (v3)
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -656,6 +707,7 @@ export default function Settings() {
             )}
           </div>
         </motion.div>
+        */}
 
         {/* ── Section 5: Session ── */}
         <motion.div
@@ -675,17 +727,18 @@ export default function Settings() {
               </div>
             </div>
             <motion.button
-              whileHover={{ borderColor: 'rgba(239,68,68,0.4)', color: '#F87171' }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleSignOutEverywhere}
-              className="flex-shrink-0 font-sans text-sm px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 border-0"
+              whileHover={!signingOut ? { borderColor: 'rgba(239,68,68,0.4)', color: '#F87171' } : {}}
+              whileTap={!signingOut ? { scale: 0.97 } : {}}
+              onClick={!signingOut ? handleSignOutEverywhere : undefined}
+              disabled={signingOut}
+              className={`flex-shrink-0 font-sans text-sm px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 border-0 flex items-center gap-2 ${signingOut ? 'opacity-60 cursor-not-allowed' : ''}`}
               style={{
                 background: 'transparent',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-secondary)',
               }}
             >
-              Sign Out Everywhere
+              {signingOut ? <><SpinnerIcon />Signing out…</> : 'Sign Out Everywhere'}
             </motion.button>
           </div>
         </motion.div>

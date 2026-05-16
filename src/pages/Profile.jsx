@@ -352,6 +352,10 @@ export default function Profile() {
     level:      state.level       || '',
   })
   const [avatarUrl, setAvatarUrl] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [deletingProjects, setDeletingProjects] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Hydrate name + email from Supabase auth user when it resolves
   useEffect(() => {
@@ -374,6 +378,12 @@ export default function Profile() {
 
   const photoInputRef = useRef(null)
 
+  const SpinnerIcon = () => (
+    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  )
+
   function handleChangePhoto() {
     photoInputRef.current?.click()
   }
@@ -381,17 +391,23 @@ export default function Profile() {
   async function handleFileUpload(e) {
     const file = e.target.files?.[0]
     if (!file || !user) return
-    const ext  = file.name.split('.').pop()
-    const path = `${user.id}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-    if (uploadError) { showToast('Photo upload failed'); return }
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-    await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
-    setAvatarUrl(publicUrl)
-    showToast('Photo updated')
+    setUploading(true)
+    try {
+      const ext  = file.name.split('.').pop()
+      const path = `${user.id}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (uploadError) { showToast('Photo upload failed'); return }
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
+      setAvatarUrl(publicUrl)
+      showToast('Photo updated')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSaveChanges() {
+    setSaving(true)
     try {
       const profileUpdates = {
         faculty:    form.faculty,
@@ -408,22 +424,26 @@ export default function Profile() {
     } catch (err) {
       console.error('[Profile] handleSaveChanges failed:', err.message)
       showToast('Failed to save changes. Please try again.')
+    } finally {
+      setSaving(false)
     }
   }
 
   async function handleDeleteProjects() {
     if (!window.confirm('Delete all project data? This cannot be undone.')) return
-
-    clearState()
-
+    setDeletingProjects(true)
     try {
-      await resetProject()
-    } catch (err) {
-      console.error('[Profile] Supabase delete failed', err)
+      clearState()
+      try {
+        await resetProject()
+      } catch (err) {
+        console.error('[Profile] Supabase delete failed', err)
+      }
+      showToast('All projects deleted')
+      navigate('/dashboard')
+    } finally {
+      setDeletingProjects(false)
     }
-
-    showToast('All projects deleted')
-    navigate('/dashboard')
   }
 
   async function handleDeleteAccount() {
@@ -435,6 +455,7 @@ export default function Profile() {
       return
     }
 
+    setDeletingAccount(true)
     try {
       const res = await fetch('/api/admin?action=self-delete', {
         method: 'POST',
@@ -448,6 +469,8 @@ export default function Profile() {
       }
     } catch {
       showToast('Account deletion failed. Please check your connection.', 'error')
+      setDeletingAccount(false)
+      return
       // Fall through — same reason as above.
     }
 
@@ -523,10 +546,16 @@ export default function Profile() {
               }
             </motion.div>
             <button
-              onClick={handleChangePhoto}
-              className="mt-2 font-sans text-xs text-blue-400 hover:text-blue-300 cursor-pointer transition-colors duration-150 bg-transparent border-0 p-0"
+              onClick={!uploading ? handleChangePhoto : undefined}
+              disabled={uploading}
+              className={`mt-2 font-sans text-xs text-blue-400 hover:text-blue-300 cursor-pointer transition-colors duration-150 bg-transparent border-0 p-0 flex items-center gap-1.5 ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              Change Photo
+              {uploading ? (
+                <>
+                  <SpinnerIcon />
+                  <span>Uploading…</span>
+                </>
+              ) : 'Change Photo'}
             </button>
             <input
               ref={photoInputRef}
@@ -539,8 +568,17 @@ export default function Profile() {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="font-sans text-xl font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{form.name}</div>
-            <div className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{form.email}</div>
+            {!user ? (
+              <>
+                <div className="animate-pulse bg-slate-700/50 rounded-lg h-5 w-36 mb-2" />
+                <div className="animate-pulse bg-slate-700/30 rounded h-4 w-48 mt-1" />
+              </>
+            ) : (
+              <>
+                <div className="font-sans text-xl font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{form.name}</div>
+                <div className="font-sans text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{form.email}</div>
+              </>
+            )}
             {memberSince && (
               <div className="font-mono text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Member since {memberSince}</div>
             )}
@@ -642,15 +680,18 @@ export default function Profile() {
             </FormField>
 
             <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleSaveChanges}
-              className="relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2"
+              whileHover={!saving ? { y: -2 } : {}}
+              whileTap={!saving ? { scale: 0.97 } : {}}
+              onClick={!saving ? handleSaveChanges : undefined}
+              disabled={saving}
+              className={`relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2 flex items-center gap-2 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
               style={{ background: '#2563EB', border: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}
+              onMouseEnter={!saving ? e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' } : undefined}
+              onMouseLeave={!saving ? e => { e.currentTarget.style.boxShadow = 'none' } : undefined}
             >
-              Save Changes
+              {saving ? (
+                <><SpinnerIcon />Saving…</>
+              ) : 'Save Changes'}
             </motion.button>
           </div>
         </motion.div>
@@ -695,16 +736,18 @@ export default function Profile() {
 
           {[
             {
-              title: 'Delete all projects',
-              desc:  'Permanently delete all your FYP projects and results. This cannot be undone.',
-              label: 'Delete Projects',
+              title:   'Delete all projects',
+              desc:    'Permanently delete all your FYP projects and results. This cannot be undone.',
+              label:   'Delete Projects',
               handler: handleDeleteProjects,
+              loading: deletingProjects,
             },
             {
-              title: 'Delete account',
-              desc:  'Permanently delete your FYPro account and all associated data.',
-              label: 'Delete Account',
+              title:   'Delete account',
+              desc:    'Permanently delete your FYPro account and all associated data.',
+              label:   'Delete Account',
               handler: handleDeleteAccount,
+              loading: deletingAccount,
             },
           ].map((item, i) => (
             <div
@@ -718,16 +761,17 @@ export default function Profile() {
                 <div className="font-sans text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{item.desc}</div>
               </div>
               <motion.button
-                whileHover={{ background: 'rgba(239,68,68,0.1)', boxShadow: '0 0 12px rgba(239,68,68,0.25)' }}
-                whileTap={{ scale: 0.97 }}
-                onClick={item.handler}
-                className="flex-shrink-0 font-sans text-sm text-red-400 rounded-xl px-4 py-2 cursor-pointer transition-all duration-200"
+                whileHover={!item.loading ? { background: 'rgba(239,68,68,0.1)', boxShadow: '0 0 12px rgba(239,68,68,0.25)' } : {}}
+                whileTap={!item.loading ? { scale: 0.97 } : {}}
+                onClick={!item.loading ? item.handler : undefined}
+                disabled={item.loading}
+                className={`flex-shrink-0 font-sans text-sm text-red-400 rounded-xl px-4 py-2 cursor-pointer transition-all duration-200 flex items-center gap-2 ${item.loading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 style={{
                   background: 'transparent',
                   border: '1px solid rgba(239,68,68,0.4)',
                 }}
               >
-                {item.label}
+                {item.loading ? <><SpinnerIcon />Deleting…</> : item.label}
               </motion.button>
             </div>
           ))}

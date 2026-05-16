@@ -277,11 +277,11 @@ export default function ResetPassword() {
                 <motion.button
                   variants={fieldVariant}
                   type="submit"
-                  disabled={phase === 'updating'}
-                  whileHover={phase !== 'updating' ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
-                  whileTap={phase !== 'updating' ? { scale: 0.98 } : {}}
+                  disabled={phase === 'updating' || !password.trim() || !confirm.trim()}
+                  whileHover={phase !== 'updating' && password.trim() && confirm.trim() ? { y: -2, boxShadow: '0 8px 24px rgba(59,130,246,0.45)' } : {}}
+                  whileTap={phase !== 'updating' && password.trim() && confirm.trim() ? { scale: 0.98 } : {}}
                   transition={{ duration: 0.15 }}
-                  className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${phase === 'updating' ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
+                  className={`w-full bg-blue-600 text-white font-semibold font-sans rounded-xl py-4 transition-colors duration-200 ${(phase === 'updating' || !password.trim() || !confirm.trim()) ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-500'}`}
                 >
                   {phase === 'updating' ? 'Updating password…' : 'Set New Password'}
                 </motion.button>

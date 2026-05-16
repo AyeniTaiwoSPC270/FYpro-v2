@@ -282,6 +282,21 @@ export default function MethodologyAdvisor() {
               You've reached your limit for this feature. Start a new project or upgrade your plan.
             </p>
           )}
+
+          {/* Empty state — shown before first generation */}
+          {!maData && (
+            <p style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: '0.8125rem',
+              color: 'var(--color-text-muted)',
+              marginTop: '20px',
+              lineHeight: 1.6,
+              textAlign: 'center',
+            }}>
+              Select your research methodology above. FYPro will recommend data collection approaches,
+              sample size guidance, and analysis techniques tailored to your topic and discipline.
+            </p>
+          )}
         </div>
 
         {/* Loading section */}

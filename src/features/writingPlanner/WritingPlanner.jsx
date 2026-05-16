@@ -220,6 +220,21 @@ export default function WritingPlanner() {
             You've reached your limit for this feature. Start a new project or upgrade your plan.
           </p>
         )}
+
+        {/* Empty state — shown before schedule is generated */}
+        {!data && (
+          <p style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.8125rem',
+            color: 'var(--color-text-muted)',
+            marginTop: '20px',
+            lineHeight: 1.6,
+            textAlign: 'center',
+          }}>
+            Set your submission deadline above and generate your personalised writing schedule.
+            FYPro builds a week-by-week plan that works backwards from your defense date.
+          </p>
+        )}
       </div>
 
       {/* Loading section */}
