@@ -4193,9 +4193,9 @@ html, body {
   align-items: center;
   gap: 10px;
   padding: 36px 24px;
-  border: 2px dashed rgba(217, 119, 6, 0.3);
+  border: 2px dashed var(--color-border-strong, rgba(13,27,42,0.2));
   border-radius: var(--radius-md);
-  background: rgba(217, 119, 6, 0.03);
+  background: transparent;
   cursor: pointer;
   transition: border-color var(--transition-fast), background var(--transition-fast);
   text-align: center;
@@ -4203,15 +4203,15 @@ html, body {
 
 .pr-upload-zone:hover,
 .pr-upload-zone:focus {
-  border-color: #D97706;
-  background: rgba(217, 119, 6, 0.06);
+  border-color: var(--color-blue-primary, #0066FF);
+  background: rgba(0, 102, 255, 0.04);
   outline: none;
 }
 
 /* Active drag-over state */
 .pr-upload-zone--drag {
-  border-color: #D97706;
-  background: rgba(217, 119, 6, 0.10);
+  border-color: var(--color-blue-primary, #0066FF);
+  background: rgba(0, 102, 255, 0.07);
 }
 
 /* Upload icon */
@@ -4230,7 +4230,7 @@ html, body {
 
 /* "click to browse" link-style span */
 .pr-upload-link {
-  color: #D97706;
+  color: var(--color-blue-primary, #0066FF);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -4935,8 +4935,9 @@ html, body {
 
 /* ── 20. PR project reviewer sub-elements ──────────────────────── */
 .app-content .pr-watermark           { color: rgba(0,102,255,0.05) !important; }
-.app-content .pr-upload-zone         { border-color: rgba(217,119,6,0.22) !important; background: rgba(217,119,6,0.04) !important; }
-.app-content .pr-upload-zone:hover   { border-color: #D97706 !important; background: rgba(217,119,6,0.08) !important; }
+.app-content .pr-upload-zone         { border-color: rgba(255,255,255,0.12) !important; background: rgba(255,255,255,0.02) !important; }
+.app-content .pr-upload-zone:hover   { border-color: rgba(0,102,255,0.5) !important; background: rgba(0,102,255,0.05) !important; }
+.app-content .pr-upload-zone--drag   { border-color: #0066FF !important; background: rgba(0,102,255,0.08) !important; }
 .app-content .pr-file-chip           { background: rgba(217,119,6,0.08) !important; border-color: rgba(217,119,6,0.25) !important; }
 .app-content .pr-grade-score         { color: rgba(255,255,255,0.55) !important; }
 .app-content .pr-grade-justification { color: rgba(255,255,255,0.60) !important; }
@@ -6046,8 +6047,8 @@ html, body {
   .db-header { padding: 0 12px; gap: 6px; }
   .db-header__title { font-size: 1.15rem; }
 
-  /* Hide icon buttons to save space */
-  .db-header__icon-btn { display: none; }
+  /* Compact icon buttons — keep visible but smaller */
+  .db-header__icon-btn { display: flex !important; }
   /* Hide guest label text, keep avatar */
   .db-header__guest { display: none; }
 
@@ -7999,15 +8000,21 @@ html, body {
    Supplements the existing responsive blocks above.
    ============================================================ */
 
-/* ── Step navigator: left indent so nav pills clear the hamburger ── */
+/* ── Step navigator: symmetric padding to clear hamburger and prevent right clip ── */
 @media (max-width: 768px) {
   .step-navigator {
     padding-left: 60px !important;
+    padding-right: 60px !important;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .step-navigator::-webkit-scrollbar { display: none; }
+  .nav-track { flex-shrink: 0; }
 }
 @media (max-width: 480px) {
   .step-navigator {
     padding-left: 52px !important;
+    padding-right: 52px !important;
   }
 }
 
@@ -8034,10 +8041,10 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* ── Dashboard header icon buttons: hide on very small screens ── */
+/* ── Dashboard header icon buttons: keep visible on all screens ── */
 @media (max-width: 480px) {
   .db-header__icon-btn {
-    display: none !important;
+    display: flex !important;
   }
 }
 
@@ -10016,9 +10023,9 @@ body {
 [data-theme="light"] .app-content .pr-watermark,
 .light .app-content .pr-watermark { color: rgba(0,102,255,0.05) !important; }
 [data-theme="light"] .app-content .pr-upload-zone,
-.light .app-content .pr-upload-zone { border-color: rgba(217,119,6,0.2) !important; background: rgba(217,119,6,0.03) !important; }
+.light .app-content .pr-upload-zone { border-color: rgba(13,27,42,0.18) !important; background: transparent !important; }
 [data-theme="light"] .app-content .pr-upload-zone:hover,
-.light .app-content .pr-upload-zone:hover { border-color: #D97706 !important; background: rgba(217,119,6,0.06) !important; }
+.light .app-content .pr-upload-zone:hover { border-color: #0066FF !important; background: rgba(0,102,255,0.03) !important; }
 [data-theme="light"] .app-content .pr-file-chip,
 .light .app-content .pr-file-chip { background: rgba(217,119,6,0.06) !important; border-color: rgba(217,119,6,0.2) !important; }
 [data-theme="light"] .app-content .pr-grade-score,
@@ -10468,3 +10475,79 @@ body {
 
 .dp-chat-area  { max-width: 720px !important; }
 .dp-input-area { max-width: 720px !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOBILE & UI FIXES — v2 patch
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Badge row — horizontal scroll on mobile ──────────────────────── */
+@media (max-width: 640px) {
+  .badge-row {
+    overflow-x: auto !important;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px; /* breathing room for drag area */
+  }
+  .badge-row::-webkit-scrollbar { display: none; }
+  .badge-row > * { scroll-snap-align: start; }
+}
+
+/* ── 5. Topic Validator — related research dark mode text colours ─────── */
+.app-content .tv-papers-heading {
+  color: rgba(255,255,255,0.35) !important;
+}
+.app-content .tv-paper-item {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.app-content .tv-paper-title {
+  color: rgba(255,255,255,0.92) !important;
+}
+.app-content .tv-paper-meta {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-author {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-year {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-citations {
+  color: #7ab8ff !important;
+}
+
+/* ── 5. Light mode overrides — keep existing tv-paper light colours ───── */
+[data-theme="light"] .app-content .tv-papers-heading,
+.light .app-content .tv-papers-heading { color: rgba(13,27,42,0.4) !important; }
+[data-theme="light"] .app-content .tv-paper-item,
+.light .app-content .tv-paper-item { background: rgba(13,27,42,0.03) !important; border-color: rgba(13,27,42,0.07) !important; }
+[data-theme="light"] .app-content .tv-paper-title,
+.light .app-content .tv-paper-title { color: #0D1B2A !important; }
+[data-theme="light"] .app-content .tv-paper-meta,
+.light .app-content .tv-paper-meta { color: rgba(13,27,42,0.45) !important; }
+[data-theme="light"] .app-content .tv-paper-author,
+.light .app-content .tv-paper-author { color: rgba(13,27,42,0.7) !important; }
+[data-theme="light"] .app-content .tv-paper-year,
+.light .app-content .tv-paper-year { color: rgba(13,27,42,0.6) !important; }
+
+/* ── 6. Landing page — force dark mode variables regardless of theme ──── */
+[data-landing-page="true"] {
+  background: #060E18;
+  --bg-base:    #0A0F1C;
+  --bg-card:    #0D1425;
+  --bg-input:   #111827;
+  --bg-sidebar: #070C18;
+  --border-color:        #1E293B;
+  --border-subtle:       rgba(255,255,255,0.07);
+  --text-primary:        #F8FAFC;
+  --text-secondary:      #94A3B8;
+  --text-muted:          #475569;
+  --color-text-primary:  rgba(255,255,255,0.90);
+  --color-text-secondary:rgba(255,255,255,0.58);
+  --color-text-muted:    rgba(255,255,255,0.32);
+  --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px);
+  --header-btn-bg:       rgba(255,255,255,0.04);
+  --header-btn-border:   rgba(255,255,255,0.1);
+  --dropdown-border:     rgba(255,255,255,0.1);
+}

@@ -27,6 +27,7 @@ export default function BadgeRow() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      className="badge-row"
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -39,13 +40,14 @@ export default function BadgeRow() {
           : 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
         border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.07)',
         marginBottom: 20,
-        overflow: 'visible',
+        scrollbarWidth: 'none',
+        flexWrap: 'nowrap',
       }}
       role="region"
       aria-label="Achievement badges"
     >
       {/* Label */}
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 64, paddingTop: 2 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 64, flexShrink: 0, paddingTop: 2 }}>
         <span style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.58rem',

@@ -43,7 +43,7 @@ export default function DashStatCards({ STUDENT, STEPS }) {
             {STUDENT.stepsCompleted} Steps<br />Completed
           </div>
           <div className="font-sans text-[0.73rem] text-slate-500 leading-[1.5]">
-            {STUDENT.totalSteps - STUDENT.stepsCompleted} steps remaining
+            {STUDENT.totalSteps - STUDENT.stepsCompleted} {STUDENT.totalSteps - STUDENT.stepsCompleted === 1 ? 'step' : 'steps'} remaining
           </div>
         </div>
       </motion.div>

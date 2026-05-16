@@ -55,11 +55,11 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
       </button>
 
       {/* Greeting */}
-      <div className="db-header-enter">
-        <div className="font-serif text-[1.18rem] text-white leading-[1.15]">
+      <div className="db-header-enter flex-1 min-w-0 mx-2 sm:mx-0 overflow-hidden">
+        <div className="font-serif text-[1rem] sm:text-[1.18rem] text-white leading-[1.15] truncate">
           {greeting}, {firstName}
         </div>
-        <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5">
+        <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5 truncate">
           {STUDENT.stepsCompleted === STUDENT.totalSteps
             ? 'All 6 steps complete — you\'re defense ready.'
             : STUDENT.stepsCompleted > 0
@@ -73,14 +73,14 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center gap-2.5"
+        className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0"
       >
         <motion.button
           whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
           whileTap={{ scale: 0.96 }}
           aria-label="Start a new project"
           onClick={onNewSession}
-          className="flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 text-white border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
+          className="hidden sm:flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 text-white border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
         >
           <PlusIcon /> New Session
         </motion.button>
@@ -90,7 +90,7 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           whileTap={{ scale: 0.94 }}
           aria-label="Notifications"
           onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
-          className="db-header__icon-btn relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn relative w-[30px] h-[30px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
         >
           <BellIcon />
@@ -110,7 +110,7 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           whileTap={{ scale: 0.94 }}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           onClick={toggleTheme}
-          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn w-[30px] h-[30px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
         >
           {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
@@ -121,7 +121,7 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
           whileTap={{ scale: 0.94 }}
           aria-label="Settings"
           onClick={() => navigate('/settings')}
-          className="db-header__icon-btn w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+          className="db-header__icon-btn w-[30px] h-[30px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
           style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
         >
           <GearIcon />

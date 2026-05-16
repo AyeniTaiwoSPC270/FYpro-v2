@@ -1300,7 +1300,13 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      data-landing-page="true"
+      style={{ background: '#060E18' }}
+    >
       <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: scrollProgress + '%', backgroundColor: '#2563EB', zIndex: 9999, transition: 'width 0.1s linear' }} />
       <Navbar />
       <Hero />
