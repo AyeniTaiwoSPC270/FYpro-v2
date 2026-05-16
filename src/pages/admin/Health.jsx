@@ -394,12 +394,8 @@ function LiveFeed({ data, failures }) {
   )
 }
 
-const INTERVAL_OVERVIEW = 20 * 1000   // 20s
-const INTERVAL_VITALS   = 15 * 1000   // 15s
-const INTERVAL_FAILURES = 20 * 1000   // 20s
-const INTERVAL_AUTH     = 30 * 1000   // 30s
-const INTERVAL_PAYMENTS = 30 * 1000   // 30s
-const INTERVAL_LOGS     = 60 * 1000   // 60s
+const POLL_FAST = 5  * 1000   // active tab  — 5s
+const POLL_SLOW = 20 * 1000   // background  — 20s
 
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
@@ -503,7 +499,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setVitals(d); setVitalsError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setVitals(d); setVitalsError(null); setLastUpdated(new Date()) })
       .catch(e => setVitalsError(e.message || 'Failed to load'))
       .finally(() => setVitalsLoading(false))
   }, [session?.access_token])
@@ -514,7 +510,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setFailures(d); setFailuresError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setFailures(d); setFailuresError(null); setLastUpdated(new Date()) })
       .catch(e => setFailuresError(e.message || 'Failed to load'))
       .finally(() => setFailuresLoading(false))
   }, [session?.access_token])
@@ -525,7 +521,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setAuthAttempts(d); setAuthAttemptsError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setAuthAttempts(d); setAuthAttemptsError(null); setLastUpdated(new Date()) })
       .catch(e => setAuthAttemptsError(e.message || 'Failed to load'))
       .finally(() => setAuthAttemptsLoading(false))
   }, [session?.access_token])
@@ -536,7 +532,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setPaymentIssues(d.issues); setPaymentIssuesError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setPaymentIssues(d.issues); setPaymentIssuesError(null); setLastUpdated(new Date()) })
       .catch(e => setPaymentIssuesError(e.message || 'Failed to load'))
       .finally(() => setPaymentIssuesLoading(false))
   }, [session?.access_token])
@@ -547,7 +543,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setSystemLogs(d.logs); setSentryIssues(d.sentry_issues || []); setSystemLogsError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setSystemLogs(d.logs); setSentryIssues(d.sentry_issues || []); setSystemLogsError(null); setLastUpdated(new Date()) })
       .catch(e => setSystemLogsError(e.message || 'Failed to load'))
       .finally(() => setSystemLogsLoading(false))
   }, [session?.access_token])
@@ -558,7 +554,7 @@ export default function AdminHealth() {
       headers: { Authorization: `Bearer ${session.access_token}` },
     })
       .then(r => r.json())
-      .then(d => { if (d.error) throw new Error(d.error); setFeedbackData(d.rows); setFeedbackError(null) })
+      .then(d => { if (d.error) throw new Error(d.error); setFeedbackData(d.rows); setFeedbackError(null); setLastUpdated(new Date()) })
       .catch(e => setFeedbackError(e.message || 'Failed to load'))
       .finally(() => setFeedbackLoading(false))
   }, [session?.access_token])
@@ -612,50 +608,52 @@ export default function AdminHealth() {
     ]).finally(() => setInitialLoading(false))
   }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
 
-  // Polling intervals — each widget on its own cadence (initial call handled above)
+  // Polling — each loader runs at POLL_FAST when its tab is active, POLL_SLOW otherwise.
+  // Changing activeTab restarts the relevant intervals at the new rate immediately.
   useEffect(() => {
     if (!isAdmin || !session) return
-    timerRef.current = setInterval(loadData, INTERVAL_OVERVIEW)
+    const fast = activeTab === 'overview' || activeTab === 'users'
+    timerRef.current = setInterval(loadData, fast ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(timerRef.current)
-  }, [isAdmin, session, loadData])
+  }, [isAdmin, session, loadData, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    vitalsTimerRef.current = setInterval(loadVitals, INTERVAL_VITALS)
+    vitalsTimerRef.current = setInterval(loadVitals, activeTab === 'vitals' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(vitalsTimerRef.current)
-  }, [isAdmin, session, loadVitals])
+  }, [isAdmin, session, loadVitals, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    failuresTimerRef.current = setInterval(loadFailures, INTERVAL_FAILURES)
+    failuresTimerRef.current = setInterval(loadFailures, activeTab === 'logs' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(failuresTimerRef.current)
-  }, [isAdmin, session, loadFailures])
+  }, [isAdmin, session, loadFailures, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    authTimerRef.current = setInterval(loadAuthAttempts, INTERVAL_AUTH)
+    authTimerRef.current = setInterval(loadAuthAttempts, activeTab === 'vitals' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(authTimerRef.current)
-  }, [isAdmin, session, loadAuthAttempts])
+  }, [isAdmin, session, loadAuthAttempts, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    paymentTimerRef.current = setInterval(loadPaymentIssues, INTERVAL_PAYMENTS)
+    paymentTimerRef.current = setInterval(loadPaymentIssues, activeTab === 'payments' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(paymentTimerRef.current)
-  }, [isAdmin, session, loadPaymentIssues])
+  }, [isAdmin, session, loadPaymentIssues, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    systemLogsTimerRef.current = setInterval(loadSystemLogs, INTERVAL_LOGS)
+    systemLogsTimerRef.current = setInterval(loadSystemLogs, activeTab === 'logs' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(systemLogsTimerRef.current)
-  }, [isAdmin, session, loadSystemLogs])
+  }, [isAdmin, session, loadSystemLogs, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    feedbackTimerRef.current = setInterval(loadFeedbackSummary, INTERVAL_LOGS)
+    feedbackTimerRef.current = setInterval(loadFeedbackSummary, activeTab === 'payments' ? POLL_FAST : POLL_SLOW)
     return () => clearInterval(feedbackTimerRef.current)
-  }, [isAdmin, session, loadFeedbackSummary])
+  }, [isAdmin, session, loadFeedbackSummary, activeTab])
 
-  // "X seconds ago" counter — ticks every second, resets whenever lastUpdated changes
+  // "X seconds ago" counter
   useEffect(() => {
     if (!lastUpdated) return
     setSecondsAgo(0)
@@ -666,10 +664,16 @@ export default function AdminHealth() {
     return () => clearInterval(secondsTimerRef.current)
   }, [lastUpdated])
 
-  // Refresh immediately when admin switches back to this tab
+  // Refresh immediately on OS focus AND when browser tab becomes visible
   useEffect(() => {
-    window.addEventListener('focus', handleRefresh)
-    return () => window.removeEventListener('focus', handleRefresh)
+    const onFocus = () => handleRefresh()
+    const onVisible = () => { if (document.visibilityState === 'visible') handleRefresh() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [handleRefresh])
 
   // Filtered + sorted user rows
@@ -1064,6 +1068,11 @@ export default function AdminHealth() {
   function switchTab(id) {
     if (id === 'overview') counterKeyRef.current += 1
     setActiveTab(id)
+    // Immediately fetch the newly-active tab's data instead of waiting for next poll tick
+    if (id === 'overview' || id === 'users') loadData()
+    else if (id === 'vitals') { loadVitals(); loadAuthAttempts() }
+    else if (id === 'payments') { loadPaymentIssues(); loadFeedbackSummary() }
+    else if (id === 'logs') { loadSystemLogs(); loadFailures() }
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
@@ -1139,7 +1148,7 @@ export default function AdminHealth() {
             </div>
             {secondsAgo !== null && (
               <span className="mc-topbar-date" style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'rgba(255,255,255,0.25)' }}>
-                {secondsAgo === 0 ? 'just now' : `${secondsAgo}s ago`}
+                {secondsAgo === 0 ? 'just now' : secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo / 60)}m ago`}
               </span>
             )}
           </div>
