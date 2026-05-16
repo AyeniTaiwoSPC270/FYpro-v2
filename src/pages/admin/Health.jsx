@@ -1649,13 +1649,13 @@ export default function AdminHealth() {
               <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
                 {systemLogs.map((log, i) => {
                   const isExpanded = expandedLogIds.has(log.id)
-                  const sev = log.severity || log.level || 'info'
+                  const sev = log.severity || 'info'
                   const levelColor = sev==='error'?RED:sev==='warning'?AMBER:BLUE
                   return (
                     <div key={log.id} className="mc-card mc-card-enter" style={{ padding:'14px 18px', borderLeft:`3px solid ${levelColor}`, animationDelay:`${i*0.04}s` }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:4 }}>
                         <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:WHITE, background:`${levelColor}33`, border:`1px solid ${levelColor}55`, borderRadius:999, padding:'2px 8px', textTransform:'uppercase' }}>{sev}</span>
-                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{log.plain_message || log.message}</span>
+                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{log.plain_message}</span>
                         <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED }}>{timeAgo(log.created_at)}</span>
                         <button className="mc-action-btn" disabled={resolvingLogId===log.id} onClick={() => handleResolveLog(log.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)' }}>
                           {resolvingLogId===log.id?'…':'Resolve'}
