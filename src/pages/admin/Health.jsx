@@ -1495,8 +1495,8 @@ export default function AdminHealth() {
                   <div key={issue.id} className="mc-card mc-card-enter" style={{ padding:'16px 20px', borderLeft:`3px solid ${AMBER}` }}>
                     <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
                       <div>
-                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:WHITE, fontWeight:500, marginBottom:4 }}>{issue.email}</div>
-                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED }}>{issue.description}</div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:WHITE, fontWeight:500, marginBottom:4 }}>{issue.user_email}</div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED }}>{issue.description || issue.transaction_ref}</div>
                         <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'rgba(255,255,255,0.2)', marginTop:4 }}>{timeAgo(issue.created_at)}</div>
                       </div>
                       <button className="mc-action-btn" disabled={resolvingIssueId===issue.id} onClick={() => handleResolvePaymentIssue(issue.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)', flexShrink:0 }}>
@@ -1610,13 +1610,13 @@ export default function AdminHealth() {
                       {(authAttempts.attempts || []).slice(0,50).map((a,i) => (
                         <tr key={a.id||i} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
                           <td style={{ ...td, color:WHITE }}>{a.email}</td>
-                          <td style={tdMono}>{a.attempt_type}</td>
+                          <td style={tdMono}>{a.action}</td>
                           <td style={td}>
                             <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:a.success?'#4ade80':RED, background:a.success?'rgba(22,163,74,0.12)':'rgba(220,38,38,0.12)', border:`1px solid ${a.success?'rgba(22,163,74,0.3)':'rgba(220,38,38,0.3)'}`, borderRadius:999, padding:'2px 8px' }}>
                               {a.success?'OK':'FAIL'}
                             </span>
                           </td>
-                          <td style={tdMono}>{a.ip_address||'—'}</td>
+                          <td style={tdMono}>{a.ip||'—'}</td>
                           <td style={td}>{timeAgo(a.created_at)}</td>
                         </tr>
                       ))}
@@ -1649,12 +1649,13 @@ export default function AdminHealth() {
               <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
                 {systemLogs.map((log, i) => {
                   const isExpanded = expandedLogIds.has(log.id)
-                  const levelColor = log.level==='error'?RED:log.level==='warning'?AMBER:BLUE
+                  const sev = log.severity || log.level || 'info'
+                  const levelColor = sev==='error'?RED:sev==='warning'?AMBER:BLUE
                   return (
                     <div key={log.id} className="mc-card mc-card-enter" style={{ padding:'14px 18px', borderLeft:`3px solid ${levelColor}`, animationDelay:`${i*0.04}s` }}>
                       <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:4 }}>
-                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:WHITE, background:`${levelColor}33`, border:`1px solid ${levelColor}55`, borderRadius:999, padding:'2px 8px', textTransform:'uppercase' }}>{log.level}</span>
-                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{log.message}</span>
+                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:WHITE, background:`${levelColor}33`, border:`1px solid ${levelColor}55`, borderRadius:999, padding:'2px 8px', textTransform:'uppercase' }}>{sev}</span>
+                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{log.plain_message || log.message}</span>
                         <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED }}>{timeAgo(log.created_at)}</span>
                         <button className="mc-action-btn" disabled={resolvingLogId===log.id} onClick={() => handleResolveLog(log.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)' }}>
                           {resolvingLogId===log.id?'…':'Resolve'}
