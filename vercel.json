@@ -14,10 +14,6 @@
     {
       "path": "/api/admin?action=daily-report",
       "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/admin?action=alert-check",
-      "schedule": "0 */6 * * *"
     }
   ],
   "rewrites": [
