@@ -289,6 +289,111 @@ function Th({ children, sortKey, active, dir, onSort }) {
   )
 }
 
+// ── KPI counter card ─────────────────────────────────────────────────
+function KpiCounterCard({ label, target, prefix = '', suffix = '', decimals = 0, glow, shadow, delay, sub }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    const duration = 1400
+    const start = performance.now()
+    let raf
+    function step(now) {
+      const pct  = Math.min((now - start) / duration, 1)
+      const ease = 1 - Math.pow(1 - pct, 3)
+      setDisplay(target * ease)
+      if (pct < 1) raf = requestAnimationFrame(step)
+    }
+    const tid = setTimeout(() => { raf = requestAnimationFrame(step) }, delay * 1000)
+    return () => { clearTimeout(tid); cancelAnimationFrame(raf) }
+  }, [target, delay])
+
+  const formatted = decimals > 0
+    ? display.toFixed(decimals)
+    : Math.floor(display).toLocaleString()
+
+  return (
+    <div className="mc-card mc-card-enter" style={{ padding: '20px 22px', animationDelay: `${delay}s`, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,102,255,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 32, fontWeight: 800, lineHeight: 1, color: glow, textShadow: shadow !== 'none' ? `0 0 24px ${shadow}` : 'none' }}>
+        {prefix}{formatted}{suffix}
+      </div>
+      {sub && <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>{sub}</div>}
+    </div>
+  )
+}
+
+// ── Weekly signups bar chart ─────────────────────────────────────────
+function SignupsBarChart({ data }) {
+  if (!data || data.length === 0) return (
+    <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>No data yet</div>
+  )
+  const recent = data.slice(-14)
+  const maxVal = Math.max(...recent.map(d => d.count), 1)
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 120 }}>
+      {recent.map((d, i) => (
+        <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div
+            className="mc-bar"
+            style={{
+              width: '100%',
+              height: `${Math.max((d.count / maxVal) * 100, d.count > 0 ? 6 : 0)}px`,
+              borderRadius: '3px 3px 0 0',
+              background: 'linear-gradient(to top, #0066FF, rgba(0,102,255,0.2))',
+              animationDelay: `${0.35 + i * 0.04}s`,
+            }}
+          />
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: 'rgba(255,255,255,0.25)' }}>
+            {new Date(d.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).slice(0, 5)}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Live activity feed ───────────────────────────────────────────────
+function LiveFeed({ data, failures }) {
+  const events = []
+  if (data?.users) {
+    const recent = [...data.users].sort((a, b) => new Date(b.signup_date) - new Date(a.signup_date)).slice(0, 2)
+    recent.forEach(u => events.push({ color: '#4ade80', text: `New signup — ${u.email?.split('@')[0] || '…'}`, time: u.signup_date }))
+  }
+  if (failures?.rows) {
+    failures.rows.filter(r => !r.resolved).slice(0, 2).forEach(r => {
+      events.push({ color: '#fbbf24', text: `AI gen fail — ${r.feature || 'unknown'}`, time: r.created_at })
+    })
+  }
+  events.sort((a, b) => new Date(b.time) - new Date(a.time))
+
+  function timeAgoShort(iso) {
+    if (!iso) return '—'
+    const ms = Date.now() - new Date(iso).getTime()
+    const m = Math.floor(ms / 60000)
+    if (m < 1) return 'just now'
+    if (m < 60) return `${m}m ago`
+    return `${Math.floor(m / 60)}h ago`
+  }
+
+  if (events.length === 0) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 100, color: 'rgba(255,255,255,0.2)', fontSize: 12, fontFamily: "'Poppins', sans-serif" }}>No recent activity</div>
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {events.slice(0, 6).map((e, i) => (
+        <div key={i} className="mc-feed-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', animationDelay: `${0.5 + i * 0.06}s` }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: e.color, flexShrink: 0, marginTop: 4 }} />
+          <div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{e.text}</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{timeAgoShort(e.time)}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const INTERVAL_OVERVIEW = 20 * 1000   // 20s
 const INTERVAL_VITALS   = 15 * 1000   // 15s
 const INTERVAL_FAILURES = 20 * 1000   // 20s
@@ -368,6 +473,9 @@ export default function AdminHealth() {
   const [maintenanceUpdatedAt, setMaintenanceUpdatedAt] = useState(null)
   const [maintenanceToast,     setMaintenanceToast]     = useState(null)
   const maintenanceToastTimer                           = useRef(null)
+
+  const [activeTab, setActiveTab] = useState('overview')
+  const counterKeyRef = useRef(0)
 
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
@@ -873,11 +981,46 @@ export default function AdminHealth() {
 
   // ── Guard states ────────────────────────────────────────────────
   const shell = { minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }
-  if (loading)             return <div className="admin-shell" style={shell}>Loading…</div>
-  if (!isAdmin)            return <div className="admin-shell" style={{ ...shell, color: RED }}>Access denied.</div>
-  if (initialLoading && !data) return <div className="admin-shell" style={shell}>Fetching dashboard data…</div>
-  if (error && !data)      return <div className="admin-shell" style={{ ...shell, color: RED }}>Error: {error}</div>
-  if (!data)               return null
+  const spinnerSvg = (color) => (
+    <svg style={{ animation: 'adminSpin 0.8s linear infinite', flexShrink: 0 }} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      <style>{`@keyframes adminSpin { to { transform: rotate(360deg); } }`}</style>
+    </svg>
+  )
+  if (loading) return (
+    <div style={shell}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: 12 }}>
+        {spinnerSvg('rgba(255,255,255,0.4)')}
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Loading…</span>
+      </div>
+    </div>
+  )
+  if (!isAdmin) return (
+    <div style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 48, color: RED, marginBottom: 12 }}>403</div>
+        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>Access denied. Admin only.</div>
+      </div>
+    </div>
+  )
+  if (initialLoading && !data) return (
+    <div style={shell}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: 12 }}>
+        {spinnerSvg(BLUE)}
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Fetching dashboard data…</span>
+      </div>
+    </div>
+  )
+  if (error && !data) return (
+    <div style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div style={{ textAlign: 'center', maxWidth: 400 }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: RED, marginBottom: 8 }}>Error loading dashboard</div>
+        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>{error}</div>
+        <button onClick={handleRefresh} style={{ background: BLUE, color: WHITE, border: 'none', borderRadius: 8, padding: '8px 20px', fontFamily: "'Poppins', sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Retry</button>
+      </div>
+    </div>
+  )
+  if (!data) return null
 
   const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted,
           daily_spend, cache_hit_rate, top_active_users, failed_payments_today, signups_yesterday,
@@ -898,15 +1041,75 @@ export default function AdminHealth() {
     borderTop: `1px solid ${BORDER}`,
   }
 
+  const TAB_ITEMS = [
+    { id: 'overview',  label: 'Overview' },
+    { id: 'users',     label: 'Users' },
+    { id: 'payments',  label: 'Payments' },
+    { id: 'vitals',    label: 'Vitals' },
+    { id: 'logs',      label: 'Logs' },
+  ]
+
+  const degradedVitals = vitals
+    ? (() => {
+        const lastCallRecent = vitals.last_call_at
+          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+          : false
+        const avgMs = vitals.avg_response_ms
+        return (!lastCallRecent ? 1 : 0) + (avgMs !== null && avgMs > 30000 ? 1 : 0)
+      })()
+    : 0
+
+  const unreadLogs = (systemLogs?.length ?? 0) + (sentryIssues?.length ?? 0)
+
+  function switchTab(id) {
+    if (id === 'overview') counterKeyRef.current += 1
+    setActiveTab(id)
+  }
+
+  const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
+
   return (
-    <div className="admin-shell" style={{ minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }}>
       <style>{`
-        @keyframes vitalPulse {
-          0%, 100% { transform: scale(1);   opacity: 1; }
-          50%       { transform: scale(1.3); opacity: 0.6; }
+        @keyframes vitalPulse  { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:0.6} }
+        @keyframes adminSpin   { to{transform:rotate(360deg)} }
+        @keyframes mcSlideUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes mcSlideRight{ from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes mcGrowUp    { from{transform:scaleY(0);opacity:0} to{transform:scaleY(1);opacity:1} }
+        @keyframes mcFadeIn    { from{opacity:0} to{opacity:1} }
+        @keyframes mcSkeleton  { 0%,100%{opacity:0.5} 50%{opacity:1} }
+        .mc-card { background:rgba(15,34,53,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+        .mc-card-enter   { animation:mcSlideUp 0.4s ease both; }
+        .mc-tab-content  { animation:mcFadeIn 0.2s ease both; }
+        .mc-skeleton     { background:rgba(255,255,255,0.06); border-radius:8px; animation:mcSkeleton 1.4s ease-in-out infinite; }
+        .mc-bar          { transform-origin:bottom; animation:mcGrowUp 0.7s ease both; }
+        .mc-feed-item    { animation:mcSlideRight 0.35s ease both; }
+        .mc-topbar       { position:sticky; top:0; z-index:50; background:#0D1B2A; border-bottom:1px solid rgba(255,255,255,0.07); }
+        .mc-tabs         { background:#060E18; border-bottom:1px solid rgba(255,255,255,0.07); }
+        .mc-main         { padding:28px 28px 80px; max-width:1400px; margin:0 auto; }
+        .mc-kpi-grid     { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+        .mc-row2         { display:grid; grid-template-columns:1fr 340px; gap:16px; }
+        .mc-vitals-grid  { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .mc-live-pulse   { width:7px; height:7px; border-radius:50%; background:#4ade80; animation:vitalPulse 1.4s ease-in-out infinite; flex-shrink:0; }
+        .mc-section-divider { font-size:10px; font-weight:700; color:rgba(255,255,255,0.2); letter-spacing:1.5px; text-transform:uppercase; margin:24px 0 12px; display:flex; align-items:center; gap:8px; }
+        .mc-section-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); }
+        .mc-action-btn   { font-family:'Poppins',sans-serif; font-size:11px; font-weight:600; border-radius:6px; padding:4px 10px; cursor:pointer; transition:all 0.15s; border:1px solid rgba(255,255,255,0.15); background:transparent; color:rgba(255,255,255,0.55); }
+        .mc-action-btn:hover    { background:rgba(255,255,255,0.08); color:#fff; }
+        .mc-action-btn:disabled { opacity:0.4; cursor:not-allowed; }
+        .mc-desktop-tabs { display:flex; }
+        .mc-mobile-tabs  { display:none; padding:12px 16px; }
+        .mc-mobile-tab-select { width:100%; background:rgba(13,27,42,0.9); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:10px; padding:10px 14px; font-size:13px; font-family:'Poppins',sans-serif; }
+        @media(max-width:1100px){.mc-row2{grid-template-columns:1fr}}
+        @media(max-width:900px) {.mc-kpi-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:700px) {.mc-vitals-grid{grid-template-columns:1fr}}
+        @media(max-width:600px) {
+          .mc-main{padding:16px 16px 80px}
+          .mc-kpi-grid{grid-template-columns:1fr}
+          .mc-topbar-date{display:none}
+          .mc-desktop-tabs{display:none!important}
+          .mc-mobile-tabs{display:block!important}
         }
-        .admin-shell { padding: 40px 48px; }
-        .admin-charts-grid { grid-template-columns: 1fr 1fr; }
+        @media(max-width:480px){.mc-main{padding:12px 12px 80px}}
         @media (max-width: 1024px) {
           .admin-shell { padding: 28px 28px; }
         }
@@ -919,1430 +1122,600 @@ export default function AdminHealth() {
         }
       `}</style>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, margin: 0 }}>
-            FYPro Admin — Analytics
-          </h1>
-          <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: MUTED, marginTop: 8, marginBottom: 0 }}>
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+      {/* ── Sticky top bar ── */}
+      <div className="mc-topbar">
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', height:56, maxWidth:1400, margin:'0 auto' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:'#fff' }}>F</span>
+            </div>
+            <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, fontWeight:400, color:WHITE }}>FYPro</span>
+            <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1.5px', textTransform:'uppercase', marginLeft:2 }}>Admin</span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(22,163,74,0.12)', border:'1px solid rgba(22,163,74,0.25)', borderRadius:999, padding:'4px 10px' }}>
+              <div className="mc-live-pulse" />
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:'#4ade80', letterSpacing:'1.5px' }}>LIVE</span>
+            </div>
             {secondsAgo !== null && (
-              <span style={{ marginLeft: 16, color: 'rgba(255,255,255,0.3)' }}>
-                · Last updated: {secondsAgo === 0 ? 'just now' : `${secondsAgo}s ago`}
+              <span className="mc-topbar-date" style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'rgba(255,255,255,0.25)' }}>
+                {secondsAgo === 0 ? 'just now' : `${secondsAgo}s ago`}
               </span>
             )}
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: 13, fontWeight: 600,
-              color: refreshing ? MUTED : WHITE,
-              background: refreshing ? 'rgba(255,255,255,0.05)' : BLUE,
-              border: `1px solid ${refreshing ? BORDER : BLUE}`,
-              borderRadius: 8, padding: '10px 20px',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s ease',
-            }}
-          >
-            {refreshing ? 'Refreshing…' : '↻ Refresh'}
-          </button>
-          <button
-            onClick={() => {
-              import('@sentry/react').then(Sentry => {
-                Sentry.captureException(new Error('Manual Sentry test from admin'))
-              })
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#7c3aed',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}
-          >
-            Test Sentry
-          </button>
-          <button
-            onClick={handleTestAlerts}
-            disabled={testAlertsBusy}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: testAlertsBusy
-                ? 'rgba(255,255,255,0.08)'
-                : testAlertsResult?.all_ok === true  ? '#16A34A'
-                : testAlertsResult?.all_ok === false ? '#DC2626'
-                : '#0D4DB3',
-              color: testAlertsBusy ? MUTED : 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: testAlertsBusy ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 600,
-              transition: 'background 0.2s ease',
-            }}
-          >
-            {testAlertsBusy
-              ? 'Sending…'
-              : testAlertsResult
-                ? testAlertsResult.all_ok
-                  ? `✓ ${testAlertsResult.sent}/10 sent`
-                  : `⚠ ${testAlertsResult.failures} failed`
-                : '🔔 Test Alerts'}
-          </button>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button onClick={handleRefresh} disabled={refreshing} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:refreshing?MUTED:WHITE, background:refreshing?'rgba(255,255,255,0.05)':BLUE, border:'none', borderRadius:8, padding:'7px 16px', cursor:refreshing?'not-allowed':'pointer', transition:'background 0.15s' }}>
+              {refreshing ? '…' : '↻ Refresh'}
+            </button>
+            <button onClick={handleTestAlerts} disabled={testAlertsBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:testAlertsBusy?MUTED:WHITE, background:testAlertsBusy?'rgba(255,255,255,0.05)':testAlertsResult?.all_ok===true?GREEN:testAlertsResult?.all_ok===false?RED:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 14px', cursor:testAlertsBusy?'not-allowed':'pointer' }}>
+              {testAlertsBusy ? 'Sending…' : testAlertsResult ? testAlertsResult.all_ok ? `✓ ${testAlertsResult.sent}/10` : `⚠ ${testAlertsResult.failures} failed` : '🔔 Alerts'}
+            </button>
+            <button onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
+              Sentry
+            </button>
+            <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:WHITE }}>{userInitials}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Test Alerts result panel ─────────────────────────────── */}
+      {/* ── Tab nav ── */}
+      <div className="mc-tabs">
+        <div className="mc-desktop-tabs" style={{ maxWidth:1400, margin:'0 auto', padding:'0 24px' }}>
+          {TAB_ITEMS.map(t => (
+            <button key={t.id} onClick={() => switchTab(t.id)} style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, fontWeight:activeTab===t.id?600:400, color:activeTab===t.id?WHITE:'rgba(255,255,255,0.45)', background:'none', border:'none', padding:'14px 18px', cursor:'pointer', borderBottom:activeTab===t.id?`2px solid ${BLUE}`:'2px solid transparent', transition:'all 0.15s', display:'flex', alignItems:'center', gap:6 }}>
+              {t.label}
+              {t.id==='vitals' && degradedVitals>0 && (
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color:WHITE, background:RED, borderRadius:999, padding:'1px 6px', lineHeight:'16px' }}>{degradedVitals}</span>
+              )}
+              {t.id==='logs' && unreadLogs>0 && (
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color:WHITE, background:AMBER, borderRadius:999, padding:'1px 6px', lineHeight:'16px' }}>{unreadLogs}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="mc-mobile-tabs">
+          <select className="mc-mobile-tab-select" value={activeTab} onChange={e => switchTab(e.target.value)}>
+            {TAB_ITEMS.map(t => (
+              <option key={t.id} value={t.id}>{t.label}{t.id==='vitals'&&degradedVitals>0?` (${degradedVitals})`:''}{t.id==='logs'&&unreadLogs>0?` (${unreadLogs})`:''}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* ── Test alerts result panel ── */}
       {testAlertsResult && (
-        <div style={{
-          marginBottom: 16,
-          padding: '12px 16px',
-          background: testAlertsResult.all_ok ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
-          border: `1px solid ${testAlertsResult.all_ok ? 'rgba(22,163,74,0.3)' : 'rgba(220,38,38,0.3)'}`,
-          borderRadius: 10,
-        }}>
-          {testAlertsResult.error ? (
-            <p style={{ margin: 0, fontSize: 13, color: RED, fontFamily: "'Poppins', sans-serif" }}>
-              Network error: {testAlertsResult.error}
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
-              {(testAlertsResult.results || []).map(r => (
-                <span key={r.key} style={{
-                  fontSize: 12,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: r.ok ? '#4ade80' : RED,
-                }}>
-                  {r.ok ? '✓' : '✗'} {r.key}
-                </span>
-              ))}
-            </div>
-          )}
+        <div style={{ maxWidth:1400, margin:'12px auto 0', padding:'0 28px' }}>
+          <div style={{ padding:'12px 16px', background:testAlertsResult.all_ok?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)', border:`1px solid ${testAlertsResult.all_ok?'rgba(22,163,74,0.3)':'rgba(220,38,38,0.3)'}`, borderRadius:10 }}>
+            {testAlertsResult.error ? (
+              <p style={{ margin:0, fontSize:13, color:RED, fontFamily:"'Poppins',sans-serif" }}>Network error: {testAlertsResult.error}</p>
+            ) : (
+              <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 16px' }}>
+                {(testAlertsResult.results||[]).map(r => (
+                  <span key={r.key} style={{ fontSize:12, fontFamily:"'JetBrains Mono',monospace", color:r.ok?'#4ade80':RED }}>{r.ok?'✓':'✗'} {r.key}</span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── System Controls ──────────────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{
-          background:  CARD,
-          border:      `1px solid ${BORDER}`,
-          borderTop:   `3px solid ${maintenanceMode ? AMBER : GREEN}`,
-          borderRadius: 12,
-          padding:     '20px 24px',
-        }}>
-          {/* Header row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
-            <div>
-              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
-                System Controls
+      {/* ── Main tab content ── */}
+      <div className="mc-main mc-tab-content" key={activeTab}>
+
+        {/* ═══════════ OVERVIEW TAB ═══════════ */}
+        {activeTab === 'overview' && (
+          <>
+            {/* KPI cards */}
+            <div className="mc-kpi-grid" style={{ marginBottom:16 }}>
+              <KpiCounterCard key={counterKeyRef.current + '-u'} label="Total Users" target={overview?.total_users||0} glow="#60A5FA" shadow="rgba(0,102,255,0.6)" delay={0} sub={`+${overview?.new_users_today||0} today`} />
+              <KpiCounterCard key={counterKeyRef.current + '-r'} label="Revenue (NGN)" target={overview?.revenue_ngn||0} prefix="₦" glow="#4ade80" shadow="rgba(22,163,74,0.5)" delay={0.05} sub={`${overview?.paying_users||0} paying users`} />
+              <KpiCounterCard key={counterKeyRef.current + '-s'} label="AI Spend Today" target={daily_spend?.spent_usd||0} prefix="$" decimals={2} glow="#fbbf24" shadow="rgba(245,158,11,0.5)" delay={0.1} sub={`cap $${daily_spend?.cap_usd?.toFixed(2)||'10.00'}`} />
+              <KpiCounterCard key={counterKeyRef.current + '-d'} label="Defenses Done" target={overview?.defenses_completed||0} glow={WHITE} shadow="none" delay={0.15} sub={`${overview?.certificates_issued||0} certificates`} />
+            </div>
+
+            {/* Signups chart + live feed */}
+            <div className="mc-row2" style={{ marginBottom:16 }}>
+              <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.2s' }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:12 }}>Signups — Last 14 Days</div>
+                <SignupsBarChart data={signups_chart} />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-                  background: maintenanceLoading ? MUTED : maintenanceMode ? AMBER : GREEN,
-                  animation: !maintenanceLoading && maintenanceMode ? 'vitalPulse 1.5s ease-in-out infinite' : 'none',
-                }} />
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: maintenanceLoading ? MUTED : maintenanceMode ? AMBER : GREEN }}>
-                  {maintenanceLoading ? '…' : maintenanceMode ? 'MAINTENANCE' : 'LIVE'}
-                </span>
-                {maintenanceUpdatedAt && (
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED }}>
-                    · Updated {timeAgo(maintenanceUpdatedAt)}
-                  </span>
-                )}
+              <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.25s' }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:12 }}>Live Activity</div>
+                <LiveFeed data={data} failures={failures} />
               </div>
             </div>
 
-            {/* Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM }}>Maintenance Mode</span>
-              <button
-                onClick={handleToggleMaintenance}
-                disabled={maintenanceBusy || maintenanceLoading}
-                aria-label={maintenanceMode ? 'Disable maintenance mode' : 'Enable maintenance mode'}
-                style={{
-                  width:       48,
-                  height:      26,
-                  borderRadius: 13,
-                  border:      'none',
-                  background:  maintenanceMode ? AMBER : 'rgba(255,255,255,0.12)',
-                  cursor:      maintenanceBusy || maintenanceLoading ? 'not-allowed' : 'pointer',
-                  position:    'relative',
-                  transition:  'background 0.2s ease',
-                  opacity:     maintenanceBusy ? 0.6 : 1,
-                  flexShrink:  0,
-                }}
-              >
-                <div style={{
-                  width:       20,
-                  height:      20,
-                  borderRadius: '50%',
-                  background:  WHITE,
-                  position:    'absolute',
-                  top:         3,
-                  left:        maintenanceMode ? 25 : 3,
-                  transition:  'left 0.2s ease',
-                  boxShadow:   '0 1px 4px rgba(0,0,0,0.3)',
-                }} />
-              </button>
+            {/* Revenue chart */}
+            <div className="mc-section-divider">Revenue — 30 Day</div>
+            <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.28s', marginBottom:16 }}>
+              {!revenue_chart || revenue_chart.length === 0 ? (
+                <div style={{ height:180, display:'flex', alignItems:'center', justifyContent:'center', color:MUTED, fontSize:12, fontFamily:"'Poppins',sans-serif" }}>No revenue data yet</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={revenue_chart.map(d => ({ ...d, date: fmtChartDate(d.date) }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} />
+                    <YAxis tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} tickFormatter={v => `₦${(v/1000).toFixed(0)}k`} />
+                    <Tooltip {...tooltipStyle} formatter={v => [`₦${Number(v).toLocaleString()}`, 'Revenue']} />
+                    <Line type="monotone" dataKey="revenue_ngn" stroke={GREEN} strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
-          </div>
 
-          {/* Message input */}
-          <div>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 6 }}>
-              Maintenance message — shown on the maintenance page (optional)
+            {/* Today's snapshot cards */}
+            <div className="mc-section-divider">Today's Snapshot</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
+              <SignupsCompareCard today={overview?.new_users_today} yesterday={signups_yesterday} />
+              <OverviewCard label="Revenue Today" value={revenue_today_ngn != null ? `₦${Number(revenue_today_ngn).toLocaleString()}` : '—'} sub={`${paying_users_today??0} payments today`} accent={GREEN} />
+              <OverviewCard label="Failed Payments" value={failed_payments_today??0} sub="today" accent={failed_payments_today>0?RED:MUTED} />
+              <SpendCard spend={daily_spend} />
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                value={maintenanceMessage}
-                onChange={e => setMaintenanceMessage(e.target.value)}
-                placeholder="FYPro is currently undergoing scheduled maintenance…"
-                style={{
-                  flex:        1,
-                  background:  SURFACE,
-                  border:      `1px solid ${BORDER}`,
-                  borderRadius: 8,
-                  padding:     '8px 14px',
-                  color:       WHITE,
-                  fontFamily:  "'Poppins', sans-serif",
-                  fontSize:    13,
-                  outline:     'none',
-                  minWidth:    0,
-                }}
-              />
-              <button
-                onClick={handleSaveMaintenanceMessage}
-                disabled={maintenanceBusy}
-                style={{
-                  fontFamily:  "'Poppins', sans-serif",
-                  fontSize:    13, fontWeight: 600,
-                  color:       WHITE,
-                  background:  maintenanceBusy ? 'rgba(255,255,255,0.1)' : BLUE,
-                  border:      'none',
-                  borderRadius: 8,
-                  padding:     '8px 18px',
-                  cursor:      maintenanceBusy ? 'not-allowed' : 'pointer',
-                  transition:  'background 0.15s ease',
-                  flexShrink:  0,
-                  whiteSpace:  'nowrap',
-                }}
-              >
-                Save
-              </button>
+
+            {/* Unit economics */}
+            <div className="mc-section-divider">Unit Economics</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
+              <OverviewCard label="Avg Rev / User" value={overview?.total_users>0&&overview?.revenue_ngn>0?`₦${Math.round(overview.revenue_ngn/overview.total_users).toLocaleString()}`:'—'} sub="total lifetime" accent={BLUE} />
+              <OverviewCard label="Conversion Rate" value={overview?.conversion_rate!=null?`${Number(overview.conversion_rate).toFixed(1)}%`:'—'} sub="free → paid" accent={GREEN} />
+              <OverviewCard label="Cache Hit Rate" value={cache_hit_rate!=null?`${Number(cache_hit_rate).toFixed(1)}%`:'—'} sub="last 24h" accent={AMBER} />
+              {ngn_per_usd && <OverviewCard label="₦ / USD Rate" value={`₦${ngn_per_usd?.toLocaleString()}`} sub="live rate" accent={MUTED} />}
             </div>
-          </div>
 
-          {/* Inline toast */}
-          {maintenanceToast && (
-            <div style={{
-              marginTop:  12,
-              padding:    '8px 14px',
-              background: maintenanceToast.type === 'error' ? 'rgba(220,38,38,0.1)' : 'rgba(22,163,74,0.1)',
-              border:     `1px solid ${maintenanceToast.type === 'error' ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
-              borderRadius: 8,
-              fontFamily: "'Poppins', sans-serif",
-              fontSize:   12,
-              color:      maintenanceToast.type === 'error' ? '#F87171' : '#4ade80',
-            }}>
-              {maintenanceToast.message}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Widget 4: System Vitals ──────────────────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        {vitalsLoading ? (
-          <div style={{ display: 'flex', gap: 16 }}>
-            {[0,1,2,3].map(i => (
-              <div key={i} style={{ flex: '1 1 0', height: 82, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
-            ))}
-          </div>
-        ) : vitalsError ? (
-          <FailedBadge label="System Vitals" error={vitalsError} />
-        ) : (
-          <div style={{ display: 'flex', gap: 16 }}>
-            {(() => {
-              const lastCallRecent = vitals?.last_call_at
-                ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
-                : false
-              const engineColor = lastCallRecent ? GREEN : RED
-              const engineValue = lastCallRecent ? 'Operational' : 'Degraded'
-
-              const avgMs    = vitals?.avg_response_ms ?? null
-              const avgColor = avgMs === null ? RED : avgMs < 15000 ? GREEN : avgMs <= 30000 ? AMBER : RED
-              const avgValue = avgMs !== null ? `${(avgMs / 1000).toFixed(1)}s` : '—'
-
-              const failuresToday = vitals?.failures_today  || 0
-              const requestsToday = vitals?.requests_today  || 0
-              const errPct   = requestsToday > 0 ? (failuresToday / requestsToday) * 100 : 0
-              const errColor = requestsToday === 0 ? MUTED : errPct < 2 ? GREEN : errPct <= 5 ? AMBER : RED
-              const errValue = requestsToday > 0 ? `${errPct.toFixed(1)}%` : '—'
-
-              return (
-                <>
-                  <VitalCard label="AI Engine"    value={engineValue} dotColor={engineColor} pulse={!lastCallRecent} />
-                  <VitalCard label="Avg Response" value={avgValue}    dotColor={avgColor}    pulse={avgMs !== null && avgMs > 30000} />
-                  <VitalCard label="Error Rate"   value={errValue}    dotColor={errColor}    pulse={errPct > 5} />
-                  <VitalCard label="Active Now"   value={String(vitals?.active_sessions ?? 0)} dotColor={BLUE} pulse={false} />
-                </>
-              )
-            })()}
-          </div>
-        )}
-      </div>
-
-      {/* ── SECTION 1: Overview Cards ─────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
-        <OverviewCard label="Total Users"      value={overview.total_users.toLocaleString()}        accent={BLUE}  />
-        <OverviewCard label="Active Today"     value={overview.active_today.toLocaleString()}        accent={GREEN} />
-        <OverviewCard label="Active This Week" value={overview.active_this_week.toLocaleString()}    accent={GREEN} />
-        <OverviewCard label="Paid Users"       value={overview.total_paid.toLocaleString()}          accent={AMBER} />
-        <OverviewCard label="Total Revenue"    value={`₦${overview.total_revenue_ngn.toLocaleString()}`} accent={GREEN} />
-        <OverviewCard label="Conversion Rate"  value={`${overview.conversion_rate}%`} sub="paid ÷ total" accent={BLUE}  />
-        <SpendCard spend={daily_spend} />
-        <OverviewCard
-          label="Failed Payments"
-          value={String(failed_payments_today ?? 0)}
-          sub="today (non-success)"
-          accent={(failed_payments_today ?? 0) > 0 ? RED : BLUE}
-        />
-        <SignupsCompareCard
-          today={overview.signups_today ?? 0}
-          yesterday={signups_yesterday ?? 0}
-        />
-      </div>
-
-      {/* ── Widget 1: Unit Economics ─────────────────────────────── */}
-      <div style={{
-        background: CARD, border: `1px solid ${BORDER}`,
-        borderTop: `3px solid ${AMBER}`,
-        borderRadius: 12, padding: '20px 24px', marginBottom: 8, marginTop: 8,
-      }}>
-        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
-          Unit Economics — Today
-        </div>
-        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          {(() => {
-            const spentUsd    = daily_spend?.spent_usd || 0
-            const activeToday = overview.active_today  || 0
-            const ngn         = ngn_per_usd            || 1600
-            const payingU     = paying_users_today      || 0
-            const revToday    = revenue_today_ngn       || 0
-
-            const costPerUser = activeToday > 0 ? (spentUsd * ngn) / activeToday : null
-            const cpuColor    = costPerUser === null ? MUTED
-              : costPerUser < 200 ? GREEN : costPerUser <= 400 ? AMBER : RED
-
-            const revPerUser  = payingU > 0 ? revToday / payingU : null
-
-            const margin      = revPerUser && costPerUser !== null && revPerUser > 0
-              ? ((revPerUser - costPerUser) / revPerUser) * 100
-              : null
-            const marginColor = margin === null ? MUTED
-              : margin > 60 ? GREEN : margin >= 30 ? AMBER : RED
-
-            return (
+            {/* Feature usage */}
+            {feature_usage && feature_usage.length > 0 && (
               <>
-                <div>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Cost Per User</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: cpuColor }}>
-                    {costPerUser !== null ? `₦${costPerUser.toFixed(0)}` : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Revenue Per User</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: WHITE }}>
-                    {revPerUser !== null ? `₦${revPerUser.toFixed(0)}` : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginBottom: 4 }}>Profit Margin Per User</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 700, color: marginColor }}>
-                    {margin !== null ? `${margin.toFixed(1)}%` : '—'}
+                <div className="mc-section-divider">Feature Usage</div>
+                <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.35s', marginBottom:16 }}>
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {feature_usage.slice(0,8).map(f => (
+                      <div key={f.feature} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:DIM, width:160, flexShrink:0 }}>{FEATURE_LABELS[f.feature]||f.feature}</div>
+                        <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:999 }}>
+                          <div style={{ height:6, background:BLUE, borderRadius:999, width:`${Math.round((f.count/maxFeature)*100)}%`, transition:'width 0.5s ease' }} />
+                        </div>
+                        <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:40, textAlign:'right' }}>{f.count}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>
-            )
-          })()}
-        </div>
-      </div>
-
-      {/* ── Widget 3: Cache Performance ───────────────────────────── */}
-      <div style={{
-        background: CARD, border: `1px solid ${BORDER}`,
-        borderTop: `3px solid ${BLUE}`,
-        borderRadius: 12, padding: '20px 24px', marginBottom: 8,
-      }}>
-        <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
-          Cache Performance
-        </div>
-        {(() => {
-          const hitRate    = cache_hit_rate?.hit_rate_pct ?? 0
-          const hitsTotal  = cache_hit_rate?.hits_total   ?? 0
-          // request_count only tracks fresh Anthropic calls (trackUsage fires after real responses)
-          const freshCalls = daily_spend?.request_count   ?? 0
-          const spentUsd   = daily_spend?.spent_usd ?? 0
-          const costPerFresh = freshCalls > 0 ? spentUsd / freshCalls : 0
-          const savings    = hitsTotal * costPerFresh * (ngn_per_usd || 1600)
-          const rateColor  = hitRate > 25 ? GREEN : hitRate >= 10 ? AMBER : RED
-          return (
-            <>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 32, fontWeight: 700, color: rateColor, lineHeight: 1, marginBottom: 12 }}>
-                {hitRate}%
-              </div>
-              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 10 }}>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: GREEN }}>{hitsTotal.toLocaleString()} cached today</span>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: AMBER }}>{freshCalls.toLocaleString()} fresh calls today</span>
-              </div>
-              <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED }}>
-                Est. savings today: <span style={{ color: WHITE, fontFamily: "'JetBrains Mono', monospace" }}>₦{savings.toFixed(0)}</span>
-              </div>
-            </>
-          )
-        })()}
-      </div>
-
-      {/* ── SECTION 2: User Table ──────────────────────────────────── */}
-      <SectionHeading title={`Users (${filteredUsers.length})`} />
-      {userActionToast && (
-        <div style={{
-          marginBottom: 12, padding: '8px 14px',
-          background: userActionToast.type === 'error' ? 'rgba(220,38,38,0.1)' : 'rgba(22,163,74,0.1)',
-          border:     `1px solid ${userActionToast.type === 'error' ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
-          borderRadius: 8, fontSize: 12,
-          color: userActionToast.type === 'error' ? '#F87171' : '#4ade80',
-          fontFamily: "'Poppins', sans-serif",
-        }}>
-          {userActionToast.message}
-        </div>
-      )}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24 }}>
-        <input
-          type="text"
-          placeholder="Search by email…"
-          value={search}
-          onChange={e => { setSearch(e.target.value); setPage(0) }}
-          style={{
-            background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8,
-            padding: '8px 14px', color: WHITE,
-            fontFamily: "'Poppins', sans-serif", fontSize: 13,
-            width: '100%', maxWidth: 320, marginBottom: 16, outline: 'none',
-          }}
-        />
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 920 }}>
-            <thead>
-              <tr>
-                {[
-                  ['email',         'Email'],
-                  ['signup_date',   'Signed Up'],
-                  ['last_active',   'Last Active'],
-                  ['plan',          'Plan'],
-                  ['project_count', 'Projects'],
-                  ['status',        'Status'],
-                  ['paid_amount',   'Paid (₦)'],
-                ].map(([key, label]) => (
-                  <Th key={key} sortKey={key} active={sortKey === key} dir={sortDir} onSort={handleSort}>
-                    {label}
-                  </Th>
-                ))}
-                <th style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: 11, fontWeight: 600,
-                  color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  padding: '10px 12px', textAlign: 'left', background: SURFACE,
-                }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ ...td, textAlign: 'center', color: MUTED }}>No users found.</td>
-                </tr>
-              ) : pageRows.map((u, i) => {
-                const aState = actionState[u.id]
-                const isPending = aState === 'pending'
-                return (
-                  <tr key={u.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                    <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email || '—'}</td>
-                    <td style={td}>{fmtDate(u.signup_date)}</td>
-                    <td style={td}>{fmtDate(u.last_active)}</td>
-                    <td style={td}><PlanBadge plan={u.plan} /></td>
-                    <td style={{ ...tdMono, textAlign: 'center' }}>{u.project_count}</td>
-                    <td style={td}><StatusBadge status={u.status} /></td>
-                    <td style={tdMono}>{u.paid_amount > 0 ? `₦${u.paid_amount.toLocaleString()}` : '—'}</td>
-                    <td style={{ ...td, padding: '6px 12px', minWidth: 220 }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                        <button
-                          disabled={isPending || aState === 'banned'}
-                          onClick={() => handleBanUser(u.id, u.email)}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: aState === 'banned' ? MUTED : AMBER,
-                            background: 'transparent',
-                            border: `1px solid ${aState === 'banned' ? BORDER : AMBER + '55'}`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: isPending || aState === 'banned' ? 'not-allowed' : 'pointer',
-                            opacity: isPending ? 0.5 : 1,
-                          }}
-                        >
-                          {aState === 'banned' ? 'Banned' : 'Ban'}
-                        </button>
-                        <button
-                          disabled={isPending}
-                          onClick={() => handleDeleteUser(u.id, u.email)}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: RED,
-                            background: 'transparent',
-                            border: `1px solid ${RED}55`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: isPending ? 'not-allowed' : 'pointer',
-                            opacity: isPending ? 0.5 : 1,
-                          }}
-                        >
-                          {aState === 'error' ? 'Retry' : 'Delete'}
-                        </button>
-                        <button
-                          disabled={isPending}
-                          onClick={() => handleResetRunCounts(u.id, u.email)}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: 'rgba(255,255,255,0.6)',
-                            background: 'transparent',
-                            border: `1px solid rgba(255,255,255,0.18)`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: isPending ? 'not-allowed' : 'pointer',
-                            opacity: isPending ? 0.5 : 1,
-                          }}
-                        >
-                          Reset Runs
-                        </button>
-                        <button
-                          disabled={isPending}
-                          onClick={() => handleGrantPlan(u.id, u.email, 'student')}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: '#60a5fa',
-                            background: 'transparent',
-                            border: `1px solid rgba(96,165,250,0.35)`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: isPending ? 'not-allowed' : 'pointer',
-                            opacity: isPending ? 0.5 : 1,
-                          }}
-                        >
-                          Grant Student
-                        </button>
-                        <button
-                          disabled={isPending}
-                          onClick={() => handleGrantPlan(u.id, u.email, 'defense')}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: WHITE,
-                            background: `${BLUE}33`,
-                            border: `1px solid ${BLUE}66`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: isPending ? 'not-allowed' : 'pointer',
-                            opacity: isPending ? 0.5 : 1,
-                          }}
-                        >
-                          Grant Defense
-                        </button>
-                        <button
-                          disabled={diagnoseBusy[u.id]}
-                          onClick={() => handleDiagnose(u.id, u.email)}
-                          style={{
-                            fontFamily: "'Poppins', sans-serif",
-                            fontSize: 11, fontWeight: 600,
-                            color: AMBER,
-                            background: 'transparent',
-                            border: `1px solid ${AMBER}55`,
-                            borderRadius: 6, padding: '4px 10px',
-                            cursor: diagnoseBusy[u.id] ? 'not-allowed' : 'pointer',
-                            opacity: diagnoseBusy[u.id] ? 0.5 : 1,
-                          }}
-                        >
-                          {diagnoseBusy[u.id] ? '…' : 'Diagnose'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
-            <button
-              disabled={page === 0}
-              onClick={() => setPage(p => p - 1)}
-              style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: page === 0 ? MUTED : WHITE, borderRadius: 6, padding: '6px 14px', cursor: page === 0 ? 'default' : 'pointer', fontFamily: "'Poppins', sans-serif", fontSize: 13 }}
-            >← Prev</button>
-            <span style={{ color: MUTED, fontSize: 13 }}>Page {page + 1} of {totalPages}</span>
-            <button
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(p => p + 1)}
-              style={{ background: SURFACE, border: `1px solid ${BORDER}`, color: page >= totalPages - 1 ? MUTED : WHITE, borderRadius: 6, padding: '6px 14px', cursor: page >= totalPages - 1 ? 'default' : 'pointer', fontFamily: "'Poppins', sans-serif", fontSize: 13 }}
-            >Next →</button>
-          </div>
-        )}
-      </div>
-
-      {/* ── Diagnose Modal ───────────────────────────────────────── */}
-      {diagnoseModal && (
-        <div
-          onClick={() => setDiagnoseModal(null)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.7)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: SURFACE, border: `1px solid ${BORDER}`,
-              borderRadius: 14, padding: 28, width: 480, maxWidth: '94vw',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: WHITE }}>
-                Diagnose User
-              </span>
-              <button onClick={() => setDiagnoseModal(null)} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 20, cursor: 'pointer' }}>✕</button>
-            </div>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED, marginBottom: 16 }}>
-              {diagnoseModal.email}
-            </div>
-
-            {diagnoseModal.loading && (
-              <div style={{ color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>Checking…</div>
             )}
 
-            {diagnoseModal.error && (
-              <div style={{ color: '#F87171', fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
-                Error: {diagnoseModal.error}
-              </div>
-            )}
-
-            {diagnoseModal.result && (() => {
-              const r = diagnoseModal.result
-              return (
-                <>
-                  {/* Overall verdict */}
-                  <div style={{
-                    padding: '10px 14px', borderRadius: 8, marginBottom: 16,
-                    background: r.is_blocked ? 'rgba(220,38,38,0.12)' : 'rgba(22,163,74,0.12)',
-                    border: `1px solid ${r.is_blocked ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
-                    fontFamily: "'Poppins', sans-serif", fontSize: 13,
-                    color: r.is_blocked ? '#F87171' : '#4ade80',
-                    fontWeight: 600,
-                  }}>
-                    {r.is_blocked ? `🔴 Blocked — ${r.block_reasons.join(', ')}` : '🟢 Not currently blocked by any known limit'}
+            {/* Funnel */}
+            {funnel && funnel.length > 0 && (
+              <>
+                <div className="mc-section-divider">Completion Funnel</div>
+                <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.4s', marginBottom:16 }}>
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {funnel.map(f => {
+                      const pct = funnel[0]?.users>0 ? Math.round((f.users/funnel[0].users)*100) : 0
+                      return (
+                        <div key={f.step} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                          <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:DIM, width:180, flexShrink:0 }}>{FUNNEL_LABELS[f.step]||f.step}</div>
+                          <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:999 }}>
+                            <div style={{ height:6, background:`linear-gradient(90deg,${BLUE},${GREEN})`, borderRadius:999, width:`${pct}%`, transition:'width 0.5s ease' }} />
+                          </div>
+                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:50, textAlign:'right' }}>{f.users}</div>
+                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED, width:36, textAlign:'right' }}>{pct}%</div>
+                        </div>
+                      )
+                    })}
                   </div>
+                </div>
+              </>
+            )}
 
-                  {/* Three checks */}
-                  {[
-                    {
-                      label: 'User-day rate limit',
-                      ok: r.user_rl_keys.length === 0,
-                      detail: r.user_rl_keys.length > 0
-                        ? `${r.user_rl_keys.length} active key(s) — Reset Limits will clear these`
-                        : 'No keys found',
-                    },
-                    {
-                      label: `IP rate limit${r.last_ip ? ` (${r.last_ip})` : ' (no IP on record)'}`,
-                      ok: r.ip_rl_keys.length === 0,
-                      detail: r.ip_rl_keys.length > 0
-                        ? `${r.ip_rl_keys.length} active key(s) — Reset Limits will clear these`
-                        : r.last_ip ? 'No keys found' : 'No IP recorded in auth_attempts',
-                    },
-                    {
-                      label: 'Global daily spend cap',
-                      ok: !r.cap_hit,
-                      detail: `$${r.spent_usd.toFixed(2)} / $${r.cap_usd.toFixed(2)} (${r.cap_pct}%)${r.cap_hit ? ' — raise DAILY_CAP_USD in Vercel env to fix' : ''}`,
-                    },
-                  ].map(({ label, ok, detail }) => (
-                    <div key={label} style={{ marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: ok ? GREEN : RED }}>
-                          {ok ? '✓' : '✗'}
-                        </span>
-                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, fontWeight: 600 }}>
-                          {label}
-                        </span>
-                      </div>
-                      <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 22, marginTop: 2 }}>
-                        {detail}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Action button if blocked by resettable keys */}
-                  {(r.user_rl_keys.length > 0 || r.ip_rl_keys.length > 0) && (
-                    <button
-                      onClick={async () => {
-                        await handleResetUsage(diagnoseModal.userId, diagnoseModal.email)
-                        setDiagnoseModal(null)
-                      }}
-                      style={{
-                        marginTop: 16, width: '100%',
-                        background: GREEN, color: WHITE,
-                        border: 'none', borderRadius: 8,
-                        padding: '10px 0', fontFamily: "'Poppins', sans-serif",
-                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                      }}
-                    >
-                      Reset Rate Limits Now
-                    </button>
-                  )}
-
-                  {r.cap_hit && (
-                    <div style={{ marginTop: 12, fontFamily: "'Poppins', sans-serif", fontSize: 12, color: AMBER }}>
-                      ⚠ Spend cap is hit — go to Vercel → Settings → Environment Variables and increase DAILY_CAP_USD
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* ── Most Active Today ─────────────────────────────────────── */}
-      {top_active_users && top_active_users.length > 0 && (
-        <>
-          <SectionHeading title="Most Active Today" />
-          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, marginTop: 0, marginBottom: 16 }}>
-              Top 3 users by cumulative run count across all features.
-            </p>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <thead>
-                  <tr>
-                    {['Email', 'Total Runs', 'Top Feature'].map(h => (
-                      <th key={h} style={{
-                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                        color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
-                        padding: '10px 12px', textAlign: 'left', background: SURFACE,
-                      }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {top_active_users.map((u, i) => (
-                    <tr key={u.email} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                      <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email}</td>
-                      <td style={tdMono}>{u.total_runs.toLocaleString()}</td>
-                      <td style={td}>{FEATURE_LABELS[u.top_feature] || u.top_feature || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ── Widget 2: Failed Generation Log ──────────────────────── */}
-      <div style={{ margin: '40px 0 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
-          Failed Generations
-        </h2>
-        <span style={{
-          fontFamily: "'JetBrains Mono', monospace",
-          fontSize: 12, fontWeight: 700,
-          color: WHITE,
-          background: (failures?.total_today ?? 0) > 0 ? RED : GREEN,
-          borderRadius: 999,
-          padding: '2px 10px',
-        }}>
-          {failures?.total_today ?? 0} today
-        </span>
-      </div>
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
-        {failuresLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[0,1,2,3,4].map(i => (
-              <div key={i} style={{ height: 44, background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
-            ))}
-          </div>
-        ) : failuresError ? (
-          <FailedBadge label="Failed Generations" error={failuresError} />
-        ) : !failures?.rows?.length ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, margin: 0 }}>No failures logged yet.</p>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 700 }}>
-              <thead>
-                <tr>
-                  {['Time', 'Feature', 'Error', 'User', 'Input Preview', 'Action'].map(h => (
-                    <th key={h} style={{
-                      fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                      color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
-                      padding: '10px 12px', textAlign: 'left', background: SURFACE,
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {failures.rows.map(row => (
-                  <tr
-                    key={row.id}
-                    style={{
-                      borderLeft: row.resolved ? 'none' : `3px solid ${RED}`,
-                      opacity: row.resolved ? 0.4 : 1,
-                    }}
-                  >
-                    <td style={{ ...td, color: MUTED, whiteSpace: 'nowrap' }}>{timeAgo(row.created_at)}</td>
-                    <td style={{ ...td, color: WHITE }}>{row.feature || '—'}</td>
-                    <td style={td}>
-                      <span style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 11, fontWeight: 600,
-                        color: row.error_type === 'timeout' ? AMBER : RED,
-                        background: 'rgba(255,255,255,0.07)',
-                        borderRadius: 999, padding: '2px 8px',
-                      }}>{row.error_type || 'generic'}</span>
-                    </td>
-                    <td style={{ ...td, color: DIM }}>{row.user_email ? row.user_email.substring(0, 20) : '—'}</td>
-                    <td style={{ ...td, color: MUTED, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {row.input_preview ? row.input_preview.substring(0, 50) : '—'}
-                    </td>
-                    <td style={{ ...td, padding: '6px 12px' }}>
-                      <button
-                        disabled={row.resolved || resolvingId === row.id}
-                        onClick={() => handleResolveFailure(row.id)}
-                        style={{
-                          fontFamily: "'Poppins', sans-serif",
-                          fontSize: 11, fontWeight: 600,
-                          color: row.resolved ? MUTED : GREEN,
-                          background: 'transparent',
-                          border: `1px solid ${row.resolved ? BORDER : GREEN + '55'}`,
-                          borderRadius: 6, padding: '4px 10px',
-                          cursor: row.resolved || resolvingId === row.id ? 'not-allowed' : 'pointer',
-                          opacity: resolvingId === row.id ? 0.5 : 1,
-                        }}
-                      >
-                        {row.resolved ? 'Resolved' : resolvingId === row.id ? 'Resolving…' : 'Mark Resolved'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* ── SECTION 3 & 4: Charts ──────────────────────────────────── */}
-      <SectionHeading title="Revenue & Signups — Last 30 Days" />
-      <div className="admin-charts-grid" style={{ display: 'grid', gap: 24, marginBottom: 8 }}>
-        <ChartCard title="Daily Revenue (₦)">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={revenue_chart} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
-              <XAxis
-                dataKey="date"
-                tickFormatter={fmtChartDate}
-                tick={{ fontSize: 10, fill: MUTED, fontFamily: 'JetBrains Mono' }}
-                interval="preserveStartEnd"
-              />
-              <YAxis tick={{ fontSize: 10, fill: MUTED, fontFamily: 'JetBrains Mono' }} />
-              <Tooltip
-                {...tooltipStyle}
-                labelFormatter={v => fmtChartDate(v)}
-                formatter={v => [`₦${v.toLocaleString()}`, 'Revenue']}
-              />
-              <Line type="monotone" dataKey="amount" stroke={GREEN} strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Daily Signups">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={signups_chart} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
-              <XAxis
-                dataKey="date"
-                tickFormatter={fmtChartDate}
-                tick={{ fontSize: 10, fill: MUTED, fontFamily: 'JetBrains Mono' }}
-                interval="preserveStartEnd"
-              />
-              <YAxis tick={{ fontSize: 10, fill: MUTED, fontFamily: 'JetBrains Mono' }} allowDecimals={false} />
-              <Tooltip
-                {...tooltipStyle}
-                labelFormatter={v => fmtChartDate(v)}
-                formatter={v => [v, 'Signups']}
-              />
-              <Bar dataKey="count" fill={BLUE} radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* ── SECTION 5: Feature Usage ───────────────────────────────── */}
-      <SectionHeading title="Feature Usage" />
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
-        {feature_usage.map(({ feature, count }) => (
-          <div key={feature} style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM }}>
-                {FEATURE_LABELS[feature] || feature}
-              </span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: WHITE }}>
-                {count.toLocaleString()}
-              </span>
-            </div>
-            <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999 }}>
-              <div style={{
-                height: 6,
-                background: BLUE,
-                borderRadius: 999,
-                width: `${maxFeature > 0 ? (count / maxFeature * 100) : 0}%`,
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── SECTION 6: Drop-off Funnel ─────────────────────────────── */}
-      <SectionHeading title="Drop-off Analysis" />
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 8 }}>
-        {funnel.map(({ step, count, dropoff_pct, pct_of_total }, i) => (
-          <div key={step}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ flex: '0 0 180px', fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM }}>
-                {FUNNEL_LABELS[step] || step}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ height: 36, background: 'rgba(255,255,255,0.05)', borderRadius: 6, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${pct_of_total}%`,
-                    minWidth: count > 0 ? 80 : 0,
-                    background: `linear-gradient(90deg, ${BLUE}cc, ${BLUE}55)`,
-                    borderRadius: 6,
-                    display: 'flex',
-                    alignItems: 'center',
-                    paddingLeft: 12,
-                    transition: 'width 0.6s ease',
-                  }}>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: WHITE, whiteSpace: 'nowrap' }}>
-                      {count.toLocaleString()} users ({pct_of_total}%)
+            {/* System controls */}
+            <div className="mc-section-divider">System Controls</div>
+            <div className="mc-card mc-card-enter" style={{ padding:'20px 24px', animationDelay:'0.45s', marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:18 }}>
+                <div>
+                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Maintenance Mode</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:10, height:10, borderRadius:'50%', flexShrink:0, background:maintenanceLoading?MUTED:maintenanceMode?AMBER:GREEN, animation:!maintenanceLoading&&maintenanceMode?'vitalPulse 1.5s ease-in-out infinite':'none' }} />
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:14, fontWeight:700, color:maintenanceLoading?MUTED:maintenanceMode?AMBER:GREEN }}>
+                      {maintenanceLoading?'…':maintenanceMode?'MAINTENANCE':'LIVE'}
                     </span>
+                    {maintenanceUpdatedAt && <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED }}>· Updated {timeAgo(maintenanceUpdatedAt)}</span>}
                   </div>
                 </div>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:DIM }}>Toggle</span>
+                  <button onClick={handleToggleMaintenance} disabled={maintenanceBusy||maintenanceLoading} aria-label={maintenanceMode?'Disable maintenance mode':'Enable maintenance mode'} style={{ width:48, height:26, borderRadius:13, border:'none', background:maintenanceMode?AMBER:'rgba(255,255,255,0.12)', cursor:maintenanceBusy||maintenanceLoading?'not-allowed':'pointer', position:'relative', transition:'background 0.2s ease', opacity:maintenanceBusy?0.6:1, flexShrink:0 }}>
+                    <div style={{ width:20, height:20, borderRadius:'50%', background:WHITE, position:'absolute', top:3, left:maintenanceMode?25:3, transition:'left 0.2s ease', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }} />
+                  </button>
+                </div>
               </div>
-              <div style={{ flex: '0 0 110px', textAlign: 'right' }}>
-                {i < funnel.length - 1 && (
-                  <span style={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 12,
-                    color: parseFloat(dropoff_pct) > 50 ? RED : AMBER,
-                  }}>
-                    −{dropoff_pct}% drop
-                  </span>
-                )}
+              <div style={{ display:'flex', gap:8 }}>
+                <input value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Maintenance message shown to users…" style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'8px 12px', color:WHITE, fontFamily:"'Poppins',sans-serif", fontSize:13 }} />
+                <button onClick={handleSaveMaintenanceMessage} disabled={maintenanceBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:BLUE, border:'none', borderRadius:8, padding:'8px 16px', cursor:maintenanceBusy?'not-allowed':'pointer', flexShrink:0 }}>Save</button>
               </div>
+              {maintenanceToast && (
+                <div style={{ marginTop:10, fontFamily:"'Poppins',sans-serif", fontSize:12, color:maintenanceToast.type==='success'?'#4ade80':RED }}>{maintenanceToast.message}</div>
+              )}
             </div>
-            {i < funnel.length - 1 && (
-              <div style={{ textAlign: 'left', paddingLeft: 195, color: MUTED, fontSize: 14, lineHeight: 1, margin: '2px 0' }}>↓</div>
-            )}
-          </div>
-        ))}
-      </div>
+          </>
+        )}
 
-      {/* ── Auth Attempts Widget ───────────────────────────────────── */}
-      <div style={{ marginTop: 40, marginBottom: 40 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          marginBottom: 16, paddingBottom: 12,
-          borderBottom: `1px solid ${BORDER}`,
-        }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
-            Auth Attempts
-          </h2>
-          {!authAttemptsLoading && authAttempts && (
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
-              background: authAttempts.suspicious?.length > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(255,255,255,0.07)',
-              color: authAttempts.suspicious?.length > 0 ? '#F87171' : MUTED,
-              border: `1px solid ${authAttempts.suspicious?.length > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: 999, padding: '2px 10px',
-            }}>
-              {authAttempts.suspicious?.length > 0
-                ? `${authAttempts.suspicious.length} suspicious IP${authAttempts.suspicious.length > 1 ? 's' : ''}`
-                : 'all clear'}
-            </span>
-          )}
-        </div>
-
-        {authAttemptsLoading ? (
-          <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
-        ) : authAttemptsError ? (
-          <FailedBadge label="Auth Attempts" error={authAttemptsError} />
-        ) : !authAttempts ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
-            No data yet. Auth attempts are logged as users sign in.
-          </p>
-        ) : (
+        {/* ═══════════ USERS TAB ═══════════ */}
+        {activeTab === 'users' && (
           <>
-            {/* Summary row */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Total (24h)', value: authAttempts.attempts?.length ?? 0, color: MUTED },
-                { label: 'Failed logins', value: authAttempts.attempts?.filter(a => !a.success && a.action === 'login').length ?? 0, color: '#F87171' },
-                { label: 'Signups', value: authAttempts.attempts?.filter(a => a.action === 'signup').length ?? 0, color: '#60A5FA' },
-                { label: 'Suspicious IPs', value: authAttempts.suspicious?.length ?? 0, color: authAttempts.suspicious?.length > 0 ? '#F87171' : MUTED },
-              ].map(({ label, value, color }) => (
-                <div key={label} style={{
-                  background: CARD, border: `1px solid ${BORDER}`,
-                  borderRadius: 10, padding: '12px 20px', flex: '1 1 110px',
-                }}>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color }}>{value}</div>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginTop: 2 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Suspicious IPs */}
-            {authAttempts.suspicious?.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: '#F87171', marginBottom: 8, marginTop: 0 }}>
-                  Suspicious IPs — 5+ failed logins in last 24h
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {authAttempts.suspicious.map(({ ip, failed_count }) => (
-                    <div key={ip} style={{
-                      background: 'rgba(220,38,38,0.07)',
-                      border: '1px solid rgba(220,38,38,0.2)',
-                      borderLeft: '3px solid #DC2626',
-                      borderRadius: 8, padding: '10px 16px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}>
-                      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: '#F87171' }}>{ip}</span>
-                      <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: '#F87171', fontWeight: 600 }}>
-                        {failed_count} failed attempts
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {userActionToast && (
+              <div style={{ marginBottom:16, padding:'10px 16px', background:userActionToast.type==='success'?'rgba(22,163,74,0.1)':'rgba(220,38,38,0.1)', border:`1px solid ${userActionToast.type==='success'?'rgba(22,163,74,0.3)':'rgba(220,38,38,0.3)'}`, borderRadius:10, fontFamily:"'Poppins',sans-serif", fontSize:13, color:userActionToast.type==='success'?'#4ade80':RED }}>
+                {userActionToast.message}
               </div>
             )}
 
-            {/* Recent failed logins */}
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED, marginBottom: 8, marginTop: 0 }}>
-              Recent failed logins
-            </p>
-            {authAttempts.attempts?.filter(a => !a.success && a.action === 'login').length === 0 ? (
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>None in the last 24 hours.</p>
+            <div style={{ marginBottom:16 }}>
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }} placeholder="Search users by email…" style={{ width:'100%', maxWidth:400, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'10px 14px', color:WHITE, fontFamily:"'Poppins',sans-serif", fontSize:13, boxSizing:'border-box' }} />
+            </div>
+
+            <div className="mc-card mc-card-enter" style={{ padding:0, marginBottom:20, overflow:'hidden', animationDelay:'0.05s' }}>
+              {!data ? (
+                <div style={{ padding:24, display:'flex', flexDirection:'column', gap:10 }}>
+                  {[...Array(5)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:40, animationDelay:`${i*0.1}s` }} />)}
+                </div>
+              ) : data.users.length === 0 ? (
+                <div style={{ padding:48, textAlign:'center', color:MUTED, fontFamily:"'Poppins',sans-serif", fontSize:14 }}>No users yet</div>
+              ) : (
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ borderCollapse:'collapse', width:'100%' }}>
+                    <thead>
+                      <tr>
+                        <Th sortKey="email"       active={sortKey==='email'}       dir={sortDir} onSort={handleSort}>Email</Th>
+                        <Th sortKey="plan"        active={sortKey==='plan'}        dir={sortDir} onSort={handleSort}>Plan</Th>
+                        <Th sortKey="status"      active={sortKey==='status'}      dir={sortDir} onSort={handleSort}>Status</Th>
+                        <Th sortKey="signup_date" active={sortKey==='signup_date'} dir={sortDir} onSort={handleSort}>Signed Up</Th>
+                        <Th sortKey="last_active" active={sortKey==='last_active'} dir={sortDir} onSort={handleSort}>Last Active</Th>
+                        <th style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.06em', padding:'10px 12px', textAlign:'left', background:SURFACE, whiteSpace:'nowrap' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((u, i) => {
+                        const busy = actionState[u.id] === 'pending'
+                        return (
+                          <tr key={u.id} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                            <td style={{ ...td, color:WHITE, fontWeight:500, maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</td>
+                            <td style={td}><PlanBadge plan={u.plan} /></td>
+                            <td style={td}><StatusBadge status={u.status} /></td>
+                            <td style={td}>{fmtDate(u.signup_date)}</td>
+                            <td style={td}>{fmtDate(u.last_active)}</td>
+                            <td style={{ ...td, whiteSpace:'nowrap' }}>
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleBanUser(u.id, u.email)}>{busy?'…':'Ban'}</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleDeleteUser(u.id, u.email)} style={{ color:'rgba(248,113,113,0.7)', borderColor:'rgba(220,38,38,0.2)' }}>{busy?'…':'Del'}</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'student')}>+Stu</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'defense')}>+Def</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleResetUsage(u.id, u.email)}>Reset</button>
+                                <button className="mc-action-btn" disabled={diagnoseBusy[u.id]} onClick={() => handleDiagnose(u.id, u.email)}>{diagnoseBusy[u.id]?'…':'Diag'}</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:24 }}>
+                <button className="mc-action-btn" disabled={page===0} onClick={() => setPage(p => p-1)}>← Prev</button>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:MUTED }}>{page+1} / {totalPages} · {filteredUsers.length} users</span>
+                <button className="mc-action-btn" disabled={page>=totalPages-1} onClick={() => setPage(p => p+1)}>Next →</button>
+              </div>
+            )}
+
+            {top_active_users && top_active_users.length > 0 && (
+              <>
+                <div className="mc-section-divider">Most Active Users</div>
+                <div className="mc-card mc-card-enter" style={{ padding:0, marginBottom:20, overflow:'hidden', animationDelay:'0.15s' }}>
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ borderCollapse:'collapse', width:'100%' }}>
+                      <thead>
+                        <tr>
+                          {['Email','Steps Done','Last Active'].map(h => (
+                            <th key={h} style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.06em', padding:'10px 12px', textAlign:'left', background:SURFACE }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {top_active_users.map((u,i) => (
+                          <tr key={u.id} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                            <td style={{ ...td, color:WHITE, fontWeight:500 }}>{u.email}</td>
+                            <td style={tdMono}>{u.steps_completed}</td>
+                            <td style={td}>{fmtDate(u.last_active)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {never_converted && (
+              <>
+                <div className="mc-section-divider">Never Converted ({never_converted.length})</div>
+                <div className="mc-card mc-card-enter" style={{ padding:0, overflow:'hidden', animationDelay:'0.2s' }}>
+                  <div style={{ padding:'12px 20px', fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED }}>Signed up 3+ days ago · Free plan · Has at least one project.</div>
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ borderCollapse:'collapse', width:'100%' }}>
+                      <thead>
+                        <tr>
+                          {['Email','Signed Up','Last Active','Steps Used'].map(h => (
+                            <th key={h} style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.06em', padding:'10px 12px', textAlign:'left', background:SURFACE }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {never_converted.length===0 ? (
+                          <tr><td colSpan={4} style={{ ...td, textAlign:'center', color:MUTED }}>No users match this criteria yet.</td></tr>
+                        ) : never_converted.map((u,i) => (
+                          <tr key={u.id} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                            <td style={{ ...td, color:WHITE, fontWeight:500 }}>{u.email}</td>
+                            <td style={td}>{fmtDate(u.signup_date)}</td>
+                            <td style={td}>{fmtDate(u.last_active)}</td>
+                            <td style={tdMono}>{u.steps_completed} / 10</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ═══════════ PAYMENTS TAB ═══════════ */}
+        {activeTab === 'payments' && (
+          <>
+            <div className="mc-section-divider">Payment Issues</div>
+            {paymentIssuesLoading ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+                {[...Array(3)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:60, animationDelay:`${i*0.1}s` }} />)}
+              </div>
+            ) : paymentIssuesError ? (
+              <div className="mc-card" style={{ padding:'16px 20px', borderLeft:`3px solid ${RED}`, marginBottom:20 }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{paymentIssuesError}</div>
+                <button className="mc-action-btn" onClick={loadPaymentIssues}>Retry</button>
+              </div>
+            ) : !paymentIssues || paymentIssues.length === 0 ? (
+              <div className="mc-card mc-card-enter" style={{ padding:'32px 24px', textAlign:'center', marginBottom:20, display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+                <div style={{ fontSize:28 }}>✓</div>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:14, color:MUTED }}>No payment issues reported</div>
+              </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                  <thead>
-                    <tr>
-                      {['When', 'Email', 'IP'].map(h => (
-                        <th key={h} style={{
-                          fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                          color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
-                          padding: '8px 12px', textAlign: 'left', background: SURFACE,
-                        }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {authAttempts.attempts
-                      .filter(a => !a.success && a.action === 'login')
-                      .slice(0, 20)
-                      .map((a, i) => (
-                        <tr key={a.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                          <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
-                            {timeAgo(a.created_at)}
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+                {paymentIssues.map(issue => (
+                  <div key={issue.id} className="mc-card mc-card-enter" style={{ padding:'16px 20px', borderLeft:`3px solid ${AMBER}` }}>
+                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+                      <div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:WHITE, fontWeight:500, marginBottom:4 }}>{issue.email}</div>
+                        <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED }}>{issue.description}</div>
+                        <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:'rgba(255,255,255,0.2)', marginTop:4 }}>{timeAgo(issue.created_at)}</div>
+                      </div>
+                      <button className="mc-action-btn" disabled={resolvingIssueId===issue.id} onClick={() => handleResolvePaymentIssue(issue.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)', flexShrink:0 }}>
+                        {resolvingIssueId===issue.id?'…':'Resolve'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mc-section-divider">Feature Feedback</div>
+            <FeatureFeedbackWidget data={feedbackData} loading={feedbackLoading} error={feedbackError} />
+          </>
+        )}
+
+        {/* ═══════════ VITALS TAB ═══════════ */}
+        {activeTab === 'vitals' && (
+          <>
+            <div className="mc-section-divider">System Health</div>
+            {vitalsLoading ? (
+              <div className="mc-vitals-grid" style={{ marginBottom:20 }}>
+                {[...Array(6)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:80, animationDelay:`${i*0.08}s` }} />)}
+              </div>
+            ) : vitalsError ? (
+              <div className="mc-card" style={{ padding:'16px 20px', borderLeft:`3px solid ${RED}`, marginBottom:20 }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{vitalsError}</div>
+                <button className="mc-action-btn" onClick={loadVitals}>Retry</button>
+              </div>
+            ) : vitals ? (
+              <div className="mc-vitals-grid mc-card-enter" style={{ animationDelay:'0.05s', marginBottom:20 }}>
+                {(() => {
+                  const lastCallRecent = vitals.last_call_at
+                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+                    : false
+                  const avgMs = vitals.avg_response_ms
+                  const apiOk = lastCallRecent && (avgMs === null || avgMs <= 30000)
+                  return (
+                    <>
+                      <VitalCard label="Claude API" value={lastCallRecent?(avgMs!==null?`${Math.round(avgMs)}ms`:'OK'):'No recent calls'} dotColor={apiOk?GREEN:AMBER} pulse={apiOk} />
+                      <VitalCard label="Database"     value={vitals.db_ok?'Healthy':'Degraded'}         dotColor={vitals.db_ok?GREEN:RED}     pulse={vitals.db_ok} />
+                      <VitalCard label="Redis Cache"  value={vitals.redis_ok?'Connected':'Down'}         dotColor={vitals.redis_ok?GREEN:RED}  pulse={vitals.redis_ok} />
+                      <VitalCard label="ElevenLabs"   value={vitals.tts_ok?'Reachable':'Unreachable'}    dotColor={vitals.tts_ok?GREEN:RED}    pulse={vitals.tts_ok} />
+                      <VitalCard label="Paystack"     value={vitals.paystack_ok?'Reachable':'Unreachable'} dotColor={vitals.paystack_ok?GREEN:RED} pulse={vitals.paystack_ok} />
+                      <VitalCard label="Sentry"       value={vitals.sentry_ok?'Connected':'Down'}        dotColor={vitals.sentry_ok?GREEN:RED} pulse={vitals.sentry_ok} />
+                    </>
+                  )
+                })()}
+              </div>
+            ) : null}
+
+            <div className="mc-section-divider">Auth Attempts</div>
+            {authAttemptsLoading ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[...Array(3)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:48, animationDelay:`${i*0.1}s` }} />)}
+              </div>
+            ) : authAttemptsError ? (
+              <div className="mc-card" style={{ padding:'16px 20px', borderLeft:`3px solid ${RED}` }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{authAttemptsError}</div>
+                <button className="mc-action-btn" onClick={loadAuthAttempts}>Retry</button>
+              </div>
+            ) : !authAttempts || authAttempts.length === 0 ? (
+              <div className="mc-card" style={{ padding:'20px 24px' }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:MUTED }}>No recent auth attempts</div>
+              </div>
+            ) : (
+              <div className="mc-card mc-card-enter" style={{ padding:0, overflow:'hidden', animationDelay:'0.1s' }}>
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ borderCollapse:'collapse', width:'100%' }}>
+                    <thead>
+                      <tr>
+                        {['Email','Type','Status','IP','Time'].map(h => (
+                          <th key={h} style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.06em', padding:'10px 12px', textAlign:'left', background:SURFACE }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {authAttempts.slice(0,50).map((a,i) => (
+                        <tr key={a.id||i} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                          <td style={{ ...td, color:WHITE }}>{a.email}</td>
+                          <td style={tdMono}>{a.attempt_type}</td>
+                          <td style={td}>
+                            <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:a.success?'#4ade80':RED, background:a.success?'rgba(22,163,74,0.12)':'rgba(220,38,38,0.12)', border:`1px solid ${a.success?'rgba(22,163,74,0.3)':'rgba(220,38,38,0.3)'}`, borderRadius:999, padding:'2px 8px' }}>
+                              {a.success?'OK':'FAIL'}
+                            </span>
                           </td>
-                          <td style={{ padding: '8px 12px', fontFamily: "'Poppins', sans-serif", fontSize: 12, color: WHITE }}>
-                            {a.email || '—'}
-                          </td>
-                          <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: MUTED }}>
-                            {a.ip || '—'}
-                          </td>
+                          <td style={tdMono}>{a.ip_address||'—'}</td>
+                          <td style={td}>{timeAgo(a.created_at)}</td>
                         </tr>
                       ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>
         )}
-      </div>
 
-      {/* ── Payment Issues Widget ──────────────────────────────────── */}
-      <div style={{ marginTop: 40, marginBottom: 40 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          marginBottom: 16, paddingBottom: 12,
-          borderBottom: `1px solid ${BORDER}`,
-        }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
-            Payment Issues
-          </h2>
-          {!paymentIssuesLoading && paymentIssues !== null && (
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
-              background: paymentIssues.length > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.07)',
-              color: paymentIssues.length > 0 ? AMBER : MUTED,
-              border: `1px solid ${paymentIssues.length > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: 999, padding: '2px 10px',
-            }}>
-              {paymentIssues.length} unresolved
-            </span>
-          )}
-        </div>
-
-        {paymentIssuesLoading ? (
-          <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10 }} />
-        ) : paymentIssuesError ? (
-          <FailedBadge label="Payment Issues" error={paymentIssuesError} />
-        ) : !paymentIssues || paymentIssues.length === 0 ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED }}>
-            No unresolved payment issues.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {paymentIssues.map(issue => (
-              <div key={issue.id} style={{
-                background: CARD, border: `1px solid ${BORDER}`,
-                borderLeft: `3px solid ${AMBER}`,
-                borderRadius: 10, padding: '14px 18px',
-                display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-              }}>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, marginBottom: 2 }}>
-                    {issue.user_email}
-                  </div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: AMBER, marginBottom: 4 }}>
-                    ref: {issue.transaction_ref}
-                  </div>
-                  {issue.description && (
-                    <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: MUTED }}>
-                      {issue.description.slice(0, 80)}{issue.description.length > 80 ? '…' : ''}
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, flexShrink: 0 }}>
-                  {timeAgo(issue.created_at)}
-                </div>
-                <button
-                  onClick={() => handleResolvePaymentIssue(issue.id)}
-                  disabled={resolvingIssueId === issue.id}
-                  style={{
-                    fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600,
-                    background: resolvingIssueId === issue.id ? 'rgba(22,163,74,0.2)' : GREEN,
-                    color: WHITE, border: 'none', borderRadius: 6,
-                    padding: '6px 14px', cursor: resolvingIssueId === issue.id ? 'not-allowed' : 'pointer',
-                    flexShrink: 0, transition: 'background 0.15s ease',
-                  }}
-                >
-                  {resolvingIssueId === issue.id ? 'Resolving…' : 'Mark Resolved'}
-                </button>
+        {/* ═══════════ LOGS TAB ═══════════ */}
+        {activeTab === 'logs' && (
+          <>
+            <div className="mc-section-divider">System Logs</div>
+            {systemLogsLoading ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+                {[...Array(4)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:56, animationDelay:`${i*0.1}s` }} />)}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── System Logs ───────────────────────────────────────────── */}
-      <div style={{ marginTop: 40, marginBottom: 64 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          marginBottom: 16, paddingBottom: 12,
-          borderBottom: `1px solid ${BORDER}`,
-        }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
-            System Logs
-          </h2>
-          {!systemLogsLoading && systemLogs !== null && (
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
-              background: systemLogs.length > 0 ? 'rgba(220,38,38,0.15)' : 'rgba(22,163,74,0.15)',
-              color: systemLogs.length > 0 ? RED : GREEN,
-              border: `1px solid ${systemLogs.length > 0 ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'}`,
-              borderRadius: 999, padding: '2px 10px',
-            }}>
-              {systemLogs.length} unresolved
-            </span>
-          )}
-        </div>
-
-        {systemLogsLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[0,1,2,3,4].map(i => (
-              <div key={i} style={{ height: 56, background: 'rgba(255,255,255,0.04)', borderRadius: 8 }} />
-            ))}
-          </div>
-        ) : systemLogsError ? (
-          <FailedBadge label="System Logs" error={systemLogsError} />
-        ) : !systemLogs || systemLogs.length === 0 ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: GREEN, margin: 0 }}>
-            No issues detected — system is healthy
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {systemLogs.map(log => {
-              const severityColor = log.severity === 'error' ? RED : log.severity === 'warning' ? AMBER : BLUE
-              const isExpanded    = expandedLogIds.has(log.id)
-              return (
-                <div key={log.id} style={{
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
-                  borderLeft: `3px solid ${severityColor}`,
-                  borderRadius: 10,
-                  padding: '14px 18px',
-                }}>
-                  {/* Top row: badge + feature + timestamp + resolve */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10, fontWeight: 700,
-                      color: WHITE,
-                      background: `${severityColor}33`,
-                      border: `1px solid ${severityColor}55`,
-                      borderRadius: 999, padding: '2px 8px',
-                      textTransform: 'uppercase',
-                    }}>
-                      {log.severity}
-                    </span>
-                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: WHITE, fontWeight: 500 }}>
-                      {log.feature}
-                    </span>
-                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 'auto' }}>
-                      {timeAgo(log.created_at)}
-                    </span>
-                    <button
-                      onClick={() => handleResolveLog(log.id)}
-                      disabled={resolvingLogId === log.id}
-                      style={{
-                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                        color: WHITE,
-                        background: resolvingLogId === log.id ? `${GREEN}55` : GREEN,
-                        border: 'none', borderRadius: 6,
-                        padding: '4px 12px',
-                        cursor: resolvingLogId === log.id ? 'not-allowed' : 'pointer',
-                        transition: 'background 0.15s ease',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {resolvingLogId === log.id ? 'Resolving…' : 'Resolve'}
-                    </button>
-                  </div>
-
-                  {/* Message */}
-                  <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM, margin: '0 0 8px 0' }}>
-                    {log.plain_message}
-                  </p>
-
-                  {/* Expand toggle */}
-                  {log.raw_detail && (
-                    <>
-                      <button
-                        onClick={() => toggleLogExpanded(log.id)}
-                        style={{
-                          fontFamily: "'Poppins', sans-serif", fontSize: 11,
-                          color: MUTED, background: 'transparent',
-                          border: `1px solid ${BORDER}`, borderRadius: 6,
-                          padding: '3px 10px', cursor: 'pointer',
-                        }}
-                      >
-                        {isExpanded ? 'Hide detail' : 'Show detail'}
-                      </button>
-                      {isExpanded && (
-                        <pre style={{
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: 11, color: DIM,
-                          background: SURFACE,
-                          border: `1px solid ${BORDER}`,
-                          borderRadius: 8,
-                          padding: 16,
-                          marginTop: 10,
-                          overflowX: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
-                        }}>
+            ) : systemLogsError ? (
+              <div className="mc-card" style={{ padding:'16px 20px', borderLeft:`3px solid ${RED}`, marginBottom:20 }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{systemLogsError}</div>
+                <button className="mc-action-btn" onClick={loadSystemLogs}>Retry</button>
+              </div>
+            ) : !systemLogs || systemLogs.length === 0 ? (
+              <div className="mc-card mc-card-enter" style={{ padding:'32px 24px', textAlign:'center', marginBottom:20 }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:14, color:MUTED }}>No system logs</div>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
+                {systemLogs.map((log, i) => {
+                  const isExpanded = expandedLogIds.has(log.id)
+                  const levelColor = log.level==='error'?RED:log.level==='warning'?AMBER:BLUE
+                  return (
+                    <div key={log.id} className="mc-card mc-card-enter" style={{ padding:'14px 18px', borderLeft:`3px solid ${levelColor}`, animationDelay:`${i*0.04}s` }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:4 }}>
+                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:WHITE, background:`${levelColor}33`, border:`1px solid ${levelColor}55`, borderRadius:999, padding:'2px 8px', textTransform:'uppercase' }}>{log.level}</span>
+                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{log.message}</span>
+                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED }}>{timeAgo(log.created_at)}</span>
+                        <button className="mc-action-btn" disabled={resolvingLogId===log.id} onClick={() => handleResolveLog(log.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)' }}>
+                          {resolvingLogId===log.id?'…':'Resolve'}
+                        </button>
+                        {log.raw_detail && (
+                          <button className="mc-action-btn" onClick={() => toggleLogExpanded(log.id)}>{isExpanded?'Hide':'Detail'}</button>
+                        )}
+                      </div>
+                      {isExpanded && log.raw_detail && (
+                        <pre style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:DIM, background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:8, padding:16, marginTop:10, overflowX:'auto', whiteSpace:'pre-wrap', wordBreak:'break-all' }}>
                           {JSON.stringify(log.raw_detail, null, 2)}
                         </pre>
                       )}
-                    </>
-                  )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {!systemLogsLoading && sentryIssues.length > 0 && (
+              <>
+                <div className="mc-section-divider" style={{ marginTop:8 }}>
+                  Sentry Issues
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color:WHITE, background:RED, borderRadius:999, padding:'1px 7px' }}>{sentryIssues.length}</span>
+                  <button onClick={handleResolveAllSentryIssues} disabled={resolvingAllSentry} style={{ marginLeft:'auto', fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:WHITE, background:resolvingAllSentry?'rgba(22,163,74,0.4)':GREEN, border:'none', borderRadius:8, padding:'4px 14px', cursor:resolvingAllSentry?'not-allowed':'pointer' }}>
+                    {resolvingAllSentry?'Resolving…':'Resolve All'}
+                  </button>
                 </div>
-              )
-            })}
-          </div>
+                {sentryResolveError && <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:RED, margin:'0 0 12px 0' }}>Failed: {sentryResolveError}</p>}
+                <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:20 }}>
+                  {sentryIssues.map(issue => {
+                    const lc = issue.level==='error'?RED:issue.level==='warning'?AMBER:BLUE
+                    return (
+                      <div key={issue.id} className="mc-card mc-card-enter" style={{ padding:'14px 18px', borderLeft:`3px solid ${lc}` }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:6 }}>
+                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:WHITE, background:`${lc}33`, border:`1px solid ${lc}55`, borderRadius:999, padding:'2px 8px', textTransform:'uppercase' }}>{issue.level}</span>
+                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:600, color:MUTED }}>×{issue.count}</span>
+                          <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED, marginLeft:'auto' }}>{timeAgo(issue.last_seen)}</span>
+                          <a href={issue.permalink} target="_blank" rel="noreferrer" style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:WHITE, background:'rgba(255,255,255,0.08)', border:`1px solid ${BORDER}`, borderRadius:6, padding:'4px 12px', textDecoration:'none', flexShrink:0 }}>View ↗</a>
+                        </div>
+                        <p style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:DIM, margin:0 }}>{issue.title}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
+            {!failuresLoading && failures?.rows && failures.rows.some(r => !r.resolved) && (
+              <>
+                <div className="mc-section-divider">Failed Generations</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {failures.rows.filter(r => !r.resolved).map((r, i) => (
+                    <div key={r.id} className="mc-card mc-card-enter" style={{ padding:'14px 18px', borderLeft:`3px solid ${RED}`, animationDelay:`${i*0.04}s` }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:RED }}>{r.feature}</span>
+                        <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:DIM, flex:1 }}>{r.error_message||'Unknown error'}</span>
+                        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED }}>{timeAgo(r.created_at)}</span>
+                        <button className="mc-action-btn" disabled={resolvingId===r.id} onClick={() => handleResolveFailure(r.id)} style={{ color:'#4ade80', borderColor:'rgba(22,163,74,0.3)' }}>
+                          {resolvingId===r.id?'…':'Resolve'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
+
       </div>
 
-      {/* ── Sentry Issues ─────────────────────────────────────────── */}
-      {!systemLogsLoading && sentryIssues.length > 0 && (
-        <div style={{ marginTop: 40, marginBottom: 64 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            marginBottom: 16, paddingBottom: 12,
-            borderBottom: `1px solid ${BORDER}`,
-          }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, fontWeight: 400, color: WHITE, margin: 0 }}>
-              Sentry Issues
-            </h2>
-            <span style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
-              background: 'rgba(220,38,38,0.15)', color: RED,
-              border: '1px solid rgba(220,38,38,0.3)',
-              borderRadius: 999, padding: '2px 10px',
-            }}>
-              {sentryIssues.length} unresolved
-            </span>
-            <button
-              onClick={handleResolveAllSentryIssues}
-              disabled={resolvingAllSentry}
-              style={{
-                marginLeft: 'auto',
-                fontFamily: "'Poppins', sans-serif", fontSize: 12, fontWeight: 600,
-                color: WHITE,
-                background: resolvingAllSentry ? 'rgba(22,163,74,0.4)' : GREEN,
-                border: 'none', borderRadius: 8,
-                padding: '6px 16px',
-                cursor: resolvingAllSentry ? 'not-allowed' : 'pointer',
-                transition: 'background 0.15s ease',
-                flexShrink: 0,
-              }}
-            >
-              {resolvingAllSentry ? 'Resolving…' : 'Resolve All'}
-            </button>
-          </div>
-          {sentryResolveError && (
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: RED, margin: '0 0 12px 0' }}>
-              Failed to resolve: {sentryResolveError}
-            </p>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {sentryIssues.map(issue => {
-              const levelColor = issue.level === 'error' ? RED : issue.level === 'warning' ? AMBER : BLUE
-              return (
-                <div key={issue.id} style={{
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
-                  borderLeft: `3px solid ${levelColor}`,
-                  borderRadius: 10,
-                  padding: '14px 18px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 10, fontWeight: 700, color: WHITE,
-                      background: `${levelColor}33`,
-                      border: `1px solid ${levelColor}55`,
-                      borderRadius: 999, padding: '2px 8px',
-                      textTransform: 'uppercase',
-                    }}>
-                      {issue.level}
-                    </span>
-                    <span style={{
-                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
-                      color: MUTED,
-                    }}>
-                      ×{issue.count}
-                    </span>
-                    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, marginLeft: 'auto' }}>
-                      {timeAgo(issue.last_seen)}
-                    </span>
-                    <a
-                      href={issue.permalink}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                        color: WHITE, background: 'rgba(255,255,255,0.08)',
-                        border: `1px solid ${BORDER}`, borderRadius: 6,
-                        padding: '4px 12px', textDecoration: 'none', flexShrink: 0,
-                      }}
-                    >
-                      View in Sentry ↗
-                    </a>
-                  </div>
-                  <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM, margin: 0 }}>
-                    {issue.title}
-                  </p>
-                </div>
-              )
-            })}
+      {/* ── Diagnose modal ── */}
+      {diagnoseModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setDiagnoseModal(null)}>
+          <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:16, padding:28, maxWidth:480, width:'100%', maxHeight:'80vh', overflowY:'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, fontWeight:400, color:WHITE, marginBottom:8 }}>User Diagnosis</div>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:MUTED, marginBottom:20 }}>{diagnoseModal.email}</div>
+            {diagnoseModal.loading ? (
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <svg style={{ animation:'adminSpin 0.8s linear infinite' }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:MUTED }}>Diagnosing…</span>
+              </div>
+            ) : diagnoseModal.error ? (
+              <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED }}>{diagnoseModal.error}</div>
+            ) : diagnoseModal.result ? (
+              <pre style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:DIM, background:'rgba(0,0,0,0.3)', borderRadius:8, padding:16, overflowX:'auto', whiteSpace:'pre-wrap', wordBreak:'break-all' }}>
+                {JSON.stringify(diagnoseModal.result, null, 2)}
+              </pre>
+            ) : null}
+            <button onClick={() => setDiagnoseModal(null)} className="mc-action-btn" style={{ marginTop:20 }}>Close</button>
           </div>
         </div>
       )}
-
-      {/* ── Feature Feedback Widget ───────────────────────────────── */}
-      <FeatureFeedbackWidget
-        data={feedbackData}
-        loading={feedbackLoading}
-        error={feedbackError}
-      />
-
-      {/* ── SECTION 7: Never Converted ─────────────────────────────── */}
-      <SectionHeading title={`Never Converted — Conversion Targets (${never_converted.length})`} />
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 24, marginBottom: 64 }}>
-        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: MUTED, marginBottom: 20, marginTop: 0 }}>
-          Signed up 3+ days ago · Free plan · Has at least one project.
-        </p>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <thead>
-              <tr>
-                {['Email', 'Signed Up', 'Last Active', 'Steps Used'].map(h => (
-                  <th key={h} style={{
-                    fontFamily: "'Poppins', sans-serif", fontSize: 11, fontWeight: 600,
-                    color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em',
-                    padding: '10px 12px', textAlign: 'left', background: SURFACE,
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {never_converted.length === 0 ? (
-                <tr>
-                  <td colSpan={4} style={{ ...td, textAlign: 'center', color: MUTED }}>
-                    No users match this criteria yet.
-                  </td>
-                </tr>
-              ) : never_converted.map((u, i) => (
-                <tr key={u.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                  <td style={{ ...td, color: WHITE, fontWeight: 500 }}>{u.email}</td>
-                  <td style={td}>{fmtDate(u.signup_date)}</td>
-                  <td style={td}>{fmtDate(u.last_active)}</td>
-                  <td style={tdMono}>{u.steps_completed} / 10</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
     </div>
   )
