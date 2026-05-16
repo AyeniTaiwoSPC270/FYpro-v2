@@ -1532,16 +1532,49 @@ export default function AdminHealth() {
                   const lastCallRecent = vitals.last_call_at
                     ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
                     : false
-                  const avgMs = vitals.avg_response_ms
-                  const apiOk = lastCallRecent && (avgMs === null || avgMs <= 30000)
+                  const avgMs   = vitals.avg_response_ms
+                  const apiOk   = lastCallRecent && (avgMs === null || avgMs <= 10000)
+                  const latColor = !lastCallRecent ? AMBER : avgMs === null ? GREEN : avgMs <= 5000 ? GREEN : avgMs <= 15000 ? AMBER : RED
+                  const failOk  = (vitals.failures_today ?? 0) === 0
+                  const overallOk = apiOk && failOk
                   return (
                     <>
-                      <VitalCard label="Claude API" value={lastCallRecent?(avgMs!==null?`${Math.round(avgMs)}ms`:'OK'):'No recent calls'} dotColor={apiOk?GREEN:AMBER} pulse={apiOk} />
-                      <VitalCard label="Database"     value={vitals.db_ok?'Healthy':'Degraded'}         dotColor={vitals.db_ok?GREEN:RED}     pulse={vitals.db_ok} />
-                      <VitalCard label="Redis Cache"  value={vitals.redis_ok?'Connected':'Down'}         dotColor={vitals.redis_ok?GREEN:RED}  pulse={vitals.redis_ok} />
-                      <VitalCard label="ElevenLabs"   value={vitals.tts_ok?'Reachable':'Unreachable'}    dotColor={vitals.tts_ok?GREEN:RED}    pulse={vitals.tts_ok} />
-                      <VitalCard label="Paystack"     value={vitals.paystack_ok?'Reachable':'Unreachable'} dotColor={vitals.paystack_ok?GREEN:RED} pulse={vitals.paystack_ok} />
-                      <VitalCard label="Sentry"       value={vitals.sentry_ok?'Connected':'Down'}        dotColor={vitals.sentry_ok?GREEN:RED} pulse={vitals.sentry_ok} />
+                      <VitalCard
+                        label="API Latency"
+                        value={avgMs !== null ? `${Math.round(avgMs).toLocaleString()} ms` : '—'}
+                        dotColor={latColor}
+                        pulse={apiOk}
+                      />
+                      <VitalCard
+                        label="Last API Call"
+                        value={vitals.last_call_at ? timeAgo(vitals.last_call_at) : 'Never'}
+                        dotColor={lastCallRecent ? GREEN : AMBER}
+                        pulse={lastCallRecent}
+                      />
+                      <VitalCard
+                        label="Failures Today"
+                        value={vitals.failures_today ?? 0}
+                        dotColor={failOk ? GREEN : RED}
+                        pulse={failOk}
+                      />
+                      <VitalCard
+                        label="Requests Today"
+                        value={(vitals.requests_today ?? 0).toLocaleString()}
+                        dotColor={BLUE}
+                        pulse={false}
+                      />
+                      <VitalCard
+                        label="Active Sessions"
+                        value={vitals.active_sessions ?? 0}
+                        dotColor={(vitals.active_sessions ?? 0) > 0 ? GREEN : MUTED}
+                        pulse={(vitals.active_sessions ?? 0) > 0}
+                      />
+                      <VitalCard
+                        label="Overall Status"
+                        value={overallOk ? 'Healthy' : 'Degraded'}
+                        dotColor={overallOk ? GREEN : AMBER}
+                        pulse={overallOk}
+                      />
                     </>
                   )
                 })()}
