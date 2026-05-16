@@ -122,16 +122,18 @@ async function handleHealth(req, res) {
 }
 
 // action: "alert-check"
-// Called hourly by external cron. Requires X-Cron-Secret header matching CRON_SECRET env var.
+// Called by Vercel cron or external cron (cron-job.org).
+// Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
 // Sends a Resend email alert when spend crosses 80% of daily cap.
 async function handleAlertCheck(req, res) {
   const cronSecret = process.env.CRON_SECRET;
   // Fail closed: if CRON_SECRET is not configured, reject all requests.
   if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const provided = req.headers['x-cron-secret'];
-  if (!provided || provided !== cronSecret) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const xSecret    = req.headers['x-cron-secret'];
+  const authHeader = req.headers['authorization'];
+  const authorized = (xSecret && xSecret === cronSecret) ||
+                     (authHeader && authHeader === `Bearer ${cronSecret}`);
+  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const today     = new Date().toISOString().slice(0, 10);
     const cap       = parseFloat(process.env.DAILY_CAP_USD || '10');
@@ -1205,15 +1207,17 @@ async function handleFeedbackSummary(req, res) {
 }
 
 // action: "daily-report"
-// Triggered by cron-job.org. Gate: X-Cron-Secret header matching CRON_SECRET env var.
+// Triggered by Vercel cron or external cron (cron-job.org).
+// Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
 // Aggregates today's key metrics and posts a summary to Telegram.
 async function handleDailyReport(req, res) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const providedSecret = req.headers['x-cron-secret'];
-  if (!providedSecret || providedSecret !== cronSecret) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const xSecret    = req.headers['x-cron-secret'];
+  const authHeader = req.headers['authorization'];
+  const authorized = (xSecret && xSecret === cronSecret) ||
+                     (authHeader && authHeader === `Bearer ${cronSecret}`);
+  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const today      = new Date().toISOString().slice(0, 10);
