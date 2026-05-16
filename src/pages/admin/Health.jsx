@@ -1424,7 +1424,7 @@ export default function AdminHealth() {
                       </thead>
                       <tbody>
                         {top_active_users.map((u,i) => (
-                          <tr key={u.id} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
+                          <tr key={u.email||i} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
                             <td style={{ ...td, color:WHITE, fontWeight:500 }}>{u.email}</td>
                             <td style={tdMono}>{u.total_runs}</td>
                             <td style={td}>{u.top_feature || '—'}</td>
