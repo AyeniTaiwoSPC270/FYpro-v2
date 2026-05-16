@@ -1591,7 +1591,7 @@ export default function AdminHealth() {
                 <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{authAttemptsError}</div>
                 <button className="mc-action-btn" onClick={loadAuthAttempts}>Retry</button>
               </div>
-            ) : !authAttempts || authAttempts.length === 0 ? (
+            ) : !authAttempts || !authAttempts.attempts?.length ? (
               <div className="mc-card" style={{ padding:'20px 24px' }}>
                 <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:MUTED }}>No recent auth attempts</div>
               </div>
@@ -1607,7 +1607,7 @@ export default function AdminHealth() {
                       </tr>
                     </thead>
                     <tbody>
-                      {authAttempts.slice(0,50).map((a,i) => (
+                      {(authAttempts.attempts || []).slice(0,50).map((a,i) => (
                         <tr key={a.id||i} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
                           <td style={{ ...td, color:WHITE }}>{a.email}</td>
                           <td style={tdMono}>{a.attempt_type}</td>
