@@ -1209,10 +1209,10 @@ export default function AdminHealth() {
           <>
             {/* KPI cards */}
             <div className="mc-kpi-grid" style={{ marginBottom:16 }}>
-              <KpiCounterCard key={counterKeyRef.current + '-u'} label="Total Users" target={overview?.total_users||0} glow="#60A5FA" shadow="rgba(0,102,255,0.6)" delay={0} sub={`+${overview?.new_users_today||0} today`} />
-              <KpiCounterCard key={counterKeyRef.current + '-r'} label="Revenue (NGN)" target={overview?.revenue_ngn||0} prefix="₦" glow="#4ade80" shadow="rgba(22,163,74,0.5)" delay={0.05} sub={`${overview?.paying_users||0} paying users`} />
+              <KpiCounterCard key={counterKeyRef.current + '-u'} label="Total Users" target={overview?.total_users||0} glow="#60A5FA" shadow="rgba(0,102,255,0.6)" delay={0} sub={`+${overview?.signups_today||0} today`} />
+              <KpiCounterCard key={counterKeyRef.current + '-r'} label="Revenue (NGN)" target={overview?.total_revenue_ngn||0} prefix="₦" glow="#4ade80" shadow="rgba(22,163,74,0.5)" delay={0.05} sub={`${overview?.total_paid||0} paying users`} />
               <KpiCounterCard key={counterKeyRef.current + '-s'} label="AI Spend Today" target={daily_spend?.spent_usd||0} prefix="$" decimals={2} glow="#fbbf24" shadow="rgba(245,158,11,0.5)" delay={0.1} sub={`cap $${daily_spend?.cap_usd?.toFixed(2)||'10.00'}`} />
-              <KpiCounterCard key={counterKeyRef.current + '-d'} label="Defenses Done" target={overview?.defenses_completed||0} glow={WHITE} shadow="none" delay={0.15} sub={`${overview?.certificates_issued||0} certificates`} />
+              <KpiCounterCard key={counterKeyRef.current + '-d'} label="Defense Simulator" target={funnel?.find(f=>f.step==='defense_simulator')?.count||0} glow={WHITE} shadow="none" delay={0.15} sub={`${overview?.conversion_rate||0}% converted`} />
             </div>
 
             {/* Signups chart + live feed */}
@@ -1239,7 +1239,7 @@ export default function AdminHealth() {
                     <XAxis dataKey="date" tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} />
                     <YAxis tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} tickFormatter={v => `₦${(v/1000).toFixed(0)}k`} />
                     <Tooltip {...tooltipStyle} formatter={v => [`₦${Number(v).toLocaleString()}`, 'Revenue']} />
-                    <Line type="monotone" dataKey="revenue_ngn" stroke={GREEN} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="amount" stroke={GREEN} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -1248,7 +1248,7 @@ export default function AdminHealth() {
             {/* Today's snapshot cards */}
             <div className="mc-section-divider">Today's Snapshot</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
-              <SignupsCompareCard today={overview?.new_users_today} yesterday={signups_yesterday} />
+              <SignupsCompareCard today={overview?.signups_today} yesterday={signups_yesterday} />
               <OverviewCard label="Revenue Today" value={revenue_today_ngn != null ? `₦${Number(revenue_today_ngn).toLocaleString()}` : '—'} sub={`${paying_users_today??0} payments today`} accent={GREEN} />
               <OverviewCard label="Failed Payments" value={failed_payments_today??0} sub="today" accent={failed_payments_today>0?RED:MUTED} />
               <SpendCard spend={daily_spend} />
@@ -1257,9 +1257,9 @@ export default function AdminHealth() {
             {/* Unit economics */}
             <div className="mc-section-divider">Unit Economics</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
-              <OverviewCard label="Avg Rev / User" value={overview?.total_users>0&&overview?.revenue_ngn>0?`₦${Math.round(overview.revenue_ngn/overview.total_users).toLocaleString()}`:'—'} sub="total lifetime" accent={BLUE} />
+              <OverviewCard label="Avg Rev / User" value={overview?.total_users>0&&overview?.total_revenue_ngn>0?`₦${Math.round(overview.total_revenue_ngn/overview.total_users).toLocaleString()}`:'—'} sub="total lifetime" accent={BLUE} />
               <OverviewCard label="Conversion Rate" value={overview?.conversion_rate!=null?`${Number(overview.conversion_rate).toFixed(1)}%`:'—'} sub="free → paid" accent={GREEN} />
-              <OverviewCard label="Cache Hit Rate" value={cache_hit_rate!=null?`${Number(cache_hit_rate).toFixed(1)}%`:'—'} sub="last 24h" accent={AMBER} />
+              <OverviewCard label="Cache Hit Rate" value={cache_hit_rate?.hit_rate_pct!=null?`${Number(cache_hit_rate.hit_rate_pct).toFixed(1)}%`:'—'} sub={`${cache_hit_rate?.hits_total||0} hits`} accent={AMBER} />
               {ngn_per_usd && <OverviewCard label="₦ / USD Rate" value={`₦${ngn_per_usd?.toLocaleString()}`} sub="live rate" accent={MUTED} />}
             </div>
 
@@ -1290,14 +1290,14 @@ export default function AdminHealth() {
                 <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.4s', marginBottom:16 }}>
                   <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {funnel.map(f => {
-                      const pct = funnel[0]?.users>0 ? Math.round((f.users/funnel[0].users)*100) : 0
+                      const pct = funnel[0]?.count>0 ? Math.round((f.count/funnel[0].count)*100) : 0
                       return (
                         <div key={f.step} style={{ display:'flex', alignItems:'center', gap:10 }}>
                           <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:DIM, width:180, flexShrink:0 }}>{FUNNEL_LABELS[f.step]||f.step}</div>
                           <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:999 }}>
                             <div style={{ height:6, background:`linear-gradient(90deg,${BLUE},${GREEN})`, borderRadius:999, width:`${pct}%`, transition:'width 0.5s ease' }} />
                           </div>
-                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:50, textAlign:'right' }}>{f.users}</div>
+                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:50, textAlign:'right' }}>{f.count}</div>
                           <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED, width:36, textAlign:'right' }}>{pct}%</div>
                         </div>
                       )
@@ -1417,7 +1417,7 @@ export default function AdminHealth() {
                     <table style={{ borderCollapse:'collapse', width:'100%' }}>
                       <thead>
                         <tr>
-                          {['Email','Steps Done','Last Active'].map(h => (
+                          {['Email','Total Runs','Top Feature'].map(h => (
                             <th key={h} style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.06em', padding:'10px 12px', textAlign:'left', background:SURFACE }}>{h}</th>
                           ))}
                         </tr>
@@ -1426,8 +1426,8 @@ export default function AdminHealth() {
                         {top_active_users.map((u,i) => (
                           <tr key={u.id} style={{ background:i%2===0?'transparent':'rgba(255,255,255,0.015)' }}>
                             <td style={{ ...td, color:WHITE, fontWeight:500 }}>{u.email}</td>
-                            <td style={tdMono}>{u.steps_completed}</td>
-                            <td style={td}>{fmtDate(u.last_active)}</td>
+                            <td style={tdMono}>{u.total_runs}</td>
+                            <td style={td}>{u.top_feature || '—'}</td>
                           </tr>
                         ))}
                       </tbody>
