@@ -354,18 +354,6 @@ function SignupsBarChart({ data }) {
 
 // ── Live activity feed ───────────────────────────────────────────────
 function LiveFeed({ data, failures }) {
-  const events = []
-  if (data?.users) {
-    const recent = [...data.users].sort((a, b) => new Date(b.signup_date) - new Date(a.signup_date)).slice(0, 2)
-    recent.forEach(u => events.push({ color: '#4ade80', text: `New signup — ${u.email?.split('@')[0] || '…'}`, time: u.signup_date }))
-  }
-  if (failures?.rows) {
-    failures.rows.filter(r => !r.resolved).slice(0, 2).forEach(r => {
-      events.push({ color: '#fbbf24', text: `AI gen fail — ${r.feature || 'unknown'}`, time: r.created_at })
-    })
-  }
-  events.sort((a, b) => new Date(b.time) - new Date(a.time))
-
   function timeAgoShort(iso) {
     if (!iso) return '—'
     const ms = Date.now() - new Date(iso).getTime()
@@ -375,19 +363,80 @@ function LiveFeed({ data, failures }) {
     return `${Math.floor(m / 60)}h ago`
   }
 
-  if (events.length === 0) {
+  const events = []
+
+  if (data?.users) {
+    const recent = [...data.users]
+      .sort((a, b) => new Date(b.signup_date) - new Date(a.signup_date))
+      .slice(0, 4)
+    recent.forEach(u => events.push({
+      color: '#4ade80',
+      label: 'Signup',
+      text: u.email?.split('@')[0] || '…',
+      time: u.signup_date,
+    }))
+  }
+
+  if (data?.users) {
+    // Users who have completed defense (have a paid plan and last_active recently)
+    const defenders = [...data.users]
+      .filter(u => u.plan === 'Defense' && u.last_active)
+      .sort((a, b) => new Date(b.last_active) - new Date(a.last_active))
+      .slice(0, 2)
+    defenders.forEach(u => events.push({
+      color: '#60A5FA',
+      label: 'Defense',
+      text: u.email?.split('@')[0] || '…',
+      time: u.last_active,
+    }))
+
+    // Paying users as proxy for recent payments
+    const payers = [...data.users]
+      .filter(u => u.plan !== 'Free' && u.last_active)
+      .sort((a, b) => new Date(b.last_active) - new Date(a.last_active))
+      .slice(0, 2)
+    payers.forEach(u => events.push({
+      color: '#fbbf24',
+      label: u.plan === 'Defense' ? 'Defense Pack' : 'Student Pack',
+      text: u.email?.split('@')[0] || '…',
+      time: u.last_active,
+    }))
+  }
+
+  if (failures?.rows) {
+    failures.rows
+      .filter(r => !r.resolved)
+      .slice(0, 3)
+      .forEach(r => events.push({
+        color: '#f87171',
+        label: 'AI Fail',
+        text: r.feature ? (r.feature.replace(/_/g, ' ')) : 'unknown',
+        time: r.created_at,
+      }))
+  }
+
+  // Dedupe by text+label and sort by time descending
+  const seen = new Set()
+  const unique = events.filter(e => {
+    const key = e.label + e.text
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+  unique.sort((a, b) => new Date(b.time) - new Date(a.time))
+
+  if (unique.length === 0) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 100, color: 'rgba(255,255,255,0.2)', fontSize: 12, fontFamily: "'Poppins', sans-serif" }}>No recent activity</div>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {events.slice(0, 6).map((e, i) => (
-        <div key={i} className="mc-feed-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', animationDelay: `${0.5 + i * 0.06}s` }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: e.color, flexShrink: 0, marginTop: 4 }} />
-          <div>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{e.text}</div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>{timeAgoShort(e.time)}</div>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {unique.slice(0, 8).map((e, i) => (
+        <div key={i} className="mc-feed-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', animationDelay: `${0.5 + i * 0.05}s` }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: e.color, flexShrink: 0 }} />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, color: e.color, background: `${e.color}18`, border: `1px solid ${e.color}33`, borderRadius: 999, padding: '1px 7px', flexShrink: 0 }}>{e.label}</span>
+          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.7)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.text}</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>{timeAgoShort(e.time)}</span>
         </div>
       ))}
     </div>
@@ -469,6 +518,8 @@ export default function AdminHealth() {
   const [maintenanceUpdatedAt, setMaintenanceUpdatedAt] = useState(null)
   const [maintenanceToast,     setMaintenanceToast]     = useState(null)
   const maintenanceToastTimer                           = useRef(null)
+
+  const [confirmModal, setConfirmModal] = useState(null) // { title, body, onConfirm, danger }
 
   const [activeTab, setActiveTab] = useState('overview')
   const counterKeyRef = useRef(0)
@@ -719,45 +770,58 @@ export default function AdminHealth() {
   }
 
   async function handleDeleteUser(userId, email) {
-    if (!window.confirm(`Permanently delete user ${email}? This cannot be undone.`)) return
-    setActionState(s => ({ ...s, [userId]: 'pending' }))
-    try {
-      const res = await fetch('/api/admin?action=delete-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setData(prev => ({ ...prev, users: prev.users.filter(u => u.id !== userId) }))
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-    } catch (err) {
-      setActionState(s => ({ ...s, [userId]: 'error' }))
-      window.alert('Delete failed: ' + err.message)
-    }
+    askConfirm(
+      'Delete User',
+      `Permanently delete ${email}? This cannot be undone.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res = await fetch('/api/admin?action=delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setData(prev => ({ ...prev, users: prev.users.filter(u => u.id !== userId) }))
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('success', `${email} deleted`)
+        } catch (err) {
+          setActionState(s => ({ ...s, [userId]: 'error' }))
+          showUserToast('error', 'Delete failed: ' + err.message)
+        }
+      },
+      true
+    )
   }
 
   async function handleBanUser(userId, email) {
-    if (!window.confirm(`Ban user ${email}? They will be denied access until 2099.`)) return
-    setActionState(s => ({ ...s, [userId]: 'pending' }))
-    try {
-      const res = await fetch('/api/admin?action=ban-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setActionState(s => ({ ...s, [userId]: 'banned' }))
-      // Update local user row so StatusBadge shows "Banned" immediately
-      setData(prev => ({
-        ...prev,
-        users: prev.users.map(u => u.id === userId ? { ...u, status: 'banned' } : u),
-      }))
-    } catch (err) {
-      setActionState(s => ({ ...s, [userId]: 'error' }))
-      window.alert('Ban failed: ' + err.message)
-    }
+    askConfirm(
+      'Ban User',
+      `Ban ${email}? They will be denied access until 2099.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res = await fetch('/api/admin?action=ban-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setActionState(s => ({ ...s, [userId]: 'banned' }))
+          setData(prev => ({
+            ...prev,
+            users: prev.users.map(u => u.id === userId ? { ...u, status: 'banned' } : u),
+          }))
+          showUserToast('success', `${email} banned`)
+        } catch (err) {
+          setActionState(s => ({ ...s, [userId]: 'error' }))
+          showUserToast('error', 'Ban failed: ' + err.message)
+        }
+      },
+      true
+    )
   }
 
   function showUserToast(type, message) {
@@ -766,64 +830,82 @@ export default function AdminHealth() {
     userActionToastTimer.current = setTimeout(() => setUserActionToast(null), 4000)
   }
 
+  function askConfirm(title, body, onConfirm, danger = false) {
+    setConfirmModal({ title, body, onConfirm, danger })
+  }
+
   async function handleResetRunCounts(userId, email) {
-    if (!window.confirm(`Reset usage run counts for ${email}? They will be able to use all features again from zero.`)) return
-    setActionState(s => ({ ...s, [userId]: 'pending' }))
-    try {
-      const res  = await fetch('/api/admin?action=reset-run-counts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('success', `Run counts reset for ${email}`)
-    } catch (err) {
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('error', 'Reset failed: ' + err.message)
-    }
+    askConfirm(
+      'Reset Run Counts',
+      `Reset all feature usage counts for ${email}? They will start from zero.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res  = await fetch('/api/admin?action=reset-run-counts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('success', `Run counts reset for ${email}`)
+        } catch (err) {
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('error', 'Reset failed: ' + err.message)
+        }
+      }
+    )
   }
 
   async function handleResetUsage(userId, email) {
-    if (!window.confirm(`Reset usage limits for ${email}?`)) return
-    setActionState(s => ({ ...s, [userId]: 'pending' }))
-    try {
-      const res  = await fetch('/api/admin?action=reset-usage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('success', `Usage limits reset for ${email}`)
-    } catch (err) {
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('error', 'Reset failed: ' + err.message)
-    }
+    askConfirm(
+      'Reset Usage Limits',
+      `Reset usage limits for ${email}? They will be able to use rate-limited features again.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res  = await fetch('/api/admin?action=reset-usage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('success', `Usage limits reset for ${email}`)
+        } catch (err) {
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('error', 'Reset failed: ' + err.message)
+        }
+      }
+    )
   }
 
   async function handleGrantPlan(userId, email, plan) {
     const label = plan === 'student' ? 'Student Plan' : 'Defense Plan'
-    if (!window.confirm(`Grant ${label} to ${email}?`)) return
-    setActionState(s => ({ ...s, [userId]: 'pending' }))
-    try {
-      const res  = await fetch('/api/admin?action=grant-entitlement', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ userId, plan }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error)
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('success', `${label} granted to ${email}`)
-      // Refresh the full user table from the server so the plan badge updates immediately
-      loadData()
-    } catch (err) {
-      setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-      showUserToast('error', `Grant failed: ${err.message}`)
-    }
+    askConfirm(
+      `Grant ${label}`,
+      `Grant ${label} to ${email}? This gives them paid access at no charge.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res  = await fetch('/api/admin?action=grant-entitlement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId, plan }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('success', `${label} granted to ${email}`)
+          loadData()
+        } catch (err) {
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('error', `Grant failed: ${err.message}`)
+        }
+      }
+    )
   }
 
   async function handleDiagnose(userId, email) {
@@ -929,7 +1011,7 @@ export default function AdminHealth() {
         rows: prev.rows.map(r => r.id === id ? { ...r, resolved: true } : r),
       }))
     } catch (err) {
-      window.alert('Resolve failed: ' + err.message)
+      showUserToast('error', 'Resolve failed: ' + err.message)
     } finally {
       setResolvingId(null)
     }
@@ -938,8 +1020,20 @@ export default function AdminHealth() {
   // ── Maintenance mode handlers ───────────────────────────────────
   async function handleToggleMaintenance() {
     const next = !maintenanceMode
-    if (next && !window.confirm('This will lock out all users. Continue?')) return
     if (maintenanceBusy) return
+    if (next) {
+      askConfirm(
+        'Enable Maintenance Mode',
+        'This will lock out all users immediately. Only do this for planned downtime.',
+        () => _doToggleMaintenance(next),
+        true
+      )
+      return
+    }
+    _doToggleMaintenance(next)
+  }
+
+  async function _doToggleMaintenance(next) {
     setMaintenanceBusy(true)
     clearTimeout(maintenanceToastTimer.current)
     try {
@@ -1056,10 +1150,11 @@ export default function AdminHealth() {
   const degradedVitals = vitals
     ? (() => {
         const lastCallRecent = vitals.last_call_at
-          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
           : false
         const avgMs = vitals.avg_response_ms
-        return (!lastCallRecent ? 1 : 0) + (avgMs !== null && avgMs > 30000 ? 1 : 0)
+        // only flag latency if there have been recent calls and they're slow (>5s)
+        return (!lastCallRecent && vitals.requests_today > 0 ? 1 : 0) + (avgMs !== null && avgMs > 5000 ? 1 : 0)
       })()
     : 0
 
@@ -1297,17 +1392,26 @@ export default function AdminHealth() {
               <>
                 <div className="mc-section-divider">Completion Funnel</div>
                 <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.4s', marginBottom:16 }}>
-                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                    {funnel.map(f => {
-                      const pct = funnel[0]?.count>0 ? Math.round((f.count/funnel[0].count)*100) : 0
+                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                    {funnel.map((f, fi) => {
+                      const pct      = funnel[0]?.count>0 ? Math.round((f.count/funnel[0].count)*100) : 0
+                      const prevCount = fi > 0 ? funnel[fi-1].count : null
+                      const dropPct  = prevCount > 0 ? Math.round(((prevCount - f.count) / prevCount) * 100) : null
                       return (
-                        <div key={f.step} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                          <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:DIM, width:180, flexShrink:0 }}>{FUNNEL_LABELS[f.step]||f.step}</div>
-                          <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:999 }}>
-                            <div style={{ height:6, background:`linear-gradient(90deg,${BLUE},${GREEN})`, borderRadius:999, width:`${pct}%`, transition:'width 0.5s ease' }} />
+                        <div key={f.step}>
+                          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
+                            <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:DIM, width:180, flexShrink:0 }}>{FUNNEL_LABELS[f.step]||f.step}</div>
+                            <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:999 }}>
+                              <div style={{ height:6, background:`linear-gradient(90deg,${BLUE},${GREEN})`, borderRadius:999, width:`${pct}%`, transition:'width 0.5s ease' }} />
+                            </div>
+                            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:50, textAlign:'right' }}>{f.count}</div>
+                            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED, width:38, textAlign:'right' }}>{pct}%</div>
                           </div>
-                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:WHITE, width:50, textAlign:'right' }}>{f.count}</div>
-                          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:MUTED, width:36, textAlign:'right' }}>{pct}%</div>
+                          {dropPct !== null && dropPct > 0 && (
+                            <div style={{ paddingLeft:190, fontFamily:"'JetBrains Mono',monospace", fontSize:9, color:dropPct>50?RED:dropPct>25?AMBER:MUTED }}>
+                              ↓ {dropPct}% drop from previous
+                            </div>
+                          )}
                         </div>
                       )
                     })}
@@ -1410,13 +1514,19 @@ export default function AdminHealth() {
               )}
             </div>
 
-            {totalPages > 1 && (
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:24 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:24 }}>
+              {totalPages > 1 && (
                 <button className="mc-action-btn" disabled={page===0} onClick={() => setPage(p => p-1)}>← Prev</button>
-                <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:MUTED }}>{page+1} / {totalPages} · {filteredUsers.length} users</span>
+              )}
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:MUTED, flex:1 }}>
+                {filteredUsers.length === 0
+                  ? 'No users match'
+                  : `Showing ${page * PAGE_SIZE + 1}–${Math.min((page+1)*PAGE_SIZE, filteredUsers.length)} of ${filteredUsers.length} user${filteredUsers.length !== 1 ? 's' : ''}`}
+              </span>
+              {totalPages > 1 && (
                 <button className="mc-action-btn" disabled={page>=totalPages-1} onClick={() => setPage(p => p+1)}>Next →</button>
-              </div>
-            )}
+              )}
+            </div>
 
             {top_active_users && top_active_users.length > 0 && (
               <>
@@ -1483,6 +1593,29 @@ export default function AdminHealth() {
         {/* ═══════════ PAYMENTS TAB ═══════════ */}
         {activeTab === 'payments' && (
           <>
+            {/* Revenue snapshot */}
+            <div className="mc-section-divider">Revenue Overview</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
+              <OverviewCard label="Total Revenue" value={`₦${Number(overview?.total_revenue_ngn||0).toLocaleString()}`} sub={`${overview?.total_paid||0} paying users`} accent={GREEN} />
+              <OverviewCard label="Revenue Today" value={revenue_today_ngn != null ? `₦${Number(revenue_today_ngn).toLocaleString()}` : '₦0'} sub={`${paying_users_today??0} payments`} accent={GREEN} />
+              <OverviewCard label="Failed Payments" value={failed_payments_today??0} sub="today" accent={(failed_payments_today??0)>0?RED:MUTED} />
+              <SpendCard spend={daily_spend} />
+            </div>
+            {revenue_chart && revenue_chart.length > 0 && (
+              <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.1s', marginBottom:20 }}>
+                <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:12 }}>Revenue — Last 30 Days</div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={revenue_chart.map(d => ({ ...d, date: fmtChartDate(d.date) }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} />
+                    <YAxis tick={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fill:MUTED }} tickFormatter={v => `₦${(v/1000).toFixed(0)}k`} />
+                    <Tooltip {...tooltipStyle} formatter={v => [`₦${Number(v).toLocaleString()}`, 'Revenue']} />
+                    <Line type="monotone" dataKey="amount" stroke={GREEN} strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
             <div className="mc-section-divider">Payment Issues</div>
             {paymentIssuesLoading ? (
               <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
@@ -1539,11 +1672,12 @@ export default function AdminHealth() {
               <div className="mc-vitals-grid mc-card-enter" style={{ animationDelay:'0.05s', marginBottom:20 }}>
                 {(() => {
                   const lastCallRecent = vitals.last_call_at
-                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
                     : false
                   const avgMs   = vitals.avg_response_ms
-                  const apiOk   = lastCallRecent && (avgMs === null || avgMs <= 10000)
-                  const latColor = !lastCallRecent ? AMBER : avgMs === null ? GREEN : avgMs <= 5000 ? GREEN : avgMs <= 15000 ? AMBER : RED
+                  const hasActivity = (vitals.requests_today ?? 0) > 0
+                  const apiOk   = (!hasActivity || lastCallRecent) && (avgMs === null || avgMs <= 5000)
+                  const latColor = avgMs === null ? (hasActivity ? GREEN : MUTED) : avgMs <= 3000 ? GREEN : avgMs <= 8000 ? AMBER : RED
                   const failOk  = (vitals.failures_today ?? 0) === 0
                   const overallOk = apiOk && failOk
                   return (
@@ -1556,8 +1690,8 @@ export default function AdminHealth() {
                       />
                       <VitalCard
                         label="Last API Call"
-                        value={vitals.last_call_at ? timeAgo(vitals.last_call_at) : 'Never'}
-                        dotColor={lastCallRecent ? GREEN : AMBER}
+                        value={vitals.last_call_at ? timeAgo(vitals.last_call_at) : 'No calls today'}
+                        dotColor={!hasActivity ? MUTED : lastCallRecent ? GREEN : AMBER}
                         pulse={lastCallRecent}
                       />
                       <VitalCard
@@ -1736,6 +1870,25 @@ export default function AdminHealth() {
         )}
 
       </div>
+
+      {/* ── Confirm modal ── */}
+      {confirmModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.82)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setConfirmModal(null)}>
+          <div style={{ background:SURFACE, border:`1px solid ${confirmModal.danger?'rgba(220,38,38,0.4)':BORDER}`, borderRadius:16, padding:28, maxWidth:400, width:'100%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, fontWeight:400, color:WHITE, marginBottom:10 }}>{confirmModal.title}</div>
+            <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:DIM, marginBottom:24, lineHeight:1.6 }}>{confirmModal.body}</div>
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button className="mc-action-btn" onClick={() => setConfirmModal(null)} style={{ padding:'8px 20px', fontSize:13 }}>Cancel</button>
+              <button
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal(null) }}
+                style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, fontWeight:600, color:WHITE, background:confirmModal.danger?RED:BLUE, border:'none', borderRadius:8, padding:'8px 22px', cursor:'pointer' }}
+              >
+                {confirmModal.danger ? 'Yes, proceed' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Diagnose modal ── */}
       {diagnoseModal && (
