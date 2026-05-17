@@ -408,11 +408,12 @@ export default function Settings() {
   const { state, clearState } = useApp()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
-
-  const name     = 'Taiwo Ayeni'
-  const initials = 'TA'
-
   const { user } = useUser()
+
+  const name     = user?.user_metadata?.full_name || state.name || ''
+  const initials = name
+    ? name.split(' ').map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+    : user?.email?.[0]?.toUpperCase() ?? '?'
 
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' })
   function handlePasswordChange(e) {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { AuthContext } from './AuthContext'
 
@@ -62,6 +62,7 @@ const DEFAULT_STATE = {
 // cookie_consent and fypro_theme are intentionally excluded — they're device preferences, not user data.
 const USER_STORAGE_KEYS = [
   'fypro_session',
+  'fypro_session_owner',
   'isOnboarded',
   'fypro_run_counts',
   'fypro_autosave_topic_validator',
@@ -82,10 +83,36 @@ export function clearUserLocalStorage() {
   try { sessionStorage.clear() } catch {}
 }
 
+// Reads the Supabase-managed session user ID synchronously from localStorage.
+// Used to guard fypro_session on mount before async auth resolves.
+function getCurrentAuthUserId() {
+  try {
+    const sbKey = Object.keys(localStorage).find(
+      k => k.startsWith('sb-') && k.endsWith('-auth-token')
+    )
+    if (!sbKey) return null
+    const parsed = JSON.parse(localStorage.getItem(sbKey) ?? 'null')
+    return parsed?.user?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem('fypro_session')
     if (!raw) return null
+    const storedOwner     = localStorage.getItem('fypro_session_owner')
+    const currentAuthUser = getCurrentAuthUserId()
+    // Reject the saved session when we know who is logged in and either:
+    // - the session belongs to a different user, OR
+    // - the session has no owner tag (could be stale from a pre-fix deployment).
+    // Both cases are cleared to prevent one user seeing another's data.
+    if (currentAuthUser && (!storedOwner || currentAuthUser !== storedOwner)) {
+      localStorage.removeItem('fypro_session')
+      localStorage.removeItem('fypro_session_owner')
+      return null
+    }
     return JSON.parse(raw)
   } catch {
     return null
@@ -108,11 +135,35 @@ export function AppProvider({ children }) {
     }
   }, [state])
 
+  // Stamp the session owner so loadFromStorage() can reject it for a different user
+  useEffect(() => {
+    if (session?.user?.id) {
+      try { localStorage.setItem('fypro_session_owner', session.user.id) } catch {}
+    }
+  }, [session?.user?.id])
+
+  // Tracks the user ID from the previous render to detect mid-session user switches
+  // (e.g. User A signs out and User B signs in without a page reload).
+  const prevUserIdRef = useRef(null)
+
   // Hydrate faculty/department/level from Supabase whenever the authenticated
   // user changes. Reads session from AuthContext — no direct getSession() call.
   useEffect(() => {
-    if (!session?.user) return
+    if (!session?.user) {
+      prevUserIdRef.current = null
+      return
+    }
     const user = session.user
+
+    // Mid-session user switch: clear all stale data before loading the new user.
+    // The page-reload case is handled by loadFromStorage() rejecting the stale
+    // fypro_session when its fypro_session_owner doesn't match the auth user.
+    if (prevUserIdRef.current !== null && prevUserIdRef.current !== user.id) {
+      clearUserLocalStorage()
+      setState(DEFAULT_STATE)
+      setOnboardedFlag(false)
+    }
+    prevUserIdRef.current = user.id
 
     async function hydrateFromSupabase() {
       const { data: profile } = await supabase
@@ -134,7 +185,8 @@ export function AppProvider({ children }) {
 
       setState(prev => ({
         ...prev,
-        name:       profile.full_name  ?? prev.name,
+        // Prefer DB name; fall back to Google/OAuth metadata; never inherit a previous user's name
+        name:       profile.full_name ?? user.user_metadata?.full_name ?? '',
         faculty:    profile.faculty    ?? prev.faculty,
         department: profile.department ?? prev.department,
         level:      profile.level      ?? prev.level,
