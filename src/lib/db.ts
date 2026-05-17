@@ -146,10 +146,14 @@ export async function updateProject(
   projectId: string,
   updates: Partial<Pick<Project, 'title' | 'current_step' | 'status'>>
 ): Promise<void> {
+  const user = await sessionUser()
+  if (!user) return
+
   const { error } = await supabase
     .from('projects')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', projectId)
+    .eq('user_id', user.id)
 
   if (error) console.error('[supabase-client] updateProject:', error.message)
 }

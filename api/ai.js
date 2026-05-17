@@ -21,11 +21,17 @@ const TTL_BY_STEP = {
 };
 
 async function handleGeneral(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
   if (!rl.allowed) {
-    const uid = extractUserId(req) || 'anon';
     const today = new Date().toISOString().slice(0, 10);
-    sendTelegramAlertOnce(`⏱️ Rate limit: ${uid} blocked on general AI`, `tg:rl:general:${uid}:${today}`);
+    sendTelegramAlertOnce(`⏱️ Rate limit: ${user.id.slice(0, 8)} blocked on general AI`, `tg:rl:general:${user.id}:${today}`);
     return res.status(429).json({ error: rl.reason });
   }
 
@@ -183,7 +189,7 @@ async function handleDefense(req, res) {
   } catch (err) {
     console.error('[ai/defense] error:', err.message);
     await Promise.all([
-      sendTelegramAlert(`🔴 Generation failed: defense-simulator for ${user.email} - ${err.message}`),
+      sendTelegramAlert(`🔴 Generation failed: defense-simulator for user:${user.id.slice(0, 8)} - ${err.message}`),
       writeSystemLog({
         severity:      'error',
         feature:       'Defense Simulator',
