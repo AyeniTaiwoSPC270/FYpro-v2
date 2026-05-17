@@ -350,7 +350,7 @@ async function cmdToday() {
     supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayISO),
     supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
     supabaseAdmin.from('system_logs').select('*', { count: 'exact', head: true }).eq('severity', 'error').eq('resolved', false),
-    supabaseAdmin.from('defense_sessions').select('*', { count: 'exact', head: true }).eq('status', 'completed').gte('completed_at', todayISO),
+    supabaseAdmin.from('defense_sessions').select('*', { count: 'exact', head: true }).not('completed_at', 'is', null).gte('completed_at', todayISO),
     supabaseAdmin.from('defense_certificates').select('*', { count: 'exact', head: true }).gte('issued_at', todayISO),
     supabaseAdmin.from('projects').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
   ])
