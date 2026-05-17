@@ -15,9 +15,10 @@ if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Missing env var: PAYSTACK
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const PLAN_DISPLAY_NAMES = {
-  student_pack:  'Student Pack',
-  defense_pack:  'Defense Pack',
-  project_reset: 'Project Reset',
+  student_pack:          'Student Pack',
+  defense_pack:          'Defense Pack',
+  defense_pack_upgrade:  'Defense Pack (Upgrade)',
+  project_reset:         'Project Reset',
 };
 
 async function getRawBody(req) {
@@ -167,9 +168,23 @@ async function handleInitiate(req, res) {
     const { tier } = req.body || {};
     if (!tier) return res.status(400).json({ error: 'Missing required field: tier' });
 
+    // Detect upgrade: Student Plan holders buying Defense Pack pay ₦1,500 (the difference)
+    let effectiveTier = tier;
+    if (tier === 'defense_pack') {
+      const { data: entitlements } = await supabaseAdmin
+        .from('user_entitlements')
+        .select('paid_features')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const features = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
+      if (features.includes('student_pack') && !features.includes('defense_pack')) {
+        effectiveTier = 'defense_pack_upgrade';
+      }
+    }
+
     let amountKobo;
     try {
-      amountKobo = expectedAmountKobo(tier);
+      amountKobo = expectedAmountKobo(effectiveTier);
     } catch {
       return res.status(400).json({ error: `Unknown tier: ${tier}` });
     }
@@ -180,7 +195,7 @@ async function handleInitiate(req, res) {
       .from('payments')
       .insert({
         user_id:            user.id,
-        tier,
+        tier:               effectiveTier,
         amount_kobo:        amountKobo,
         paystack_reference: reference,
         status:             'pending',

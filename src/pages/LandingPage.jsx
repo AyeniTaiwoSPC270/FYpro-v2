@@ -411,7 +411,7 @@ function Navbar() {
 
         <div className="hidden md:flex items-center gap-2.5">
           <BtnLink href="/login" className="px-5 py-2 text-[0.8rem] bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">Login</BtnLink>
-          <BtnLink href="/login" className="px-5 py-2 text-[0.8rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Try Free</BtnLink>
+          <BtnLink href="/signup" className="px-5 py-2 text-[0.8rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Try Free</BtnLink>
         </div>
 
         <button
@@ -457,7 +457,7 @@ function Navbar() {
             </div>
             <div className="flex flex-col gap-2.5">
               <BtnLink href="/login" className="w-full py-2.5 px-[22px] text-[0.875rem] bg-transparent text-white border border-white/[0.22] hover:border-white/45">Login</BtnLink>
-              <BtnLink href="/login" className="w-full py-2.5 px-[22px] text-[0.875rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)]">Start Free</BtnLink>
+              <BtnLink href="/signup" className="w-full py-2.5 px-[22px] text-[0.875rem] bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)]">Start Free</BtnLink>
             </div>
           </motion.div>
         )}
@@ -718,7 +718,7 @@ function Hero() {
         style={{ animationDelay: '1800ms' }}
       >
         <div className="flex gap-3 items-center justify-center flex-wrap">
-          <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
+          <BtnLink href="/signup" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
           <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
             See How It Works
@@ -948,7 +948,7 @@ function TestimonialsSection() {
 const PLANS = [
   {
     tier: 'Free', amount: '₦0', period: 'forever', featured: false,
-    features: ['Topic Validator (3 runs)', 'Chapter Architect (basic outline)', 'Methodology Advisor (recommendation only)', 'Writing Planner (4 weeks only)'],
+    features: ['Topic Validator (3 runs)', 'Chapter Architect (basic outline)', 'Methodology Advisor (recommendation only)'],
     ctaLabel: 'Start Free', ctaGhost: true,
   },
   {
@@ -1204,7 +1204,7 @@ function FinalCTA() {
             </div>
           </Reveal>
           <Reveal delay={0.15} className="flex justify-center gap-3 flex-wrap">
-            <BtnLink href="/login" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free — No Sign Up</BtnLink>
+            <BtnLink href="/signup" className="lp-btn-shimmer px-8 py-3.5 text-base bg-blue-brand text-white hover:shadow-[0_0_24px_rgba(0,102,255,0.4)] hover:-translate-y-0.5">Start Free</BtnLink>
             <BtnLink href="#how-it-works" className="px-8 py-3.5 text-base bg-transparent text-white border border-white/[0.22] hover:border-white/45 hover:bg-white/[0.04]">See the 6 Steps</BtnLink>
           </Reveal>
         </div>

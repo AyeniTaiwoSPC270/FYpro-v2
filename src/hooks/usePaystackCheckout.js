@@ -70,7 +70,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
     if (hasStudent && tier === 'student_pack') {
       setBlockInfo({
         tier: 'student_pack',
-        message: "You're already on the Student Plan. Upgrade to Defense Plan to unlock the Defense Simulator.",
+        message: "You already have the Student Plan. Upgrade to Defense Plan to unlock the Defense Simulator.",
       })
       return
     }

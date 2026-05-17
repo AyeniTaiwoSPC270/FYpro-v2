@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
+import { supabase } from '../lib/supabase'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -407,6 +408,22 @@ function BlockAlert({ message, onDismiss }) {
 
 function PricingCards() {
   const { handlePay, paying, payError, blockInfo, setBlockInfo } = usePaystackCheckout()
+  const [isUpgrader, setIsUpgrader] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('user_entitlements')
+        .select('paid_features')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          const features = Array.isArray(data?.paid_features) ? data.paid_features : []
+          setIsUpgrader(features.includes('student_pack') && !features.includes('defense_pack'))
+        })
+    })
+  }, [])
 
   return (
     <section>
@@ -490,8 +507,23 @@ function PricingCards() {
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
                 Defense Plan
               </div>
-              <div className="font-serif text-5xl text-white mt-2">₦3,500</div>
-              <div className="text-slate-500 text-sm mt-1">per project, one-time</div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <div className="font-serif text-5xl text-white">
+                  {isUpgrader ? '₦1,500' : '₦3,500'}
+                </div>
+                {isUpgrader && (
+                  <div className="font-serif text-2xl text-slate-600 line-through">₦3,500</div>
+                )}
+              </div>
+              <div className="text-slate-500 text-sm mt-1">
+                {isUpgrader ? 'upgrade from Student Plan' : 'per project, one-time'}
+              </div>
+              {isUpgrader && (
+                <div className="mt-2 inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/25 rounded-lg px-2.5 py-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span className="font-mono text-xs text-green-400">Student Plan credit applied</span>
+                </div>
+              )}
               <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
                 {DEFENSE_FEATURES.map((f, i) => (
@@ -503,7 +535,11 @@ function PricingCards() {
                 disabled={paying === 'defense_pack'}
                 className="mt-8 flex items-center justify-center w-full py-3 border border-slate-700 hover:border-blue-500 hover:text-blue-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-400 rounded-xl transition-all duration-200 font-sans font-semibold text-sm bg-transparent cursor-pointer"
               >
-                {paying === 'defense_pack' ? 'Opening…' : 'Get Defense Plan — ₦3,500'}
+                {paying === 'defense_pack'
+                  ? 'Opening…'
+                  : isUpgrader
+                  ? 'Upgrade to Defense — ₦1,500'
+                  : 'Get Defense Plan — ₦3,500'}
               </button>
               <AnimatePresence>
                 {blockInfo?.tier === 'defense_pack' && (
@@ -634,8 +670,8 @@ const FAQ_ITEMS = [
     a: 'FYPro accepts all Nigerian debit cards, bank transfers, and USSD payments through Paystack. No international card required.',
   },
   {
-    q: 'Can I switch plans mid-project?',
-    a: 'Yes. You can upgrade from Free to Student Plan or from Student Plan to Defense Plan at any time. You only pay the difference.',
+    q: 'Can I upgrade my plan mid-project?',
+    a: 'Yes. You can upgrade from Free to Student Plan or from Student Plan to Defense Plan at any time. Each plan is a separate one-time payment — your previous payment is not deducted.',
   },
   {
     q: 'Is my project data saved?',

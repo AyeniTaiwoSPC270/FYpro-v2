@@ -244,8 +244,8 @@ export default function PaymentSuccess() {
               }}
             >
               {[
-                { label: 'Plan',      value: tier === 'defense_pack' ? 'Defense Plan' : tier === 'project_reset' ? 'Project Reset' : 'Student Plan', type: 'white' },
-                { label: 'Amount',    value: tier === 'defense_pack' ? '₦3,500' : tier === 'project_reset' ? '₦1,500' : '₦2,000', type: 'white' },
+                { label: 'Plan',      value: (tier === 'defense_pack' || tier === 'defense_pack_upgrade') ? 'Defense Plan' : tier === 'project_reset' ? 'Project Reset' : 'Student Plan', type: 'white' },
+                { label: 'Amount',    value: tier === 'defense_pack' ? '₦3,500' : tier === 'defense_pack_upgrade' ? '₦1,500' : tier === 'project_reset' ? '₦1,500' : '₦2,000', type: 'white' },
                 { label: 'Reference', value: reference,           type: 'mono'  },
                 { label: 'Date',      value: today,              type: 'slate' },
                 { label: 'Status',    value: 'Confirmed',        type: 'badge', noBorder: true },
