@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { trackEvent, identifyUser } from '../lib/analytics'
 import { resolveRouteAfterLogin } from '../lib/routingCache'
 
-// ─── Shared primitives ────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
 
@@ -28,7 +28,7 @@ function ShieldLogo() {
 
 function EyeOpen() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -37,7 +37,7 @@ function EyeOpen() {
 
 function EyeClosed() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
@@ -51,6 +51,23 @@ function GoogleIcon() {
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+    </svg>
+  )
+}
+
+function GoogleSpinner() {
+  return (
+    <svg
+      width="16" height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      className="animate-spin"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>
   )
 }
@@ -84,11 +101,11 @@ function PasswordInput({ label, id, placeholder, value, onChange }) {
   )
 }
 
-function OrDivider() {
+function OrDivider({ label = 'or' }) {
   return (
-    <div className="flex items-center gap-3 my-2">
+    <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-slate-700/70" />
-      <span className="text-slate-500 text-xs font-mono">or continue with</span>
+      <span className="text-slate-500 text-xs font-mono whitespace-nowrap">{label}</span>
       <div className="flex-1 h-px bg-slate-700/70" />
     </div>
   )
@@ -98,7 +115,7 @@ function OrDivider() {
 
 const formStagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } },
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
 }
 
 const fieldVariant = {
@@ -116,9 +133,23 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [authError, setAuthError] = useState('')
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) {
+      showToast('Google sign-in failed. Please try again.')
+      setGoogleLoading(false)
+    }
+    // Browser redirects on success — component unmounts naturally
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -205,12 +236,34 @@ export default function Login() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="text-sm text-slate-400 text-center mt-1 mb-8"
+          className="text-sm text-slate-400 text-center mt-1 mb-6"
         >
           Continue your FYP journey.
         </motion.p>
 
-        {/* Form */}
+        {/* Google sign-in — primary method, above form */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.32, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+            whileHover={!googleLoading ? { borderColor: 'rgba(148,163,184,0.5)', y: -1, boxShadow: '0 4px 16px rgba(0,0,0,0.25)' } : {}}
+            whileTap={!googleLoading ? { scale: 0.98 } : {}}
+            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3.5 w-full flex items-center justify-center gap-3 text-white text-sm font-sans font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {googleLoading
+              ? <><GoogleSpinner />Connecting to Google…</>
+              : <><GoogleIcon />Continue with Google</>}
+          </motion.button>
+        </motion.div>
+
+        <OrDivider label="or sign in with email" />
+
+        {/* Email / password form */}
         <motion.form
           className="flex flex-col gap-4"
           onSubmit={handleSubmit}
@@ -272,35 +325,18 @@ export default function Login() {
           </motion.button>
         </motion.form>
 
-        <motion.div
+        {/* Footer link */}
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.65, duration: 0.4 }}
+          className="text-slate-400 text-sm text-center mt-6"
         >
-          <OrDivider />
-
-          {/* Google */}
-          <motion.button
-            type="button"
-            whileHover={{ borderColor: 'rgba(100,116,139,0.65)', y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              showToast('Google sign-in coming soon')
-            }}
-            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3 w-full flex items-center justify-center gap-3 text-white text-sm font-sans transition-all"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </motion.button>
-
-          {/* Footer link */}
-          <p className="text-slate-400 text-sm text-center mt-6">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
-              Sign up
-            </Link>
-          </p>
-        </motion.div>
+          Don&apos;t have an account?{' '}
+          <Link to="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
+            Sign up
+          </Link>
+        </motion.p>
       </motion.div>
     </div>
   )

@@ -76,7 +76,15 @@ export default function AuthConfirm() {
       if (token_hash && type) {
         ;({ error } = await supabase.auth.verifyOtp({ token_hash, type }))
       } else if (code) {
-        ;({ error } = await supabase.auth.exchangeCodeForSession(code))
+        const { data: oauthData, error: oauthError } = await supabase.auth.exchangeCodeForSession(code)
+        if (!oauthError && oauthData?.user) {
+          // Route to onboarding if the user has never completed it (new Google user)
+          const hasOnboarded = oauthData.user.user_metadata?.onboarding_completed === true
+          window.history.replaceState(null, '', window.location.pathname)
+          navigate(hasOnboarded ? '/dashboard' : '/start', { replace: true })
+          return
+        }
+        error = oauthError
       } else {
         // No params — Supabase OTP flow authenticates before redirecting here.
         // Check whether a session was already established.
