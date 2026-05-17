@@ -12,6 +12,13 @@ import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 const CLAUDE_TTL = 86400; // 24h
 
 async function handleValidate(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+
   const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'topic-validator' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
@@ -104,6 +111,13 @@ async function handleValidate(req, res) {
 }
 
 async function handleLitMap(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+
   const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 60, prefix: 'literature-map' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 

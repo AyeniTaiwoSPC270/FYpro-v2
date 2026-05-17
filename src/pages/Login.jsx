@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
@@ -135,10 +135,14 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [authError, setAuthError] = useState('')
+  const googleClickedRef = useRef(false)
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
 
   async function handleGoogleSignIn() {
+    if (googleClickedRef.current) return
+    googleClickedRef.current = true
+    setTimeout(() => { googleClickedRef.current = false }, 3000)
     setGoogleLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

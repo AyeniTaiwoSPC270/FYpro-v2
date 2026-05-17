@@ -10,12 +10,14 @@ import WhatsAppButton from './WhatsAppButton'
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useUser()
   const [banned, setBanned] = useState(false)
+  const [banChecking, setBanChecking] = useState(true)
 
-  // Ban check is a best-effort background check — it runs after children are
-  // already shown. This avoids a null → children flicker on every page transition.
-  // If the check fails (network error), the user is allowed access.
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setBanChecking(false)
+      return
+    }
+    setBanChecking(true)
     supabase
       .from('user_entitlements')
       .select('banned_until')
@@ -28,10 +30,11 @@ export default function ProtectedRoute({ children }) {
         }
       })
       .catch(() => {})
+      .finally(() => setBanChecking(false))
   }, [user?.id])
 
-  // Show a skeleton while Supabase confirms the session — prevents blank flash.
-  if (loading) return (
+  // Show spinner while auth resolves or ban check is in flight.
+  if (loading || (banChecking && !!user?.id)) return (
     <div style={{
       minHeight: '100vh',
       display: 'flex',

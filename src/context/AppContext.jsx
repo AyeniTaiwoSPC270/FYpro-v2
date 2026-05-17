@@ -122,9 +122,14 @@ function loadFromStorage() {
 export function AppProvider({ children }) {
   const { session } = useContext(AuthContext)
   const [state, setState] = useState(() => {
+    // Skip localStorage for authenticated users — Supabase hydration will populate real data.
+    // Prevents a flash of stale session data before hydrateFromSupabase() runs.
+    if (getCurrentAuthUserId()) return DEFAULT_STATE
     const saved = loadFromStorage()
     return saved ? { ...DEFAULT_STATE, ...saved } : DEFAULT_STATE
   })
+  const [hydrateError, setHydrateError] = useState(false)
+  const [_hydrateRetryCount, setHydrateRetryCount] = useState(0)
 
   // Persist to localStorage on every state change
   useEffect(() => {
@@ -148,12 +153,15 @@ export function AppProvider({ children }) {
 
   // Hydrate faculty/department/level from Supabase whenever the authenticated
   // user changes. Reads session from AuthContext — no direct getSession() call.
+  // _hydrateRetryCount in the dep array lets retryHydrate() force a re-run.
   useEffect(() => {
     if (!session?.user) {
       prevUserIdRef.current = null
       return
     }
     const user = session.user
+
+    setHydrateError(false)
 
     // Mid-session user switch: clear all stale data before loading the new user.
     // The page-reload case is handled by loadFromStorage() rejecting the stale
@@ -192,8 +200,16 @@ export function AppProvider({ children }) {
         level:      profile.level      ?? prev.level,
       }))
     }
-    hydrateFromSupabase()
-  }, [session?.user?.id])
+    hydrateFromSupabase().catch(err => {
+      console.error('[AppContext] hydrateFromSupabase failed:', err?.message)
+      setHydrateError(true)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, _hydrateRetryCount])
+
+  function retryHydrate() {
+    setHydrateRetryCount(c => c + 1)
+  }
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   function set(partial) {
@@ -274,6 +290,8 @@ export function AppProvider({ children }) {
       completeStep,
       studentContext,
       isOnboarded,
+      hydrateError,
+      retryHydrate,
     }}>
       {children}
     </AppContext.Provider>
