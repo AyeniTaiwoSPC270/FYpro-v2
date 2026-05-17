@@ -8,6 +8,7 @@ import { Resend } from 'resend'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
+import { setMaintenanceMode } from './_lib/maintenance.js'
 
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -61,6 +62,24 @@ async function sendReply(chatId, text, keyboard = null) {
   }
 }
 
+async function editMessage(chatId, messageId, text, keyboard = null) {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) return false
+  const payload = { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML' }
+  if (keyboard) payload.reply_markup = keyboard
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    })
+    return r.ok
+  } catch (err) {
+    console.error('[notify/bot] editMessage failed:', err.message)
+    return false
+  }
+}
+
 async function answerCallbackQuery(callbackQueryId) {
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) return
@@ -73,6 +92,22 @@ async function answerCallbackQuery(callbackQueryId) {
   } catch {}
 }
 
+// ─── Data helpers ─────────────────────────────────────────────────────────────
+
+async function listAllUsers() {
+  const pageSize = 1000
+  let page = 1
+  let all  = []
+  while (true) {
+    const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: pageSize, page })
+    const users = data?.users || []
+    all = all.concat(users)
+    if (users.length < pageSize) break
+    page++
+  }
+  return all
+}
+
 // ─── Bot commands ─────────────────────────────────────────────────────────────
 
 async function cmdStats() {
@@ -81,13 +116,12 @@ async function cmdStats() {
   const weekAgo  = new Date(Date.now() - 7 * 24 * 3600000).toISOString()
   const cap      = parseFloat(process.env.DAILY_CAP_USD || '10')
 
-  const [authRes, paymentsRes, usageRes] = await Promise.all([
-    supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+  const [users, paymentsRes, usageRes] = await Promise.all([
+    listAllUsers(),
     supabaseAdmin.from('payments').select('user_id').eq('status', 'success'),
     supabaseAdmin.from('daily_usage').select('total_cost_usd').eq('date', today).maybeSingle(),
   ])
 
-  const users       = authRes.data?.users || []
   const totalUsers  = users.length
   const activeToday = users.filter(u => u.last_sign_in_at >= todayISO).length
   const activeWeek  = users.filter(u => u.last_sign_in_at >= weekAgo).length
@@ -137,8 +171,8 @@ async function cmdRevenue() {
 }
 
 async function cmdUsers() {
-  const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 })
-  const latest = (data?.users || [])
+  const users  = await listAllUsers()
+  const latest = users
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 5)
 
@@ -197,7 +231,7 @@ Status: ${status}`
 async function cmdErrors() {
   const { data: rows } = await supabaseAdmin
     .from('system_logs')
-    .select('created_at, feature, source, plain_message')
+    .select('id, created_at, feature, source, plain_message')
     .eq('severity', 'error')
     .eq('resolved', false)
     .order('created_at', { ascending: false })
@@ -208,7 +242,8 @@ async function cmdErrors() {
   const lines = rows.map(r => {
     const feature = r.feature || r.source || '?'
     const msg     = (r.plain_message || '—').slice(0, 80)
-    return `🔴 [${feature}] — ${timeAgo(r.created_at)}\n    ${msg}`
+    const shortId = r.id?.slice(0, 8) || '?'
+    return `🔴 [${feature}] — ${timeAgo(r.created_at)}\n    ${msg}\n    <code>/resolve ${shortId}</code>`
   }).join('\n\n')
 
   return `🔴 <b>Last 5 Errors</b>\n\n${lines}`
@@ -254,13 +289,26 @@ async function cmdHealth() {
   const today = new Date().toISOString().slice(0, 10)
   const cap   = parseFloat(process.env.DAILY_CAP_USD || '10')
 
-  const [sbOk, redisOk, usageRes] = await Promise.all([
+  const [sbOk, redisOk, usageRes, claudeStatus] = await Promise.all([
     supabaseAdmin.from('daily_usage').select('date').limit(1).then(() => true).catch(() => false),
     UPSTASH_URL && UPSTASH_TOKEN
       ? fetch(`${UPSTASH_URL}/ping`, { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } })
           .then(r => r.ok).catch(() => false)
       : Promise.resolve(null),
     supabaseAdmin.from('daily_usage').select('total_cost_usd').eq('date', today).maybeSingle(),
+    (async () => {
+      const apiKey = process.env.ANTHROPIC_API_KEY
+      if (!apiKey) return '⚠️ Key not set'
+      try {
+        const r = await fetch('https://api.anthropic.com/v1/models', {
+          headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          signal:  AbortSignal.timeout(5000),
+        })
+        return r.status < 500 ? '🟢 OK' : '🔴 Error'
+      } catch {
+        return '🔴 Unreachable'
+      }
+    })(),
   ])
 
   const sbStatus    = sbOk ? '🟢 OK' : '🔴 Error'
@@ -278,62 +326,303 @@ async function cmdHealth() {
 
 🗄️ Supabase: ${sbStatus}
 ⚡ Redis: ${redisStatus}
+🤖 Claude API: ${claudeStatus}
 💸 Spend cap: ${spendStatus}`
 }
 
+async function cmdToday() {
+  const today    = new Date().toISOString().slice(0, 10)
+  const todayISO = `${today}T00:00:00.000Z`
+  const cap      = parseFloat(process.env.DAILY_CAP_USD || '10')
+
+  const [
+    usageRes,
+    signupsTodayRes,
+    revTodayRes,
+    revTotalRes,
+    errRes,
+    defensesTodayRes,
+    certsTodayRes,
+    projectsTodayRes,
+  ] = await Promise.all([
+    supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
+    supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
+    supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayISO),
+    supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
+    supabaseAdmin.from('system_logs').select('*', { count: 'exact', head: true }).eq('severity', 'error').eq('resolved', false),
+    supabaseAdmin.from('defense_sessions').select('*', { count: 'exact', head: true }).eq('status', 'completed').gte('completed_at', todayISO),
+    supabaseAdmin.from('defense_certificates').select('*', { count: 'exact', head: true }).gte('issued_at', todayISO),
+    supabaseAdmin.from('projects').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
+  ])
+
+  const spent       = parseFloat(usageRes.data?.total_cost_usd || 0)
+  const capPct      = cap > 0 ? ((spent / cap) * 100).toFixed(1) : '0.0'
+  const spendIcon   = spent / cap >= 1 ? '🔴' : spent / cap >= 0.8 ? '🔶' : '🟢'
+  const revToday    = (revTodayRes.data || []).reduce((s, p) => s + (p.amount_kobo || 0), 0)
+  const revTotal    = (revTotalRes.data || []).reduce((s, p) => s + (p.amount_kobo || 0), 0)
+  const errorCount  = errRes.count || 0
+  const errorIcon   = errorCount > 0 ? '🔴' : '✅'
+
+  return `📋 <b>Today — ${today}</b>
+
+👤 Signups: <b>${signupsTodayRes.count || 0} new</b>
+📁 Projects: <b>${projectsTodayRes.count || 0} new</b>
+🎓 Defenses: <b>${defensesTodayRes.count || 0} completed</b>
+🏆 Certs: <b>${certsTodayRes.count || 0} issued</b>
+
+💰 Revenue today: <b>${ngn(revToday)}</b>
+💵 All-time total: <b>${ngn(revTotal)}</b>
+
+${spendIcon} API spend: <b>${usd(spent)}</b> (${capPct}% of $${cap})
+📬 Requests: <b>${usageRes.data?.request_count || 0}</b>
+${errorIcon} Unresolved errors: <b>${errorCount}</b>`
+}
+
+async function cmdProjects() {
+  const { data: rows } = await supabaseAdmin
+    .from('projects')
+    .select('id, title, current_step, created_at, user_id')
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (!rows || rows.length === 0) return '📁 <b>No projects yet</b>'
+
+  const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))]
+  const emailMap = {}
+  await Promise.all(
+    userIds.map(async uid => {
+      try {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(uid)
+        if (user) emailMap[uid] = user.email
+      } catch {}
+    })
+  )
+
+  const STEP_LABELS = {
+    topic_validator:     'Step 1',
+    chapter_architect:   'Step 2',
+    methodology_advisor: 'Step 3',
+    writing_planner:     'Step 5',
+    defense_prep:        'Step 6',
+  }
+
+  const lines = rows.map(r => {
+    const email = emailMap[r.user_id] || '—'
+    const step  = STEP_LABELS[r.current_step] || r.current_step || '—'
+    const title = (r.title || 'Untitled').slice(0, 50)
+    return `📝 <b>${title}</b>\n    ${email} · ${step} · ${timeAgo(r.created_at)}`
+  }).join('\n\n')
+
+  return `📁 <b>Last 5 Projects</b>\n\n${lines}`
+}
+
+async function cmdCerts() {
+  const today    = new Date().toISOString().slice(0, 10)
+  const todayISO = `${today}T00:00:00.000Z`
+
+  const [totalRes, todayRes, lastRow] = await Promise.all([
+    supabaseAdmin.from('defense_certificates').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('defense_certificates').select('*', { count: 'exact', head: true }).gte('issued_at', todayISO),
+    supabaseAdmin.from('defense_certificates')
+      .select('certificate_number, issued_at, user_id, score')
+      .order('issued_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  let lastLine = '—'
+  if (lastRow.data) {
+    let email = '—'
+    try {
+      const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(lastRow.data.user_id)
+      if (user) email = user.email
+    } catch {}
+    lastLine = `<code>${lastRow.data.certificate_number}</code> · ${email} · ${lastRow.data.score}/10 · ${timeAgo(lastRow.data.issued_at)}`
+  }
+
+  return `🏆 <b>Defense Certificates</b>
+
+Total issued: <b>${totalRes.count || 0}</b>
+Today: <b>${todayRes.count || 0}</b>
+Last: ${lastLine}`
+}
+
+async function cmdReferrals() {
+  const today    = new Date().toISOString().slice(0, 10)
+  const todayISO = `${today}T00:00:00.000Z`
+
+  const [totalRes, qualifiedRes, rewardedRes, todayRes] = await Promise.all([
+    supabaseAdmin.from('referrals').select('*', { count: 'exact', head: true }),
+    supabaseAdmin.from('referrals').select('*', { count: 'exact', head: true }).eq('status', 'qualified'),
+    supabaseAdmin.from('referrals').select('*', { count: 'exact', head: true }).eq('status', 'rewarded'),
+    supabaseAdmin.from('referrals').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
+  ])
+
+  return `🔗 <b>Referral Stats</b>
+
+Total tracked: <b>${totalRes.count || 0}</b>
+Qualified: <b>${qualifiedRes.count || 0}</b>
+Rewarded (milestone credits): <b>${rewardedRes.count || 0}</b>
+Today: <b>${todayRes.count || 0} new</b>`
+}
+
+async function cmdLogs() {
+  const { data: rows } = await supabaseAdmin
+    .from('system_logs')
+    .select('created_at, feature, source, plain_message, severity')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (!rows || rows.length === 0) return '📜 <b>No system logs</b>'
+
+  const SEV_ICON = { error: '🔴', warning: '🟡', info: '🔵' }
+
+  const lines = rows.map(r => {
+    const icon    = SEV_ICON[r.severity] || '⚪'
+    const feature = r.feature || r.source || '?'
+    const msg     = (r.plain_message || '—').slice(0, 80)
+    return `${icon} [${feature}] — ${timeAgo(r.created_at)}\n    ${msg}`
+  }).join('\n\n')
+
+  return `📜 <b>System Logs (last 10)</b>\n\n${lines}`
+}
+
+async function cmdResolve(id) {
+  if (!id || id.length < 4) return '❌ Usage: /resolve &lt;log-id-prefix&gt; (min 4 chars)'
+
+  const { data: rows } = await supabaseAdmin
+    .from('system_logs')
+    .select('id, plain_message')
+    .ilike('id', `${id}%`)
+    .eq('resolved', false)
+    .limit(2)
+
+  if (!rows || rows.length === 0) return `❌ No unresolved log found matching <code>${id}</code>`
+  if (rows.length > 1) return `⚠️ Multiple matches for <code>${id}</code> — use more characters`
+
+  const { error } = await supabaseAdmin
+    .from('system_logs')
+    .update({ resolved: true, resolved_at: new Date().toISOString() })
+    .eq('id', rows[0].id)
+
+  if (error) return `❌ Failed to resolve: ${error.message}`
+
+  return `✅ Resolved: ${(rows[0].plain_message || '—').slice(0, 80)}`
+}
+
+async function cmdMaintenance(args) {
+  const onOff = args[0]?.toLowerCase()
+  if (onOff !== 'on' && onOff !== 'off') {
+    return '❌ Usage: /maintenance on [message] | /maintenance off'
+  }
+
+  const enabled = onOff === 'on'
+
+  try {
+    await setMaintenanceMode(enabled)
+    const status = enabled ? '🔴 ENABLED' : '🟢 DISABLED'
+    const msg    = args.slice(1).join(' ').trim()
+    return `🔧 Maintenance mode ${status}${msg ? `\nMessage: ${msg}` : ''}`
+  } catch (err) {
+    return `❌ Failed to toggle maintenance mode: ${err.message}`
+  }
+}
+
 function cmdHelp() {
-  return `🛡️ <b>FYPro Admin Bot</b>\n\nTap a button or type a command:`
+  return `🛡️ <b>FYPro Admin Bot</b>
+
+Tap a button or type a command:
+
+<b>Quick view</b>
+/today — combined daily snapshot
+/stats — users, conversion, spend
+/revenue — revenue by tier
+/health — system status
+
+<b>Data</b>
+/users — last 5 signups
+/projects — last 5 projects
+/payments — last 5 payments
+/certs — certificate stats
+/referrals — referral stats
+/spend — API spend detail
+/errors — unresolved errors
+/logs — recent system logs
+
+<b>Actions</b>
+/resolve &lt;id&gt; — mark error resolved
+/maintenance on|off [msg] — toggle maintenance mode`
 }
 
 const KEYBOARD = {
   inline_keyboard: [
     [
-      { text: '📊 Stats',    callback_data: 'stats'    },
-      { text: '💰 Revenue',  callback_data: 'revenue'  },
+      { text: '📋 Today',     callback_data: 'today'     },
+      { text: '🏥 Health',    callback_data: 'health'    },
     ],
     [
-      { text: '👥 Users',    callback_data: 'users'    },
-      { text: '💸 Spend',    callback_data: 'spend'    },
+      { text: '📊 Stats',     callback_data: 'stats'     },
+      { text: '💰 Revenue',   callback_data: 'revenue'   },
     ],
     [
-      { text: '🔴 Errors',   callback_data: 'errors'   },
-      { text: '💳 Payments', callback_data: 'payments' },
+      { text: '👥 Users',     callback_data: 'users'     },
+      { text: '💸 Spend',     callback_data: 'spend'     },
     ],
     [
-      { text: '🏥 Health',   callback_data: 'health'   },
+      { text: '📁 Projects',  callback_data: 'projects'  },
+      { text: '🏆 Certs',     callback_data: 'certs'     },
+    ],
+    [
+      { text: '🔴 Errors',    callback_data: 'errors'    },
+      { text: '💳 Payments',  callback_data: 'payments'  },
+    ],
+    [
+      { text: '🔗 Referrals', callback_data: 'referrals' },
+      { text: '📜 Logs',      callback_data: 'logs'      },
     ],
   ],
 }
 
 // ─── Telegram bot handler ─────────────────────────────────────────────────────
 
-async function runCommand(key) {
-  if      (key === 'stats'    ) return cmdStats()
-  else if (key === 'revenue'  ) return cmdRevenue()
-  else if (key === 'users'    ) return cmdUsers()
-  else if (key === 'spend'    ) return cmdSpend()
-  else if (key === 'errors'   ) return cmdErrors()
-  else if (key === 'payments' ) return cmdPayments()
-  else if (key === 'health'   ) return cmdHealth()
-  else if (key === 'help'     ) return cmdHelp()
+async function runCommand(key, args = []) {
+  if      (key === 'today'       ) return cmdToday()
+  else if (key === 'stats'       ) return cmdStats()
+  else if (key === 'revenue'     ) return cmdRevenue()
+  else if (key === 'users'       ) return cmdUsers()
+  else if (key === 'spend'       ) return cmdSpend()
+  else if (key === 'errors'      ) return cmdErrors()
+  else if (key === 'payments'    ) return cmdPayments()
+  else if (key === 'health'      ) return cmdHealth()
+  else if (key === 'projects'    ) return cmdProjects()
+  else if (key === 'certs'       ) return cmdCerts()
+  else if (key === 'referrals'   ) return cmdReferrals()
+  else if (key === 'logs'        ) return cmdLogs()
+  else if (key === 'resolve'     ) return cmdResolve(args[0])
+  else if (key === 'maintenance' ) return cmdMaintenance(args)
+  else if (key === 'help'        ) return cmdHelp()
   return null
 }
 
 async function handleTelegramBot(req, res) {
   const body = req.body
 
-  // ── Button tap (callback_query) ──────────────────────────────────────────
+  // ── Button tap (callback_query) — edit in-place ──────────────────────────
   if (body?.callback_query) {
-    const cq     = body.callback_query
-    const chatId = cq.message?.chat?.id
-    const admId  = String(process.env.TELEGRAM_CHAT_ID)
+    const cq      = body.callback_query
+    const chatId  = cq.message?.chat?.id
+    const msgId   = cq.message?.message_id
+    const admId   = String(process.env.TELEGRAM_CHAT_ID)
 
     if (String(chatId) !== admId) return res.status(200).end()
 
     try {
-      const reply = await runCommand(cq.data)
-      if (reply) await sendReply(chatId, reply, KEYBOARD)
-      await answerCallbackQuery(cq.id) // dismiss loading spinner
+      const reply = await runCommand(cq.data, [])
+      if (reply) {
+        const edited = await editMessage(chatId, msgId, reply, KEYBOARD)
+        if (!edited) await sendReply(chatId, reply, KEYBOARD)
+      }
+      await answerCallbackQuery(cq.id)
     } catch (err) {
       console.error('[notify/bot] callback error:', err.message)
       await answerCallbackQuery(cq.id)
@@ -352,15 +641,15 @@ async function handleTelegramBot(req, res) {
   const chatId = message.chat.id
   const raw    = (message.text || '').trim().toLowerCase().split('@')[0]
 
-  // Map typed /command to the same key used by callback_data
-  const key = raw.startsWith('/') ? raw.slice(1).split(' ')[0] : null
-  if (!key) return res.status(200).end()
+  if (!raw.startsWith('/')) return res.status(200).end()
 
-  // /start → same as /help
+  const parts  = raw.slice(1).split(' ')
+  const key    = parts[0]
+  const args   = parts.slice(1)
   const cmdKey = key === 'start' ? 'help' : key
 
   try {
-    const reply = await runCommand(cmdKey)
+    const reply = await runCommand(cmdKey, args)
     if (!reply) return res.status(200).end()
     await sendReply(chatId, reply, KEYBOARD)
   } catch (err) {
@@ -388,13 +677,13 @@ async function handleNotify(req, res) {
   if (action === 'defense_completed') {
     const score = Number(payload?.score)
     if (!isNaN(score)) {
-      await sendTelegramAlert(`🎓 Defense completed: ${email} scored ${score}/10`)
+      await sendTelegramAlert(`🎓 Defense completed: ${email} scored <b>${score}/10</b>`)
     }
   }
 
   if (action === 'project_created') {
     const title = String(payload?.title || 'untitled').slice(0, 80)
-    await sendTelegramAlert(`📁 New project: ${email} started '${title}'`)
+    await sendTelegramAlert(`📁 New project: ${email} started '<b>${title}</b>'`)
   }
 
   return res.status(200).json({ ok: true })
@@ -489,7 +778,7 @@ async function handleContact(req, res) {
     return res.status(500).json({ error: 'Failed to send message. Please email us directly at hello@fypro.com.ng.' })
   }
 
-  await sendTelegramAlert(`📬 Contact form: ${safeName} (${safeEmail})\nSubject: ${safeSubject}`).catch(() => null)
+  await sendTelegramAlert(`📬 Contact form: <b>${safeName}</b> (${safeEmail})\nSubject: ${safeSubject}`).catch(() => null)
 
   return res.status(200).json({ ok: true })
 }

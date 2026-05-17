@@ -22,7 +22,12 @@ const TTL_BY_STEP = {
 
 async function handleGeneral(req, res) {
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+  if (!rl.allowed) {
+    const uid = extractUserId(req) || 'anon';
+    const today = new Date().toISOString().slice(0, 10);
+    sendTelegramAlertOnce(`⏱️ Rate limit: ${uid} blocked on general AI`, `tg:rl:general:${uid}:${today}`);
+    return res.status(429).json({ error: rl.reason });
+  }
 
   const cap = await checkDailyCap();
   const today = new Date().toISOString().slice(0, 10);
@@ -101,7 +106,12 @@ async function handleGeneral(req, res) {
 
 async function handleDefense(req, res) {
   const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+  if (!rl.allowed) {
+    const uid = extractUserId(req) || 'anon';
+    const today = new Date().toISOString().slice(0, 10);
+    sendTelegramAlertOnce(`⏱️ Rate limit: ${uid} blocked on Defense Simulator`, `tg:rl:defense:${uid}:${today}`);
+    return res.status(429).json({ error: rl.reason });
+  }
 
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;

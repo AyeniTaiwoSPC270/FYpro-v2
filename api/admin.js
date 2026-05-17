@@ -1046,6 +1046,10 @@ async function handleSentryWebhook(req, res, rawBody) {
     raw_detail:    payload,
   });
 
+  if (level === 'fatal' || level === 'error') {
+    await sendTelegramAlert(`🚨 Sentry ${level}: [${feature}]\n${title}`);
+  }
+
   return res.status(200).json({ ok: true });
 }
 

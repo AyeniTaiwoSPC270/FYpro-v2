@@ -3,7 +3,7 @@ import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
-import { sendTelegramAlert } from './_lib/telegram.js';
+import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { Resend } from 'resend';
 
 // bodyParser disabled so the webhook handler can access the raw body for HMAC.
@@ -109,7 +109,7 @@ async function handleWebhook(req, res, rawBody) {
           const email     = event.data.customer?.email || 'unknown'
           const amountNGN = (event.data.amount / 100).toLocaleString('en-NG')
           const planName  = PLAN_DISPLAY_NAMES[result.tier] || result.tier
-          sendTelegramAlert(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`)
+          sendTelegramAlertOnce(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`, `tg:payment:${event.data.reference}`)
         }
         return res.status(200).json({ received: true, status: result.status });
       } catch (err) {
@@ -262,7 +262,7 @@ async function handleVerify(req, res) {
             const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
             const amountNGN = payment.amount_kobo / 100;
             await sendReceiptEmail(user.email, planName, amountNGN, reference);
-            sendTelegramAlert(`💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`)
+            sendTelegramAlertOnce(`💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`, `tg:payment:${reference}`)
           }
         }
       } catch (emailErr) {
