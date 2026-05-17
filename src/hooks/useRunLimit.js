@@ -110,22 +110,21 @@ export { _signedInSyncSub as __signedInSyncSub }
 
 async function syncRunCountsToSupabase(updatedCounts) {
   const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user?.id) {
+  if (!session?.access_token) {
     console.error('syncRunCounts: no session')
     return
   }
-  // upsert so free users without an existing user_entitlements row still persist counts
-  const { error } = await supabase
-    .from('user_entitlements')
-    .upsert(
-      { user_id: session.user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    )
-    .select()
-  if (error) {
-    console.error('syncRunCounts FAILED:', error)
+  const res = await fetch('/api/ai?action=sync-run-counts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ run_counts: updatedCounts }),
+  })
+  if (!res.ok) {
+    console.error('syncRunCounts FAILED:', res.status, await res.text().catch(() => ''))
   } else {
-    // Stale entry — next read will re-fetch paid_features + run_counts together
     invalidateCachedEntitlements(session.user.id)
   }
 }

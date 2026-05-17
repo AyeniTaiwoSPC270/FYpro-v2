@@ -190,7 +190,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
 
                 <div className="py-1.5 border-t border-slate-800/80">
                   <button
-                    onClick={() => { clearState(); navigate('/') }}
+                    onClick={async () => { await supabase.auth.signOut(); resetUser(); clearState(); navigate('/') }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors duration-150 cursor-pointer"
                   >
                     <span className="text-red-400"><LogOutIcon /></span>

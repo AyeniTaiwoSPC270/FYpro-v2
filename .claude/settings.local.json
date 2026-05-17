@@ -150,7 +150,19 @@
       "Skill(brainstorming)",
       "Bash(npx skillfish *)",
       "Skill(security-review)",
-      "Skill(vercel:deploy)"
+      "Skill(vercel:deploy)",
+      "mcp__supabase__list_edge_functions",
+      "Bash(supabase secrets *)",
+      "Skill(dispatching-parallel-agents)",
+      "Bash(vercel deploy *)",
+      "Bash(bash .claude/skills/brainstorming/scripts/start-server.sh --project-dir \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\")",
+      "Skill(writing-plans)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\src\\\\pages\\\\admin\\\\Health.jsx\" | Measure-Object -Line\\).Lines)",
+      "Bash(head -n 1722 \"/c/Users/FEYISAYO ATINUKE/Downloads/fypro-v2/src/pages/admin/Health.jsx\")",
+      "Bash(cp /tmp/health_truncated.jsx \"/c/Users/FEYISAYO ATINUKE/Downloads/fypro-v2/src/pages/admin/Health.jsx\")",
+      "Bash(xargs cat)",
+      "Bash(xargs grep -l \"undefined\\\\|null\")",
+      "Bash(grep -r \"src=.*\\\\\\\\.png\\\\|src=.*\\\\\\\\.jpg\\\\|src=.*\\\\\\\\.svg\" src/pages --include=\"*.jsx\")"
     ]
   }
 }

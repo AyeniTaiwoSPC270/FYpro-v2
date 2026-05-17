@@ -31,11 +31,16 @@ async function getAccessToken() {
 
 async function callClaude(system, messages, maxTokens = 2000) {
   const token = await getAccessToken();
+  if (!token) {
+    const err = new Error('Session expired');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
   });
@@ -610,8 +615,7 @@ export async function logFailure(feature, err, inputPreview = '') {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     await supabase.from('generation_failures').insert({
-      user_id:       session?.user?.id    || null,
-      user_email:    session?.user?.email || null,
+      user_id:       session?.user?.id || null,
       feature,
       error_type:    err?.code === 'RATE_LIMIT'      ? 'rate_limit'
                    : err?.code === 'GATEWAY_TIMEOUT' ? 'timeout'

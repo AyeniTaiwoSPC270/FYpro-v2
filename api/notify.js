@@ -605,6 +605,21 @@ async function runCommand(key, args = []) {
 }
 
 async function handleTelegramBot(req, res) {
+  // Verify the shared secret Telegram sends in every webhook request.
+  // Set when registering the webhook: POST api.telegram.org/bot<TOKEN>/setWebhook
+  //   with body { url: "...", secret_token: process.env.TELEGRAM_WEBHOOK_SECRET }
+  // If the env var is not set, fail closed — reject all inbound updates.
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error('[notify/bot] TELEGRAM_WEBHOOK_SECRET is not configured — rejecting update')
+    return res.status(401).end()
+  }
+  const incoming = req.headers['x-telegram-bot-api-secret-token'] || ''
+  if (incoming !== webhookSecret) {
+    console.error('[notify/bot] webhook secret mismatch — possible spoofed request')
+    return res.status(401).end()
+  }
+
   const body = req.body
 
   // ── Button tap (callback_query) — edit in-place ──────────────────────────

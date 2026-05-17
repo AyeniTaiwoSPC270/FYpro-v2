@@ -48,18 +48,35 @@ export function clearRef(): void {
 
 /**
  * Called from signup.jsx after successful account creation.
- * Silently no-ops on failure — never block the signup UX.
+ * Retries on 404 because the public.users row is created by an async DB trigger
+ * that may not have fired yet when this runs immediately after signup.
+ * Silently drops on final failure — never blocks the signup UX.
  */
 export async function callTrackReferral(email: string, refCode: string): Promise<void> {
-  try {
-    await fetch('/api/referral?action=track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, ref_code: refCode }),
-    })
-    clearRef()
-  } catch {
-    // Non-fatal
+  const RETRY_DELAYS = [1000, 2000, 4000]
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    try {
+      const res = await fetch('/api/referral?action=track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, ref_code: refCode }),
+      })
+      if (res.ok) {
+        clearRef()
+        return
+      }
+      // Only retry on 404 — the DB trigger may not have created the user row yet.
+      const isUserNotFound = res.status === 404
+      if (!isUserNotFound || attempt >= RETRY_DELAYS.length) {
+        if (isUserNotFound) {
+          console.warn('[referral] all retries exhausted — referral conversion dropped for', email)
+        }
+        return
+      }
+    } catch {
+      if (attempt >= RETRY_DELAYS.length) return
+    }
+    await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]))
   }
 }
 

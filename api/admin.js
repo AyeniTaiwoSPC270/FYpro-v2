@@ -182,6 +182,23 @@ async function handleAlertCheck(req, res) {
   }
 }
 
+// Fetches every page of auth.users — Supabase caps listUsers at 1,000 per page.
+// Without pagination, handleDashboard and handleDailyReport silently return incomplete
+// data when the user count exceeds 1,000.
+async function listAllAuthUsers() {
+  const allUsers = [];
+  let page = 1;
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page });
+    if (error) throw error;
+    const batch = data?.users || [];
+    allUsers.push(...batch);
+    if (batch.length < 1000) break;
+    page++;
+  }
+  return allUsers;
+}
+
 // action: "dashboard" — comprehensive admin analytics
 async function handleDashboard(req, res) {
   // Server-side admin gate: verify JWT and check email
@@ -213,8 +230,8 @@ async function handleDashboard(req, res) {
     const threeDaysAgoISO = new Date(now - MS3).toISOString();
 
     // run_counts live in user_entitlements, not projects — fetch both
-    const [authRes, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes] = await Promise.all([
-      supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+    const [authUsers, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes] = await Promise.all([
+      listAllAuthUsers(),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
       supabaseAdmin.from('user_entitlements').select('user_id, run_counts, paid_features'),
@@ -224,7 +241,6 @@ async function handleDashboard(req, res) {
       supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', yesterdayStart).lt('created_at', todayStart),
     ]);
 
-    const authUsers    = authRes.data?.users || [];
     const payments     = paymentsRes.data    || [];
     const projects     = projectsRes.data    || [];
     const entitlements = entitlementsRes.data || [];
@@ -1229,7 +1245,7 @@ async function handleDailyReport(req, res) {
     const cap        = parseFloat(process.env.DAILY_CAP_USD || '10');
 
     const [
-      authRes,
+      authUsers,
       paymentsAllRes,
       paymentsTodayRes,
       usageRes,
@@ -1241,7 +1257,7 @@ async function handleDailyReport(req, res) {
       newUsersRes,
       totalUsersRes,
     ] = await Promise.all([
-      supabaseAdmin.auth.admin.listUsers({ perPage: 1000, page: 1 }),
+      listAllAuthUsers(),
       supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
       supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayStart),
       supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
@@ -1254,7 +1270,6 @@ async function handleDailyReport(req, res) {
       supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
     ]);
 
-    const authUsers   = authRes.data?.users || [];
     const activeToday = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
     const totalUsers  = totalUsersRes.count || 0;
     const newUsers    = newUsersRes.count   || 0;

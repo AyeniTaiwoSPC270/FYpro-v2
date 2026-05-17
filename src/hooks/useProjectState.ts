@@ -309,16 +309,23 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   // Load a specific project by ID and hydrate AppContext.
   // Called when the user picks a project from the dashboard grid.
   const selectProject = useCallback(async (pid: string): Promise<void> => {
+    const currentUser = userRef.current
+    if (!currentUser) return
+
     const [projectRes, stepsRes] = await Promise.all([
-      supabase.from('projects').select('*').eq('id', pid).single(),
-      supabase.from('project_steps').select('*').eq('project_id', pid),
+      supabase.from('projects').select('*').eq('id', pid).eq('user_id', currentUser.id).single(),
+      supabase.from('project_steps').select('*').eq('project_id', pid).eq('user_id', currentUser.id),
     ])
     if (projectRes.error || !projectRes.data) {
-      console.error('[useProjectState] selectProject: project not found', pid)
+      console.error('[useProjectState] selectProject: project not found or unauthorized', pid)
       return
     }
 
     const project = projectRes.data as import('../lib/db').Project
+    if (project.user_id !== currentUser.id) {
+      console.error('[useProjectState] selectProject: ownership mismatch', pid)
+      return
+    }
     const steps = (stepsRes.data as import('../lib/db').ProjectStep[]) ?? []
 
     const hydration: Record<string, unknown> = {}

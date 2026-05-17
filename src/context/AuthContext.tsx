@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, updated) => {
-      if (event === 'TOKEN_REFRESH_FAILED') return
+      if (event === 'TOKEN_REFRESH_FAILED') { forceSignOut(); return }
       if (event === 'SIGNED_OUT') clearRoutingCache()
       sessionRef.current = updated
       setSession(updated)

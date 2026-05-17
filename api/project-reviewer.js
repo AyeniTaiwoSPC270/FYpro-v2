@@ -35,13 +35,14 @@ const handler = async (req, res) => {
     .from('user_entitlements')
     .select('paid_features')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (entError || !entitlements) {
-    return res.status(403).json({ error: 'Feature not unlocked.' });
+  if (entError) {
+    console.error('[project-reviewer] entitlements query error:', entError.message);
+    return res.status(500).json({ error: 'Failed to verify entitlements. Please try again.' });
   }
 
-  const paidFeatures = Array.isArray(entitlements.paid_features)
+  const paidFeatures = Array.isArray(entitlements?.paid_features)
     ? entitlements.paid_features
     : [];
 
