@@ -28,6 +28,14 @@ export const roadmap: RoadmapItem[] = [
     shippedDate: '2026-03-28',
   },
   {
+    id: 'auth-payments',
+    status: 'done',
+    title: 'Auth & Payments',
+    description:
+      'Email sign-in with Supabase, project persistence across devices, and Paystack payments — Student Pack (₦2,000), Defense Pack (₦3,500), and Project Reset (₦1,500).',
+    shippedDate: '2026-04-15',
+  },
+  {
     id: 'defense-simulator',
     status: 'done',
     title: 'Defense Simulator',
@@ -35,46 +43,63 @@ export const roadmap: RoadmapItem[] = [
       'Three-examiner panel — The Methodologist, The Subject Expert, and The External Examiner — fires live questions based on your project and scores every answer in real time.',
     shippedDate: '2026-04-22',
   },
-
-  // ── In Progress ─────────────────────────────────────────────────────────────
   {
-    id: 'supabase-auth',
-    status: 'in_progress',
-    title: 'Auth & Persistent Projects',
+    id: 'defense-certificate',
+    status: 'done',
+    title: 'Defense Certificate',
     description:
-      'Email sign-in and Supabase-backed project storage so your work survives closing the browser tab — and picks up exactly where you left off.',
+      'Score 7/10 or higher in a full panel session and download a personalised Defense Certificate with a unique serial number — proof you faced the panel before the real thing.',
+    shippedDate: '2026-04-20',
   },
   {
-    id: 'paystack-payments',
-    status: 'in_progress',
-    title: 'Paystack Payments',
+    id: 'real-paper-integration',
+    status: 'done',
+    title: 'Real Paper Integration',
     description:
-      'One-time unlock model: Student Pack (₦2,000), Defense Pack (₦3,500), and Project Reset (₦1,500). No subscriptions, no surprises.',
+      'Topic Validator and Literature Map pull live academic papers from Semantic Scholar, OpenAlex, and Crossref — no hallucinated references, ever.',
+    shippedDate: '2026-04-28',
+  },
+  {
+    id: 'project-reviewer',
+    status: 'done',
+    title: 'Project Reviewer',
+    description:
+      'Upload your draft chapter as a PDF and Claude reviews it against your methodology, flags gaps, and gives structured feedback — available on the Defense Pack.',
+    shippedDate: '2026-05-05',
   },
   {
     id: 'rate-limiting',
-    status: 'in_progress',
+    status: 'done',
     title: 'Rate Limiting & Spend Cap',
     description:
       'Per-IP and per-user API limits via Upstash Redis, with a daily spend cap so one bad actor cannot drain the budget in minutes.',
+    shippedDate: '2026-05-01',
+  },
+  {
+    id: 'referral-system',
+    status: 'done',
+    title: 'Referral Program',
+    description:
+      'Share your referral link — when three friends sign up through it you unlock a free Defense Simulator session, no payment required.',
+    shippedDate: '2026-05-10',
+  },
+  {
+    id: 'google-oauth',
+    status: 'done',
+    title: 'Google Sign-In',
+    description:
+      'One tap to get started — sign in or create your account with Google. No password to forget, no verification email to wait for.',
+    shippedDate: '2026-05-17',
   },
 
   // ── Coming Soon ──────────────────────────────────────────────────────────────
-  {
-    id: 'real-paper-integration',
-    status: 'coming_soon',
-    title: 'Real Paper Integration',
-    description:
-      'Topic Validator and Literature Map will pull live academic papers from Semantic Scholar, OpenAlex, and Crossref — not hallucinated references.',
-    targetWindow: 'July 2026',
-  },
   {
     id: 'voice-mode',
     status: 'coming_soon',
     title: 'Voice Mode',
     description:
       'Answer your panel questions out loud instead of typing. Powered by OpenAI Whisper and tuned for Nigerian accents.',
-    targetWindow: 'July 2026',
+    targetWindow: 'Q3 2026',
   },
   {
     id: 'supervisor-dashboard',
@@ -82,6 +107,14 @@ export const roadmap: RoadmapItem[] = [
     title: 'Supervisor Dashboard',
     description:
       "Supervisors track their students' structured progress without reading draft chapters. Built for the institutional model launching in v3.",
+    targetWindow: 'Q4 2026',
+  },
+  {
+    id: 'institutional-billing',
+    status: 'coming_soon',
+    title: 'Institutional Access',
+    description:
+      'Bulk licensing for universities — one department code unlocks FYPro for every final year student on the list.',
     targetWindow: 'Q4 2026',
   },
 ];
