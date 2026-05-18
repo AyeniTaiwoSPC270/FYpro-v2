@@ -114,7 +114,8 @@ export default function Dashboard() {
     currentStepId: activeStepId,
   }
 
-  function handleNewSession() { setShowNewSessionModal(true) }
+  const handleNewSession = useCallback(() => setShowNewSessionModal(true), [])
+  const handleToggleSidebar = useCallback(() => setSidebarOpen(o => !o), [])
   function handleModalClose() { setShowNewSessionModal(false) }
   function handleModalConfirm() { setShowNewSessionModal(false); handlePay('project_reset') }
 
@@ -193,7 +194,7 @@ export default function Dashboard() {
       <DashSidebar STUDENT={STUDENT} STEPS={STEPS} onNewSession={handleNewSession} isOpen={sidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={() => setSidebarOpen(o => !o)} />
+        <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={handleToggleSidebar} />
         <AnnouncementBanner />
 
         {!projectsLoading && projects.length > 0 && !state.stepsCompleted[0] && (

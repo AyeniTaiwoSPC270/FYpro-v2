@@ -1,10 +1,10 @@
-import { Fragment } from 'react'
+import { Fragment, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
 import { useReveal, revealStyle, slideLeftStyle, CheckIcon, LockIcon, ArrowRightIcon } from './_shared'
 
-export default function DashProgressJourney({ STEPS, STUDENT }) {
+export default memo(function DashProgressJourney({ STEPS, STUDENT }) {
   const navigate = useNavigate()
   const { navigateStep, state } = useApp()
 
@@ -272,4 +272,4 @@ export default function DashProgressJourney({ STEPS, STUDENT }) {
       </div>
     </section>
   )
-}
+})

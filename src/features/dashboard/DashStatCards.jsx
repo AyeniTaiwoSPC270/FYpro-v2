@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useReveal, revealStyle, ShieldIcon, ArrowRightIcon, ProgressRing } from './_shared'
@@ -11,7 +12,7 @@ const cardEnter = {
   }),
 }
 
-export default function DashStatCards({ STUDENT, STEPS }) {
+export default memo(function DashStatCards({ STUDENT, STEPS }) {
   const navigate = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active')
   const [rowRef, rowVisible] = useReveal()
@@ -124,4 +125,4 @@ export default function DashStatCards({ STUDENT, STEPS }) {
       </motion.div>
     </div>
   )
-}
+})

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
@@ -9,7 +9,7 @@ import { resetUser } from '../../lib/analytics'
 import { showToast } from '../../components/Toast'
 import { BellIcon, GearIcon, SunIcon, MoonIcon, PlusIcon } from './_shared'
 
-export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
+export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
   const { clearState } = useApp()
@@ -198,4 +198,4 @@ export default function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
       />
     </header>
   )
-}
+})

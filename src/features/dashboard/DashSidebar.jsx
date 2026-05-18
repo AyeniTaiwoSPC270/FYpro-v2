@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
 import { CheckIcon, LockIcon } from './_shared'
 
-export default function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
+export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
   const navigate = useNavigate()
   const { navigateStep } = useApp()
 
@@ -126,4 +127,4 @@ export default function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
       </div>
     </aside>
   )
-}
+})

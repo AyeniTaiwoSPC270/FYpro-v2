@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
 import {
   detectRedFlags,
@@ -90,7 +90,7 @@ function TypingIndicator() {
   )
 }
 
-function ExaminerBubble({ examiner, text, onReady, voicePaused, onRetry }) {
+const ExaminerBubble = memo(function ExaminerBubble({ examiner, text, onReady, voicePaused, onRetry }) {
   const [labelText, setLabelText]       = useState('')
   const [bubbleVisible, setBubbleVisible] = useState(false)
 
@@ -135,7 +135,7 @@ function ExaminerBubble({ examiner, text, onReady, voicePaused, onRetry }) {
       </div>
     </div>
   )
-}
+})
 
 function ScoreBadges({ scores }) {
   const [visible, setVisible] = useState([])
@@ -199,7 +199,7 @@ function ScoreReasonings({ scores }) {
   )
 }
 
-function StudentBubble({ text, scores }) {
+const StudentBubble = memo(function StudentBubble({ text, scores }) {
   return (
     <div className="dp-student-wrap">
       <div className="dp-student-bubble">
@@ -213,9 +213,9 @@ function StudentBubble({ text, scores }) {
       )}
     </div>
   )
-}
+})
 
-function FlagItem({ flag, visible }) {
+const FlagItem = memo(function FlagItem({ flag, visible }) {
   const dotClass =
     flag.severity === 'Critical' ? 'dp-flag-dot--critical' :
     flag.severity === 'Serious'  ? 'dp-flag-dot--serious'  :
@@ -244,7 +244,7 @@ function FlagItem({ flag, visible }) {
       )}
     </div>
   )
-}
+})
 
 function ExitModal({ questionCount, onContinue, onLeave }) {
   return (
@@ -269,7 +269,7 @@ function ExitModal({ questionCount, onContinue, onLeave }) {
   )
 }
 
-function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
+const SummaryCard = memo(function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
   const panelLabel = (data.panel_score_label || '').toLowerCase()
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError]     = useState(null)
@@ -467,7 +467,7 @@ function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
       </div>
     </>
   )
-}
+})
 
 // ── main component ────────────────────────────────────────────────────────────
 
@@ -642,7 +642,7 @@ export default function DefensePrep() {
 
   // ── voice — TTS ───────────────────────────────────────────────────────────
 
-  function speakAsExaminer(text, examinerName, msgId) {
+  const speakAsExaminer = useCallback(function speakAsExaminer(text, examinerName, msgId) {
     if (!text) return
     if (currentAudioRef.current) {
       currentAudioRef.current.pause()
@@ -715,7 +715,8 @@ export default function DefensePrep() {
         }
         fallbackSpeak(text, examinerName)
       })
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only refs and stable setters captured
+  }, [])
 
   function fallbackSpeak(text, examinerName) {
     if (!ttsSupported || !text) return
@@ -1196,7 +1197,7 @@ export default function DefensePrep() {
 
   // ── close & revise ────────────────────────────────────────────────────────
 
-  function closeDefenseOverlay() {
+  const closeDefenseOverlay = useCallback(function closeDefenseOverlay() {
     const closingFromSummary = overlayPhase === 'summary'
     stopAudio()
     if (micActiveRef.current && recognitionRef.current) {
@@ -1212,7 +1213,7 @@ export default function DefensePrep() {
     setMicActive(false)
     setVerdictLoading(false)
     if (closingFromSummary) setSection('summary')
-  }
+  }, [overlayPhase])
 
   function handleGoBackAndRevise() {
     set({
@@ -1231,9 +1232,9 @@ export default function DefensePrep() {
     setSection('input')
   }
 
-  function handleCloseSummary() {
+  const handleCloseSummary = useCallback(function handleCloseSummary() {
     setSection(redFlags ? 'flags' : 'input')
-  }
+  }, [redFlags])
 
   // ── circuit breaker actions ───────────────────────────────────────────────
 
