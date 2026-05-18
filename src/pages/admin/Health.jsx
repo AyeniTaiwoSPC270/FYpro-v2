@@ -435,6 +435,7 @@ export default function AdminHealth() {
   const secondsTimerRef = useRef(null)
   const authTimerRef    = useRef(null)
   const paymentTimerRef = useRef(null)
+  const isFetchingRef   = useRef(false)
 
   const [vitals, setVitals]               = useState(null)
   const [vitalsLoading, setVitalsLoading] = useState(true)
@@ -506,6 +507,8 @@ export default function AdminHealth() {
 
   const loadData = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
+    if (isFetchingRef.current) return Promise.resolve()
+    isFetchingRef.current = true
     setFetching(true)
     setError(null)
     return fetch('/api/admin?action=dashboard', {
@@ -517,7 +520,7 @@ export default function AdminHealth() {
       })
       .then(d => { if (d.error) throw new Error(d.error); setData(d); setLastUpdated(new Date()) })
       .catch(e => setError(e.message))
-      .finally(() => setFetching(false))
+      .finally(() => { isFetchingRef.current = false; setFetching(false) })
   }, [session?.access_token])
 
   const loadVitals = useCallback(() => {
@@ -815,8 +818,9 @@ export default function AdminHealth() {
           const json = await res.json()
           if (!res.ok) throw new Error(json.error)
           setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-          loadData()
+          setData(prev => prev ? { ...prev, users: prev.users.map(u => u.id === userId ? { ...u, status: u.project_count > 0 ? 'inactive' : 'never_used' } : u) } : prev)
           showUserToast('success', `${email} unbanned`)
+          loadData()
         } catch (err) {
           setActionState(s => { const n = { ...s }; delete n[userId]; return n })
           showUserToast('error', 'Unban failed: ' + err.message)
@@ -899,6 +903,7 @@ export default function AdminHealth() {
           const json = await res.json()
           if (!res.ok) throw new Error(json.error)
           setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          setData(prev => prev ? { ...prev, users: prev.users.map(u => u.id === userId ? { ...u, plan: plan === 'defense' ? 'Defense' : 'Student' } : u) } : prev)
           showUserToast('success', `${label} granted to ${email}`)
           loadData()
         } catch (err) {
@@ -1205,31 +1210,26 @@ export default function AdminHealth() {
         .mc-mobile-tabs  { display:none; padding:12px 16px; }
         .mc-mobile-tab-select { width:100%; background:rgba(13,27,42,0.9); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:10px; padding:10px 14px; font-size:13px; font-family:'Poppins',sans-serif; }
         @media(max-width:1100px){.mc-row2{grid-template-columns:1fr}}
-        @media(max-width:900px) {.mc-kpi-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:900px) {.mc-kpi-grid{grid-template-columns:repeat(2,1fr)}.mc-vitals-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:700px) {.mc-vitals-grid{grid-template-columns:1fr}}
         @media(max-width:600px) {
           .mc-main{padding:16px 16px 80px}
           .mc-kpi-grid{grid-template-columns:1fr}
           .mc-topbar-date{display:none}
+          .mc-topbar-center{display:none!important}
+          .mc-topbar-utility{display:none!important}
           .mc-desktop-tabs{display:none!important}
           .mc-mobile-tabs{display:block!important}
         }
-        @media(max-width:480px){.mc-main{padding:12px 12px 80px}}
-        @media (max-width: 1024px) {
-          .admin-shell { padding: 28px 28px; }
-        }
-        @media (max-width: 768px) {
-          .admin-shell { padding: 20px 16px !important; }
-          .admin-charts-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .admin-shell { padding: 14px 12px !important; }
+        @media(max-width:480px){
+          .mc-main{padding:12px 12px 80px}
+          .mc-topbar-inner{padding:0 12px!important}
         }
       `}</style>
 
       {/* ── Sticky top bar ── */}
       <div className="mc-topbar">
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', height:56, maxWidth:1400, margin:'0 auto' }}>
+        <div className="mc-topbar-inner" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', height:56, maxWidth:1400, margin:'0 auto' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:'#fff' }}>F</span>
@@ -1237,7 +1237,7 @@ export default function AdminHealth() {
             <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, fontWeight:400, color:WHITE }}>FYPro</span>
             <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1.5px', textTransform:'uppercase', marginLeft:2 }}>Admin</span>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+          <div className="mc-topbar-center" style={{ display:'flex', alignItems:'center', gap:16 }}>
             <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(22,163,74,0.12)', border:'1px solid rgba(22,163,74,0.25)', borderRadius:999, padding:'4px 10px' }}>
               <div className="mc-live-pulse" />
               <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, fontWeight:700, color:'#4ade80', letterSpacing:'1.5px' }}>LIVE</span>
@@ -1252,10 +1252,10 @@ export default function AdminHealth() {
             <button onClick={handleRefresh} disabled={refreshing} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:refreshing?MUTED:WHITE, background:refreshing?'rgba(255,255,255,0.05)':BLUE, border:'none', borderRadius:8, padding:'7px 16px', cursor:refreshing?'not-allowed':'pointer', transition:'background 0.15s' }}>
               {refreshing ? '…' : '↻ Refresh'}
             </button>
-            <button onClick={handleTestAlerts} disabled={testAlertsBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:testAlertsBusy?MUTED:WHITE, background:testAlertsBusy?'rgba(255,255,255,0.05)':testAlertsResult?.all_ok===true?GREEN:testAlertsResult?.all_ok===false?RED:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 14px', cursor:testAlertsBusy?'not-allowed':'pointer' }}>
+            <button className="mc-topbar-utility" onClick={handleTestAlerts} disabled={testAlertsBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:testAlertsBusy?MUTED:WHITE, background:testAlertsBusy?'rgba(255,255,255,0.05)':testAlertsResult?.all_ok===true?GREEN:testAlertsResult?.all_ok===false?RED:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 14px', cursor:testAlertsBusy?'not-allowed':'pointer' }}>
               {testAlertsBusy ? 'Sending…' : testAlertsResult ? testAlertsResult.all_ok ? `✓ ${testAlertsResult.sent}/10` : `⚠ ${testAlertsResult.failures} failed` : '🔔 Alerts'}
             </button>
-            <button onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }).catch(() => {}) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
+            <button className="mc-topbar-utility" onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }).catch(() => {}) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
               Sentry
             </button>
             <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
