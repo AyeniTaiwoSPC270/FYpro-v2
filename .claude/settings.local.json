@@ -162,7 +162,10 @@
       "Bash(cp /tmp/health_truncated.jsx \"/c/Users/FEYISAYO ATINUKE/Downloads/fypro-v2/src/pages/admin/Health.jsx\")",
       "Bash(xargs cat)",
       "Bash(xargs grep -l \"undefined\\\\|null\")",
-      "Bash(grep -r \"src=.*\\\\\\\\.png\\\\|src=.*\\\\\\\\.jpg\\\\|src=.*\\\\\\\\.svg\" src/pages --include=\"*.jsx\")"
+      "Bash(grep -r \"src=.*\\\\\\\\.png\\\\|src=.*\\\\\\\\.jpg\\\\|src=.*\\\\\\\\.svg\" src/pages --include=\"*.jsx\")",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_edge_function"
     ]
   }
 }

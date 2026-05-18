@@ -203,48 +203,6 @@ async function callLiteratureMap(system, messages, topic) {
   return parsed;
 }
 
-// Returns { parsed, rawText } without JSON parsing — used for defense chat
-async function callClaudeRaw(system, messages, maxTokens = 2000) {
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
-  });
-
-  if (res.status === 429) {
-    const err = new Error('Rate limited');
-    err.code = 'RATE_LIMIT';
-    throw err;
-  }
-  if (res.status === 504) {
-    const err = new Error('Gateway timeout');
-    err.code = 'GATEWAY_TIMEOUT';
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error(`HTTP ${res.status}`);
-    err.code = 'HTTP_ERROR';
-    throw err;
-  }
-
-  const raw = await res.json();
-  const text = raw?.content?.[0]?.text ?? '';
-
-  let parsed;
-  try {
-    const stripped = text.replace(/```json|```/g, '').trim();
-    const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
-  } catch {
-    const err = new Error('JSON parse failed');
-    err.code = 'JSON_PARSE';
-    err.raw = text;
-    throw err;
-  }
-
-  return { parsed, rawText: text };
-}
-
 // Auth-aware variant — attaches user JWT so server can verify entitlement
 async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
   const token = await getAccessToken();

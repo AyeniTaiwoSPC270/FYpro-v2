@@ -55,6 +55,7 @@ function RunLimitBanner({ stepKey, onUpgrade }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
+      flexWrap: 'wrap',
       gap: '16px',
       background: 'rgba(245,158,11,0.06)',
       border: '1px solid rgba(245,158,11,0.2)',

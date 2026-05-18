@@ -119,6 +119,14 @@ async function handleSignup(req, res) {
 
   if (success) {
     sendTelegramAlert(`👤 New signup: ${email} (free)`);
+    // Fire welcome email immediately — don't wait for cron (up to 24h delay)
+    if (process.env.CRON_SECRET) {
+      fetch(`${APP_URL}/api/send-nurture-email`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
+        body:    JSON.stringify({ userId, emailType: 'welcome', email, name: full_name || '' }),
+      }).catch(e => console.error('[auth/signup] welcome email failed:', e.message));
+    }
   }
 
   if (error) {

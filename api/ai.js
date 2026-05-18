@@ -86,7 +86,8 @@ async function handleGeneral(req, res) {
         'anthropic-version': '2023-06-01',
         'anthropic-beta':    'pdfs-2024-09-25',
       },
-      body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
+      body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
+      signal: AbortSignal.timeout(25000),
     });
 
     const data = await response.json();
@@ -178,7 +179,8 @@ async function handleDefense(req, res) {
         'anthropic-version': '2023-06-01',
         'anthropic-beta':    'pdfs-2024-09-25',
       },
-      body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
+      body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
+      signal: AbortSignal.timeout(25000),
     });
 
     const data = await response.json();
@@ -256,6 +258,7 @@ async function handleSupervisorPrep(req, res) {
         messages:    [{ role: 'user', content: userPrompt }],
         temperature: 0,
       }),
+      signal: AbortSignal.timeout(25000),
     });
 
     const data = await response.json();

@@ -78,7 +78,8 @@ async function handleValidate(req, res) {
         'x-api-key':         apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
+      body:   JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
+      signal: AbortSignal.timeout(25000),
     });
 
     const data = await response.json();
@@ -182,7 +183,8 @@ async function handleLitMap(req, res) {
         'x-api-key':         apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
+      body:   JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
+      signal: AbortSignal.timeout(25000),
     });
 
     const data = await response.json();

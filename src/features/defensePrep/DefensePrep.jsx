@@ -1687,6 +1687,8 @@ export default function DefensePrep() {
                       id="dp-student-input"
                       placeholder="Type your answer here…"
                       value={inputValue}
+                      inputMode="text"
+                      enterKeyHint="send"
                       onChange={e => {
                         const val = e.target.value
                         const words = val.trim() === '' ? [] : val.trim().split(/\s+/)

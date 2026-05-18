@@ -1,9 +1,9 @@
 import { Resend } from 'resend'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 
-const BASE_URL   = 'https://fypro.com.ng'
-const FROM       = 'FYPro <hello@fypro.com.ng>'
-const LIST_UNSUB = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>'
+const BASE_URL    = 'https://fypro.com.ng'
+const FROM        = 'FYPro <hello@fypro.com.ng>'
+const LIST_UNSUB  = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>'
 
 type EmailType = 'welcome' | 'defense_nudge' | 'urgency_reminder'
 
@@ -13,56 +13,50 @@ const SUBJECTS: Record<EmailType, string> = {
   urgency_reminder: 'Defense checklist — where do you stand?',
 }
 
-const STYLES = `
-  <style>
-    body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
-    .wrapper { max-width:560px; margin:32px auto; }
-    .header { background:#0f172a; border-radius:12px 12px 0 0; padding:24px; text-align:center; }
-    .header img { height:36px; width:auto; }
-    .box { background:#fff; border-radius:0 0 12px 12px; padding:40px; }
-    h1 { font-size:22px; font-weight:700; color:#0D1B2A; margin:0 0 16px; }
-    p { font-size:15px; line-height:1.7; color:#374151; margin:0 0 24px; }
-    .item { font-size:15px; line-height:1.7; color:#374151; margin:0 0 10px; padding-left:8px; }
-    .btn-green { display:inline-block; background:#16A34A; color:#fff; border-radius:8px; padding:12px 24px; font-size:15px; font-weight:600; text-decoration:none; }
-    .btn-blue  { display:inline-block; background:#0066FF; color:#fff; border-radius:8px; padding:12px 24px; font-size:15px; font-weight:600; text-decoration:none; }
-    hr { border:none; border-top:1px solid #E5E7EB; margin:24px 0; }
-    .foot { font-size:12px; color:#9CA3AF; line-height:1.6; }
-    .foot a { color:#6B7280; }
-  </style>
-`
+// Preheader text shown after subject line in inbox previews
+const PREHEADERS: Record<EmailType, string> = {
+  welcome:          'Validate your topic idea before your supervisor sees it.',
+  defense_nudge:    'Three AI examiners are waiting to push back on your work.',
+  urgency_reminder: 'Run through your checklist before the panel does it for you.',
+}
 
+// All CSS is inlined — Gmail strips <style> blocks
 function header(baseUrl: string) {
   return `
-    <div class="header">
-      <img src="${baseUrl}/fypro-logo.png" alt="FYPro" />
+    <div style="background:#0f172a;border-radius:12px 12px 0 0;padding:24px;text-align:center;">
+      <img src="${baseUrl}/fypro-logo.png" alt="FYPro" style="height:36px;width:auto;" />
     </div>
   `
 }
 
 function footer(baseUrl: string) {
   return `
-    <hr>
-    <p class="foot">
+    <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;">
+    <p style="font-size:12px;color:#9CA3AF;line-height:1.6;margin:0;">
       You're receiving this because you signed up for FYPro.<br>
       FYPro · Lagos, Nigeria<br>
-      <a href="${baseUrl}/account/email-preferences">Manage email preferences</a>
+      <a href="${baseUrl}/account/email-preferences" style="color:#6B7280;">Manage email preferences</a>
     </p>
   `
 }
 
+function preheader(text: string) {
+  return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${text}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`
+}
+
 function renderHtml(type: EmailType, name: string, baseUrl: string): string {
   const firstName = name ? name.split(' ')[0] : 'there'
+  const pre       = preheader(PREHEADERS[type])
 
   if (type === 'welcome') {
-    return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-      <div class="wrapper">
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
+      ${pre}
+      <div style="max-width:560px;margin:32px auto;">
         ${header(baseUrl)}
-        <div class="box">
-          <h1>Welcome to FYPro, ${firstName}</h1>
-          <p>You've just joined thousands of Nigerian final year students who are taking their
-          project seriously. Your next step is simple — paste your topic idea into our Topic
-          Validator and find out if it's defensible before your supervisor ever sees it.</p>
-          <a href="${baseUrl}/app" class="btn-green">Validate your topic now</a>
+        <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
+          <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName}, welcome to FYPro</h1>
+          <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">You've just joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea into our Topic Validator and find out if it's defensible before your supervisor ever sees it.</p>
+          <a href="${baseUrl}/app" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Validate your topic now</a>
           ${footer(baseUrl)}
         </div>
       </div>
@@ -70,16 +64,14 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
   }
 
   if (type === 'defense_nudge') {
-    return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-      <div class="wrapper">
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
+      ${pre}
+      <div style="max-width:560px;margin:32px auto;">
         ${header(baseUrl)}
-        <div class="box">
-          <h1>Have you met your examiners yet, ${firstName}?</h1>
-          <p>Most students walk into their defense never having practiced out loud. FYPro's
-          Defense Simulator puts you in front of three AI examiners — a methodologist, a
-          subject expert, and an external examiner — who push back on your work exactly the
-          way the real panel will. Find out where you're weak before it matters.</p>
-          <a href="${baseUrl}/app" class="btn-blue">Try a Defense Simulation</a>
+        <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
+          <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName}, have you met your examiners yet?</h1>
+          <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners — a methodologist, a subject expert, and an external examiner — who push back on your work exactly the way the real panel will. Find out where you're weak before it matters.</p>
+          <a href="${baseUrl}/app" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Try a Defense Simulation</a>
           ${footer(baseUrl)}
         </div>
       </div>
@@ -87,23 +79,37 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
   }
 
   // urgency_reminder
-  return `<!DOCTYPE html><html><head>${STYLES}</head><body>
-    <div class="wrapper">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
+    ${pre}
+    <div style="max-width:560px;margin:32px auto;">
       ${header(baseUrl)}
-      <div class="box">
-        <h1>Defense checklist, ${firstName} — are you ready?</h1>
-        <p>A week in and the clock is moving. Run through this before you do anything else:</p>
-        <p class="item">☐ &nbsp; Topic locked and validated?</p>
-        <p class="item">☐ &nbsp; Methodology chosen and defensible?</p>
-        <p class="item">☐ &nbsp; Project PDF uploaded for review?</p>
-        <p class="item">☐ &nbsp; Defense Simulator score 7 or above?</p>
-        <p style="margin-top:16px">If any box is unchecked, open your dashboard and work through it.
-        Your panel will not go easy on gaps.</p>
-        <a href="${baseUrl}/dashboard" class="btn-green">Open my dashboard</a>
+      <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
+        <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName} — defense checklist, where do you stand?</h1>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 8px;">A week in and the clock is moving. Run through this before you do anything else:</p>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Topic locked and validated?</p>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Methodology chosen and defensible?</p>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Project PDF uploaded for review?</p>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;padding-left:8px;">☐ &nbsp; Defense Simulator score 7 or above?</p>
+        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">If any box is unchecked, open your dashboard and work through it. Your panel will not go easy on gaps.</p>
+        <a href="${baseUrl}/dashboard" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Open my dashboard</a>
         ${footer(baseUrl)}
       </div>
     </div>
   </body></html>`
+}
+
+function renderText(type: EmailType, name: string, baseUrl: string): string {
+  const firstName = name ? name.split(' ')[0] : 'there'
+
+  if (type === 'welcome') {
+    return `${firstName}, welcome to FYPro\n\nYou've just joined thousands of Nigerian final year students who are taking their project seriously.\n\nYour next step is simple — paste your topic idea into our Topic Validator and find out if it's defensible before your supervisor ever sees it.\n\nValidate your topic now: ${baseUrl}/app\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
+  }
+
+  if (type === 'defense_nudge') {
+    return `${firstName}, have you met your examiners yet?\n\nMost students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners who push back on your work the way the real panel will.\n\nTry a Defense Simulation: ${baseUrl}/app\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
+  }
+
+  return `${firstName} — defense checklist, where do you stand?\n\nA week in and the clock is moving. Run through this:\n\n☐  Topic locked and validated?\n☐  Methodology chosen and defensible?\n☐  Project PDF uploaded for review?\n☐  Defense Simulator score 7 or above?\n\nIf any box is unchecked, open your dashboard and work through it.\n\nOpen my dashboard: ${baseUrl}/dashboard\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
 }
 
 export default async function handler(req: any, res: any) {
@@ -135,12 +141,18 @@ export default async function handler(req: any, res: any) {
   try {
     const html = renderHtml(emailType, name ?? '', BASE_URL)
 
+    const text = renderText(emailType, name ?? '', BASE_URL)
+
     const { data, error } = await resend.emails.send({
       from:    FROM,
       to:      email,
       subject: SUBJECTS[emailType],
       html,
-      headers: { 'List-Unsubscribe': LIST_UNSUB },
+      text,
+      headers: {
+        'List-Unsubscribe':      LIST_UNSUB,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     })
 
     if (error) throw new Error(error.message)

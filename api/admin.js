@@ -1225,6 +1225,141 @@ async function handleFeedbackSummary(req, res) {
   }
 }
 
+// ─── Nurture email dispatcher helpers ────────────────────────────────────────
+
+const NURTURE_BASE_URL = 'https://www.fypro.com.ng';
+const NURTURE_FROM     = 'FYPro <hello@fypro.com.ng>';
+const NURTURE_UNSUB    = '<mailto:unsubscribe@fypro.com.ng>, <https://fypro.com.ng/account/email-preferences>';
+const NURTURE_SUBJECTS = {
+  welcome:          'Welcome to FYPro — validate your topic now',
+  defense_nudge:    'Have you met your AI examiners yet?',
+  urgency_reminder: 'Defense checklist — where do you stand?',
+};
+
+function buildNurtureHtml(type, name) {
+  const n = name ? name.split(' ')[0] : 'there';
+  const hdr = `<div style="background:#0f172a;border-radius:12px 12px 0 0;padding:24px;text-align:center;"><img src="${NURTURE_BASE_URL}/fypro-logo.png" alt="FYPro" style="height:36px;width:auto;" /></div>`;
+  const ftr = `<hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;"><p style="font-size:12px;color:#9CA3AF;line-height:1.6;margin:0;">You're receiving this because you signed up for FYPro.<br>FYPro · Lagos, Nigeria<br><a href="${NURTURE_BASE_URL}/account/email-preferences" style="color:#6B7280;">Manage email preferences</a></p>`;
+  const wrap = b => `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;"><div style="max-width:560px;margin:32px auto;">${hdr}<div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">${b}${ftr}</div></div></body></html>`;
+  if (type === 'welcome') return wrap(`<h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${n}, welcome to FYPro</h1><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">You've just joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea into our Topic Validator and find out if it's defensible before your supervisor ever sees it.</p><a href="${NURTURE_BASE_URL}/app" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Validate your topic now</a>`);
+  if (type === 'defense_nudge') return wrap(`<h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${n}, have you met your examiners yet?</h1><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners — a methodologist, a subject expert, and an external examiner — who push back on your work exactly the way the real panel will.</p><a href="${NURTURE_BASE_URL}/app" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Try a Defense Simulation</a>`);
+  return wrap(`<h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${n} — defense checklist, where do you stand?</h1><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 8px;">A week in and the clock is moving. Run through this before you do anything else:</p><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Topic locked and validated?</p><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Methodology chosen and defensible?</p><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Project PDF uploaded for review?</p><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;padding-left:8px;">☐ &nbsp; Defense Simulator score 7 or above?</p><p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">If any box is unchecked, open your dashboard and work through it.</p><a href="${NURTURE_BASE_URL}/dashboard" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Open my dashboard</a>`);
+}
+
+async function sendOneNurtureEmail(resend, userId, email, name, emailType) {
+  let resendId = null;
+  let status   = 'sent';
+  try {
+    const { data, error } = await resend.emails.send({
+      from:    NURTURE_FROM,
+      to:      email,
+      subject: NURTURE_SUBJECTS[emailType],
+      html:    buildNurtureHtml(emailType, name || ''),
+      headers: { 'List-Unsubscribe': NURTURE_UNSUB, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+    });
+    if (error) throw new Error(error.message);
+    resendId = data?.id ?? null;
+  } catch (err) {
+    status = 'failed';
+    console.error('[dispatch-nurture] send error', { userId, emailType, err: err.message });
+  }
+  try {
+    await supabaseAdmin.from('email_log').insert({ user_id: userId, email_type: emailType, resend_id: resendId, status });
+  } catch (dbErr) {
+    if (dbErr?.code !== '23505') console.error('[dispatch-nurture] email_log insert failed', { userId, emailType });
+  }
+  return { userId, emailType, status };
+}
+
+// action: "dispatch-nurture-emails"
+// Called daily by cron-job.org at 09:00 UTC.
+// Sends defense_nudge (Day 3), urgency_reminder (Day 7), and welcome fallback (missed on signup).
+// Auth: x-cron-secret header or Authorization: Bearer CRON_SECRET.
+async function handleDispatchNurtureEmails(req, res) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
+  const xSecret    = req.headers['x-cron-secret'];
+  const authHeader = req.headers['authorization'];
+  const authorized = (xSecret && xSecret === cronSecret) ||
+                     (authHeader && authHeader === `Bearer ${cronSecret}`);
+  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
+
+  const now    = Date.now();
+  const DAY    = 24 * 60 * 60 * 1000;
+  const WINDOW = 13 * 60 * 60 * 1000; // ±13h so a daily cron never misses anyone
+
+  const nudgeStart   = new Date(now - 3 * DAY - WINDOW).toISOString();
+  const nudgeEnd     = new Date(now - 3 * DAY + WINDOW).toISOString();
+  const remindStart  = new Date(now - 7 * DAY - WINDOW).toISOString();
+  const remindEnd    = new Date(now - 7 * DAY + WINDOW).toISOString();
+  const welcomeStart = new Date(now - 2 * DAY).toISOString(); // catch anyone missed in last 48h
+
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const [nudgeRes, remindRes, welcomeCandRes] = await Promise.all([
+      supabaseAdmin.from('users').select('id, email, full_name').gte('created_at', nudgeStart).lte('created_at', nudgeEnd),
+      supabaseAdmin.from('users').select('id, email, full_name').gte('created_at', remindStart).lte('created_at', remindEnd),
+      supabaseAdmin.from('users').select('id, email, full_name').gte('created_at', welcomeStart),
+    ]);
+
+    const nudgeUsers   = nudgeRes.data   || [];
+    const remindUsers  = remindRes.data  || [];
+    const welcomeCands = welcomeCandRes.data || [];
+
+    const allIds = [...new Set([
+      ...nudgeUsers.map(u => u.id),
+      ...remindUsers.map(u => u.id),
+      ...welcomeCands.map(u => u.id),
+    ])];
+
+    const sentinel = '00000000-0000-0000-0000-000000000000';
+    const [logRes, prefsRes] = await Promise.all([
+      supabaseAdmin.from('email_log').select('user_id, email_type').in('user_id', allIds.length ? allIds : [sentinel]),
+      supabaseAdmin.from('email_preferences').select('user_id, welcome_enabled, defense_nudge_enabled, urgency_reminder_enabled, unsubscribed_all').in('user_id', allIds.length ? allIds : [sentinel]),
+    ]);
+
+    const sent    = new Set((logRes.data || []).map(r => `${r.user_id}:${r.email_type}`));
+    const prefs   = {};
+    for (const p of prefsRes.data || []) prefs[p.user_id] = p;
+
+    const results = [];
+
+    // Welcome fallback — users who never received welcome
+    for (const u of welcomeCands) {
+      if (sent.has(`${u.id}:welcome`)) continue;
+      const p = prefs[u.id];
+      if (p?.unsubscribed_all || p?.welcome_enabled === false) { results.push({ userId: u.id, emailType: 'welcome', status: 'skipped_optout' }); continue; }
+      results.push(await sendOneNurtureEmail(resend, u.id, u.email, u.full_name, 'welcome'));
+    }
+
+    // Day-3 defense_nudge
+    for (const u of nudgeUsers) {
+      if (sent.has(`${u.id}:defense_nudge`)) { results.push({ userId: u.id, emailType: 'defense_nudge', status: 'skipped_duplicate' }); continue; }
+      const p = prefs[u.id];
+      if (p?.unsubscribed_all || p?.defense_nudge_enabled === false) { results.push({ userId: u.id, emailType: 'defense_nudge', status: 'skipped_optout' }); continue; }
+      results.push(await sendOneNurtureEmail(resend, u.id, u.email, u.full_name, 'defense_nudge'));
+    }
+
+    // Day-7 urgency_reminder
+    for (const u of remindUsers) {
+      if (sent.has(`${u.id}:urgency_reminder`)) { results.push({ userId: u.id, emailType: 'urgency_reminder', status: 'skipped_duplicate' }); continue; }
+      const p = prefs[u.id];
+      if (p?.unsubscribed_all || p?.urgency_reminder_enabled === false) { results.push({ userId: u.id, emailType: 'urgency_reminder', status: 'skipped_optout' }); continue; }
+      results.push(await sendOneNurtureEmail(resend, u.id, u.email, u.full_name, 'urgency_reminder'));
+    }
+
+    const sentCount    = results.filter(r => r.status === 'sent').length;
+    const skippedCount = results.filter(r => r.status?.startsWith('skipped')).length;
+    const failedCount  = results.filter(r => r.status === 'failed').length;
+    console.log(`[dispatch-nurture] done — sent:${sentCount} skipped:${skippedCount} failed:${failedCount}`);
+    return res.status(200).json({ ok: true, sent: sentCount, skipped: skippedCount, failed: failedCount, results });
+  } catch (err) {
+    console.error('[dispatch-nurture-emails] fatal error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 // action: "daily-report"
 // Triggered by Vercel cron or external cron (cron-job.org).
 // Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
@@ -1501,6 +1636,7 @@ export default async function handler(req, res) {
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
+  if (action === 'dispatch-nurture-emails') return handleDispatchNurtureEmails(req, res);
   if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);
   if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
   if (action === 'set-maintenance-mode')    return handleSetMaintenanceMode(req, res);
