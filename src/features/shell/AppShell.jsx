@@ -99,11 +99,12 @@ function RunLimitBanner({ stepKey, onUpgrade }) {
 
 export default function AppShell() {
   const navigate = useNavigate()
-  const { state, navigateStep, isOnboarded } = useApp()
+  const { state, navigateStep, isOnboarded, onboardingResolved } = useApp()
   const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration } = useProjectState()
 
   useEffect(() => {
     if (isLoading) return
+    if (!onboardingResolved) return  // wait for Supabase before acting on localStorage cache
     if (!isOnboarded) {
       navigate('/start', { replace: true })
       return
@@ -122,8 +123,8 @@ export default function AppShell() {
     } else if (!document.referrer.includes('/app')) {
       navigate('/dashboard', { replace: true })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; re-running on every render would cause redirect loops
-  }, [isLoading])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; onboardingResolved only flips once
+  }, [isLoading, onboardingResolved])
 
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)

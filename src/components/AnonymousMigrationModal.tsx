@@ -21,6 +21,7 @@ export default function AnonymousMigrationModal({ onBringOver, onStartFresh }: P
           background: 'var(--bg-card)',
           border: '1px solid var(--border-color)',
           boxShadow: '0 24px 60px rgba(0,0,0,0.4)',
+          maxWidth: 'min(28rem, calc(100vw - 2rem))',
         }}
       >
         <div className="flex items-center gap-3 mb-4">

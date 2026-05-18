@@ -152,7 +152,9 @@ export function recordStepRun(stepKey) {
   counts[stepKey] = (counts[stepKey] ?? 0) + 1
   localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
   window.dispatchEvent(new Event('fypro_run_counts_updated'))
-  syncRunCountsToSupabase(counts).catch(() => {})
+  syncRunCountsToSupabase(counts).catch(err => {
+    console.error('[useRunLimit] recordStepRun sync failed:', err?.message)
+  })
 }
 
 export function useRunLimit(features) {

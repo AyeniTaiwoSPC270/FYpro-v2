@@ -24,6 +24,8 @@ export default function SplashOnboarding() {
   const [department, setDepartment] = useState(state.department || '')
   const [level, setLevel] = useState(state.level || '')
   const [topic, setTopic] = useState(state.roughTopic || '')
+  const [submitError, setSubmitError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const topicRef = useRef(null)
 
@@ -91,20 +93,31 @@ export default function SplashOnboarding() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!canSubmit) return
+    if (!canSubmit || isSubmitting) return
+
+    setSubmitError(null)
+    setIsSubmitting(true)
 
     try {
       await updateUserProfile({ faculty, department, level })
     } catch (err) {
       console.error('[onboarding] Supabase profile update failed:', err)
+      setSubmitError('Could not save your profile. Please check your connection and try again.')
+      setIsSubmitting(false)
+      return
     }
 
     // Persist onboarding completion to user_metadata so new devices / incognito
     // sessions can skip onboarding without relying on localStorage alone.
-    try {
-      await supabase.auth.updateUser({ data: { onboarding_completed: true } })
-    } catch (err) {
-      console.error('[onboarding] user_metadata update failed:', err)
+    // updateUser returns { data, error } — it does not throw on API errors.
+    const { error: authUpdateError } = await supabase.auth.updateUser({
+      data: { onboarding_completed: true },
+    })
+    if (authUpdateError) {
+      console.error('[onboarding] user_metadata update failed:', authUpdateError)
+      setSubmitError('Setup could not complete. Please check your connection and try again.')
+      setIsSubmitting(false)
+      return
     }
 
     set({ university, faculty, department, level, roughTopic: topic.trim() })
@@ -265,16 +278,35 @@ export default function SplashOnboarding() {
                 />
               </div>
 
+              {submitError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginBottom: 12,
+                    padding: '10px 14px',
+                    background: 'rgba(220, 38, 38, 0.1)',
+                    border: '1px solid rgba(220, 38, 38, 0.3)',
+                    borderRadius: 8,
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.8rem',
+                    color: '#FCA5A5',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {submitError}
+                </div>
+              )}
+
               <motion.button
                 id="btn-begin"
                 type="submit"
-                className={`begin-btn${canSubmit ? ' is-ready' : ''}`}
-                disabled={!canSubmit}
-                whileHover={canSubmit ? { scale: 1.02, boxShadow: '0 8px 24px rgba(0,102,255,0.4)' } : {}}
-                whileTap={canSubmit ? { scale: 0.97 } : {}}
+                className={`begin-btn${canSubmit && !isSubmitting ? ' is-ready' : ''}`}
+                disabled={!canSubmit || isSubmitting}
+                whileHover={canSubmit && !isSubmitting ? { scale: 1.02, boxShadow: '0 8px 24px rgba(0,102,255,0.4)' } : {}}
+                whileTap={canSubmit && !isSubmitting ? { scale: 0.97 } : {}}
                 transition={{ duration: 0.15 }}
               >
-                Begin
+                {isSubmitting ? 'Saving…' : 'Begin'}
               </motion.button>
             </form>
 

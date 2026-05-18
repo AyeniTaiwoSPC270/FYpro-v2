@@ -10,6 +10,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
   const [payError, setPayError] = useState(null)
   const [blockInfo, setBlockInfo] = useState(null)
   const pollingIntervalRef = useRef(null)
+  const isInitiatingRef   = useRef(false)
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
@@ -35,6 +36,8 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
   }, [])
 
   const handlePay = useCallback(async (tier) => {
+    if (isInitiatingRef.current) return
+    isInitiatingRef.current = true
     setPayError(null)
     setBlockInfo(null)
 
@@ -43,6 +46,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
       supabase.auth.getSession(),
     ])
     if (authError || !authData?.user) {
+      isInitiatingRef.current = false
       navigate(`/login?returnUrl=${loginReturnUrl}`)
       return
     }
@@ -60,6 +64,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
     const hasStudent = currentFeatures.includes('student_pack')
 
     if (hasDefense && tier !== 'project_reset') {
+      isInitiatingRef.current = false
       setBlockInfo({
         tier,
         message: "You're already on the Defense Plan for this project. Start a new project to continue your research journey.",
@@ -68,6 +73,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
     }
 
     if (hasStudent && tier === 'student_pack') {
+      isInitiatingRef.current = false
       setBlockInfo({
         tier: 'student_pack',
         message: "You already have the Student Plan. Upgrade to Defense Plan to unlock the Defense Simulator.",
@@ -97,6 +103,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
         currency: 'NGN',
         onSuccess: async (transaction) => {
           stopPolling()
+          isInitiatingRef.current = false
           setVerifying(true)
           try {
             const { data: { session: vSession } } = await supabase.auth.getSession()
@@ -121,9 +128,13 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
             setVerifying(false)
           }
         },
-        onCancel: () => {},
+        onCancel: () => {
+          isInitiatingRef.current = false
+          setPaying(null)
+        },
         onClose: () => {
           stopPolling()
+          isInitiatingRef.current = false
           if (pendingReference) {
             supabase.auth.getSession().then(({ data: { session: cSession } }) => {
               fetch('/api/payments?action=verify', {
@@ -164,6 +175,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
       }, 3000)
 
     } catch (err) {
+      isInitiatingRef.current = false
       setPayError(err.message)
     } finally {
       setPaying(null)

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { AuthContext } from './AuthContext'
 
@@ -178,9 +178,12 @@ export function AppProvider({ children }) {
         .from('users')
         .select('full_name, faculty, department, level')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (!profile) return
+      if (!profile) {
+        setOnboardingResolved(true)
+        return
+      }
 
       const metaOnboarded = user.user_metadata?.onboarding_completed === true
       if (metaOnboarded || (profile.faculty && profile.department)) {
@@ -199,31 +202,34 @@ export function AppProvider({ children }) {
         department: profile.department ?? prev.department,
         level:      profile.level      ?? prev.level,
       }))
+
+      setOnboardingResolved(true)
     }
     hydrateFromSupabase().catch(err => {
       console.error('[AppContext] hydrateFromSupabase failed:', err?.message)
       setHydrateError(true)
+      setOnboardingResolved(true) // unblock on error — localStorage cache is the fallback
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, _hydrateRetryCount])
 
-  function retryHydrate() {
+  const retryHydrate = useCallback(() => {
     setHydrateRetryCount(c => c + 1)
-  }
+  }, [])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
-  function set(partial) {
+  const set = useCallback((partial) => {
     setState(prev => ({ ...prev, ...partial }))
-  }
+  }, [])
 
-  function clearState() {
+  const clearState = useCallback(() => {
     clearUserLocalStorage()
     setState(DEFAULT_STATE)
-  }
+  }, [])
 
   // Resets project data only — preserves personal info (name, university, faculty,
   // department, level). Use this when starting a new project, not when signing out.
-  function clearProjectData() {
+  const clearProjectData = useCallback(() => {
     setState(prev => ({
       ...DEFAULT_STATE,
       name:       prev.name,
@@ -232,15 +238,15 @@ export function AppProvider({ children }) {
       department: prev.department,
       level:      prev.level,
     }))
-  }
+  }, [])
 
   // Navigate to any accessible step by 0-based index
-  function navigateStep(stepIndex) {
+  const navigateStep = useCallback((stepIndex) => {
     setState(prev => ({ ...prev, currentStep: stepIndex }))
-  }
+  }, [])
 
   // Mark step complete, merge any extra fields (e.g. validatedTopic), advance currentStep
-  function completeStep(stepIndex, extraFields = {}) {
+  const completeStep = useCallback((stepIndex, extraFields = {}) => {
     setState(prev => {
       const stepsCompleted = [...prev.stepsCompleted]
       stepsCompleted[stepIndex] = true
@@ -251,7 +257,7 @@ export function AppProvider({ children }) {
         currentStep: stepIndex + 1,
       }
     })
-  }
+  }, [])
 
   // Mirrors vanilla State.studentContext getter — passed to every API call
   const studentContext = useMemo(() => ({
@@ -270,6 +276,12 @@ export function AppProvider({ children }) {
 
   const [_onboardedFlag, setOnboardedFlag] = useState(() => localStorage.getItem('isOnboarded') === 'true')
 
+  // True once hydrateFromSupabase() has completed (success or error) for the
+  // current session. Starts false when a Supabase session exists in localStorage
+  // so that redirect guards wait for the authoritative server value instead of
+  // acting on a stale (or absent) localStorage cache.
+  const [onboardingResolved, setOnboardingResolved] = useState(() => !getCurrentAuthUserId())
+
   useEffect(() => {
     function syncOnboarded(e) {
       if (e.key === 'isOnboarded') setOnboardedFlag(e.newValue === 'true')
@@ -280,19 +292,22 @@ export function AppProvider({ children }) {
 
   const isOnboarded = _onboardedFlag || Boolean(state.faculty && state.department)
 
+  const contextValue = useMemo(() => ({
+    state,
+    set,
+    clearState,
+    clearProjectData,
+    navigateStep,
+    completeStep,
+    studentContext,
+    isOnboarded,
+    onboardingResolved,
+    hydrateError,
+    retryHydrate,
+  }), [state, set, clearState, clearProjectData, navigateStep, completeStep, studentContext, isOnboarded, onboardingResolved, hydrateError, retryHydrate])
+
   return (
-    <AppContext.Provider value={{
-      state,
-      set,
-      clearState,
-      clearProjectData,
-      navigateStep,
-      completeStep,
-      studentContext,
-      isOnboarded,
-      hydrateError,
-      retryHydrate,
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   )

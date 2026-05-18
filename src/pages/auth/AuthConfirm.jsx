@@ -78,9 +78,24 @@ export default function AuthConfirm() {
       } else if (code) {
         const { data: oauthData, error: oauthError } = await supabase.auth.exchangeCodeForSession(code)
         if (!oauthError && oauthData?.user) {
+          const u = oauthData.user
           // Route to onboarding if the user has never completed it (new Google user)
-          const hasOnboarded = oauthData.user.user_metadata?.onboarding_completed === true
+          const hasOnboarded = u.user_metadata?.onboarding_completed === true
           window.history.replaceState(null, '', window.location.pathname)
+
+          // Ensure a profile row exists for this Google user.
+          // ignoreDuplicates: true means returning users are completely unaffected.
+          const { error: upsertErr } = await supabase.from('users').upsert({
+            id:         u.id,
+            email:      u.email ?? '',
+            full_name:  u.user_metadata?.full_name || u.user_metadata?.name || null,
+            avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
+          }, { onConflict: 'id', ignoreDuplicates: true })
+          if (upsertErr) {
+            console.error('[auth/callback] profile upsert failed:', upsertErr.message)
+            // Non-fatal — onboarding will collect and save profile data
+          }
+
           // Alert admin of new Google signup (fire-and-forget, never blocks navigation)
           if (!hasOnboarded && oauthData.session?.access_token) {
             fetch('/api/notify', {

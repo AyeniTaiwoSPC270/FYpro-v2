@@ -105,8 +105,8 @@ async function handleValidate(req, res) {
     if (response.ok) setCached(claudeKey, data, CLAUDE_TTL);
     return res.status(response.status).json(data);
   } catch (err) {
-    console.error('[research/validate] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    console.error('[research/validate]', err.message);
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 
@@ -209,8 +209,8 @@ async function handleLitMap(req, res) {
     if (response.ok) setCached(claudeKey, data, CLAUDE_TTL);
     return res.status(response.status).json(data);
   } catch (err) {
-    console.error('[research/lit-map] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    console.error('[research/lit-map]', err.message);
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 

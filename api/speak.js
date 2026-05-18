@@ -6,6 +6,7 @@
 
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { setCorsHeaders } from './_lib/cors.js';
+import { supabaseAdmin }  from './_lib/supabase-admin.js';
 
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
@@ -63,6 +64,13 @@ const handler = async (req, res) => {
   // Handle CORS preflight so browsers don't block the POST
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
 
   // Rate limit: 30 TTS calls per user per day, 60 per IP per day
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' });

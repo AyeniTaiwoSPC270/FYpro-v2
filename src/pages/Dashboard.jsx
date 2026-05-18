@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
@@ -28,13 +28,14 @@ import { NewSessionModal, DeleteProjectModal } from '../features/dashboard/DashM
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { state, clearProjectData, isOnboarded } = useApp()
+  const { state, clearProjectData, isOnboarded, onboardingResolved } = useApp()
   const { selectProject, projectId: activeProjectId, isLoading: projectStateLoading } = useProjectState()
 
   useEffect(() => {
     if (projectStateLoading) return
+    if (!onboardingResolved) return  // wait for Supabase before acting on localStorage cache
     if (!isOnboarded) navigate('/start', { replace: true })
-  }, [isOnboarded, navigate, projectStateLoading])
+  }, [isOnboarded, onboardingResolved, navigate, projectStateLoading])
 
   const { user } = useUser()
   const [projects, setProjects] = useState([])
@@ -123,32 +124,39 @@ export default function Dashboard() {
   }
 
   async function handleStartNewProject() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
+    if (isStartingProjectRef.current) return
+    isStartingProjectRef.current = true
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
 
-    const isDefenseFreeSlot = Array.isArray(features) && features.includes('defense_pack') && Array.isArray(projects) && projects.length === 0
+      const isDefenseFreeSlot = Array.isArray(features) && features.includes('defense_pack') && Array.isArray(projects) && projects.length === 0
 
-    if (!isDefenseFreeSlot) {
-      const consumeRes = await fetch('/api/payments?action=consume-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      })
-      if (!consumeRes.ok) {
-        const err = await consumeRes.json().catch(() => ({}))
-        showToastMessage(err.error || 'Could not start new project. Please try again.')
-        return
+      if (!isDefenseFreeSlot) {
+        const consumeRes = await fetch('/api/payments?action=consume-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        })
+        if (!consumeRes.ok) {
+          const err = await consumeRes.json().catch(() => ({}))
+          showToastMessage(err.error || 'Could not start new project. Please try again.')
+          return
+        }
+        window.dispatchEvent(new Event('fypro_entitlements_updated'))
       }
-      window.dispatchEvent(new Event('fypro_entitlements_updated'))
-    }
 
-    await archiveAllActiveProjects()
-    const newProject = await createProject({ faculty: state.faculty || null, department: state.department || null, level: state.level || null })
-    if (!newProject) { showToastMessage('Failed to create project. Please try again.'); return }
-    clearProjectData()
-    sessionStorage.setItem('intentional_app_entry', 'true')
-    navigate('/app')
+      await archiveAllActiveProjects()
+      const newProject = await createProject({ faculty: state.faculty || null, department: state.department || null, level: state.level || null })
+      if (!newProject) { showToastMessage('Failed to create project. Please try again.'); return }
+      clearProjectData()
+      sessionStorage.setItem('intentional_app_entry', 'true')
+      navigate('/app')
+    } finally {
+      isStartingProjectRef.current = false
+    }
   }
 
+  const isStartingProjectRef = useRef(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [deleting, setDeleting] = useState(false)
 

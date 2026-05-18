@@ -72,33 +72,93 @@ export default function VerifyEmail() {
   const [phase, setPhase] = useState('waiting')
   // idle | sending | sent | cooldown
   const [resendState, setResendState] = useState('idle')
+  // resolved destination — used by success state and "Go now" button
+  const [destination, setDestination] = useState('/dashboard')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const token_hash = params.get('token_hash')
-    const type = params.get('type')
+    const hash   = new URLSearchParams(window.location.hash.slice(1))
+
+    const token_hash    = params.get('token_hash')
+    const type          = params.get('type')
+    const access_token  = hash.get('access_token')
+    const refresh_token = hash.get('refresh_token')
+
+    let cancelled = false
+
+    async function resolveAndRedirect(userId) {
+      try {
+        const dest = await resolveRouteAfterLogin(userId)
+        if (cancelled) return
+        setDestination(dest)
+        setPhase('success')
+        setTimeout(() => navigate(dest, { replace: true }), 3000)
+      } catch {
+        if (cancelled) return
+        setDestination('/dashboard')
+        setPhase('success')
+        setTimeout(() => navigate('/dashboard', { replace: true }), 3000)
+      }
+    }
 
     if (token_hash && type) {
+      // PKCE OTP flow — token arrives as query params
       setPhase('verifying')
-      supabase.auth.verifyOtp({ token_hash, type })
-        .then(async ({ data, error }) => {
-          if (error) {
-            setPhase('error')
-          } else {
+      supabase.auth.verifyOtp({ token_hash, type }).then(async ({ data, error }) => {
+        if (cancelled) return
+        if (error) { setPhase('error'); return }
+        const userId = data?.user?.id
+        if (userId) {
+          resolveAndRedirect(userId)
+        } else {
+          // OTP already consumed (e.g. user clicked link twice) — fall back to session
+          const { data: { session } } = await supabase.auth.getSession()
+          const fallbackId = session?.user?.id
+          if (fallbackId && !cancelled) {
+            resolveAndRedirect(fallbackId)
+          } else if (!cancelled) {
+            setDestination('/dashboard')
             setPhase('success')
-            const userId = data?.user?.id
-            if (userId) {
-              try {
-                const destination = await resolveRouteAfterLogin(userId)
-                setTimeout(() => navigate(destination), 3000)
-              } catch {
-                setTimeout(() => navigate('/dashboard'), 3000)
-              }
-            } else {
-              setTimeout(() => navigate('/dashboard'), 3000)
-            }
+            setTimeout(() => navigate('/dashboard', { replace: true }), 3000)
           }
-        })
+        }
+      })
+      return () => { cancelled = true }
+    }
+
+    if (access_token && refresh_token) {
+      // Implicit flow — tokens arrived in the URL hash fragment
+      setPhase('verifying')
+      window.history.replaceState(null, '', window.location.pathname)
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ data, error }) => {
+        if (cancelled) return
+        if (error) { setPhase('error'); return }
+        const userId = data?.user?.id
+        if (userId) {
+          resolveAndRedirect(userId)
+        } else if (!cancelled) {
+          setDestination('/dashboard')
+          setPhase('success')
+          setTimeout(() => navigate('/dashboard', { replace: true }), 3000)
+        }
+      })
+      return () => { cancelled = true }
+    }
+
+    // No explicit tokens in URL. Listen for SIGNED_IN to catch the case where
+    // the Supabase SDK silently processes hash tokens via detectSessionInUrl
+    // (fires before our code can extract them) or the server-side flow redirects
+    // here with the session already established but no params in the URL.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return
+      if (event === 'SIGNED_IN' && session?.user?.id) {
+        resolveAndRedirect(session.user.id)
+      }
+    })
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
     }
   }, [navigate])
 
@@ -285,7 +345,11 @@ export default function VerifyEmail() {
                 className="text-center"
               >
                 <h1 className="text-2xl font-bold text-white mt-6">Email verified!</h1>
-                <p className="text-sm text-slate-400 mt-2">Your account is active. Redirecting to your dashboard…</p>
+                <p className="text-sm text-slate-400 mt-2">
+                  {destination === '/start'
+                    ? 'Welcome to FYPro! Setting up your workspace now…'
+                    : 'Your account is active. Redirecting to your dashboard…'}
+                </p>
                 <div className="mt-4 flex justify-center">
                   <div className="h-1 w-48 rounded-full bg-slate-800 overflow-hidden">
                     <motion.div
@@ -298,7 +362,7 @@ export default function VerifyEmail() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate(destination, { replace: true })}
                   className="mt-6 text-blue-400 hover:text-blue-300 text-sm underline transition-colors"
                 >
                   Go now

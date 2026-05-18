@@ -911,13 +911,15 @@ export default function DefensePrep() {
 
     initRecognition()
 
-    // Create the defense_sessions row (best-effort — does not block the simulator)
-    createDefenseSessionRecord().then(id => {
-      if (id) {
-        defenseSessionIdRef.current = id
-        setDefenseSessionId(id)
-      }
-    })
+    // Create the defense_sessions row so the certificate endpoint can verify the score.
+    // Non-blocking failure: if this fails, the fallback in doEndSession creates it as completed.
+    const sessionId = await createDefenseSessionRecord()
+    if (sessionId) {
+      defenseSessionIdRef.current = sessionId
+      setDefenseSessionId(sessionId)
+    } else {
+      console.warn('[defense] session row not created at start — fallback runs at session end')
+    }
 
     getFirstQuestion()
   }
@@ -1092,11 +1094,13 @@ export default function DefensePrep() {
 
     try {
       const data = await panelSummary(panelSystemRef.current, defenseMessagesRef.current)
+      const panelScore = Number.isFinite(Number(data.panel_score)) ? Math.round(Number(data.panel_score)) : 0
+      data.panel_score = panelScore
 
       trackEvent('defense_simulator_completed', {
-        score:   data.overall_score,
+        score:    panelScore,
         examiner: 'three_examiner_panel',
-        passed:  (data.overall_score ?? 0) >= 7,
+        passed:   panelScore >= 7,
       })
 
       // Mark complete without advancing currentStep past the last step
@@ -1111,7 +1115,7 @@ export default function DefensePrep() {
         fetch('/api/notify', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${notifySession.access_token}` },
-          body:    JSON.stringify({ action: 'defense_completed', payload: { score: Math.round(data.panel_score ?? 0) } }),
+          body:    JSON.stringify({ action: 'defense_completed', payload: { score: panelScore } }),
         }).catch(err => console.error('[notify] defense_completed failed:', err))
       }
 
@@ -1121,24 +1125,30 @@ export default function DefensePrep() {
         .then(() => markDefenseSimulatorRun())
         .then(() => tryAwardDefenseReady())
 
-      // Update defense_sessions row with the final score and completion time
+      // Update defense_sessions row with the final score and completion time.
+      // Awaited so the certificate endpoint always finds a complete row.
+      let sessionWriteOk = false
       if (defenseSessionIdRef.current) {
-        supabase
+        const { error: updateErr } = await supabase
           .from('defense_sessions')
           .update({
             status:       'completed',
-            total_score:  Math.round(data.panel_score ?? 0),
+            total_score:  panelScore,
             turns_count:  questionCountRef.current,
             completed_at: new Date().toISOString(),
           })
           .eq('id', defenseSessionIdRef.current)
-          .then(({ error }) => {
-            if (error) console.warn('[defense] session update failed:', error.message)
-          })
-      } else {
-        // Fallback: session row was never created (projectId was null at session start
-        // or the insert failed). Create it directly as completed so the certificate
-        // endpoint can verify the score and the recovery useEffect finds it.
+        if (updateErr) {
+          console.warn('[defense] session update failed, running fallback:', updateErr.message)
+          defenseSessionIdRef.current = null  // clear so fallback insert runs below
+        } else {
+          sessionWriteOk = true
+        }
+      }
+
+      if (!sessionWriteOk) {
+        // Fallback: session row was never created, or the update failed above.
+        // Create it directly as completed so the certificate endpoint can verify the score.
         const pid = projectId || await ensureProject()
         if (pid) {
           const fallbackUser = authUserRef.current

@@ -186,7 +186,8 @@ async function handleInitiate(req, res) {
     try {
       amountKobo = expectedAmountKobo(effectiveTier);
     } catch {
-      return res.status(400).json({ error: `Unknown tier: ${tier}` });
+      console.error('[payments/initiate] unknown tier:', effectiveTier);
+      return res.status(400).json({ error: 'Invalid payment tier.' });
     }
 
     const reference = generateReference(user.id);

@@ -16,7 +16,8 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError,   setShareError]   = useState(null)
 
-  const qualifies = score != null && score >= SCORE_THRESHOLD
+  const normalizedScore = Number.isFinite(Number(score)) ? Math.round(Number(score)) : 0
+  const qualifies = normalizedScore >= SCORE_THRESHOLD
 
   async function handleDownload() {
     if (!defenseSessionId) {
@@ -83,7 +84,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
       const blob = await res.blob()
       const pdfFile = new File([blob], 'FYPro-Certificate.pdf', { type: 'application/pdf' })
       const truncatedTopic = (topic || 'my research project').slice(0, 60)
-      const shareText = `I just earned a FYPro Defense Readiness Certificate for ${truncatedTopic}. Score: ${score}/10. Try it: https://fypro.com.ng`
+      const shareText = `I just earned a FYPro Defense Readiness Certificate for ${truncatedTopic}. Score: ${normalizedScore}/10. Try it: https://fypro.com.ng`
 
       // Try Web Share API with PDF file attached
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [pdfFile] })) {
@@ -184,7 +185,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         marginBottom: 14,
         maxWidth:     '40ch',
       }}>
-        Your score of {score}/10 qualifies you for an official FYPro Defense Readiness certificate.
+        Your score of {normalizedScore}/10 qualifies you for an official FYPro Defense Readiness certificate.
       </p>
 
       {certError === 'NAME_REQUIRED' && (

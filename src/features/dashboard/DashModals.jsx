@@ -1,9 +1,19 @@
+import { useRef } from 'react'
+
 export function NewSessionModal({ onClose, onConfirm }) {
+  const confirmedRef = useRef(false)
+
+  function handleConfirm() {
+    if (confirmedRef.current) return
+    confirmedRef.current = true
+    onConfirm()
+  }
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center">
       <div
         className="mt-[20vh] w-full max-w-md mx-4 rounded-2xl p-8"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', maxWidth: 'min(28rem, calc(100vw - 2rem))' }}
       >
         <h2 className="text-white font-semibold text-lg">Start a new project?</h2>
         <p className="text-slate-400 text-sm mt-2">
@@ -18,7 +28,7 @@ export function NewSessionModal({ onClose, onConfirm }) {
             Cancel
           </button>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-6 py-2 font-sans text-sm font-semibold transition-colors duration-150"
           >
             Continue to Payment
@@ -34,7 +44,7 @@ export function DeleteProjectModal({ onCancel, onConfirm, deleting }) {
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center">
       <div
         className="mt-[20vh] w-full max-w-md mx-4 rounded-2xl p-8"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', maxWidth: 'min(28rem, calc(100vw - 2rem))' }}
       >
         <h2 className="font-sans font-semibold text-lg" style={{ color: 'var(--text-primary)', margin: '0 0 8px' }}>
           Delete this project?

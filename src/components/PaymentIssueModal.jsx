@@ -66,7 +66,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
           borderRadius: 16,
           padding: '32px',
           width: '100%',
-          maxWidth: 460,
+          maxWidth: 'min(460px, calc(100vw - 32px))',
           position: 'relative',
         }}
       >

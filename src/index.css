@@ -5175,6 +5175,42 @@ html, body {
 }
 
 
+/* ── 375px small phones ──────────────────────────────────────── */
+@media (max-width: 375px) {
+  /* Ensure content cards have minimal padding so text isn't clipped */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
+  .se-card, .placeholder-card {
+    padding: 22px 14px 28px !important;
+  }
+
+  /* Defense chat bubbles: nearly full width, room for avatar/padding */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 98%;
+  }
+
+  /* Examiner name chip: truncate long persona names gracefully */
+  .dp-examiner-name {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Defense header: reduce font and padding at very small widths */
+  .dp-defense-title { font-size: 0.8rem !important; }
+  .dp-chat-area     { padding: 8px !important; gap: 10px !important; }
+  .dp-input-area    { padding: 8px 10px 14px !important; }
+
+  /* Navigator: minimum tap target on tiny screens */
+  .nav-pill {
+    width: 20px;
+    height: 20px;
+    font-size: 0.5rem;
+  }
+  .nav-connector { width: 6px; }
+}
+
 /* ============================================================
    STEP ACCENT ENHANCEMENTS — Appended 2026-04-18
    Adds per-step button gradients, loading shield glows,
