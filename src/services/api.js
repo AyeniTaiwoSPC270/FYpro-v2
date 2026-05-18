@@ -74,6 +74,7 @@ async function callClaude(system, messages, maxTokens = 2000) {
     const jsonMatch = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
     parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
   } catch {
+    console.error('[callClaude] JSON parse failed. Raw response:', text.slice(0, 1000));
     const err = new Error('JSON parse failed');
     err.code = 'JSON_PARSE';
     err.raw = text;
@@ -86,8 +87,12 @@ async function callClaude(system, messages, maxTokens = 2000) {
 // Calls /api/research?action=validate — passes raw topic for paper fetching
 async function callTopicValidator(system, messages, topic) {
   const token = await getAccessToken();
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!token) {
+    const err = new Error('Session expired');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const res = await fetch(TOPIC_VALIDATOR_ENDPOINT, {
     method: 'POST',
@@ -139,8 +144,12 @@ async function callTopicValidator(system, messages, topic) {
 // Calls /api/research?action=lit-map — passes topic for real-paper fetching; handles no_papers_found
 async function callLiteratureMap(system, messages, topic) {
   const token = await getAccessToken();
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!token) {
+    const err = new Error('Session expired');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const res = await fetch(LITERATURE_MAP_ENDPOINT, {
     method:  'POST',

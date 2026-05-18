@@ -665,11 +665,16 @@ export default function DefensePrep() {
     const controller = new AbortController()
     const timeoutId  = setTimeout(() => controller.abort(), 10000)
 
-    fetch('/api/speak', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text, examiner: examinerName }),
-      signal:  controller.signal,
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token ?? null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      return fetch('/api/speak', {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify({ text, examiner: examinerName }),
+        signal:  controller.signal,
+      })
     })
       .then(async res => {
         clearTimeout(timeoutId)
