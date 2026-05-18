@@ -234,7 +234,7 @@ async function handleDashboard(req, res) {
       listAllAuthUsers(),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
-      supabaseAdmin.from('user_entitlements').select('user_id, run_counts, paid_features'),
+      supabaseAdmin.from('user_entitlements').select('user_id, run_counts, paid_features, banned_until'),
       supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
       readCacheHits(),
       supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).neq('status', 'success').gte('created_at', todayStart),
@@ -267,15 +267,19 @@ async function handleDashboard(req, res) {
     const failedPaymentsToday = failedPaymentsRes.count || 0;
     const signupsYesterday    = signupsYesterdayRes.count || 0;
 
-    // build userId → run_counts map and userId → paid_features map from entitlements
-    const runCountsByUser   = {};
+    // build userId → run_counts map, paid_features map, and banned set from entitlements
+    const runCountsByUser    = {};
     const paidFeaturesByUser = {};
+    const bannedByUser       = new Set();
     for (const ent of entitlements) {
       if (ent.run_counts && typeof ent.run_counts === 'object') {
         runCountsByUser[ent.user_id] = ent.run_counts;
       }
       if (Array.isArray(ent.paid_features) && ent.paid_features.length > 0) {
         paidFeaturesByUser[ent.user_id] = ent.paid_features;
+      }
+      if (ent.banned_until && new Date(ent.banned_until).getTime() > now) {
+        bannedByUser.add(ent.user_id);
       }
     }
 
@@ -343,6 +347,7 @@ async function handleDashboard(req, res) {
         else if (daysSince <= 30) status = 'inactive';
         else                      status = 'churned';
       }
+      if (bannedByUser.has(u.id)) status = 'banned';
 
       return {
         id:            u.id,
@@ -826,6 +831,30 @@ async function handleBanUser(req, res) {
   }
 }
 
+// action: "unban-user" — clears banned_until so the user can access the app again
+async function handleUnbanUser(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { userId } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { error } = await supabaseAdmin
+      .from('user_entitlements')
+      .upsert({
+        user_id:      userId,
+        banned_until: null,
+        updated_at:   new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/unban-user]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 // action: "self-delete"
 // Called by the authenticated user to permanently delete their own account.
 // Verifies the user's own JWT — does NOT require ADMIN_EMAIL.
@@ -946,7 +975,21 @@ async function handlePaymentIssues(req, res) {
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) throw error;
-    return res.status(200).json({ issues: data || [] });
+
+    const issues  = data || [];
+    const userIds = [...new Set(issues.map(i => i.user_id).filter(Boolean))];
+    let emailMap  = {};
+    if (userIds.length > 0) {
+      const { data: usersData } = await supabaseAdmin
+        .from('users')
+        .select('id, email')
+        .in('id', userIds);
+      for (const u of usersData || []) emailMap[u.id] = u.email;
+    }
+
+    return res.status(200).json({
+      issues: issues.map(i => ({ ...i, user_email: emailMap[i.user_id] || null })),
+    });
   } catch (err) {
     console.error('[admin/payment-issues] error:', err.message);
     return res.status(500).json({ error: err.message });
@@ -1621,6 +1664,7 @@ export default async function handler(req, res) {
   if (action === 'resolve-failure')  return handleResolveFailure(req, res);
   if (action === 'delete-user')        return handleDeleteUser(req, res);
   if (action === 'ban-user')           return handleBanUser(req, res);
+  if (action === 'unban-user')         return handleUnbanUser(req, res);
   if (action === 'reset-usage')        return handleResetUsage(req, res);
   if (action === 'reset-run-counts')   return handleResetRunCounts(req, res);
   if (action === 'grant-entitlement')  return handleGrantEntitlement(req, res);

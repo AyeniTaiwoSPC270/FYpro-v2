@@ -294,10 +294,11 @@ function KpiCounterCard({ label, target, prefix = '', suffix = '', decimals = 0,
   const [display, setDisplay] = useState(0)
   useEffect(() => {
     const duration = 1400
-    const start = performance.now()
     let raf
-    function step(now) {
-      const pct  = Math.min((now - start) / duration, 1)
+    let start
+    function step(ts) {
+      if (start === undefined) start = ts
+      const pct  = Math.min((ts - start) / duration, 1)
       const ease = 1 - Math.pow(1 - pct, 3)
       setDisplay(target * ease)
       if (pct < 1) raf = requestAnimationFrame(step)
@@ -377,31 +378,6 @@ function LiveFeed({ data, failures }) {
     }))
   }
 
-  if (data?.users) {
-    // Users who have completed defense (have a paid plan and last_active recently)
-    const defenders = [...data.users]
-      .filter(u => u.plan === 'Defense' && u.last_active)
-      .sort((a, b) => new Date(b.last_active) - new Date(a.last_active))
-      .slice(0, 2)
-    defenders.forEach(u => events.push({
-      color: '#60A5FA',
-      label: 'Defense',
-      text: u.email?.split('@')[0] || '…',
-      time: u.last_active,
-    }))
-
-    // Paying users as proxy for recent payments
-    const payers = [...data.users]
-      .filter(u => u.plan !== 'Free' && u.last_active)
-      .sort((a, b) => new Date(b.last_active) - new Date(a.last_active))
-      .slice(0, 2)
-    payers.forEach(u => events.push({
-      color: '#fbbf24',
-      label: u.plan === 'Defense' ? 'Defense Pack' : 'Student Pack',
-      text: u.email?.split('@')[0] || '…',
-      time: u.last_active,
-    }))
-  }
 
   if (failures?.rows) {
     failures.rows
@@ -700,9 +676,9 @@ export default function AdminHealth() {
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    feedbackTimerRef.current = setInterval(loadFeedbackSummary, activeTab === 'payments' ? POLL_FAST : POLL_SLOW)
+    feedbackTimerRef.current = setInterval(loadFeedbackSummary, POLL_SLOW)
     return () => clearInterval(feedbackTimerRef.current)
-  }, [isAdmin, session, loadFeedbackSummary, activeTab])
+  }, [isAdmin, session, loadFeedbackSummary])
 
   // "X seconds ago" counter
   useEffect(() => {
@@ -783,7 +759,7 @@ export default function AdminHealth() {
           })
           const json = await res.json()
           if (!res.ok) throw new Error(json.error)
-          setData(prev => ({ ...prev, users: prev.users.filter(u => u.id !== userId) }))
+          setData(prev => prev ? { ...prev, users: prev.users.filter(u => u.id !== userId) } : prev)
           setActionState(s => { const n = { ...s }; delete n[userId]; return n })
           showUserToast('success', `${email} deleted`)
         } catch (err) {
@@ -821,6 +797,31 @@ export default function AdminHealth() {
         }
       },
       true
+    )
+  }
+
+  async function handleUnbanUser(userId, email) {
+    askConfirm(
+      'Unban User',
+      `Unban ${email}? They will regain access immediately.`,
+      async () => {
+        setActionState(s => ({ ...s, [userId]: 'pending' }))
+        try {
+          const res = await fetch('/api/admin?action=unban-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ userId }),
+          })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error)
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          loadData()
+          showUserToast('success', `${email} unbanned`)
+        } catch (err) {
+          setActionState(s => { const n = { ...s }; delete n[userId]; return n })
+          showUserToast('error', 'Unban failed: ' + err.message)
+        }
+      }
     )
   }
 
@@ -1254,7 +1255,7 @@ export default function AdminHealth() {
             <button onClick={handleTestAlerts} disabled={testAlertsBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:testAlertsBusy?MUTED:WHITE, background:testAlertsBusy?'rgba(255,255,255,0.05)':testAlertsResult?.all_ok===true?GREEN:testAlertsResult?.all_ok===false?RED:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 14px', cursor:testAlertsBusy?'not-allowed':'pointer' }}>
               {testAlertsBusy ? 'Sending…' : testAlertsResult ? testAlertsResult.all_ok ? `✓ ${testAlertsResult.sent}/10` : `⚠ ${testAlertsResult.failures} failed` : '🔔 Alerts'}
             </button>
-            <button onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
+            <button onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }).catch(() => {}) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
               Sentry
             </button>
             <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
@@ -1364,7 +1365,7 @@ export default function AdminHealth() {
               <OverviewCard label="Avg Rev / User" value={overview?.total_users>0&&overview?.total_revenue_ngn>0?`₦${Math.round(overview.total_revenue_ngn/overview.total_users).toLocaleString()}`:'—'} sub="total lifetime" accent={BLUE} />
               <OverviewCard label="Conversion Rate" value={overview?.conversion_rate!=null?`${Number(overview.conversion_rate).toFixed(1)}%`:'—'} sub="free → paid" accent={GREEN} />
               <OverviewCard label="Cache Hit Rate" value={cache_hit_rate?.hit_rate_pct!=null?`${Number(cache_hit_rate.hit_rate_pct).toFixed(1)}%`:'—'} sub={`${cache_hit_rate?.hits_total||0} hits`} accent={AMBER} />
-              {ngn_per_usd && <OverviewCard label="₦ / USD Rate" value={`₦${ngn_per_usd?.toLocaleString()}`} sub="live rate" accent={MUTED} />}
+              {ngn_per_usd && <OverviewCard label="₦ / USD Rate" value={`₦${ngn_per_usd?.toLocaleString()}`} sub="configured rate" accent={MUTED} />}
             </div>
 
             {/* Feature usage */}
@@ -1497,11 +1498,15 @@ export default function AdminHealth() {
                             <td style={td}>{fmtDate(u.last_active)}</td>
                             <td style={{ ...td, whiteSpace:'nowrap' }}>
                               <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-                                <button className="mc-action-btn" disabled={busy} onClick={() => handleBanUser(u.id, u.email)}>{busy?'…':'Ban'}</button>
+                                {u.status === 'banned'
+                                  ? <button className="mc-action-btn" disabled={busy} onClick={() => handleUnbanUser(u.id, u.email)} style={{ color:'rgba(251,191,36,0.8)', borderColor:'rgba(245,158,11,0.3)' }}>{busy?'…':'Unban'}</button>
+                                  : <button className="mc-action-btn" disabled={busy} onClick={() => handleBanUser(u.id, u.email)}>{busy?'…':'Ban'}</button>
+                                }
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleDeleteUser(u.id, u.email)} style={{ color:'rgba(248,113,113,0.7)', borderColor:'rgba(220,38,38,0.2)' }}>{busy?'…':'Del'}</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'student')}>+Stu</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'defense')}>+Def</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleResetUsage(u.id, u.email)}>Reset</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleResetRunCounts(u.id, u.email)}>Runs</button>
                                 <button className="mc-action-btn" disabled={diagnoseBusy[u.id]} onClick={() => handleDiagnose(u.id, u.email)}>{diagnoseBusy[u.id]?'…':'Diag'}</button>
                               </div>
                             </td>
@@ -1578,7 +1583,7 @@ export default function AdminHealth() {
                             <td style={{ ...td, color:WHITE, fontWeight:500 }}>{u.email}</td>
                             <td style={td}>{fmtDate(u.signup_date)}</td>
                             <td style={td}>{fmtDate(u.last_active)}</td>
-                            <td style={tdMono}>{u.steps_completed} / 10</td>
+                            <td style={tdMono}>{u.steps_completed} / 11</td>
                           </tr>
                         ))}
                       </tbody>
