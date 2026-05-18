@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -25,7 +26,7 @@ import Terms from './pages/Terms'
 import NotFound from './pages/NotFound'
 import AppShell from './features/shell/AppShell'
 import SupervisorPrep from './features/supervisorPrep/SupervisorPrep'
-import AdminHealth from './pages/admin/Health'
+const AdminHealth = lazy(() => import('./pages/admin/Health'))
 import ChangelogPage from './pages/changelog/ChangelogPage'
 import RoadmapPage from './pages/roadmap/RoadmapPage'
 import EmailPreferences from './pages/account/EmailPreferences'
@@ -100,8 +101,8 @@ function AppRoutes() {
           {/* My Referrals */}
           <Route path="/account/referrals" element={<ProtectedRoute><MyReferrals /></ProtectedRoute>} />
 
-          {/* Admin */}
-          <Route path="/admin/health" element={<ProtectedRoute><AdminHealth /></ProtectedRoute>} />
+          {/* Admin — lazy-loaded so recharts only downloads when admin visits */}
+          <Route path="/admin/health" element={<ProtectedRoute><Suspense fallback={null}><AdminHealth /></Suspense></ProtectedRoute>} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />
