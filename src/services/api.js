@@ -83,14 +83,23 @@ async function callClaude(system, messages, maxTokens = 2000) {
   return parsed;
 }
 
-// Calls /api/topic-validator — same contract as callClaude but passes raw topic for paper fetching
+// Calls /api/research?action=validate — passes raw topic for paper fetching
 async function callTopicValidator(system, messages, topic) {
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(TOPIC_VALIDATOR_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ system, messages, max_tokens: 2000, topic }),
   });
 
+  if (res.status === 401) {
+    const err = new Error('Not authenticated');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
   if (res.status === 429) {
     const err = new Error('Rate limited');
     err.code = 'RATE_LIMIT';
@@ -127,14 +136,23 @@ async function callTopicValidator(system, messages, topic) {
   return parsed;
 }
 
-// Calls /api/literature-map — passes topic for real-paper fetching; handles no_papers_found
+// Calls /api/research?action=lit-map — passes topic for real-paper fetching; handles no_papers_found
 async function callLiteratureMap(system, messages, topic) {
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(LITERATURE_MAP_ENDPOINT, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body:    JSON.stringify({ system, messages, max_tokens: 3000, topic }),
   });
 
+  if (res.status === 401) {
+    const err = new Error('Not authenticated');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
   if (res.status === 422) {
     const errData = await res.json();
     const err = new Error(errData.message || 'No papers found for this topic.');
