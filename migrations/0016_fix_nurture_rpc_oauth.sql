@@ -1,9 +1,10 @@
--- get_eligible_nurture_users: returns users due to receive a given email type.
--- Called by the email-nurture Deno Edge Function via service_role RPC.
--- SECURITY DEFINER: runs as the function owner (postgres), allowing access to auth.users.
--- Note: email_confirmed_at is set for email/password users (Supabase email link).
---       confirmed_at is set for all users including Google OAuth.
---       COALESCE handles both so OAuth users are not silently excluded.
+-- Migration 0016: Fix get_eligible_nurture_users to include Google OAuth users.
+-- Google OAuth users have confirmed_at set but email_confirmed_at may be NULL
+-- in some Supabase/GoTrue configurations, because email_confirmed_at only records
+-- confirmation via Supabase's own email link — not OAuth provider verification.
+-- This caused all OAuth users to be silently excluded from every nurture email.
+-- Fix: use COALESCE(email_confirmed_at, confirmed_at) so both auth methods qualify.
+
 CREATE OR REPLACE FUNCTION public.get_eligible_nurture_users(
   p_email_type text,
   p_min_days   integer

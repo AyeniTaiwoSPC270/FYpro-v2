@@ -701,6 +701,10 @@ async function handleNotify(req, res) {
     await sendTelegramAlert(`📁 New project: ${email} started '<b>${title}</b>'`)
   }
 
+  if (action === 'oauth_signup') {
+    await sendTelegramAlert(`👤 New signup: ${email} (Google, free)`)
+  }
+
   return res.status(200).json({ ok: true })
 }
 

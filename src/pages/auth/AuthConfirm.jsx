@@ -81,6 +81,17 @@ export default function AuthConfirm() {
           // Route to onboarding if the user has never completed it (new Google user)
           const hasOnboarded = oauthData.user.user_metadata?.onboarding_completed === true
           window.history.replaceState(null, '', window.location.pathname)
+          // Alert admin of new Google signup (fire-and-forget, never blocks navigation)
+          if (!hasOnboarded && oauthData.session?.access_token) {
+            fetch('/api/notify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${oauthData.session.access_token}`,
+              },
+              body: JSON.stringify({ action: 'oauth_signup' }),
+            }).catch(() => {})
+          }
           navigate(hasOnboarded ? '/dashboard' : '/start', { replace: true })
           return
         }
