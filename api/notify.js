@@ -56,6 +56,7 @@ async function sendReply(chatId, text, keyboard = null) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
+      signal:  AbortSignal.timeout(8000),
     })
   } catch (err) {
     console.error('[notify/bot] sendReply failed:', err.message)
@@ -72,6 +73,7 @@ async function editMessage(chatId, messageId, text, keyboard = null) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
+      signal:  AbortSignal.timeout(8000),
     })
     return r.ok
   } catch (err) {
@@ -88,6 +90,7 @@ async function answerCallbackQuery(callbackQueryId) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ callback_query_id: callbackQueryId }),
+      signal:  AbortSignal.timeout(4000),
     })
   } catch {}
 }
@@ -687,6 +690,9 @@ async function handleNotify(req, res) {
   if (authError || !user) return res.status(401).end()
 
   const { action, payload } = req.body || {}
+  const ALLOWED_ACTIONS = ['defense_completed', 'project_created', 'oauth_signup']
+  if (!ALLOWED_ACTIONS.includes(action)) return res.status(400).json({ error: 'Unknown action' })
+
   const email = user.email || 'unknown'
 
   if (action === 'defense_completed') {
