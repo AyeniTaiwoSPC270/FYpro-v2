@@ -503,7 +503,7 @@ export default function AdminHealth() {
 
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
-  const [isAdmin, setIsAdmin] = useState(true) // optimistic; server corrects to false on 403
+  const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
 
   const loadData = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
@@ -516,6 +516,7 @@ export default function AdminHealth() {
     })
       .then(r => {
         if (r.status === 403) { setIsAdmin(false); throw new Error('Forbidden') }
+        setIsAdmin(true)
         return r.json()
       })
       .then(d => { if (d.error) throw new Error(d.error); setData(d); setLastUpdated(new Date()) })
@@ -623,8 +624,10 @@ export default function AdminHealth() {
   }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
 
   // Initial parallel fetch — all 8 widgets at once; one failure never blocks the rest
+  // Guard uses === false (not !isAdmin) so the null loading state still triggers the fetch
+  // that establishes isAdmin. Once isAdmin is true, polling effects take over.
   useEffect(() => {
-    if (!isAdmin || !session) return
+    if (isAdmin === false || !session) return
     setInitialLoading(true)
     Promise.allSettled([
       loadData(),
@@ -1099,6 +1102,14 @@ export default function AdminHealth() {
       </div>
     </div>
   )
+  if (isAdmin === null) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#060E18' }}>
+      <div style={{ color: '#fff', fontFamily: 'Poppins, sans-serif', fontSize: '1rem', opacity: 0.6 }}>
+        Verifying access…
+      </div>
+    </div>
+  )
+
   if (!isAdmin) return (
     <div style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div style={{ textAlign: 'center' }}>

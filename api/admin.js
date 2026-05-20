@@ -9,11 +9,15 @@ import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
 
 // Redis client used exclusively by admin actions (key inspection, reset)
+let _adminRedis = null;
 function getAdminRedis() {
-  return new Redis({
-    url:   process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
+  if (!_adminRedis) {
+    _adminRedis = new Redis({
+      url:   process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  return _adminRedis;
 }
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
@@ -27,6 +31,29 @@ function readRawBody(req) {
     req.on('end',  () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
+}
+
+// Timing-safe cron secret verification.
+// Accepts x-cron-secret header OR Authorization: Bearer <secret>.
+// Returns true if authorized, false (and sends 401) if not.
+function verifyCronSecret(req, res) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) { res.status(401).json({ error: 'Unauthorized' }); return false; }
+  const xSecret    = req.headers['x-cron-secret']   || '';
+  const authHeader = req.headers['authorization']    || '';
+  const expected   = Buffer.from(cronSecret);
+  const bearer     = `Bearer ${cronSecret}`;
+
+  const xMatch = xSecret.length === cronSecret.length &&
+    crypto.timingSafeEqual(Buffer.from(xSecret), expected);
+  const bearerMatch = authHeader.length === bearer.length &&
+    crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(bearer));
+
+  if (!xMatch && !bearerMatch) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return false;
+  }
+  return true;
 }
 
 function mapSentryLevel(level) {
@@ -117,7 +144,7 @@ async function handleHealth(req, res) {
     });
   } catch (err) {
     console.error('[admin/health] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -126,14 +153,7 @@ async function handleHealth(req, res) {
 // Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
 // Sends a Resend email alert when spend crosses 80% of daily cap.
 async function handleAlertCheck(req, res) {
-  const cronSecret = process.env.CRON_SECRET;
-  // Fail closed: if CRON_SECRET is not configured, reject all requests.
-  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const xSecret    = req.headers['x-cron-secret'];
-  const authHeader = req.headers['authorization'];
-  const authorized = (xSecret && xSecret === cronSecret) ||
-                     (authHeader && authHeader === `Bearer ${cronSecret}`);
-  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
+  if (!verifyCronSecret(req, res)) return;
   try {
     const today     = new Date().toISOString().slice(0, 10);
     const cap       = parseFloat(process.env.DAILY_CAP_USD || '10');
@@ -178,7 +198,7 @@ async function handleAlertCheck(req, res) {
     });
   } catch (err) {
     console.error('[admin/alert-check] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -464,7 +484,7 @@ async function handleDashboard(req, res) {
 
   } catch (err) {
     console.error('[admin/dashboard] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -476,7 +496,11 @@ async function verifyAdmin(req, res) {
   try {
     const { data: { user: caller }, error } = await supabaseAdmin.auth.getUser(token);
     if (error || !caller) { res.status(401).json({ error: 'Unauthorized' }); return null; }
-    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const callerBuf  = Buffer.from(caller.email  || '');
+    const adminBuf   = Buffer.from(adminEmail     || '');
+    if (!adminEmail || callerBuf.length !== adminBuf.length ||
+        !crypto.timingSafeEqual(callerBuf, adminBuf)) {
       res.status(403).json({ error: 'Forbidden' }); return null;
     }
     return caller;
@@ -526,7 +550,7 @@ async function handleVitals(req, res) {
     });
   } catch (err) {
     console.error('[admin/vitals] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -550,7 +574,7 @@ async function handleFailures(req, res) {
     });
   } catch (err) {
     console.error('[admin/failures] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -571,7 +595,7 @@ async function handleResolveFailure(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/resolve-failure] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -588,11 +612,14 @@ async function handleResolveFailure(req, res) {
 async function handleResetRunCounts(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 50, ipHour: 60, prefix: 'admin:reset-run-counts' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    console.log(`[audit] action=reset-run-counts admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
     const { error } = await supabaseAdmin
       .from('user_entitlements')
       .upsert({
@@ -604,24 +631,27 @@ async function handleResetRunCounts(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/reset-run-counts]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 async function handleDeleteUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:delete-user' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    console.log(`[audit] action=delete-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/delete-user]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -630,6 +660,8 @@ async function handleDeleteUser(req, res) {
 async function handleResetUsage(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 50, ipHour: 60, prefix: 'admin:reset-usage' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
@@ -669,7 +701,7 @@ async function handleResetUsage(req, res) {
     return res.status(200).json({ ok: true, keys_deleted: deleted, user_keys: userRlKeys, ip_keys: ipRlKeys, last_ip: lastIp });
   } catch (err) {
     console.error('[admin/reset-usage]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -731,7 +763,7 @@ async function handleDiagnoseUser(req, res) {
     });
   } catch (err) {
     console.error('[admin/diagnose-user]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -748,12 +780,16 @@ async function handleDebugRedisKeys(req, res) {
   }
 
   try {
-    const redis  = getAdminRedis();
-    const found  = await redis.keys(`*${userId}*`);
-    const allRl  = await redis.keys('rl:*');
-    return res.status(200).json({ keys_for_user: found || [], all_rl_keys_sample: (allRl || []).slice(0, 20) });
+    const redis       = getAdminRedis();
+    const userRlKeys  = await redis.keys(`rl:*${userId}*`);
+    const allRlSample = await redis.keys('rl:*');
+    return res.status(200).json({
+      keys_for_user:       userRlKeys   || [],
+      all_rl_keys_sample:  (allRlSample || []).slice(0, 20),
+    });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error('[admin/debug-redis-keys]', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -761,6 +797,8 @@ async function handleDebugRedisKeys(req, res) {
 async function handleGrantEntitlement(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:grant-entitlement' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId, plan } = req.body || {};
   if (!userId || !['student', 'defense'].includes(plan)) {
@@ -768,6 +806,7 @@ async function handleGrantEntitlement(req, res) {
   }
 
   try {
+    console.log(`[audit] action=grant-entitlement admin=${caller.email} target=${userId} plan=${plan} at=${new Date().toISOString()}`);
     const { data: current } = await supabaseAdmin
       .from('user_entitlements')
       .select('paid_features, defense_packs_remaining, total_lifetime_paid_ngn')
@@ -800,7 +839,7 @@ async function handleGrantEntitlement(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/grant-entitlement]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -811,11 +850,14 @@ async function handleGrantEntitlement(req, res) {
 async function handleBanUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:ban-user' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    console.log(`[audit] action=ban-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
     const { error } = await supabaseAdmin
       .from('user_entitlements')
       .upsert({
@@ -827,7 +869,7 @@ async function handleBanUser(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/ban-user]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -835,11 +877,14 @@ async function handleBanUser(req, res) {
 async function handleUnbanUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
+  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:unban-user' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    console.log(`[audit] action=unban-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
     const { error } = await supabaseAdmin
       .from('user_entitlements')
       .upsert({
@@ -851,7 +896,7 @@ async function handleUnbanUser(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/unban-user]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -921,7 +966,7 @@ async function handleSelfDelete(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/self-delete]', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -958,7 +1003,7 @@ async function handleAuthAttempts(req, res) {
     return res.status(200).json({ attempts: rows, suspicious });
   } catch (err) {
     console.error('[admin/auth-attempts] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -992,7 +1037,7 @@ async function handlePaymentIssues(req, res) {
     });
   } catch (err) {
     console.error('[admin/payment-issues] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1013,7 +1058,7 @@ async function handleResolvePaymentIssue(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/resolve-payment-issue] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1072,14 +1117,16 @@ async function handleSentryWebhook(req, res, rawBody) {
   const secret = process.env.SENTRY_WEBHOOK_SECRET;
   if (!secret) {
     console.error('[sentry-webhook] SENTRY_WEBHOOK_SECRET is not set — rejecting request');
-    return res.status(500).json({ error: 'Webhook secret not configured on server.' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const sig      = req.headers['sentry-hook-signature'] || '';
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
-  if (sig !== expected) {
+  const sigBuf   = Buffer.from(sig);
+  const expBuf   = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     console.error('[sentry-webhook] invalid signature');
-    return res.status(400).json({ error: 'Invalid signature' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   let payload;
@@ -1160,7 +1207,7 @@ async function handleSystemLogs(req, res) {
     return res.status(200).json({ logs: logsRes.data || [], sentry_issues: sentryIssues });
   } catch (err) {
     console.error('[admin/system_logs] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1181,7 +1228,7 @@ async function handleResolveLog(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/resolve_log] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1264,7 +1311,7 @@ async function handleFeedbackSummary(req, res) {
     return res.status(200).json({ rows });
   } catch (err) {
     console.error('[admin/feedback-summary] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1319,13 +1366,7 @@ async function sendOneNurtureEmail(resend, userId, email, name, emailType) {
 // Sends defense_nudge (Day 3), urgency_reminder (Day 7), and welcome fallback (missed on signup).
 // Auth: x-cron-secret header or Authorization: Bearer CRON_SECRET.
 async function handleDispatchNurtureEmails(req, res) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const xSecret    = req.headers['x-cron-secret'];
-  const authHeader = req.headers['authorization'];
-  const authorized = (xSecret && xSecret === cronSecret) ||
-                     (authHeader && authHeader === `Bearer ${cronSecret}`);
-  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
+  if (!verifyCronSecret(req, res)) return;
 
   const now    = Date.now();
   const DAY    = 24 * 60 * 60 * 1000;
@@ -1399,7 +1440,7 @@ async function handleDispatchNurtureEmails(req, res) {
     return res.status(200).json({ ok: true, sent: sentCount, skipped: skippedCount, failed: failedCount, results });
   } catch (err) {
     console.error('[dispatch-nurture-emails] fatal error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1408,13 +1449,7 @@ async function handleDispatchNurtureEmails(req, res) {
 // Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
 // Aggregates today's key metrics and posts a summary to Telegram.
 async function handleDailyReport(req, res) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return res.status(401).json({ error: 'Unauthorized' });
-  const xSecret    = req.headers['x-cron-secret'];
-  const authHeader = req.headers['authorization'];
-  const authorized = (xSecret && xSecret === cronSecret) ||
-                     (authHeader && authHeader === `Bearer ${cronSecret}`);
-  if (!authorized) return res.status(401).json({ error: 'Unauthorized' });
+  if (!verifyCronSecret(req, res)) return;
 
   try {
     const today      = new Date().toISOString().slice(0, 10);
@@ -1504,7 +1539,7 @@ async function handleDailyReport(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/daily-report] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1551,7 +1586,7 @@ async function handleResolveSentryIssues(req, res) {
     clearTimeout(timeout);
     const msg = err.name === 'AbortError' ? 'Sentry API timed out (8s)' : err.message;
     console.error('[admin/resolve-sentry-issues] error:', msg);
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1579,7 +1614,7 @@ async function handleGetMaintenanceMode(req, res) {
     });
   } catch (err) {
     console.error('[admin/get-maintenance-mode] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
@@ -1611,7 +1646,7 @@ async function handleSetMaintenanceMode(req, res) {
     return res.status(200).json({ ok: true, maintenance_mode: enabled });
   } catch (err) {
     console.error('[admin/set-maintenance-mode] error:', err.message);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
