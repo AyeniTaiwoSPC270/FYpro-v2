@@ -4,6 +4,7 @@ import { setCorsHeaders } from './_lib/cors.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
 import { creditUser } from './_lib/credit-user.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
+import { rateLimitCheck } from './_lib/rate-limit.js';
 import { Resend } from 'resend';
 
 // bodyParser disabled so the webhook handler can access the raw body for HMAC.
@@ -138,6 +139,9 @@ async function handleCheckStatus(req, res) {
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+  const rl = await rateLimitCheck(req, { userDay: 120, ipDay: 300, prefix: 'pay_status' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
   const { reference } = req.query;
   if (!reference || typeof reference !== 'string') {
     return res.status(400).json({ error: 'Missing reference' });
@@ -164,6 +168,9 @@ async function handleInitiate(req, res) {
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_initiate' });
+    if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
     const { tier } = req.body || {};
     if (!tier) return res.status(400).json({ error: 'Missing required field: tier' });
@@ -225,6 +232,9 @@ async function handleVerify(req, res) {
 
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_verify' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const { reference } = req.body || {};
   if (!reference || typeof reference !== 'string' || !reference.trim()) {
@@ -308,6 +318,9 @@ async function handleConsumeReset(req, res) {
 
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const rl = await rateLimitCheck(req, { userDay: 5, ipDay: 20, prefix: 'pay_consume' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const { data: current, error: fetchErr } = await supabaseAdmin
     .from('user_entitlements')
