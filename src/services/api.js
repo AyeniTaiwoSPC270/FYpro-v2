@@ -29,25 +29,32 @@ async function getAccessToken() {
   return session?.access_token ?? null;
 }
 
-async function callClaude(system, messages, maxTokens = 2000) {
+async function callClaude(system, messages, maxTokens = 2000, step = null) {
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
     err.code = 'UNAUTHORIZED';
     throw err;
   }
+  const body = { system, messages, max_tokens: maxTokens };
+  if (step) body.step = step;
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+    body: JSON.stringify(body),
   });
 
   if (res.status === 429) {
     const err = new Error('Rate limited');
     err.code = 'RATE_LIMIT';
+    throw err;
+  }
+  if (res.status === 503) {
+    const err = new Error('Service temporarily unavailable. Please try again.');
+    err.code = 'SERVICE_UNAVAILABLE';
     throw err;
   }
   if (res.status === 504) {
@@ -64,6 +71,14 @@ async function callClaude(system, messages, maxTokens = 2000) {
 
   const raw = await res.json();
   const text = raw?.content?.[0]?.text ?? '';
+
+  if (raw?.stop_reason === 'max_tokens') {
+    console.error('[callClaude] Response truncated (max_tokens). Raw end:', text.slice(-200));
+    const err = new Error('Response was too long. Please try again.');
+    err.code = 'JSON_PARSE';
+    err.raw = text;
+    throw err;
+  }
 
   let parsed;
   try {
@@ -369,7 +384,8 @@ export async function adviseMethodology(studentCtx, validatedTopic, chapterStruc
   return callClaude(
     system,
     [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }],
-    4000
+    4000,
+    'methodology-advisor'
   );
 }
 
@@ -527,14 +543,15 @@ export async function generateEmail(studentCtx, validatedTopic, chapterStructure
 // ── Error handler (call from components) ─────────────────────────────────────
 // Returns true if error was handled, false if caller should do fallback
 const AI_ERRORS = {
-  rate_limit:   'FYPro is in high demand right now. Your progress is saved — please try again in {secs} seconds.',
-  timeout:      'This is taking longer than expected. Your progress is saved. Please click Try Again.',
-  network:      'Connection lost. Your progress is saved. Check your internet and try again.',
-  generic:      'Something went wrong on our end. Your progress is saved. Please try again.',
-  token_limit:  'Your input is too long. Please shorten it and try again.',
-  json_parse:   'Received an unexpected response. Your progress is saved. Please try again.',
-  forbidden:    'This feature requires a paid upgrade. Please visit the Pricing page to unlock it.',
-  unauthorized: 'Your session has expired. Please sign in again.',
+  rate_limit:    'FYPro is in high demand right now. Your progress is saved — please try again in {secs} seconds.',
+  timeout:       'This is taking longer than expected. Your progress is saved. Please click Try Again.',
+  network:       'Connection lost. Your progress is saved. Check your internet and try again.',
+  generic:       'Something went wrong on our end. Your progress is saved. Please try again.',
+  token_limit:   'Your input is too long. Please shorten it and try again.',
+  json_parse:    'Received an unexpected response. Your progress is saved. Please try again.',
+  forbidden:     'This feature requires a paid upgrade. Please visit the Pricing page to unlock it.',
+  unauthorized:  'Your session has expired. Please sign in again.',
+  unavailable:   'FYPro is temporarily unavailable. Your progress is saved. Please try again in a moment.',
 };
 
 // Module-level handle for the rate-limit countdown so components can clear it on unmount.
@@ -576,6 +593,10 @@ export function handleApiError(err, showError) {
   }
   if (err.code === 'GATEWAY_TIMEOUT') {
     showError(AI_ERRORS.timeout);
+    return true;
+  }
+  if (err.code === 'SERVICE_UNAVAILABLE') {
+    showError(AI_ERRORS.unavailable);
     return true;
   }
   if (err.code === 'JSON_PARSE') {

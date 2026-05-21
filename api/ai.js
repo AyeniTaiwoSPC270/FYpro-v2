@@ -11,7 +11,7 @@ import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
 const ALLOWED_MODELS   = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']);
-const MAX_TOKENS_LIMIT = 3000;
+const MAX_TOKENS_LIMIT = 4096;
 
 const TTL_BY_STEP = {
   'topic-validator':     86400,
