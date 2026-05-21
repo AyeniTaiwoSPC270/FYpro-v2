@@ -612,7 +612,7 @@ async function handleResolveFailure(req, res) {
 async function handleResetRunCounts(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 50, ipHour: 60, prefix: 'admin:reset-run-counts' });
+  const rl = await rateLimitCheck(req, { userDay: 50, ipDay: 60, prefix: 'admin:reset-run-counts' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
@@ -638,7 +638,7 @@ async function handleResetRunCounts(req, res) {
 async function handleDeleteUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:delete-user' });
+  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 30, prefix: 'admin:delete-user' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
@@ -646,12 +646,33 @@ async function handleDeleteUser(req, res) {
 
   try {
     console.log(`[audit] action=delete-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
+
+    // Explicitly delete from tables that may not have CASCADE DELETE on the FK chain.
+    // Same pattern as handleSelfDelete — prevents FK constraint violations in deleteUser.
+    const tablesToClear = [
+      'defense_certificates',
+      'defense_credits',
+      'feature_feedback',
+      'email_preferences',
+      'user_onboarding',
+      'response_times',
+      'auth_attempts',
+      'email_log',
+    ];
+    await Promise.allSettled(
+      tablesToClear.map(table => supabaseAdmin.from(table).delete().eq('user_id', userId))
+    );
+    await Promise.allSettled([
+      supabaseAdmin.from('referrals').delete().eq('referrer_user_id', userId),
+      supabaseAdmin.from('referrals').delete().eq('referred_user_id', userId),
+    ]);
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw error;
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/delete-user]', err.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
 
@@ -660,7 +681,7 @@ async function handleDeleteUser(req, res) {
 async function handleResetUsage(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 50, ipHour: 60, prefix: 'admin:reset-usage' });
+  const rl = await rateLimitCheck(req, { userDay: 50, ipDay: 60, prefix: 'admin:reset-usage' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
@@ -797,7 +818,7 @@ async function handleDebugRedisKeys(req, res) {
 async function handleGrantEntitlement(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:grant-entitlement' });
+  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 30, prefix: 'admin:grant-entitlement' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId, plan } = req.body || {};
@@ -850,7 +871,7 @@ async function handleGrantEntitlement(req, res) {
 async function handleBanUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:ban-user' });
+  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 30, prefix: 'admin:ban-user' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
@@ -877,7 +898,7 @@ async function handleBanUser(req, res) {
 async function handleUnbanUser(req, res) {
   const caller = await verifyAdmin(req, res);
   if (!caller) return;
-  const rl = await rateLimitCheck(req, { userDay: 20, ipHour: 30, prefix: 'admin:unban-user' });
+  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 30, prefix: 'admin:unban-user' });
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId } = req.body || {};
