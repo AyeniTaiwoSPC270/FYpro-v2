@@ -214,9 +214,12 @@ export default function ChapterArchitect() {
   const [agCopied, setAgCopied]           = useState(false)
   // If abstract data already exists (restored session), make all blocks visible immediately
   const [agVisible, setAgVisible]         = useState(() => state.abstractData ? AG_COMPONENTS.map((_, i) => i) : [])
-  const agTimers        = useRef([])
-  const loadingTimerRef = useRef(null)
+  const agTimers          = useRef([])
+  const loadingTimerRef   = useRef(null)
   const agLoadingTimerRef = useRef(null)
+  const caInflightRef     = useRef(false)
+  const agInflightRef     = useRef(false)
+  const regenInflightRef  = useRef(false)
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -340,6 +343,7 @@ export default function ChapterArchitect() {
   // ── Generate chapters ─────────────────────────────────────────────────────
 
   async function handleGenerate() {
+    if (caInflightRef.current) return
     const wc = parseInt(wordCount, 10)
     if (!wc || wc < 5000) {
       setWordCountShaking(true)
@@ -347,18 +351,24 @@ export default function ChapterArchitect() {
       return
     }
     setError(null)
+    caInflightRef.current = true
+    setBtnDisabled(true)
 
     const allowed = await checkAndRecord('chapter_architect', features)
-    if (!allowed) return
+    if (!allowed) {
+      caInflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
 
     trackEvent('workflow_step_started', { step: 'chapter_architect' })
     localStorage.setItem('fypro_autosave_chapter_architect', JSON.stringify({ wordCount, structureType }))
-    setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc, features)
       .then(result => {
+        caInflightRef.current = false
         setData(result)
         setChapters(result.chapters || [])
         setOpenChapters({})
@@ -371,6 +381,7 @@ export default function ChapterArchitect() {
         saveStep('chapter_architect', result)
       })
       .catch(err => {
+        caInflightRef.current = false
         logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('input')
         if (!handleApiError(err, msg => {
@@ -384,6 +395,8 @@ export default function ChapterArchitect() {
   }
 
   function handleRegenerate() {
+    if (regenInflightRef.current) return
+    regenInflightRef.current = true
     const wc = parseInt(wordCount, 10) || 0
     setResultError(null)
     setHasSubmitted(true)
@@ -391,6 +404,7 @@ export default function ChapterArchitect() {
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc)
       .then(result => {
+        regenInflightRef.current = false
         setData(result)
         setChapters(result.chapters || [])
         setOpenChapters({})
@@ -401,6 +415,7 @@ export default function ChapterArchitect() {
         saveStep('chapter_architect', result)
       })
       .catch(err => {
+        regenInflightRef.current = false
         logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('result')
         if (!handleApiError(err, msg => setResultError(msg))) {
@@ -424,6 +439,8 @@ export default function ChapterArchitect() {
   // ── Abstract Generator ────────────────────────────────────────────────────
 
   function handleGenerateAbstract() {
+    if (agInflightRef.current) return
+    agInflightRef.current = true
     setAgBtnDisabled(true)
     setAgError(null)
     setAgHasSubmitted(true)
@@ -433,6 +450,7 @@ export default function ChapterArchitect() {
 
     generateAbstract(studentContext, state.validatedTopic, chaps)
       .then(result => {
+        agInflightRef.current = false
         // Normalize: Claude sometimes wraps the response under a key like "abstract"
         let agResult = result
         if (!agResult?.background) {
@@ -452,6 +470,7 @@ export default function ChapterArchitect() {
         saveStep('abstract_generator', agResult)
       })
       .catch(err => {
+        agInflightRef.current = false
         logFailure('Abstract Generator', err, state.validatedTopic || '')
         setAgSection('input')
         if (!handleApiError(err, msg => {

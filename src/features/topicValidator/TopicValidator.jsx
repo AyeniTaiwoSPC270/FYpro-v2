@@ -55,6 +55,7 @@ export default function TopicValidator() {
   const twIntervalRef   = useRef(null)
   const animateRef      = useRef(false)  // true only after a fresh API response
   const loadingTimerRef = useRef(null)
+  const inflightRef     = useRef(false)
 
   // Restore autosaved input on mount if form is empty
   useEffect(() => {
@@ -117,6 +118,7 @@ export default function TopicValidator() {
 
   // ── Validate ──────────────────────────────────────────────────────────────
   async function handleValidate() {
+    if (inflightRef.current) return
     const trimmed = topic.trim()
     if (!trimmed || trimmed.length < 5) {
       setShaking(true)
@@ -125,20 +127,26 @@ export default function TopicValidator() {
     }
 
     setError(null)
+    inflightRef.current = true
+    setBtnDisabled(true)
 
     const allowed = await checkAndRecord('topic_validator', features)
-    if (!allowed) return
+    if (!allowed) {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
 
     trackEvent('workflow_step_started', { step: 'topic_validator' })
     set({ roughTopic: trimmed })
     localStorage.setItem('fypro_autosave_topic_validator', JSON.stringify({ topic: trimmed }))
-    setBtnDisabled(true)
     setHasSubmitted(true)
     if (showNudge) dismiss()
     setSection('loading')
 
     validateTopic(studentContext, trimmed)
       .then(result => {
+        inflightRef.current = false
         set({ topicValidation: result })
         animateRef.current = true
         setData(result)
@@ -147,11 +155,11 @@ export default function TopicValidator() {
         saveStep('topic_validator', result, trimmed)
       })
       .catch(err => {
+        inflightRef.current = false
         logFailure('Topic Validator', err, topic.trim())
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)
-          // Re-enable button after rate-limit countdown clears the message
           if (!msg) setBtnDisabled(false)
         })) {
           setBtnDisabled(false)

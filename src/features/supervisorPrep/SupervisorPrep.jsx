@@ -45,6 +45,7 @@ export default function SupervisorPrep() {
   const stuckWordCount    = countWords(stuckOn)
 
   const loadingTimerRef = useRef(null)
+  const inflightRef     = useRef(false)
 
   // Restore autosaved inputs on mount if form is empty
   useEffect(() => {
@@ -76,20 +77,28 @@ export default function SupervisorPrep() {
   }, [section])
 
   async function handleSubmit() {
+    if (inflightRef.current) return
     if (!stage) {
       setError('Please select where you are in your project.')
       return
     }
+    inflightRef.current = true
+    setBtnDisabled(true)
+
     const allowed = await checkAndRecord('meeting_prep', features)
-    if (!allowed) return
+    if (!allowed) {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     setError(null)
     localStorage.setItem('fypro_autosave_supervisor_prep', JSON.stringify({ stage, lastFeedback, stuckOn }))
-    setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
 
     prepareSupervisorMeeting(stage, lastFeedback.trim(), stuckOn.trim())
       .then(data => {
+        inflightRef.current = false
         const questions = data.questions || []
         setQuestions(questions)
         setSection('result')
@@ -97,6 +106,7 @@ export default function SupervisorPrep() {
         saveStep('meeting_prep', { questions, stage })
       })
       .catch(err => {
+        inflightRef.current = false
         logFailure('Meeting Prep', err, `${stage} | ${stuckOn.trim()}`)
         setSection('input')
         if (!handleApiError(err, msg => {

@@ -244,6 +244,7 @@ export default function ProjectReviewer() {
 
   const fileInputRef    = useRef(null)
   const loadingTimerRef = useRef(null)
+  const inflightRef     = useRef(false)
 
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
@@ -341,12 +342,18 @@ export default function ProjectReviewer() {
   // ── Review handler ─────────────────────────────────────────────────────────
 
   async function handleReview() {
-    if (isProcessing || !selectedFile) return
+    if (inflightRef.current || isProcessing || !selectedFile) return
     setError(null)
-    const allowed = await checkAndRecord('project_reviewer', features)
-    if (!allowed) return
-    trackEvent('workflow_step_started', { step: 'project_reviewer' })
+    inflightRef.current = true
     setIsProcessing(true)
+
+    const allowed = await checkAndRecord('project_reviewer', features)
+    if (!allowed) {
+      inflightRef.current = false
+      setIsProcessing(false)
+      return
+    }
+    trackEvent('workflow_step_started', { step: 'project_reviewer' })
     setHasSubmitted(true)
     setSection('loading')
 
@@ -354,6 +361,7 @@ export default function ProjectReviewer() {
     try {
       result = await extractTextFromFile(selectedFile)
     } catch (err) {
+      inflightRef.current = false
       setIsProcessing(false)
       setSection('input')
       setError(err.message)
@@ -367,6 +375,7 @@ export default function ProjectReviewer() {
         : await checkDocumentRelevance(studentContext, result.text)
 
       if (relevanceCheck && relevanceCheck.relevant === false) {
+        inflightRef.current = false
         setIsProcessing(false)
         setSection('input')
         setError(
@@ -393,18 +402,21 @@ export default function ProjectReviewer() {
         : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
 
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
+        inflightRef.current = false
         setSection('input')
         setError('The review returned an unexpected format. Please try again.')
         setIsProcessing(false)
         return
       }
 
+      inflightRef.current = false
       setTruncationWarning(data._truncationWarning || null)
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
       saveStep('project_reviewer', { reviewData: data })
     } catch (err) {
+      inflightRef.current = false
       logFailure('Project Reviewer', err, selectedFile?.name || '')
       setIsProcessing(false)
       setSection('input')

@@ -63,6 +63,8 @@ export default function MethodologyAdvisor() {
   const diCardRef         = useRef(null)
   const maLoadingTimerRef = useRef(null)
   const diLoadingTimerRef = useRef(null)
+  const maInflightRef     = useRef(false)
+  const diInflightRef     = useRef(false)
 
   // Safety timeout: force-stop MA loading after 30s
   useEffect(() => {
@@ -95,24 +97,32 @@ export default function MethodologyAdvisor() {
   // ── MA handlers ────────────────────────────────────────────────────────────
 
   async function handleAnalyse() {
+    if (maInflightRef.current) return
     setMaError(null)
+    maInflightRef.current = true
+    setMaBtnDisabled(true)
 
     const allowed = await checkAndRecord('methodology_advisor', features)
-    if (!allowed) return
+    if (!allowed) {
+      maInflightRef.current = false
+      setMaBtnDisabled(false)
+      return
+    }
 
     trackEvent('workflow_step_started', { step: 'methodology_advisor' })
-    setMaBtnDisabled(true)
     setMaHasSubmitted(true)
     setMaSection('loading')
 
     adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure, features)
       .then(data => {
+        maInflightRef.current = false
         setMaData(data)
         setMaSection('result')
         setMaBtnDisabled(false)
         saveStep('methodology_advisor', data)
       })
       .catch(err => {
+        maInflightRef.current = false
         logFailure('Methodology Advisor', err, state.validatedTopic || '')
         setMaSection('input')
         if (!handleApiError(err, msg => {
@@ -158,21 +168,30 @@ export default function MethodologyAdvisor() {
   // ── DI handlers ────────────────────────────────────────────────────────────
 
   async function handleGenerateInstrument() {
+    if (diInflightRef.current) return
     setDiError(null)
-    const allowed = await checkAndRecord('instrument_builder', features)
-    if (!allowed) return
+    diInflightRef.current = true
     setDiGenBtnDisabled(true)
+
+    const allowed = await checkAndRecord('instrument_builder', features)
+    if (!allowed) {
+      diInflightRef.current = false
+      setDiGenBtnDisabled(false)
+      return
+    }
     setDiHasSubmitted(true)
     setDiSection('loading')
 
     buildInstrument(studentContext, state.validatedTopic, selectedMethodology, state.chapterStructure)
       .then(data => {
+        diInflightRef.current = false
         buildPlainText(data)
         setDiData(data)
         setDiSection('result')
         saveStep('instrument_builder', data)
       })
       .catch(err => {
+        diInflightRef.current = false
         logFailure('Instrument Builder', err, selectedMethodology)
         setDiSection('input')
         if (!handleApiError(err, msg => {

@@ -38,6 +38,7 @@ export default function LiteratureMap({ chapters }) {
   const [copiedChip, setCopiedChip]   = useState(null)
   const chipTimers      = useRef({})
   const loadingTimerRef = useRef(null)
+  const inflightRef     = useRef(false)
 
   useEffect(() => {
     return () => { Object.values(chipTimers.current).forEach(clearTimeout) }
@@ -58,10 +59,17 @@ export default function LiteratureMap({ chapters }) {
   }, [section])
 
   async function handleGenerate() {
+    if (inflightRef.current) return
     setError(null)
-    const allowed = await checkAndRecord('literature_map', features)
-    if (!allowed) return
+    inflightRef.current = true
     setBtnDisabled(true)
+
+    const allowed = await checkAndRecord('literature_map', features)
+    if (!allowed) {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     setHasSubmitted(true)
     setSection('loading')
 
@@ -69,6 +77,7 @@ export default function LiteratureMap({ chapters }) {
 
     generateLiteratureMap(studentContext, state.validatedTopic, chaps)
       .then(result => {
+        inflightRef.current = false
         let lmResult = result
         if (!Array.isArray(lmResult?.thematic_areas)) {
           const unwrapped = Object.values(lmResult || {}).find(
@@ -81,6 +90,7 @@ export default function LiteratureMap({ chapters }) {
         saveStep('literature_map', lmResult)
       })
       .catch(err => {
+        inflightRef.current = false
         logFailure('Literature Map', err, state.validatedTopic || '')
         setSection('input')
         setBtnDisabled(false)

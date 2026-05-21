@@ -90,6 +90,7 @@ export default function WritingPlanner() {
   }
 
   async function handleGenerate() {
+    if (inflightRef.current) return
     setError(null)
     if (!dateValue) return
 
@@ -102,12 +103,18 @@ export default function WritingPlanner() {
       return
     }
 
+    inflightRef.current = true
+    setBtnDisabled(true)
+
     const allowed = await checkAndRecord('writing_planner', features)
-    if (!allowed) return
+    if (!allowed) {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
 
     trackEvent('workflow_step_started', { step: 'writing_planner' })
     localStorage.setItem('fypro_autosave_writing_planner', JSON.stringify({ dateValue }))
-    setBtnDisabled(true)
     setHasSubmitted(true)
     setSection('loading')
 
@@ -121,12 +128,14 @@ export default function WritingPlanner() {
 
     buildWritingPlan(studentContext, dateValue, currentDate, previousSteps, features)
       .then(result => {
+        inflightRef.current = false
         setData(result)
         setSection('result')
         setBtnDisabled(false)
         saveStep('writing_planner', { ...result, submission_deadline: dateValue }, dateValue)
       })
       .catch(err => {
+        inflightRef.current = false
         logFailure('Writing Planner', err, dateValue)
         setSection('input')
         if (!handleApiError(err, msg => {
@@ -148,6 +157,7 @@ export default function WritingPlanner() {
   }
 
   const loadingTimerRef = useRef(null)
+  const inflightRef     = useRef(false)
 
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
