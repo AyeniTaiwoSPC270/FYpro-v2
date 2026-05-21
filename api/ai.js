@@ -100,7 +100,7 @@ async function handleGeneral(req, res) {
         'anthropic-beta':    'pdfs-2024-09-25',
       },
       body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();
@@ -118,7 +118,7 @@ async function handleGeneral(req, res) {
   } catch (err) {
     // AbortSignal.timeout() throws a DOMException with name 'TimeoutError' in Node 18+
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[ai/general] Anthropic request timed out after 25s');
+      console.error('[ai/general] Anthropic request timed out after 50s');
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
     console.error('[ai/general] error:', err.message);
@@ -211,7 +211,7 @@ async function handleDefense(req, res) {
         'anthropic-beta':    'pdfs-2024-09-25',
       },
       body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();
