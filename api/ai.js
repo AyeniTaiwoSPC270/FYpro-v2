@@ -25,10 +25,23 @@ async function handleGeneral(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  let user;
+  try {
+    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+    user = data.user;
+  } catch (authErr) {
+    console.error('[ai/general] auth.getUser threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
-  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
+  let rl;
+  try {
+    rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
+  } catch (rlErr) {
+    console.error('[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
+    rl = { allowed: true, reason: '' };
+  }
   if (!rl.allowed) {
     const today = new Date().toISOString().slice(0, 10);
     sendTelegramAlertOnce(`⏱️ Rate limit: ${user.id.slice(0, 8)} blocked on general AI`, `tg:rl:general:${user.id}:${today}`);
@@ -103,6 +116,11 @@ async function handleGeneral(req, res) {
     res.setHeader('X-Cache', 'MISS');
     return res.status(response.status).json(data);
   } catch (err) {
+    // AbortSignal.timeout() throws a DOMException with name 'TimeoutError' in Node 18+
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      console.error('[ai/general] Anthropic request timed out after 25s');
+      return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
     console.error('[ai/general] error:', err.message);
     const feature  = req.body?.step || 'general'
     const userId   = extractUserId(req) || 'anonymous'
@@ -116,10 +134,23 @@ async function handleDefense(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  let user;
+  try {
+    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+    user = data.user;
+  } catch (authErr) {
+    console.error('[ai/defense] auth.getUser threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
-  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' });
+  let rl;
+  try {
+    rl = await rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' });
+  } catch (rlErr) {
+    console.error('[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
+    rl = { allowed: true, reason: '' };
+  }
   if (!rl.allowed) {
     const today = new Date().toISOString().slice(0, 10);
     sendTelegramAlertOnce(`⏱️ Rate limit: ${user.id.slice(0, 8)} blocked on Defense Simulator`, `tg:rl:defense:${user.id}:${today}`);
@@ -296,8 +327,15 @@ async function handleSyncRunCounts(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  let user;
+  try {
+    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+    user = data.user;
+  } catch (authErr) {
+    console.error('[ai/sync-run-counts] auth.getUser threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
   const { run_counts } = req.body || {};
   if (!run_counts || typeof run_counts !== 'object' || Array.isArray(run_counts)) {
