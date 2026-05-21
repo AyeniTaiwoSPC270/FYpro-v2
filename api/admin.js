@@ -250,7 +250,7 @@ async function handleDashboard(req, res) {
     const threeDaysAgoISO = new Date(now - MS3).toISOString();
 
     // run_counts live in user_entitlements, not projects — fetch both
-    const [authUsers, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes] = await Promise.all([
+    const [authUsers, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes, recentStepsRes] = await Promise.all([
       listAllAuthUsers(),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
       supabaseAdmin.from('projects').select('user_id, created_at'),
@@ -259,6 +259,7 @@ async function handleDashboard(req, res) {
       readCacheHits(),
       supabaseAdmin.from('payments').select('*', { count: 'exact', head: true }).neq('status', 'success').gte('created_at', todayStart),
       supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', yesterdayStart).lt('created_at', todayStart),
+      supabaseAdmin.from('project_steps').select('user_id, step_name, completed_at').not('completed_at', 'is', null).order('completed_at', { ascending: false }).limit(20),
     ]);
 
     const payments     = paymentsRes.data    || [];
@@ -456,6 +457,37 @@ async function handleDashboard(req, res) {
         };
       });
 
+    // ── Recent Events for Live Activity Feed ─────────────────────────────
+    const recentSteps = recentStepsRes.data || [];
+    const recentEvents = [
+      ...[...authUsers]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 10)
+        .map(u => ({
+          type: 'signup',
+          label: 'Signed up',
+          user_prefix: (u.email || '…').split('@')[0],
+          time: u.created_at,
+        })),
+      ...[...payments]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 10)
+        .map(p => ({
+          type: 'payment',
+          label: (p.tier || 'payment').replace(/_/g, ' '),
+          user_prefix: (userEmailMap[p.user_id] || '…').split('@')[0],
+          time: p.created_at,
+        })),
+      ...recentSteps.map(s => ({
+        type: 'feature',
+        label: (s.step_name || 'step').replace(/_/g, ' '),
+        user_prefix: (userEmailMap[s.user_id] || '…').split('@')[0],
+        time: s.completed_at,
+      })),
+    ]
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 20);
+
     return res.status(200).json({
       overview: {
         total_users:       totalUsers,
@@ -480,6 +512,7 @@ async function handleDashboard(req, res) {
       revenue_today_ngn:     revenueTodayNgn,
       paying_users_today:    payingUsersToday,
       ngn_per_usd:           ngnPerUsd,
+      recent_events:         recentEvents,
     });
 
   } catch (err) {
@@ -519,10 +552,13 @@ async function handleVitals(req, res) {
     const todayStart     = `${today}T00:00:00.000Z`;
     const thirtyMinAgo   = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
     const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeGenFailRes, activeRtRes] = await Promise.all([
       supabaseAdmin.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      // Exclude duration_ms = 0 (cache-hit sentinel) from avg so cached requests don't dilute the mean
-      supabaseAdmin.from('response_times').select('duration_ms').gt('duration_ms', 0).order('created_at', { ascending: false }).limit(10),
+      // Last 24h only, up to 100 rows — avoids stale pre-migration rows skewing the average.
+      // duration_ms = 0 is the cache-hit sentinel, excluded from avg.
+      supabaseAdmin.from('response_times').select('duration_ms').gt('duration_ms', 0).gte('created_at', oneDayAgo).order('created_at', { ascending: false }).limit(100),
       supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
       supabaseAdmin.from('daily_usage').select('request_count').eq('date', today).maybeSingle(),
       // Active users from error events

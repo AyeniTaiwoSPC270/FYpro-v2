@@ -354,73 +354,85 @@ function SignupsBarChart({ data }) {
 }
 
 // ── Live activity feed ───────────────────────────────────────────────
-function LiveFeed({ data, failures }) {
+const FEED_COLORS = {
+  signup:  '#4ade80',
+  payment: '#fbbf24',
+  feature: '#60a5fa',
+  failure: '#f87171',
+}
+const FEED_TAGS = {
+  signup:  'SIGNUP',
+  payment: 'PAY',
+  feature: 'STEP',
+  failure: 'AI FAIL',
+}
+
+function LiveFeed({ events }) {
+  const [newKeys,   setNewKeys]   = useState(new Set())
+  const prevKeysRef = useRef(new Set())
+
+  useEffect(() => {
+    if (!events?.length) return
+    const incoming = new Set(events.map(e => `${e.type}:${e.user_prefix}:${e.time}`))
+    const fresh    = [...incoming].filter(k => !prevKeysRef.current.has(k))
+    prevKeysRef.current = incoming
+    if (fresh.length > 0) {
+      setNewKeys(new Set(fresh))
+      const t = setTimeout(() => setNewKeys(new Set()), 1800)
+      return () => clearTimeout(t)
+    }
+  }, [events])
+
   function timeAgoShort(iso) {
     if (!iso) return '—'
     const ms = Date.now() - new Date(iso).getTime()
-    const m = Math.floor(ms / 60000)
-    if (m < 1) return 'just now'
+    const m  = Math.floor(ms / 60000)
+    if (m < 1)  return 'just now'
     if (m < 60) return `${m}m ago`
     return `${Math.floor(m / 60)}h ago`
   }
 
-  const events = []
-
-  if (data?.users) {
-    const recent = [...data.users]
-      .sort((a, b) => new Date(b.signup_date) - new Date(a.signup_date))
-      .slice(0, 4)
-    recent.forEach(u => events.push({
-      color: '#4ade80',
-      label: 'Signup',
-      text: u.email?.split('@')[0] || '…',
-      time: u.signup_date,
-    }))
-  }
-
-
-  if (failures?.rows) {
-    failures.rows
-      .filter(r => !r.resolved)
-      .slice(0, 3)
-      .forEach(r => events.push({
-        color: '#f87171',
-        label: 'AI Fail',
-        text: r.feature ? (r.feature.replace(/_/g, ' ')) : 'unknown',
-        time: r.created_at,
-      }))
-  }
-
-  // Dedupe by text+label and sort by time descending
-  const seen = new Set()
-  const unique = events.filter(e => {
-    const key = e.label + e.text
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-  unique.sort((a, b) => new Date(b.time) - new Date(a.time))
-
-  if (unique.length === 0) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 100, color: 'rgba(255,255,255,0.2)', fontSize: 12, fontFamily: "'Poppins', sans-serif" }}>No recent activity</div>
+  if (!events || events.length === 0) {
+    return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:100, color:'rgba(255,255,255,0.2)', fontSize:12, fontFamily:"'Poppins',sans-serif" }}>No recent activity</div>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {unique.slice(0, 8).map((e, i) => (
-        <div key={i} className="mc-feed-item" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', animationDelay: `${0.5 + i * 0.05}s` }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: e.color, flexShrink: 0 }} />
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, color: e.color, background: `${e.color}18`, border: `1px solid ${e.color}33`, borderRadius: 999, padding: '1px 7px', flexShrink: 0 }}>{e.label}</span>
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.7)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.text}</span>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>{timeAgoShort(e.time)}</span>
-        </div>
-      ))}
+    <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+      {events.slice(0, 20).map((e, i) => {
+        const color = FEED_COLORS[e.type] || '#60a5fa'
+        const tag   = FEED_TAGS[e.type]   || e.type.toUpperCase()
+        const key   = `${e.type}:${e.user_prefix}:${e.time}`
+        const isNew = newKeys.has(key)
+        return (
+          <div
+            key={key}
+            className="mc-feed-item"
+            style={{
+              display:'flex', alignItems:'center', gap:10,
+              padding:'7px 12px', borderRadius:8,
+              background: isNew ? `${color}10` : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${isNew ? color + '30' : 'rgba(255,255,255,0.05)'}`,
+              animationDelay:`${0.5 + i * 0.04}s`,
+              transition:'background 1s ease, border-color 1s ease',
+            }}
+          >
+            <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
+            <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, fontWeight:700, color, background:`${color}18`, border:`1px solid ${color}33`, borderRadius:999, padding:'1px 7px', flexShrink:0 }}>{tag}</span>
+            <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:'rgba(255,255,255,0.7)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e.user_prefix} — {e.label}</span>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, color:'rgba(255,255,255,0.25)', flexShrink:0 }}>{timeAgoShort(e.time)}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-const POLL_FAST = 5  * 1000   // active tab  — 5s
-const POLL_SLOW = 20 * 1000   // background  — 20s
+const POLL_OVERVIEW = 30 * 1000   // overview / users tab
+const POLL_VITALS   = 15 * 1000   // vitals tab
+const POLL_FEED     = 10 * 1000   // live activity feed (failures) when overview active
+const POLL_PAYMENTS = 60 * 1000   // payments tab
+const POLL_LOGS     = 30 * 1000   // logs tab
+const POLL_BG       = 60 * 1000   // any non-active or hidden tab
 
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
@@ -641,48 +653,76 @@ export default function AdminHealth() {
     ]).finally(() => setInitialLoading(false))
   }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
 
-  // Polling — each loader runs at POLL_FAST when its tab is active, POLL_SLOW otherwise.
-  // Changing activeTab restarts the relevant intervals at the new rate immediately.
+  // Polling — each loader uses a tab-specific rate.
+  // Callbacks are no-ops when document is hidden; the visibilitychange handler
+  // (below) fires an immediate refresh when the tab becomes visible again.
   useEffect(() => {
     if (!isAdmin || !session) return
-    const fast = activeTab === 'overview' || activeTab === 'users'
-    timerRef.current = setInterval(loadData, fast ? POLL_FAST : POLL_SLOW)
+    const ms = (activeTab === 'overview' || activeTab === 'users') ? POLL_OVERVIEW : POLL_BG
+    timerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadData()
+    }, ms)
     return () => clearInterval(timerRef.current)
   }, [isAdmin, session, loadData, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    vitalsTimerRef.current = setInterval(loadVitals, activeTab === 'vitals' ? POLL_FAST : POLL_SLOW)
+    const ms = activeTab === 'vitals' ? POLL_VITALS : POLL_BG
+    vitalsTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadVitals()
+    }, ms)
     return () => clearInterval(vitalsTimerRef.current)
   }, [isAdmin, session, loadVitals, activeTab])
 
+  // Live feed runs at POLL_FEED (10s) when overview is active so new events appear quickly
   useEffect(() => {
     if (!isAdmin || !session) return
-    failuresTimerRef.current = setInterval(loadFailures, activeTab === 'logs' ? POLL_FAST : POLL_SLOW)
+    const ms = activeTab === 'overview' ? POLL_FEED : activeTab === 'logs' ? POLL_LOGS : POLL_BG
+    failuresTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadFailures()
+    }, ms)
     return () => clearInterval(failuresTimerRef.current)
   }, [isAdmin, session, loadFailures, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    authTimerRef.current = setInterval(loadAuthAttempts, activeTab === 'vitals' ? POLL_FAST : POLL_SLOW)
+    const ms = activeTab === 'vitals' ? POLL_VITALS : POLL_BG
+    authTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadAuthAttempts()
+    }, ms)
     return () => clearInterval(authTimerRef.current)
   }, [isAdmin, session, loadAuthAttempts, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    paymentTimerRef.current = setInterval(loadPaymentIssues, activeTab === 'payments' ? POLL_FAST : POLL_SLOW)
+    const ms = activeTab === 'payments' ? POLL_PAYMENTS : POLL_BG
+    paymentTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadPaymentIssues()
+    }, ms)
     return () => clearInterval(paymentTimerRef.current)
   }, [isAdmin, session, loadPaymentIssues, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    systemLogsTimerRef.current = setInterval(loadSystemLogs, activeTab === 'logs' ? POLL_FAST : POLL_SLOW)
+    const ms = activeTab === 'logs' ? POLL_LOGS : POLL_BG
+    systemLogsTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadSystemLogs()
+    }, ms)
     return () => clearInterval(systemLogsTimerRef.current)
   }, [isAdmin, session, loadSystemLogs, activeTab])
 
   useEffect(() => {
     if (!isAdmin || !session) return
-    feedbackTimerRef.current = setInterval(loadFeedbackSummary, POLL_SLOW)
+    feedbackTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadFeedbackSummary()
+    }, POLL_PAYMENTS)
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
 
@@ -708,6 +748,24 @@ export default function AdminHealth() {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [handleRefresh])
+
+  // Live activity events — merges dashboard recent_events + unresolved failures
+  const liveEvents = useMemo(() => {
+    const evts = []
+    if (data?.recent_events) evts.push(...data.recent_events)
+    if (failures?.rows) {
+      failures.rows
+        .filter(r => !r.resolved)
+        .slice(0, 5)
+        .forEach(r => evts.push({
+          type: 'failure',
+          label: (r.feature || 'unknown').replace(/_/g, ' '),
+          user_prefix: '—',
+          time: r.created_at,
+        }))
+    }
+    return evts.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 20)
+  }, [data, failures])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -1164,14 +1222,19 @@ export default function AdminHealth() {
     { id: 'logs',      label: 'Logs' },
   ]
 
+  // Status thresholds (match vitals tab rendering below):
+  //   HEALTHY  — latency < 3000ms, 0 failures
+  //   DEGRADED — latency 3000–8000ms OR 1–5 failures  → badge shows 1
+  //   DOWN     — latency > 8000ms OR 6+ failures       → badge shows 2
   const degradedVitals = vitals
     ? (() => {
-        const lastCallRecent = vitals.last_call_at
-          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
-          : false
-        const avgMs = vitals.avg_response_ms
-        // only flag latency if there have been recent calls and they're slow (>5s)
-        return (!lastCallRecent && vitals.requests_today > 0 ? 1 : 0) + (avgMs !== null && avgMs > 5000 ? 1 : 0)
+        const avgMs    = vitals.avg_response_ms
+        const failures = vitals.failures_today ?? 0
+        const hasData  = (vitals.requests_today ?? 0) > 0 || avgMs !== null
+        if (!hasData) return 0
+        if ((avgMs !== null && avgMs > 8000) || failures >= 6) return 2
+        if ((avgMs !== null && avgMs > 3000) || failures >= 1) return 1
+        return 0
       })()
     : 0
 
@@ -1339,7 +1402,7 @@ export default function AdminHealth() {
               </div>
               <div className="mc-card mc-card-enter" style={{ padding:'20px 22px', animationDelay:'0.25s' }}>
                 <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:12 }}>Live Activity</div>
-                <LiveFeed data={data} failures={failures} />
+                <LiveFeed events={liveEvents} />
               </div>
             </div>
 
@@ -1687,22 +1750,36 @@ export default function AdminHealth() {
             ) : vitals ? (
               <div className="mc-vitals-grid mc-card-enter" style={{ animationDelay:'0.05s', marginBottom:20 }}>
                 {(() => {
+                  const avgMs       = vitals.avg_response_ms
+                  const hasActivity = (vitals.requests_today ?? 0) > 0
+                  const failures    = vitals.failures_today ?? 0
                   const lastCallRecent = vitals.last_call_at
                     ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
                     : false
-                  const avgMs   = vitals.avg_response_ms
-                  const hasActivity = (vitals.requests_today ?? 0) > 0
-                  const apiOk   = (!hasActivity || lastCallRecent) && (avgMs === null || avgMs <= 5000)
-                  const latColor = avgMs === null ? (hasActivity ? GREEN : MUTED) : avgMs <= 3000 ? GREEN : avgMs <= 8000 ? AMBER : RED
-                  const failOk  = (vitals.failures_today ?? 0) === 0
-                  const overallOk = apiOk && failOk
+
+                  // Latency color: only meaningful if there are recent calls
+                  const latColor = avgMs === null
+                    ? MUTED
+                    : avgMs <= 3000 ? GREEN : avgMs <= 8000 ? AMBER : RED
+
+                  // Status rules:
+                  //   HEALTHY  — latency < 3000ms (or no data), 0 failures
+                  //   DEGRADED — latency 3000–8000ms OR 1–5 failures
+                  //   DOWN     — latency > 8000ms OR 6+ failures
+                  const statusResult = (() => {
+                    if (!hasActivity && avgMs === null) return { label: 'No Data', color: MUTED, pulse: false }
+                    if ((avgMs !== null && avgMs > 8000) || failures >= 6) return { label: 'Down', color: RED, pulse: false }
+                    if ((avgMs !== null && avgMs > 3000) || failures >= 1) return { label: 'Degraded', color: AMBER, pulse: false }
+                    return { label: 'Healthy', color: GREEN, pulse: true }
+                  })()
+
                   return (
                     <>
                       <VitalCard
                         label="API Latency"
                         value={avgMs !== null ? `${Math.round(avgMs).toLocaleString()} ms` : '—'}
                         dotColor={latColor}
-                        pulse={apiOk}
+                        pulse={avgMs !== null && avgMs <= 3000}
                       />
                       <VitalCard
                         label="Last API Call"
@@ -1712,9 +1789,9 @@ export default function AdminHealth() {
                       />
                       <VitalCard
                         label="Failures Today"
-                        value={vitals.failures_today ?? 0}
-                        dotColor={failOk ? GREEN : RED}
-                        pulse={failOk}
+                        value={failures}
+                        dotColor={failures === 0 ? GREEN : failures < 6 ? AMBER : RED}
+                        pulse={failures === 0}
                       />
                       <VitalCard
                         label="Requests Today"
@@ -1730,9 +1807,9 @@ export default function AdminHealth() {
                       />
                       <VitalCard
                         label="Overall Status"
-                        value={overallOk ? 'Healthy' : 'Degraded'}
-                        dotColor={overallOk ? GREEN : AMBER}
-                        pulse={overallOk}
+                        value={statusResult.label}
+                        dotColor={statusResult.color}
+                        pulse={statusResult.pulse}
                       />
                     </>
                   )

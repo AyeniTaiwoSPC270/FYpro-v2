@@ -85,12 +85,18 @@ export default function AuthConfirm() {
 
           // Ensure a profile row exists for this Google user.
           // ignoreDuplicates: true means returning users are completely unaffected.
-          const { error: upsertErr } = await supabase.from('users').upsert({
-            id:         u.id,
-            email:      u.email ?? '',
-            full_name:  u.user_metadata?.full_name || u.user_metadata?.name || null,
-            avatar_url: u.user_metadata?.avatar_url || u.user_metadata?.picture || null,
-          }, { onConflict: 'id', ignoreDuplicates: true })
+          const profilePayload = {
+            id:        u.id,
+            email:     u.email ?? '',
+            full_name: u.user_metadata?.full_name || u.user_metadata?.name || null,
+          }
+          const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null
+          if (avatarUrl) profilePayload.avatar_url = avatarUrl
+
+          const { error: upsertErr } = await supabase.from('users').upsert(
+            profilePayload,
+            { onConflict: 'id', ignoreDuplicates: true },
+          )
           if (upsertErr) {
             console.error('[auth/callback] profile upsert failed:', upsertErr.message)
             // Non-fatal — onboarding will collect and save profile data
