@@ -220,7 +220,7 @@ function stripScoreRange(raw) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ProjectReviewer() {
-  const { state, studentContext, navigateStep, completeStep } = useApp()
+  const { state, set, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
@@ -414,6 +414,11 @@ export default function ProjectReviewer() {
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
+      set({ uploadedProject: {
+        fileName: selectedFile?.name || 'Uploaded document',
+        fileType: (selectedFile?.name || '').split('.').pop().toLowerCase() || 'unknown',
+        reviewData: data,
+      } })
       saveStep('project_reviewer', { reviewData: data })
       setTimeout(() => {
         document.getElementById('pr-result-section')
