@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { useUser } from '../../hooks/useUser'
 import {
   LineChart, Line, BarChart, Bar,
@@ -436,8 +436,7 @@ const POLL_LOGS     = 30 * 1000   // logs tab
 const POLL_BG       = 60 * 1000   // any non-active or hidden tab
 
 // ── Main component ────────────────────────────────────────────────────
-export default function AdminHealth() {
-  console.log('Health component mounted')
+function AdminHealth() {
   const { user, session, loading } = useUser()
   const [data, setData]           = useState(null)
   const [error, setError]         = useState(null)
@@ -836,12 +835,32 @@ export default function AdminHealth() {
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
 
+  // Log once on actual mount (not on every re-render)
+  useEffect(() => { console.log('Health component mounted') }, [])
+
+  // Stable refs so the Realtime subscription never needs to tear down when
+  // these callbacks are recreated (e.g. when session object reference changes).
+  const loadVitalsRef   = useRef(loadVitals)
+  const loadFailuresRef = useRef(loadFailures)
+  const loadDataRef     = useRef(loadData)
+  const fetchRtRef      = useRef(fetchRtMetrics)
+  // useLayoutEffect (no deps) runs synchronously after every render — refs are
+  // always current before any pending useEffect fires.
+  useLayoutEffect(() => {
+    loadVitalsRef.current   = loadVitals
+    loadFailuresRef.current = loadFailures
+    loadDataRef.current     = loadData
+    fetchRtRef.current      = fetchRtMetrics
+  })
+
   // Realtime subscriptions — each table change triggers both the API loader (for complex
   // aggregates) and fetchRtMetrics (for the 7 direct-query live metrics).
-  // Requires migration 0018 to be applied and the admin user seeded into admin_users.
+  // Deps: isAdmin (subscription only makes sense once admin is confirmed) and
+  // session?.access_token (a stable string — rotates only when the JWT expires,
+  // not on every session object re-creation from onAuthStateChange).
   useEffect(() => {
     console.log('useEffect running', { isAdmin })
-    if (!isAdmin || !session) {
+    if (!isAdmin || !session?.access_token) {
       console.log('[admin-realtime] skipped — isAdmin:', isAdmin, 'session:', !!session)
       return
     }
@@ -852,25 +871,25 @@ export default function AdminHealth() {
     const channel = supabase
       .channel('admin-realtime-v1')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'response_times' }, () => {
-        if (document.visibilityState === 'visible') { loadVitals(); fetchRtMetrics() }
+        if (document.visibilityState === 'visible') { loadVitalsRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_usage' }, () => {
-        if (document.visibilityState === 'visible') { loadVitals(); fetchRtMetrics() }
+        if (document.visibilityState === 'visible') { loadVitalsRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'generation_failures' }, () => {
-        if (document.visibilityState === 'visible') { loadFailures(); loadVitals(); fetchRtMetrics() }
+        if (document.visibilityState === 'visible') { loadFailuresRef.current(); loadVitalsRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
-        if (document.visibilityState === 'visible') { loadData(); fetchRtMetrics() }
+        if (document.visibilityState === 'visible') { loadDataRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
-        if (document.visibilityState === 'visible') fetchRtMetrics()
+        if (document.visibilityState === 'visible') fetchRtRef.current()
       })
       .subscribe((status) => {
         console.log('Realtime status:', status)
       })
     return () => { supabase.removeChannel(channel) }
-  }, [isAdmin, session, loadVitals, loadFailures, loadData, fetchRtMetrics])
+  }, [isAdmin, session?.access_token])
 
   // "X seconds ago" counter
   useEffect(() => {
@@ -2179,3 +2198,5 @@ export default function AdminHealth() {
     </div>
   )
 }
+
+export default memo(AdminHealth)
