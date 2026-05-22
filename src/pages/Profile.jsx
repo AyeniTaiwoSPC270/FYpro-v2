@@ -417,6 +417,13 @@ export default function Profile() {
   }
 
   async function handleSaveChanges() {
+    const previous = {
+      university: state.university,
+      faculty:    state.faculty,
+      department: state.department,
+      level:      state.level,
+    }
+    set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
     setSaving(true)
     try {
       const profileUpdates = {
@@ -429,10 +436,10 @@ export default function Profile() {
         await supabase.auth.updateUser({ data: { full_name: form.name } })
       }
       await updateUserProfile(profileUpdates)
-      set({ university: form.university, faculty: form.faculty, department: form.department, level: form.level })
       showToast('Changes saved')
     } catch (err) {
       console.error('[Profile] handleSaveChanges failed:', err.message)
+      set(previous)
       showToast('Failed to save changes. Please try again.')
     } finally {
       setSaving(false)
