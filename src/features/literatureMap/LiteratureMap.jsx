@@ -15,7 +15,7 @@ const LOADING_MESSAGES = [
 ]
 
 export default function LiteratureMap({ chapters }) {
-  const { state, studentContext } = useApp()
+  const { state, set, studentContext } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features)
@@ -87,6 +87,7 @@ export default function LiteratureMap({ chapters }) {
         }
         setData(lmResult)
         setSection('result')
+        set({ literatureMap: lmResult })
         saveStep('literature_map', lmResult)
       })
       .catch(err => {
