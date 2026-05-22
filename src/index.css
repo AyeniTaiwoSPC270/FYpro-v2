@@ -10603,3 +10603,72 @@ body {
   --header-btn-border:   rgba(255,255,255,0.1);
   --dropdown-border:     rgba(255,255,255,0.1);
 }
+
+/* ═══════════════════════════════════════════════════════
+   SMOOTH INTERACTIONS — GLOBAL POLISH
+   ═══════════════════════════════════════════════════════ */
+
+/* Smooth scroll inside the workflow content container */
+.app-content__scroll {
+  scroll-behavior: smooth;
+}
+
+/* Smooth scroll at document level (marketing pages, public routes) */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Button press scale: upgrade from 0.98 → 0.97 for a crisper feel.
+   Higher specificity than the block at ~line 6786, so this wins. */
+@media (prefers-reduced-motion: no-preference) {
+  .tv-btn-validate:active:not(:disabled),
+  .tv-btn-use:active:not(:disabled),
+  .ca-btn-generate:active:not(:disabled),
+  .ca-btn-confirm:active:not(:disabled),
+  .ca-btn-regenerate:active:not(:disabled),
+  .ma-btn-analyse:active:not(:disabled),
+  .ma-btn-confirm:active:not(:disabled),
+  .di-btn-generate:active:not(:disabled),
+  .di-btn-continue:active:not(:disabled),
+  .wp-btn-generate:active:not(:disabled),
+  .wp-btn-confirm:active:not(:disabled),
+  .dp-btn-start-scan:active:not(:disabled),
+  .dp-btn-enter-defense:active:not(:disabled),
+  .pr-btn-review:active:not(:disabled),
+  .pr-btn-confirm:active:not(:disabled),
+  .ag-btn-generate:active:not(:disabled),
+  .lm-btn-generate:active:not(:disabled),
+  .se-btn-generate:active:not(:disabled) {
+    transform: scale(0.97) translateY(0) !important;
+    transition: transform 0.08s ease !important;
+  }
+}
+
+/* GPU promotion for elements that animate transform on interaction */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-pill,
+  .begin-btn.is-ready,
+  .tv-btn-validate,
+  .tv-btn-use,
+  .ca-btn-generate,
+  .ca-btn-confirm,
+  .ma-btn-analyse,
+  .ma-btn-confirm,
+  .wp-btn-generate,
+  .wp-btn-confirm,
+  .dp-btn-enter-defense,
+  .pr-btn-review {
+    will-change: transform;
+  }
+}
+
+/* Smooth hover on clickable sidebar step items */
+.step-list__item {
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Smooth hover on clickable nav pills — override earlier transition for consistency */
+.nav-pill {
+  transition: background 0.15s ease, border-color 0.15s ease,
+              box-shadow 0.15s ease, color 0.15s ease !important;
+}

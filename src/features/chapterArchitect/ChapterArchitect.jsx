@@ -379,6 +379,10 @@ export default function ChapterArchitect() {
         setSection('result')
         setBtnDisabled(false)
         saveStep('chapter_architect', result)
+        setTimeout(() => {
+          document.getElementById('ca-result-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
       })
       .catch(err => {
         caInflightRef.current = false
@@ -413,6 +417,10 @@ export default function ChapterArchitect() {
         resetCompanions()
         setSection('result')
         saveStep('chapter_architect', result)
+        setTimeout(() => {
+          document.getElementById('ca-result-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
       })
       .catch(err => {
         regenInflightRef.current = false

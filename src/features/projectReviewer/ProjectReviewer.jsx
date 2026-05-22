@@ -415,6 +415,10 @@ export default function ProjectReviewer() {
       setSection('result')
       setIsProcessing(false)
       saveStep('project_reviewer', { reviewData: data })
+      setTimeout(() => {
+        document.getElementById('pr-result-section')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 80)
     } catch (err) {
       inflightRef.current = false
       logFailure('Project Reviewer', err, selectedFile?.name || '')

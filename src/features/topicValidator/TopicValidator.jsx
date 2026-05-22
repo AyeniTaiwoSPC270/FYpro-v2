@@ -153,6 +153,10 @@ export default function TopicValidator() {
         setSection('result')
         setBtnDisabled(false)
         saveStep('topic_validator', result, trimmed)
+        setTimeout(() => {
+          document.getElementById('tv-result-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
       })
       .catch(err => {
         inflightRef.current = false

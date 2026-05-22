@@ -133,6 +133,10 @@ export default function WritingPlanner() {
         setSection('result')
         setBtnDisabled(false)
         saveStep('writing_planner', { ...result, submission_deadline: dateValue }, dateValue)
+        setTimeout(() => {
+          document.getElementById('wp-result-section')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 80)
       })
       .catch(err => {
         inflightRef.current = false

@@ -44,13 +44,13 @@ import { AuthProvider } from './context/AuthContext'
 function AppRoutes() {
   const location = useLocation()
   return (
-    <AnimatePresence mode="sync" initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.key}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
         style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
       >
         <Routes location={location}>

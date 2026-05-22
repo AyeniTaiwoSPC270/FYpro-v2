@@ -1,5 +1,5 @@
-import { useEffect, useState, Fragment } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { useEffect, useState, Fragment, useRef } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -134,6 +134,33 @@ export default function AppShell() {
 
   const [sidebarOpen, setSidebarOpen]           = useState(false)
   const [showSupervisorEmail, setShowSupervisorEmail] = useState(false)
+
+  // Step slide direction: 1 = forward (slide left), -1 = backward (slide right)
+  const prevStepRef  = useRef(state.currentStep)
+  const directionRef = useRef(1)
+  if (prevStepRef.current !== state.currentStep) {
+    directionRef.current = state.currentStep > prevStepRef.current ? 1 : -1
+    prevStepRef.current  = state.currentStep
+  }
+
+  // Scroll container ref — reset to top when the step changes
+  const scrollRef = useRef(null)
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [state.currentStep])
+
+  const prefersReduced = useReducedMotion()
+  const stepVariants = prefersReduced
+    ? {
+        enter:  () => ({ opacity: 0 }),
+        center: { opacity: 1 },
+        exit:   () => ({ opacity: 0 }),
+      }
+    : {
+        enter:  (dir) => ({ x: dir * 24, opacity: 0 }),
+        center: { x: 0, opacity: 1 },
+        exit:   (dir) => ({ x: -dir * 24, opacity: 0 }),
+      }
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)')
@@ -336,25 +363,37 @@ export default function AppShell() {
         </div>
 
         {/* Current step or bonus feature */}
-        <div className="app-content__scroll">
-          {showSupervisorEmail ? (
-            <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
-          ) : state.currentStep === 4 ? (
-            <PaidFeatureGate requiredPack="student_pack">
-              <CurrentStep />
-            </PaidFeatureGate>
-          ) : state.currentStep === 5 ? (
-            <PaidFeatureGate requiredPack="defense_pack">
-              <CurrentStep />
-            </PaidFeatureGate>
-          ) : (
-            <>
-              {currentStepKey && isOverLimit(currentStepKey) && (
-                <RunLimitBanner stepKey={currentStepKey} onUpgrade={() => navigate('/pricing')} />
+        <div className="app-content__scroll" ref={scrollRef}>
+          <AnimatePresence mode="wait" custom={directionRef.current}>
+            <motion.div
+              key={showSupervisorEmail ? 'supervisor' : String(state.currentStep)}
+              custom={directionRef.current}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              {showSupervisorEmail ? (
+                <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
+              ) : state.currentStep === 4 ? (
+                <PaidFeatureGate requiredPack="student_pack">
+                  <CurrentStep />
+                </PaidFeatureGate>
+              ) : state.currentStep === 5 ? (
+                <PaidFeatureGate requiredPack="defense_pack">
+                  <CurrentStep />
+                </PaidFeatureGate>
+              ) : (
+                <>
+                  {currentStepKey && isOverLimit(currentStepKey) && (
+                    <RunLimitBanner stepKey={currentStepKey} onUpgrade={() => navigate('/pricing')} />
+                  )}
+                  <CurrentStep />
+                </>
               )}
-              <CurrentStep />
-            </>
-          )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
       </main>
