@@ -437,6 +437,7 @@ const POLL_BG       = 60 * 1000   // any non-active or hidden tab
 
 // ── Main component ────────────────────────────────────────────────────
 export default function AdminHealth() {
+  console.log('Health component mounted')
   const { user, session, loading } = useUser()
   const [data, setData]           = useState(null)
   const [error, setError]         = useState(null)
@@ -839,7 +840,15 @@ export default function AdminHealth() {
   // aggregates) and fetchRtMetrics (for the 7 direct-query live metrics).
   // Requires migration 0018 to be applied and the admin user seeded into admin_users.
   useEffect(() => {
-    if (!isAdmin || !session) return
+    console.log('useEffect running', { isAdmin })
+    if (!isAdmin || !session) {
+      console.log('[admin-realtime] skipped — isAdmin:', isAdmin, 'session:', !!session)
+      return
+    }
+    // Inject the current JWT so Realtime authenticates as the admin user, not anon.
+    // Required because supabase.auth.stopAutoRefresh() prevents the automatic token push.
+    supabase.realtime.setAuth(session.access_token)
+    console.log('Realtime subscribing...')
     const channel = supabase
       .channel('admin-realtime-v1')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'response_times' }, () => {
@@ -857,7 +866,9 @@ export default function AdminHealth() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
         if (document.visibilityState === 'visible') fetchRtMetrics()
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Realtime status:', status)
+      })
     return () => { supabase.removeChannel(channel) }
   }, [isAdmin, session, loadVitals, loadFailures, loadData, fetchRtMetrics])
 
