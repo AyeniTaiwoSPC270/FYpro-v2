@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import FeatureFeedbackWidget from './widgets/FeatureFeedbackWidget'
+import { supabase } from '../../lib/supabase'
 
 // ── Design tokens (dark admin theme) ────────────────────────────────
 const BG      = '#060E18'
@@ -726,6 +727,29 @@ export default function AdminHealth() {
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
 
+  // Realtime subscriptions — trigger re-fetch when rows change.
+  // Falls back silently to polling if RLS blocks the subscription.
+  // Requires a migration to add SELECT policies for authenticated admin on these tables.
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    const channel = supabase
+      .channel('admin-realtime-v1')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'response_times' }, () => {
+        if (document.visibilityState === 'visible') loadVitals()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_usage' }, () => {
+        if (document.visibilityState === 'visible') loadVitals()
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'generation_failures' }, () => {
+        if (document.visibilityState === 'visible') { loadFailures(); loadVitals() }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        if (document.visibilityState === 'visible') loadData()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [isAdmin, session, loadVitals, loadFailures, loadData])
+
   // "X seconds ago" counter
   useEffect(() => {
     if (!lastUpdated) return
@@ -1228,10 +1252,12 @@ export default function AdminHealth() {
   //   DOWN     — latency > 8000ms OR 6+ failures       → badge shows 2
   const degradedVitals = vitals
     ? (() => {
-        const avgMs    = vitals.avg_response_ms
-        const failures = vitals.failures_today ?? 0
-        const hasData  = (vitals.requests_today ?? 0) > 0 || avgMs !== null
-        if (!hasData) return 0
+        const avgMs             = vitals.avg_response_ms
+        const failures          = vitals.failures_today ?? 0
+        const hasRecentActivity = vitals.last_call_at
+          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+          : false
+        if (!hasRecentActivity) return 0
         if ((avgMs !== null && avgMs > 8000) || failures >= 6) return 2
         if ((avgMs !== null && avgMs > 3000) || failures >= 1) return 1
         return 0
@@ -1750,9 +1776,12 @@ export default function AdminHealth() {
             ) : vitals ? (
               <div className="mc-vitals-grid mc-card-enter" style={{ animationDelay:'0.05s', marginBottom:20 }}>
                 {(() => {
-                  const avgMs       = vitals.avg_response_ms
-                  const hasActivity = (vitals.requests_today ?? 0) > 0
-                  const failures    = vitals.failures_today ?? 0
+                  const avgMs             = vitals.avg_response_ms
+                  const hasActivity       = (vitals.requests_today ?? 0) > 0
+                  const failures          = vitals.failures_today ?? 0
+                  const hasRecentActivity = vitals.last_call_at
+                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+                    : false
                   const lastCallRecent = vitals.last_call_at
                     ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
                     : false
@@ -1763,11 +1792,14 @@ export default function AdminHealth() {
                     : avgMs <= 3000 ? GREEN : avgMs <= 8000 ? AMBER : RED
 
                   // Status rules:
-                  //   HEALTHY  — latency < 3000ms (or no data), 0 failures
-                  //   DEGRADED — latency 3000–8000ms OR 1–5 failures
-                  //   DOWN     — latency > 8000ms OR 6+ failures
+                  //   HEALTHY           — latency < 3000ms, 0 failures
+                  //   DEGRADED          — latency 3000–8000ms OR 1–5 failures
+                  //   DOWN              — latency > 8000ms OR 6+ failures
+                  //   No Recent Activity— no call in last 30 minutes (but has historical data)
+                  //   No Data           — never had any calls today
                   const statusResult = (() => {
-                    if (!hasActivity && avgMs === null) return { label: 'No Data', color: MUTED, pulse: false }
+                    if (!hasActivity && !hasRecentActivity) return { label: 'No Data', color: MUTED, pulse: false }
+                    if (!hasRecentActivity) return { label: 'No Recent Activity', color: MUTED, pulse: false }
                     if ((avgMs !== null && avgMs > 8000) || failures >= 6) return { label: 'Down', color: RED, pulse: false }
                     if ((avgMs !== null && avgMs > 3000) || failures >= 1) return { label: 'Degraded', color: AMBER, pulse: false }
                     return { label: 'Healthy', color: GREEN, pulse: true }

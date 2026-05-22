@@ -554,16 +554,16 @@ async function handleVitals(req, res) {
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    const [rtLatestRes, rtAvgRes, failuresTodayRes, usageRes, activeGenFailRes, activeRtRes] = await Promise.all([
+    const [rtLatestRes, rtAvgRes, failuresTodayRes, rtTodayCountRes, activeRtRes] = await Promise.all([
+      // Most recent call timestamp for "Last API Call"
       supabaseAdmin.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      // Last 24h only, up to 100 rows — avoids stale pre-migration rows skewing the average.
-      // duration_ms = 0 is the cache-hit sentinel, excluded from avg.
-      supabaseAdmin.from('response_times').select('duration_ms').gt('duration_ms', 0).gte('created_at', oneDayAgo).order('created_at', { ascending: false }).limit(100),
+      // Last 10 requests only — fresh latency snapshot. duration_ms=0 cache-hits excluded.
+      supabaseAdmin.from('response_times').select('duration_ms').gt('duration_ms', 0).gte('created_at', oneDayAgo).order('created_at', { ascending: false }).limit(10),
+      // Failures today
       supabaseAdmin.from('generation_failures').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
-      supabaseAdmin.from('daily_usage').select('request_count').eq('date', today).maybeSingle(),
-      // Active users from error events
-      supabaseAdmin.from('generation_failures').select('user_id').gte('created_at', thirtyMinAgo),
-      // Active users from successful API calls (requires 0009 migration for user_id column)
+      // Requests today — count response_times rows directly (reliable even if increment_daily_usage RPC was disrupted)
+      supabaseAdmin.from('response_times').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      // Active sessions — distinct user_ids in response_times last 30 min
       supabaseAdmin.from('response_times').select('user_id').gte('created_at', thirtyMinAgo).not('user_id', 'is', null),
     ]);
 
@@ -572,16 +572,13 @@ async function handleVitals(req, res) {
       ? Math.round(rows.reduce((s, r) => s + (r.duration_ms || 0), 0) / rows.length)
       : null;
 
-    // Union distinct user_ids from both tables for accurate "active in last 30 min" count
-    const genFailUserIds = new Set((activeGenFailRes.data || []).map(r => r.user_id).filter(Boolean));
-    const rtUserIds      = new Set((activeRtRes.data      || []).map(r => r.user_id).filter(Boolean));
-    const activeSessions = new Set([...genFailUserIds, ...rtUserIds]).size;
+    const activeSessions = new Set((activeRtRes.data || []).map(r => r.user_id).filter(Boolean)).size;
 
     return res.status(200).json({
       avg_response_ms: avgResponseMs,
       last_call_at:    rtLatestRes.data?.created_at || null,
       failures_today:  failuresTodayRes.count || 0,
-      requests_today:  usageRes.data?.request_count || 0,
+      requests_today:  rtTodayCountRes.count || 0,
       active_sessions: activeSessions,
     });
   } catch (err) {

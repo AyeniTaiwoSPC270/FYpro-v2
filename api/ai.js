@@ -202,6 +202,7 @@ async function handleDefense(req, res) {
       return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
     }
 
+    const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -217,6 +218,10 @@ async function handleDefense(req, res) {
     const data = await response.json();
     console.log('[ai/defense] Anthropic status:', response.status);
     if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    if (response.ok) {
+      const duration = Date.now() - start;
+      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id }) } catch {} })();
+    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[ai/defense] error:', err.message);
@@ -275,6 +280,7 @@ async function handleSupervisorPrep(req, res) {
       return res.status(200).json(cached);
     }
 
+    const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
       headers: {
@@ -298,6 +304,10 @@ async function handleSupervisorPrep(req, res) {
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error?.message || 'Anthropic error' });
     }
+
+    const duration = Date.now() - start;
+    const userId   = extractUserId(req);
+    (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: userId }) } catch {} })();
 
     const text = data.content?.[0]?.text ?? '';
     let questions;
