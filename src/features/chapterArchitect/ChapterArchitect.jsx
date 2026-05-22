@@ -153,7 +153,7 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
 }
 
 export default function ChapterArchitect() {
-  const { state, studentContext, completeStep, navigateStep } = useApp()
+  const { state, set, studentContext, completeStep, navigateStep } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
@@ -475,6 +475,7 @@ export default function ChapterArchitect() {
           setTimeout(() => setAgVisible(prev => [...prev, i]), i * 350)
         )
         agTimers.current = timers
+        set({ abstractData: agResult })
         saveStep('abstract_generator', agResult)
       })
       .catch(err => {
