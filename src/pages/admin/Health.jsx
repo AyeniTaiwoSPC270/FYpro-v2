@@ -487,6 +487,12 @@ export default function AdminHealth() {
   const [systemLogsError, setSystemLogsError]       = useState(null)
   const [initialLoading, setInitialLoading]         = useState(true)
 
+  // Direct Supabase real-time metrics (bypass /api/admin for live fields)
+  const [rtMetrics, setRtMetrics]               = useState(null)
+  const [rtMetricsLoading, setRtMetricsLoading] = useState(true)
+  const [rtMetricsError, setRtMetricsError]     = useState(null)
+  const isFetchingRtRef                         = useRef(false)
+
   // User table state
   const [search, setSearch]   = useState('')
   const [sortKey, setSortKey] = useState('signup_date')
@@ -619,6 +625,106 @@ export default function AdminHealth() {
       .finally(() => setMaintenanceLoading(false))
   }, [session?.access_token])
 
+  // fetchRtMetrics — 9 parallel direct Supabase queries for the 7 live metrics.
+  // Preferred over /api/admin for these fields; falls back gracefully if RLS blocks
+  // access (migration 0018 must be applied and admin seeded into admin_users).
+  const fetchRtMetrics = useCallback(async () => {
+    if (!isAdmin) return
+    if (isFetchingRtRef.current) return
+    isFetchingRtRef.current = true
+    try {
+      const todayUTC      = new Date().toISOString().split('T')[0]   // 'YYYY-MM-DD'
+      const todayStart    = `${todayUTC}T00:00:00Z`
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+
+      const [
+        usageRes, activeRes, latencyRes, failCountRes, lastCallRes,
+        revenueRes, signupsRes, payFeedRes, failFeedRes,
+      ] = await Promise.allSettled([
+        // Requests today — daily_usage.request_count for today's date
+        supabase.from('daily_usage').select('request_count').eq('date', todayUTC).maybeSingle(),
+        // Active sessions — rows in response_times in last 30 min
+        supabase.from('response_times').select('id', { count: 'exact', head: true }).gt('created_at', thirtyMinsAgo),
+        // API latency — avg of last 10 duration_ms values
+        supabase.from('response_times').select('duration_ms').order('created_at', { ascending: false }).limit(10),
+        // Failures today — count from generation_failures since midnight UTC
+        supabase.from('generation_failures').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+        // Last API call — most recent created_at from response_times
+        supabase.from('response_times').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        // Revenue today — sum of successful payment amounts since midnight UTC
+        supabase.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayStart),
+        // Live feed: recent signups
+        supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(7),
+        // Live feed: recent successful payments
+        supabase.from('payments').select('user_id, created_at, amount_kobo, tier').eq('status', 'success').order('created_at', { ascending: false }).limit(7),
+        // Live feed: recent generation failures
+        supabase.from('generation_failures').select('created_at, feature, error_message, user_email').order('created_at', { ascending: false }).limit(7),
+      ])
+
+      const requestsToday = (usageRes.status === 'fulfilled' && !usageRes.value.error)
+        ? (usageRes.value.data?.request_count ?? 0) : null
+
+      const activeSessions = (activeRes.status === 'fulfilled' && !activeRes.value.error)
+        ? (activeRes.value.count ?? 0) : null
+
+      let avgLatencyMs = null
+      if (latencyRes.status === 'fulfilled' && !latencyRes.value.error && latencyRes.value.data?.length) {
+        const rows = latencyRes.value.data
+        avgLatencyMs = rows.reduce((s, r) => s + (r.duration_ms || 0), 0) / rows.length
+      }
+
+      const failuresToday = (failCountRes.status === 'fulfilled' && !failCountRes.value.error)
+        ? (failCountRes.value.count ?? 0) : null
+
+      const lastCallAt = (lastCallRes.status === 'fulfilled' && !lastCallRes.value.error)
+        ? (lastCallRes.value.data?.created_at ?? null) : null
+
+      let revenueTodayNgn = null
+      if (revenueRes.status === 'fulfilled' && !revenueRes.value.error && revenueRes.value.data) {
+        revenueTodayNgn = revenueRes.value.data.reduce((s, p) => s + (p.amount_kobo || 0), 0) / 100
+      }
+
+      const feedEvents = []
+      if (signupsRes.status === 'fulfilled' && !signupsRes.value.error && signupsRes.value.data) {
+        signupsRes.value.data.forEach(u => feedEvents.push({
+          type: 'signup', label: 'New signup',
+          user_prefix: u.id.slice(0, 8), time: u.created_at,
+        }))
+      }
+      if (payFeedRes.status === 'fulfilled' && !payFeedRes.value.error && payFeedRes.value.data) {
+        payFeedRes.value.data.forEach(p => feedEvents.push({
+          type: 'payment',
+          label: `${p.tier || 'payment'} — ₦${Math.round((p.amount_kobo || 0) / 100).toLocaleString()}`,
+          user_prefix: (p.user_id || '—').slice(0, 8), time: p.created_at,
+        }))
+      }
+      if (failFeedRes.status === 'fulfilled' && !failFeedRes.value.error && failFeedRes.value.data) {
+        failFeedRes.value.data.forEach(f => feedEvents.push({
+          type: 'failure',
+          label: (f.feature || 'unknown').replace(/_/g, ' '),
+          user_prefix: f.user_email ? f.user_email.slice(0, 8) : '—', time: f.created_at,
+        }))
+      }
+      feedEvents.sort((a, b) => new Date(b.time) - new Date(a.time))
+
+      setRtMetrics({
+        requests_today:    requestsToday,
+        active_sessions:   activeSessions,
+        avg_latency_ms:    avgLatencyMs,
+        failures_today:    failuresToday,
+        last_call_at:      lastCallAt,
+        revenue_today_ngn: revenueTodayNgn,
+        live_feed:         feedEvents.slice(0, 20),
+      })
+      setRtMetricsError(null)
+    } catch (err) {
+      setRtMetricsError(err.message || 'Real-time metrics unavailable')
+    } finally {
+      isFetchingRtRef.current = false
+      setRtMetricsLoading(false)
+    }
+  }, [isAdmin])
+
   // Fire all 8 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -631,10 +737,11 @@ export default function AdminHealth() {
       loadSystemLogs(),
       loadFeedbackSummary(),
       loadMaintenanceMode(),
+      fetchRtMetrics(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics])
 
   // Initial parallel fetch — all 8 widgets at once; one failure never blocks the rest
   // Guard uses === false (not !isAdmin) so the null loading state still triggers the fetch
@@ -651,8 +758,9 @@ export default function AdminHealth() {
       loadSystemLogs(),
       loadFeedbackSummary(),
       loadMaintenanceMode(),
+      fetchRtMetrics(),
     ]).finally(() => setInitialLoading(false))
-  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode])
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics])
 
   // Polling — each loader uses a tab-specific rate.
   // Callbacks are no-ops when document is hidden; the visibilitychange handler
@@ -727,28 +835,31 @@ export default function AdminHealth() {
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
 
-  // Realtime subscriptions — trigger re-fetch when rows change.
-  // Falls back silently to polling if RLS blocks the subscription.
-  // Requires a migration to add SELECT policies for authenticated admin on these tables.
+  // Realtime subscriptions — each table change triggers both the API loader (for complex
+  // aggregates) and fetchRtMetrics (for the 7 direct-query live metrics).
+  // Requires migration 0018 to be applied and the admin user seeded into admin_users.
   useEffect(() => {
     if (!isAdmin || !session) return
     const channel = supabase
       .channel('admin-realtime-v1')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'response_times' }, () => {
-        if (document.visibilityState === 'visible') loadVitals()
+        if (document.visibilityState === 'visible') { loadVitals(); fetchRtMetrics() }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_usage' }, () => {
-        if (document.visibilityState === 'visible') loadVitals()
+        if (document.visibilityState === 'visible') { loadVitals(); fetchRtMetrics() }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'generation_failures' }, () => {
-        if (document.visibilityState === 'visible') { loadFailures(); loadVitals() }
+        if (document.visibilityState === 'visible') { loadFailures(); loadVitals(); fetchRtMetrics() }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
-        if (document.visibilityState === 'visible') loadData()
+        if (document.visibilityState === 'visible') { loadData(); fetchRtMetrics() }
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
+        if (document.visibilityState === 'visible') fetchRtMetrics()
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [isAdmin, session, loadVitals, loadFailures, loadData])
+  }, [isAdmin, session, loadVitals, loadFailures, loadData, fetchRtMetrics])
 
   // "X seconds ago" counter
   useEffect(() => {
@@ -773,8 +884,9 @@ export default function AdminHealth() {
     }
   }, [handleRefresh])
 
-  // Live activity events — merges dashboard recent_events + unresolved failures
+  // Live activity events — prefers direct Supabase data; falls back to API events
   const liveEvents = useMemo(() => {
+    if (rtMetrics?.live_feed?.length > 0) return rtMetrics.live_feed
     const evts = []
     if (data?.recent_events) evts.push(...data.recent_events)
     if (failures?.rows) {
@@ -789,7 +901,7 @@ export default function AdminHealth() {
         }))
     }
     return evts.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 20)
-  }, [data, failures])
+  }, [rtMetrics, data, failures])
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -806,6 +918,19 @@ export default function AdminHealth() {
       return 0
     })
   }, [data, search, sortKey, sortDir])
+
+  // Merged vitals: direct Supabase data preferred, API response as fallback.
+  // Enables the Vitals tab to display as soon as either source resolves.
+  const displayVitals = useMemo(() => {
+    if (!vitals && !rtMetrics) return null
+    return {
+      avg_response_ms: rtMetrics?.avg_latency_ms  ?? vitals?.avg_response_ms  ?? null,
+      last_call_at:    rtMetrics?.last_call_at     ?? vitals?.last_call_at     ?? null,
+      failures_today:  rtMetrics?.failures_today   ?? vitals?.failures_today   ?? 0,
+      requests_today:  rtMetrics?.requests_today   ?? vitals?.requests_today   ?? 0,
+      active_sessions: rtMetrics?.active_sessions  ?? vitals?.active_sessions  ?? 0,
+    }
+  }, [vitals, rtMetrics])
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE)
   const pageRows   = filteredUsers.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -1222,6 +1347,8 @@ export default function AdminHealth() {
   const { overview, revenue_chart, signups_chart, feature_usage, funnel, never_converted,
           daily_spend, cache_hit_rate, top_active_users, failed_payments_today, signups_yesterday,
           revenue_today_ngn, paying_users_today, ngn_per_usd } = data
+  // Direct Supabase revenue preferred; falls back to API aggregate
+  const displayRevenueTodayNgn = rtMetrics?.revenue_today_ngn ?? revenue_today_ngn
   const maxFeature = feature_usage?.[0]?.count || 1
 
   // ── Shared inline styles ─────────────────────────────────────────
@@ -1250,12 +1377,12 @@ export default function AdminHealth() {
   //   HEALTHY  — latency < 3000ms, 0 failures
   //   DEGRADED — latency 3000–8000ms OR 1–5 failures  → badge shows 1
   //   DOWN     — latency > 8000ms OR 6+ failures       → badge shows 2
-  const degradedVitals = vitals
+  const degradedVitals = displayVitals
     ? (() => {
-        const avgMs             = vitals.avg_response_ms
-        const failures          = vitals.failures_today ?? 0
-        const hasRecentActivity = vitals.last_call_at
-          ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+        const avgMs             = displayVitals.avg_response_ms
+        const failures          = displayVitals.failures_today ?? 0
+        const hasRecentActivity = displayVitals.last_call_at
+          ? (Date.now() - new Date(displayVitals.last_call_at).getTime()) < 30 * 60 * 1000
           : false
         if (!hasRecentActivity) return 0
         if ((avgMs !== null && avgMs > 8000) || failures >= 6) return 2
@@ -1454,7 +1581,7 @@ export default function AdminHealth() {
             <div className="mc-section-divider">Today's Snapshot</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
               <SignupsCompareCard today={overview?.signups_today} yesterday={signups_yesterday} />
-              <OverviewCard label="Revenue Today" value={revenue_today_ngn != null ? `₦${Number(revenue_today_ngn).toLocaleString()}` : '—'} sub={`${paying_users_today??0} payments today`} accent={GREEN} />
+              <OverviewCard label="Revenue Today" value={displayRevenueTodayNgn != null ? `₦${Number(displayRevenueTodayNgn).toLocaleString()}` : '—'} sub={`${paying_users_today??0} payments today`} accent={GREEN} />
               <OverviewCard label="Failed Payments" value={failed_payments_today??0} sub="today" accent={failed_payments_today>0?RED:MUTED} />
               <SpendCard spend={daily_spend} />
             </div>
@@ -1702,7 +1829,7 @@ export default function AdminHealth() {
             <div className="mc-section-divider">Revenue Overview</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:16 }}>
               <OverviewCard label="Total Revenue" value={`₦${Number(overview?.total_revenue_ngn||0).toLocaleString()}`} sub={`${overview?.total_paid||0} paying users`} accent={GREEN} />
-              <OverviewCard label="Revenue Today" value={revenue_today_ngn != null ? `₦${Number(revenue_today_ngn).toLocaleString()}` : '₦0'} sub={`${paying_users_today??0} payments`} accent={GREEN} />
+              <OverviewCard label="Revenue Today" value={displayRevenueTodayNgn != null ? `₦${Number(displayRevenueTodayNgn).toLocaleString()}` : '₦0'} sub={`${paying_users_today??0} payments`} accent={GREEN} />
               <OverviewCard label="Failed Payments" value={failed_payments_today??0} sub="today" accent={(failed_payments_today??0)>0?RED:MUTED} />
               <SpendCard spend={daily_spend} />
             </div>
@@ -1764,26 +1891,26 @@ export default function AdminHealth() {
         {activeTab === 'vitals' && (
           <>
             <div className="mc-section-divider">System Health</div>
-            {vitalsLoading ? (
+            {(vitalsLoading && rtMetricsLoading) ? (
               <div className="mc-vitals-grid" style={{ marginBottom:20 }}>
                 {[...Array(6)].map((_,i) => <div key={i} className="mc-skeleton" style={{ height:80, animationDelay:`${i*0.08}s` }} />)}
               </div>
-            ) : vitalsError ? (
+            ) : vitalsError && !displayVitals ? (
               <div className="mc-card" style={{ padding:'16px 20px', borderLeft:`3px solid ${RED}`, marginBottom:20 }}>
                 <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED, marginBottom:8 }}>{vitalsError}</div>
                 <button className="mc-action-btn" onClick={loadVitals}>Retry</button>
               </div>
-            ) : vitals ? (
+            ) : displayVitals ? (
               <div className="mc-vitals-grid mc-card-enter" style={{ animationDelay:'0.05s', marginBottom:20 }}>
                 {(() => {
-                  const avgMs             = vitals.avg_response_ms
-                  const hasActivity       = (vitals.requests_today ?? 0) > 0
-                  const failures          = vitals.failures_today ?? 0
-                  const hasRecentActivity = vitals.last_call_at
-                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 30 * 60 * 1000
+                  const avgMs             = displayVitals.avg_response_ms
+                  const hasActivity       = (displayVitals.requests_today ?? 0) > 0
+                  const failures          = displayVitals.failures_today ?? 0
+                  const hasRecentActivity = displayVitals.last_call_at
+                    ? (Date.now() - new Date(displayVitals.last_call_at).getTime()) < 30 * 60 * 1000
                     : false
-                  const lastCallRecent = vitals.last_call_at
-                    ? (Date.now() - new Date(vitals.last_call_at).getTime()) < 5 * 60 * 1000
+                  const lastCallRecent = displayVitals.last_call_at
+                    ? (Date.now() - new Date(displayVitals.last_call_at).getTime()) < 5 * 60 * 1000
                     : false
 
                   // Latency color: only meaningful if there are recent calls
@@ -1815,7 +1942,7 @@ export default function AdminHealth() {
                       />
                       <VitalCard
                         label="Last API Call"
-                        value={vitals.last_call_at ? timeAgo(vitals.last_call_at) : 'No calls today'}
+                        value={displayVitals.last_call_at ? timeAgo(displayVitals.last_call_at) : 'No calls today'}
                         dotColor={!hasActivity ? MUTED : lastCallRecent ? GREEN : AMBER}
                         pulse={lastCallRecent}
                       />
@@ -1827,15 +1954,15 @@ export default function AdminHealth() {
                       />
                       <VitalCard
                         label="Requests Today"
-                        value={(vitals.requests_today ?? 0).toLocaleString()}
+                        value={(displayVitals.requests_today ?? 0).toLocaleString()}
                         dotColor={BLUE}
                         pulse={false}
                       />
                       <VitalCard
                         label="Active Sessions"
-                        value={vitals.active_sessions ?? 0}
-                        dotColor={(vitals.active_sessions ?? 0) > 0 ? GREEN : MUTED}
-                        pulse={(vitals.active_sessions ?? 0) > 0}
+                        value={displayVitals.active_sessions ?? 0}
+                        dotColor={(displayVitals.active_sessions ?? 0) > 0 ? GREEN : MUTED}
+                        pulse={(displayVitals.active_sessions ?? 0) > 0}
                       />
                       <VitalCard
                         label="Overall Status"
