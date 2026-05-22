@@ -188,6 +188,7 @@ export default function MethodologyAdvisor() {
         buildPlainText(data)
         setDiData(data)
         setDiSection('result')
+        set({ instrumentBuilder: data })
         saveStep('instrument_builder', data)
       })
       .catch(err => {
