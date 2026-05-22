@@ -658,7 +658,7 @@ export default function AdminHealth() {
         // Live feed: recent successful payments
         supabase.from('payments').select('user_id, created_at, amount_kobo, tier').eq('status', 'success').order('created_at', { ascending: false }).limit(7),
         // Live feed: recent generation failures
-        supabase.from('generation_failures').select('created_at, feature, error_message, user_email').order('created_at', { ascending: false }).limit(7),
+        supabase.from('generation_failures').select('created_at, feature, error_message').order('created_at', { ascending: false }).limit(7),
       ])
 
       const requestsToday = (usageRes.status === 'fulfilled' && !usageRes.value.error)
@@ -702,7 +702,7 @@ export default function AdminHealth() {
         failFeedRes.value.data.forEach(f => feedEvents.push({
           type: 'failure',
           label: (f.feature || 'unknown').replace(/_/g, ' '),
-          user_prefix: f.user_email ? f.user_email.slice(0, 8) : '—', time: f.created_at,
+          user_prefix: '—', time: f.created_at,
         }))
       }
       feedEvents.sort((a, b) => new Date(b.time) - new Date(a.time))
