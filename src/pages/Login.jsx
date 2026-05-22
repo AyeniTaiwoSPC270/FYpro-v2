@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { trackEvent, identifyUser } from '../lib/analytics'
 import { resolveRouteAfterLogin } from '../lib/routingCache'
+import { useUser } from '../hooks/useUser'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -131,6 +132,12 @@ const fieldVariant = {
 export default function Login() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { user, loading: authLoading } = useUser()
+
+  useEffect(() => {
+    if (!authLoading && user) navigate('/dashboard', { replace: true })
+  }, [user, authLoading, navigate])
+
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)

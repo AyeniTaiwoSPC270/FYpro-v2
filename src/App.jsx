@@ -75,7 +75,7 @@ function AppRoutes() {
           <Route path="/roadmap" element={<RoadmapPage />} />
 
           {/* App entry — splash + onboarding */}
-          <Route path="/start" element={<SplashOnboarding />} />
+          <Route path="/start" element={<ProtectedRoute><SplashOnboarding /></ProtectedRoute>} />
 
           {/* Main app */}
           <Route path="/app" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
@@ -102,7 +102,7 @@ function AppRoutes() {
           <Route path="/account/referrals" element={<ProtectedRoute><MyReferrals /></ProtectedRoute>} />
 
           {/* Admin — lazy-loaded so recharts only downloads when admin visits */}
-          <Route path="/admin/health" element={<ProtectedRoute><Suspense fallback={null}><AdminHealth /></Suspense></ProtectedRoute>} />
+          <Route path="/admin/health" element={<ProtectedRoute adminOnly><Suspense fallback={null}><AdminHealth /></Suspense></ProtectedRoute>} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />

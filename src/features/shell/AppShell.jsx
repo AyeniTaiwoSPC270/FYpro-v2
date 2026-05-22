@@ -121,7 +121,7 @@ export default function AppShell() {
     const flag = sessionStorage.getItem('intentional_app_entry')
     if (flag) {
       sessionStorage.removeItem('intentional_app_entry')
-    } else if (!document.referrer.includes('/app')) {
+    } else {
       navigate('/dashboard', { replace: true })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; onboardingResolved only flips once

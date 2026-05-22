@@ -7,7 +7,7 @@ import WhatsAppButton from './WhatsAppButton'
 // SQL required (run once in Supabase SQL Editor):
 //   ALTER TABLE user_entitlements
 //   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useUser()
   const [banned, setBanned] = useState(false)
   const [banChecking, setBanChecking] = useState(true)
@@ -55,6 +55,10 @@ export default function ProtectedRoute({ children }) {
   )
 
   if (!user) return <Navigate to="/login" replace />
+
+  if (adminOnly && user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   if (banned) {
     return (

@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { getStoredRef, callTrackReferral } from '../lib/referral'
 import { trackEvent } from '../lib/analytics'
+import { useUser } from '../hooks/useUser'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -214,6 +215,12 @@ function mapSupabaseError(error) {
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useUser()
+
+  useEffect(() => {
+    if (!authLoading && user) navigate('/dashboard', { replace: true })
+  }, [user, authLoading, navigate])
+
   const [form, setForm] = useState({ name: '', email: '', university: '', password: '', confirm: '' })
   const [agreed, setAgreed] = useState(false)
   const [consentError, setConsentError] = useState(false)

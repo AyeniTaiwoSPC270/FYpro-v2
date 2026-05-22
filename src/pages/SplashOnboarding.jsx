@@ -34,6 +34,7 @@ export default function SplashOnboarding() {
   // after Supabase hydrates their profile.
   useEffect(() => {
     if (isOnboarded) {
+      sessionStorage.setItem('intentional_app_entry', 'true')
       navigate('/app', { replace: true })
     }
   }, [isOnboarded]) // eslint-disable-line
@@ -121,6 +122,7 @@ export default function SplashOnboarding() {
     }
 
     set({ university, faculty, department, level, roughTopic: topic.trim() })
+    sessionStorage.setItem('intentional_app_entry', 'true')
     navigate('/app')
   }
 
