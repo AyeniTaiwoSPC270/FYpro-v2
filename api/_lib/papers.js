@@ -50,28 +50,21 @@ async function fetchPapers(rawTopic, normalizedTopic, count) {
     return { papers: [], status: 'no_papers_found', sparse_literature: false };
   }
 
-  // Primary: Semantic Scholar with full topic
-  let papers = await trySemanticScholar(outbound, count);
+  // Phase 1: Semantic Scholar + OpenAlex in parallel (handles the vast majority of topics)
+  const [ssPapers, oaPapers] = await Promise.all([
+    trySemanticScholar(outbound, count),
+    tryOpenAlex(outbound, count),
+  ]);
+  let papers = dedupe([...ssPapers, ...oaPapers]);
 
-  // Broadened query: strip geographic modifiers and retry SS
+  // Phase 2: still sparse — broadened SS + Crossref in parallel
   if (papers.length < 3) {
     const broadened = sanitizeOutbound(normalizedTopic);
-    if (broadened && broadened !== outbound) {
-      const extra = await trySemanticScholar(broadened, count);
-      papers = dedupe([...papers, ...extra]);
-    }
-  }
-
-  // Fallback: OpenAlex
-  if (papers.length < 3) {
-    const oaPapers = await tryOpenAlex(outbound, count);
-    papers = dedupe([...papers, ...oaPapers]);
-  }
-
-  // Last resort: Crossref (metadata only)
-  if (papers.length < 3) {
-    const crPapers = await tryCrossref(outbound, count);
-    papers = dedupe([...papers, ...crPapers]);
+    const [broadenedPapers, crPapers] = await Promise.all([
+      (broadened && broadened !== outbound) ? trySemanticScholar(broadened, count) : Promise.resolve([]),
+      tryCrossref(outbound, count),
+    ]);
+    papers = dedupe([...papers, ...broadenedPapers, ...crPapers]);
   }
 
   const final  = papers.slice(0, count);

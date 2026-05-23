@@ -9,6 +9,8 @@ import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 
+export const config = { maxDuration: 60 };
+
 const CLAUDE_TTL = 86400; // 24h
 
 async function handleValidate(req, res) {
@@ -16,38 +18,47 @@ async function handleValidate(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-
-  const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'topic-validator' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
-
-  const cap = await checkDailyCap();
-  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
-
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
+  const { system, messages, max_tokens = 2000, topic } = req.body || {};
+
+  if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
+    return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
+  }
+  const topicWordCount = topic.trim() === '' ? 0 : topic.trim().split(/\s+/).length;
+  if (topicWordCount > 500) {
+    return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
+  }
+
+  const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
+  const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
+  const claudeKey   = buildCacheKey('topic-validator', system ?? '', userPrompt);
+
+  let authResult, rl, cap, claudeCached;
   try {
-    const { system, messages, max_tokens = 2000, topic } = req.body || {};
+    [authResult, rl, cap, claudeCached] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'topic-validator' }).catch(() => ({ allowed: true, reason: '' })),
+      checkDailyCap().catch(() => ({ allowed: true })),
+      getCached(claudeKey).catch(() => null),
+    ]);
+  } catch (err) {
+    console.error('[research/validate] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
-    if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
-      return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
-    }
-    const topicWordCount = topic.trim() === '' ? 0 : topic.trim().split(/\s+/).length;
-    if (topicWordCount > 500) {
-      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
-    }
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
-    const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
-    const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-    const claudeKey   = buildCacheKey('topic-validator', system ?? '', userPrompt);
+  if (claudeCached) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(claudeCached);
+  }
 
-    const claudeCached = await getCached(claudeKey);
-    if (claudeCached) {
-      res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json(claudeCached);
-    }
+  try {
 
     const papersResult = await fetchPapersForValidation(topic.trim());
 
@@ -79,7 +90,7 @@ async function handleValidate(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body:   JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();
@@ -116,34 +127,43 @@ async function handleLitMap(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-
-  const rl = await rateLimitCheck(req, { userDay: 20, ipDay: 60, prefix: 'literature-map' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
-
-  const cap = await checkDailyCap();
-  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
-
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
+  const { system, messages, max_tokens = 3000, topic } = req.body || {};
+
+  if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
+    return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
+  }
+
+  const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
+  const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
+  const claudeKey   = buildCacheKey('literature-map', system ?? '', userPrompt);
+
+  let authResult, rl, cap, claudeCached;
   try {
-    const { system, messages, max_tokens = 3000, topic } = req.body || {};
+    [authResult, rl, cap, claudeCached] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 20, ipDay: 60, prefix: 'literature-map' }).catch(() => ({ allowed: true, reason: '' })),
+      checkDailyCap().catch(() => ({ allowed: true })),
+      getCached(claudeKey).catch(() => null),
+    ]);
+  } catch (err) {
+    console.error('[research/lit-map] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
-    if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
-      return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
-    }
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
-    const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
-    const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-    const claudeKey   = buildCacheKey('literature-map', system ?? '', userPrompt);
+  if (claudeCached) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(claudeCached);
+  }
 
-    const claudeCached = await getCached(claudeKey);
-    if (claudeCached) {
-      res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json(claudeCached);
-    }
+  try {
 
     const papersResult = await fetchPapersForLitMap(topic.trim());
 
@@ -184,7 +204,7 @@ async function handleLitMap(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body:   JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens, system: augmentedSystem, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();

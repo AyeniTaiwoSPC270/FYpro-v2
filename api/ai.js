@@ -10,6 +10,8 @@ import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
+export const config = { maxDuration: 60 };
+
 const ALLOWED_MODELS   = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']);
 const MAX_TOKENS_LIMIT = 4096;
 
@@ -25,30 +27,53 @@ async function handleGeneral(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  let user;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error('[ai/general] ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'API key not configured on server.' });
+  }
+
+  const {
+    system,
+    messages,
+    max_tokens: rawMaxTokens = 2000,
+    model: rawModel = 'claude-sonnet-4-6',
+    step,
+  } = req.body || {};
+
+  const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+  const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
+  const prefix      = step || 'general';
+  const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
+  const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
+  const cacheKey    = buildCacheKey(prefix, system ?? '', userPrompt);
+  const ttl         = TTL_BY_STEP[prefix] ?? 21600;
+
+  let authResult, rl, cap, cached;
   try {
-    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-    user = data.user;
+    [authResult, rl, cap, cached] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' }).catch(rlErr => {
+        console.error('[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
+        return { allowed: true, reason: '' };
+      }),
+      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+      getCached(cacheKey).catch(() => null),
+    ]);
   } catch (authErr) {
     console.error('[ai/general] auth.getUser threw:', authErr.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
-  let rl;
-  try {
-    rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' });
-  } catch (rlErr) {
-    console.error('[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
-    rl = { allowed: true, reason: '' };
-  }
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+
   if (!rl.allowed) {
     const today = new Date().toISOString().slice(0, 10);
     sendTelegramAlertOnce(`⏱️ Rate limit: ${user.id.slice(0, 8)} blocked on general AI`, `tg:rl:general:${user.id}:${today}`);
     return res.status(429).json({ error: rl.reason });
   }
 
-  const cap = await checkDailyCap();
   const today = new Date().toISOString().slice(0, 10);
   if (!cap.allowed) {
     sendTelegramAlertOnce(`⚠️ Spend cap hit: $${cap.spent.toFixed(2)} spent today. Claude requests blocked.`, `tg:spend:cap:${today}`)
@@ -58,37 +83,14 @@ async function handleGeneral(req, res) {
     sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`)
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('[ai/general] ANTHROPIC_API_KEY is not set');
-    return res.status(500).json({ error: 'API key not configured on server.' });
+  if (cached) {
+    const userId = extractUserId(req);
+    (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }) } catch {} })();
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cached);
   }
 
   try {
-    const {
-      system,
-      messages,
-      max_tokens: rawMaxTokens = 2000,
-      model: rawModel = 'claude-sonnet-4-6',
-      step,
-    } = req.body || {};
-
-    const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
-    const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
-
-    const prefix      = step || 'general';
-    const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
-    const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-    const cacheKey    = buildCacheKey(prefix, system ?? '', userPrompt);
-    const ttl         = TTL_BY_STEP[prefix] ?? 21600;
-
-    const cached = await getCached(cacheKey);
-    if (cached) {
-      const userId = extractUserId(req);
-      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }) } catch {} })();
-      res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json(cached);
-    }
 
     const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -134,29 +136,34 @@ async function handleDefense(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  let user;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  // Parallelize auth + rate limit + daily cap
+  let authResult, rl, cap;
   try {
-    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-    user = data.user;
+    [authResult, rl, cap] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' }).catch(rlErr => {
+        console.error('[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
+        return { allowed: true, reason: '' };
+      }),
+      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+    ]);
   } catch (authErr) {
     console.error('[ai/defense] auth.getUser threw:', authErr.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
-  let rl;
-  try {
-    rl = await rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' });
-  } catch (rlErr) {
-    console.error('[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
-    rl = { allowed: true, reason: '' };
-  }
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+
   if (!rl.allowed) {
     const today = new Date().toISOString().slice(0, 10);
     sendTelegramAlertOnce(`⏱️ Rate limit: ${user.id.slice(0, 8)} blocked on Defense Simulator`, `tg:rl:defense:${user.id}:${today}`);
     return res.status(429).json({ error: rl.reason });
   }
 
+  // Entitlements check requires user.id — runs after auth resolves
   const { data: entitlements, error: entError } = await supabaseAdmin
     .from('user_entitlements')
     .select('paid_features')
@@ -170,7 +177,6 @@ async function handleDefense(req, res) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 
-  const cap = await checkDailyCap();
   const today = new Date().toISOString().slice(0, 10);
   if (!cap.allowed) {
     sendTelegramAlertOnce(`⚠️ Spend cap hit: $${cap.spent.toFixed(2)} spent today. Claude requests blocked.`, `tg:spend:cap:${today}`)
@@ -180,7 +186,6 @@ async function handleDefense(req, res) {
     sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`)
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.error('[ai/defense] ANTHROPIC_API_KEY is not set');
     return res.status(500).json({ error: 'API key not configured on server.' });
@@ -249,36 +254,39 @@ Format: return ONLY a JSON array of 8 strings. No preamble. No markdown.`;
 const SUPERVISOR_PREP_TTL = 21600; // 6 hours
 
 async function handleSupervisorPrep(req, res) {
-  const rl = await rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
-
-  const cap = await checkDailyCap();
-  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
-
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
+  const { stage, lastFeedback, stuckOn } = req.body || {};
+
+  if (!stage || typeof stage !== 'string' || !stage.trim()) {
+    return res.status(400).json({ error: 'Project stage is required.' });
+  }
+
+  const fbWords = !lastFeedback ? 0 : lastFeedback.trim().split(/\s+/).length;
+  const stWords = !stuckOn     ? 0 : stuckOn.trim().split(/\s+/).length;
+  if (fbWords > 500 || stWords > 500) {
+    return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
+  }
+
+  const userPrompt = `Stage: ${stage.trim()}. Last feedback: ${lastFeedback || 'none'}. Stuck on: ${stuckOn || 'nothing specific'}.`;
+  const cacheKey   = buildCacheKey('supervisor-prep', SUPERVISOR_PREP_SYSTEM, userPrompt);
+
+  const [rl, cap, cached] = await Promise.all([
+    rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' }).catch(() => ({ allowed: true, reason: '' })),
+    checkDailyCap().catch(() => ({ allowed: true })),
+    getCached(cacheKey).catch(() => null),
+  ]);
+
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+  if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
+
+  if (cached) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cached);
+  }
+
   try {
-    const { stage, lastFeedback, stuckOn } = req.body || {};
-
-    if (!stage || typeof stage !== 'string' || !stage.trim()) {
-      return res.status(400).json({ error: 'Project stage is required.' });
-    }
-
-    const fbWords = !lastFeedback ? 0 : lastFeedback.trim().split(/\s+/).length;
-    const stWords = !stuckOn     ? 0 : stuckOn.trim().split(/\s+/).length;
-    if (fbWords > 500 || stWords > 500) {
-      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
-    }
-
-    const userPrompt = `Stage: ${stage.trim()}. Last feedback: ${lastFeedback || 'none'}. Stuck on: ${stuckOn || 'nothing specific'}.`;
-    const cacheKey   = buildCacheKey('supervisor-prep', SUPERVISOR_PREP_SYSTEM, userPrompt);
-
-    const cached = await getCached(cacheKey);
-    if (cached) {
-      res.setHeader('X-Cache', 'HIT');
-      return res.status(200).json(cached);
-    }
 
     const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -295,7 +303,7 @@ async function handleSupervisorPrep(req, res) {
         messages:    [{ role: 'user', content: userPrompt }],
         temperature: 0,
       }),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();

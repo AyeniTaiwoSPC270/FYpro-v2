@@ -9,7 +9,7 @@ import { Resend } from 'resend';
 
 // bodyParser disabled so the webhook handler can access the raw body for HMAC.
 // Non-webhook actions parse the body manually below.
-export const config = { api: { bodyParser: false } };
+export const config = { maxDuration: 60, api: { bodyParser: false } };
 
 if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('Missing env var: PAYSTACK_SECRET_KEY');
 
@@ -136,10 +136,17 @@ async function handleCheckStatus(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let authResult, rl;
+  try {
+    [authResult, rl] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 120, ipDay: 300, prefix: 'pay_status' }).catch(() => ({ allowed: true, reason: '' })),
+    ]);
+  } catch {
+    return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+  }
+  const { data: { user } = {}, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const rl = await rateLimitCheck(req, { userDay: 120, ipDay: 300, prefix: 'pay_status' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const { reference } = req.query;
@@ -166,10 +173,17 @@ async function handleInitiate(req, res) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    let authResult, rl;
+    try {
+      [authResult, rl] = await Promise.all([
+        supabaseAdmin.auth.getUser(token),
+        rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_initiate' }).catch(() => ({ allowed: true, reason: '' })),
+      ]);
+    } catch {
+      return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+    }
+    const { data: { user } = {}, error: authError } = authResult;
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-    const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_initiate' });
     if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
     const { tier } = req.body || {};
@@ -230,10 +244,17 @@ async function handleVerify(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let authResult, rl;
+  try {
+    [authResult, rl] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_verify' }).catch(() => ({ allowed: true, reason: '' })),
+    ]);
+  } catch {
+    return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+  }
+  const { data: { user } = {}, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 30, prefix: 'pay_verify' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const { reference } = req.body || {};
@@ -316,10 +337,17 @@ async function handleConsumeReset(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let authResult, rl;
+  try {
+    [authResult, rl] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 5, ipDay: 20, prefix: 'pay_consume' }).catch(() => ({ allowed: true, reason: '' })),
+    ]);
+  } catch {
+    return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+  }
+  const { data: { user } = {}, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const rl = await rateLimitCheck(req, { userDay: 5, ipDay: 20, prefix: 'pay_consume' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   const { data: current, error: fetchErr } = await supabaseAdmin

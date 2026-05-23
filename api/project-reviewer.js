@@ -7,16 +7,14 @@ import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 
+export const config = { maxDuration: 60 };
+
 const handler = async (req, res) => {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const rl = await rateLimitCheck(req, { userDay: 10, ipDay: 100, prefix: 'reviewer' });
-  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
-
-  // 1. Extract JWT from Authorization header
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -24,43 +22,49 @@ const handler = async (req, res) => {
     return res.status(401).json({ error: 'No authentication token provided.' });
   }
 
-  // 2. Verify JWT
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) {
-    return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error('[project-reviewer] ANTHROPIC_API_KEY is not set');
+    return res.status(500).json({ error: 'API key not configured on server.' });
   }
 
-  // 3. Check user_entitlements
-  const { data: entitlements, error: entError } = await supabaseAdmin
-    .from('user_entitlements')
-    .select('paid_features')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  // Phase 1: rate limit + auth in parallel
+  let authResult, rl;
+  try {
+    [authResult, rl] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 10, ipDay: 100, prefix: 'reviewer' }).catch(() => ({ allowed: true, reason: '' })),
+    ]);
+  } catch (err) {
+    console.error('[project-reviewer] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
 
-  if (entError) {
-    console.error('[project-reviewer] entitlements query error:', entError.message);
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  // Phase 2: entitlements + daily cap in parallel (both need user.id or are independent)
+  const [entResult, cap] = await Promise.all([
+    supabaseAdmin.from('user_entitlements').select('paid_features').eq('user_id', user.id).maybeSingle(),
+    checkDailyCap().catch(() => ({ allowed: true })),
+  ]);
+
+  if (entResult.error) {
+    console.error('[project-reviewer] entitlements query error:', entResult.error.message);
     return res.status(500).json({ error: 'Failed to verify entitlements. Please try again.' });
   }
 
-  const paidFeatures = Array.isArray(entitlements?.paid_features)
-    ? entitlements.paid_features
+  const paidFeatures = Array.isArray(entResult.data?.paid_features)
+    ? entResult.data.paid_features
     : [];
 
   if (!paidFeatures.includes('defense_pack')) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 
-  // 4. Check daily spend cap before proxying
-  const cap = await checkDailyCap();
   if (!cap.allowed) {
     return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
-  }
-
-  // 5. Proxy to Anthropic
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('[project-reviewer] ANTHROPIC_API_KEY is not set');
-    return res.status(500).json({ error: 'API key not configured on server.' });
   }
 
   try {
@@ -104,6 +108,7 @@ const handler = async (req, res) => {
         'anthropic-beta': 'pdfs-2024-09-25',
       },
       body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
+      signal: AbortSignal.timeout(50000),
     });
 
     const data = await response.json();

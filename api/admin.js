@@ -22,7 +22,7 @@ function getAdminRedis() {
 
 // bodyParser disabled so the sentry_webhook action receives raw bytes for HMAC-SHA256.
 // Every other action reads rawBody then re-parses it as JSON before dispatching.
-export const config = { api: { bodyParser: false } };
+export const config = { maxDuration: 60, api: { bodyParser: false } };
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
