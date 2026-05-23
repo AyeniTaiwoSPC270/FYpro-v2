@@ -552,6 +552,7 @@ function AdminHealth() {
   const secondsTimerRef = useRef(null)
   const authTimerRef    = useRef(null)
   const paymentTimerRef = useRef(null)
+  const rtPollTimerRef  = useRef(null)
   const isFetchingRef   = useRef(false)
 
   const [vitals, setVitals]               = useState(null)
@@ -956,6 +957,18 @@ function AdminHealth() {
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
 
+  // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
+  // API spend today, active sessions). Fires even when Realtime misses RPC updates.
+  // Uses the stable ref so this effect never needs to re-run on fetchRtMetrics changes.
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    rtPollTimerRef.current = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      fetchRtRef.current()
+    }, POLL_VITALS)
+    return () => clearInterval(rtPollTimerRef.current)
+  }, [isAdmin, session])
+
   // Log once on actual mount (not on every re-render)
   useEffect(() => { console.log('Health component mounted') }, [])
 
@@ -1004,6 +1017,9 @@ function AdminHealth() {
         if (document.visibilityState === 'visible') { loadDataRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, () => {
+        if (document.visibilityState === 'visible') fetchRtRef.current()
+      })
+      .on('broadcast', { event: 'usage_updated' }, () => {
         if (document.visibilityState === 'visible') fetchRtRef.current()
       })
       .subscribe((status) => {
