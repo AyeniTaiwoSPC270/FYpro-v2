@@ -261,17 +261,18 @@ export function AppProvider({ children }) {
 
   // Mirrors vanilla State.studentContext getter — passed to every API call
   const studentContext = useMemo(() => ({
-    university:   state.university,
-    faculty:      state.faculty,
-    department:   state.department,
-    level:        state.level,
+    university:     state.university,
+    faculty:        state.faculty,
+    department:     state.department,
+    level:          state.level,
     validatedTopic: state.validatedTopic || state.roughTopic,
-    methodology:  state.chosenMethodology,
-    chapterCount: state.chapterStructure?.total_chapters ?? null,
+    methodology:    state.chosenMethodology,
+    chapterCount:   state.chapterStructure?.total_chapters ?? null,
+    totalWordCount: state.chapterStructure?.total_word_count ?? state.totalWordCount ?? null,
   }), [
     state.university, state.faculty, state.department, state.level,
     state.validatedTopic, state.roughTopic, state.chosenMethodology,
-    state.chapterStructure,
+    state.chapterStructure, state.totalWordCount,
   ])
 
   const [_onboardedFlag, setOnboardedFlag] = useState(() => localStorage.getItem('isOnboarded') === 'true')

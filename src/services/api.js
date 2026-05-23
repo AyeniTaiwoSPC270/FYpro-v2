@@ -407,6 +407,17 @@ export async function buildWritingPlan(studentCtx, submissionDeadline, currentDa
     system,
     [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
   );
+
+  // Safety net: enforce actual word count from Chapter Architect regardless of what Claude returned.
+  const actualWords = previousSteps.chapterStructure?.total_word_count ?? studentCtx.totalWordCount ?? null;
+  if (actualWords && actualWords > 0) {
+    result.total_words = actualWords;
+    const writingWeeks = Array.isArray(result.weeks)
+      ? result.weeks.filter(w => !w.is_buffer_week && !w.is_holiday_week).length
+      : result.total_weeks || 1;
+    result.weekly_average = Math.round(actualWords / Math.max(writingWeeks, 1));
+  }
+
   if (isFree && Array.isArray(result.weeks)) {
     result.weeks = result.weeks.slice(0, 4);
   }

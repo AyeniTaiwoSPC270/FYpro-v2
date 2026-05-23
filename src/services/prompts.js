@@ -14,7 +14,8 @@ Department: ${student.department}
 Level: ${student.level}
 Validated Topic: ${student.validatedTopic || "Not yet validated"}
 Methodology: ${student.methodology || "Not yet determined"}
-Chapter Count: ${student.chapterCount || "Not yet determined"}`.trim();
+Chapter Count: ${student.chapterCount || "Not yet determined"}
+Total Project Word Count: ${student.totalWordCount || "Not yet determined"}`.trim();
 }
 
 export function buildPreviousStepsContext(previousSteps = {}) {
@@ -297,6 +298,7 @@ CRITICAL: Return ONLY valid JSON. No prose. No markdown.
 `.trim();
 
 export function buildWritingPlannerPrompt(student, submissionDeadline, currentDate) {
+  const wordCount = student.totalWordCount || 18000;
   return `
 ${buildStudentContext(student)}
 Today's Date: ${currentDate}
@@ -306,12 +308,13 @@ Generate a realistic week-by-week writing plan from today until the deadline.
 Account for Nigerian public holidays and likely university exam periods in your scheduling.
 Weight the Literature Review and Methodology chapters with more time than Introduction or Conclusion.
 Reserve the final 1-2 weeks before deadline as buffer for review, formatting, and submission preparation.
+CRITICAL: The total project word count is ${wordCount} words (from the student's Chapter Architect above). You MUST use exactly ${wordCount} as the value for total_words. Distribute this across writing weeks only — buffer and holiday weeks have word_target of 0.
 
 Return ONLY this exact JSON structure:
 
 {
   "total_weeks": number,
-  "total_words": number,
+  "total_words": ${wordCount},
   "weekly_average": number,
   "buffer_weeks": number,
   "weeks": [
