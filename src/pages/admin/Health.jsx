@@ -428,6 +428,110 @@ function LiveFeed({ events }) {
   )
 }
 
+// ── DiagnoseResult — structured display for diagnose-user response ──────
+const RL_FEATURE_LABELS = {
+  claude: 'Claude API', defense: 'Defense Sim', supervisor: 'Supervisor',
+  'supervisor-prep': 'Supervisor', reviewer: 'Project Reviewer',
+  research: 'Research', auth: 'Auth', admin: 'Admin',
+}
+
+function parseRlKey(key) {
+  const parts = key.split(':')
+  const featureRaw = parts[2] || 'unknown'
+  const featureLabel = RL_FEATURE_LABELS[featureRaw] || featureRaw
+  const dateMatch = key.match(/(\d{4}-\d{2}-\d{2})/)
+  return { feature: featureLabel, expiry: dateMatch ? dateMatch[1] : 'today' }
+}
+
+function DiagnoseResult({ result }) {
+  const { user_rl_keys = [], ip_rl_keys = [], last_ip, cap_hit, cap_pct, spent_usd, cap_usd, is_blocked, block_reasons = [] } = result
+  const allRlKeys = [...user_rl_keys, ...ip_rl_keys]
+
+  const sectionTitle = {
+    fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700,
+    color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em',
+    marginBottom: 10, paddingBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.06)',
+  }
+  const row = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
+  }
+  const lbl = { fontFamily: "'Poppins',sans-serif", fontSize: 12, color: MUTED }
+  const val = { fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: WHITE }
+
+  function KeyRow({ keyStr }) {
+    const { feature, expiry } = parseRlKey(keyStr)
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 0 5px 8px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:AMBER }}>{feature}</span>
+        <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:MUTED }}>{expiry}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Rate Limit Keys */}
+      <div style={{ marginBottom:20 }}>
+        <div style={sectionTitle}>Rate Limit Keys</div>
+        {allRlKeys.length === 0 ? (
+          <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED, paddingLeft:8 }}>No active rate limit keys</div>
+        ) : allRlKeys.map((k, i) => <KeyRow key={i} keyStr={k} />)}
+      </div>
+
+      {/* User Status */}
+      <div style={{ marginBottom:20 }}>
+        <div style={sectionTitle}>User Status</div>
+        <div style={row}>
+          <span style={lbl}>Is Blocked</span>
+          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, fontWeight:700, color:is_blocked?RED:GREEN, background:is_blocked?'rgba(220,38,38,0.12)':'rgba(22,163,74,0.12)', border:`1px solid ${is_blocked?'rgba(220,38,38,0.3)':'rgba(22,163,74,0.3)'}`, borderRadius:999, padding:'2px 10px' }}>
+            {is_blocked ? 'YES' : 'NO'}
+          </span>
+        </div>
+        {block_reasons.length > 0 && (
+          <div style={{ padding:'8px 0 8px 8px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ ...lbl, marginBottom:6 }}>Block Reasons</div>
+            {block_reasons.map((r, i) => (
+              <div key={i} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:'#F87171', padding:'2px 0' }}>· {r}</div>
+            ))}
+          </div>
+        )}
+        <div style={row}>
+          <span style={lbl}>Cap Hit</span>
+          <span style={{ ...val, color: cap_hit ? RED : GREEN }}>{cap_hit ? 'YES' : 'NO'}</span>
+        </div>
+        <div style={row}>
+          <span style={lbl}>Cap Percentage</span>
+          <span style={{ ...val, color: (cap_pct||0) >= 80 ? RED : (cap_pct||0) >= 50 ? AMBER : WHITE }}>{cap_pct ?? 0}%</span>
+        </div>
+        <div style={row}>
+          <span style={lbl}>Spent USD</span>
+          <span style={val}>${(spent_usd || 0).toFixed(2)}</span>
+        </div>
+        <div style={row}>
+          <span style={lbl}>Cap USD</span>
+          <span style={val}>${(cap_usd || 0).toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* IP Info */}
+      <div style={{ marginBottom:8 }}>
+        <div style={sectionTitle}>IP Info</div>
+        <div style={row}>
+          <span style={lbl}>Last IP</span>
+          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color: last_ip ? WHITE : MUTED }}>{last_ip || 'None'}</span>
+        </div>
+        <div style={{ padding:'8px 0 0' }}>
+          <div style={{ ...lbl, marginBottom:6 }}>IP RL Keys</div>
+          {ip_rl_keys.length === 0 ? (
+            <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:MUTED, paddingLeft:8 }}>None</div>
+          ) : ip_rl_keys.map((k, i) => <KeyRow key={i} keyStr={k} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const POLL_OVERVIEW = 30 * 1000   // overview / users tab
 const POLL_VITALS   = 15 * 1000   // vitals tab
 const POLL_FEED     = 10 * 1000   // live activity feed (failures) when overview active
@@ -654,7 +758,7 @@ function AdminHealth() {
         // Revenue today — sum of successful payment amounts since midnight UTC
         supabase.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayStart),
         // Live feed: recent signups
-        supabase.from('users').select('id, created_at').order('created_at', { ascending: false }).limit(7),
+        supabase.from('users').select('id, email, created_at').order('created_at', { ascending: false }).limit(7),
         // Live feed: recent successful payments
         supabase.from('payments').select('user_id, created_at, amount_kobo, tier').eq('status', 'success').order('created_at', { ascending: false }).limit(7),
         // Live feed: recent generation failures
@@ -684,19 +788,36 @@ function AdminHealth() {
         revenueTodayNgn = revenueRes.value.data.reduce((s, p) => s + (p.amount_kobo || 0), 0) / 100
       }
 
+      // Batch-fetch emails for payment user_ids so the feed shows email prefixes
+      let paymentEmailMap = {}
+      if (payFeedRes.status === 'fulfilled' && !payFeedRes.value.error && payFeedRes.value.data?.length) {
+        const uids = [...new Set(payFeedRes.value.data.map(p => p.user_id).filter(Boolean))]
+        if (uids.length > 0) {
+          try {
+            const { data: userRows } = await supabase.from('users').select('id, email').in('id', uids)
+            if (userRows) userRows.forEach(u => { paymentEmailMap[u.id] = u.email })
+          } catch (_) {}
+        }
+      }
+
       const feedEvents = []
       if (signupsRes.status === 'fulfilled' && !signupsRes.value.error && signupsRes.value.data) {
         signupsRes.value.data.forEach(u => feedEvents.push({
           type: 'signup', label: 'New signup',
-          user_prefix: u.id.slice(0, 8), time: u.created_at,
+          user_prefix: u.email ? u.email.split('@')[0] : u.id.slice(0, 8),
+          time: u.created_at,
         }))
       }
       if (payFeedRes.status === 'fulfilled' && !payFeedRes.value.error && payFeedRes.value.data) {
-        payFeedRes.value.data.forEach(p => feedEvents.push({
-          type: 'payment',
-          label: `${p.tier || 'payment'} — ₦${Math.round((p.amount_kobo || 0) / 100).toLocaleString()}`,
-          user_prefix: (p.user_id || '—').slice(0, 8), time: p.created_at,
-        }))
+        payFeedRes.value.data.forEach(p => {
+          const email = paymentEmailMap[p.user_id]
+          feedEvents.push({
+            type: 'payment',
+            label: `${p.tier || 'payment'} — ₦${Math.round((p.amount_kobo || 0) / 100).toLocaleString()}`,
+            user_prefix: email ? email.split('@')[0] : (p.user_id || '—').slice(0, 8),
+            time: p.created_at,
+          })
+        })
       }
       if (failFeedRes.status === 'fulfilled' && !failFeedRes.value.error && failFeedRes.value.data) {
         failFeedRes.value.data.forEach(f => feedEvents.push({
@@ -2186,9 +2307,7 @@ function AdminHealth() {
             ) : diagnoseModal.error ? (
               <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:RED }}>{diagnoseModal.error}</div>
             ) : diagnoseModal.result ? (
-              <pre style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:DIM, background:'rgba(0,0,0,0.3)', borderRadius:8, padding:16, overflowX:'auto', whiteSpace:'pre-wrap', wordBreak:'break-all' }}>
-                {JSON.stringify(diagnoseModal.result, null, 2)}
-              </pre>
+              <DiagnoseResult result={diagnoseModal.result} />
             ) : null}
             <button onClick={() => setDiagnoseModal(null)} className="mc-action-btn" style={{ marginTop:20 }}>Close</button>
           </div>
