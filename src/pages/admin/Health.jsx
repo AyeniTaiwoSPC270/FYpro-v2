@@ -735,8 +735,11 @@ function AdminHealth() {
   // access (migration 0018 must be applied and admin seeded into admin_users).
   const fetchRtMetrics = useCallback(async () => {
     console.log('[fetchRtMetrics] called')
-    if (!isAdmin) return
-    if (isFetchingRtRef.current) return
+    console.log('[fetchRtMetrics] isFetchingRtRef:', isFetchingRtRef.current)
+    if (!isAdmin) { console.log('[fetchRtMetrics] bailing — isAdmin falsy'); return }
+    // Guard removed: reads are safe to overlap; last setRtMetrics wins.
+    // The old isFetchingRtRef guard was causing all calls after the first to bail permanently
+    // if the ref got stuck true (e.g. slow initial fetch + rapid realtime events).
     isFetchingRtRef.current = true
     try {
       const todayUTC      = new Date().toISOString().split('T')[0]   // 'YYYY-MM-DD'
@@ -766,6 +769,9 @@ function AdminHealth() {
         // Live feed: recent generation failures
         supabase.from('generation_failures').select('created_at, feature, error_message').order('created_at', { ascending: false }).limit(7),
       ])
+
+      console.log('[fetchRtMetrics] requests today raw:', usageRes)
+      console.log('[fetchRtMetrics] latency raw:', latencyRes)
 
       const requestsToday = (usageRes.status === 'fulfilled' && !usageRes.value.error)
         ? (usageRes.value.data?.request_count ?? 0) : null
@@ -830,6 +836,7 @@ function AdminHealth() {
       }
       feedEvents.sort((a, b) => new Date(b.time) - new Date(a.time))
 
+      console.log('[fetchRtMetrics] setting metrics:', { requestsToday, avgLatencyMs, activeSessions })
       setRtMetrics({
         requests_today:    requestsToday,
         active_sessions:   activeSessions,
