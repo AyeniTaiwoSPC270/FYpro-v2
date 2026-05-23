@@ -273,7 +273,7 @@ function XIcon() {
 
 // ─── Info Card ────────────────────────────────────────────────────────────────
 
-function InfoCard({ icon, title, value, note }) {
+function InfoCard({ icon, title, value, note, href }) {
   return (
     <motion.div
       whileHover={{ y: -3, borderColor: 'rgba(0,102,255,0.35)', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', transition: { duration: 0.2 } }}
@@ -281,7 +281,13 @@ function InfoCard({ icon, title, value, note }) {
     >
       {icon}
       <div className="text-white font-semibold mt-3 font-sans">{title}</div>
-      <div className="text-blue-400 text-sm mt-1 font-sans hover:text-blue-300 cursor-pointer transition-colors duration-150">{value}</div>
+      <div className="text-blue-400 text-sm mt-1 font-sans hover:text-blue-300 cursor-pointer transition-colors duration-150">
+        {href ? (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="no-underline text-inherit hover:text-blue-300 transition-colors duration-150">
+            {value}
+          </a>
+        ) : value}
+      </div>
       <div className="text-slate-500 text-xs mt-1 font-sans">{note}</div>
     </motion.div>
   )
@@ -504,6 +510,7 @@ export default function Contact() {
                 title="Join the community"
                 value="FYPro Student Community"
                 note="Connect with other final year students"
+                href="https://whatsapp.com/channel/0029VbCzsDVISTkPF0JrxO14"
               />
             </Reveal>
             <Reveal delay={0.25}>
