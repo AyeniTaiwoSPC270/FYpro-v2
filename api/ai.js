@@ -85,7 +85,10 @@ async function handleGeneral(req, res) {
 
   if (cached) {
     const userId = extractUserId(req);
-    (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId }) } catch {} })();
+    (async () => {
+      const { error } = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId });
+      if (error) console.error('[ai/general] response_times cache-hit insert failed:', error.message, error.code);
+    })();
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
@@ -111,7 +114,10 @@ async function handleGeneral(req, res) {
     if (response.ok) {
       const duration = Date.now() - start;
       const userId   = extractUserId(req);
-      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId }) } catch {} })();
+      (async () => {
+        const { error } = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId });
+        if (error) console.error('[ai/general] response_times insert failed:', error.message, error.code);
+      })();
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
 
@@ -225,7 +231,10 @@ async function handleDefense(req, res) {
     if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     if (response.ok) {
       const duration = Date.now() - start;
-      (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id }) } catch {} })();
+      (async () => {
+        const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id });
+        if (error) console.error('[ai/defense] response_times insert failed:', error.message, error.code);
+      })();
     }
     return res.status(response.status).json(data);
   } catch (err) {
@@ -315,7 +324,10 @@ async function handleSupervisorPrep(req, res) {
 
     const duration = Date.now() - start;
     const userId   = extractUserId(req);
-    (async () => { try { await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: userId }) } catch {} })();
+    (async () => {
+      const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: userId });
+      if (error) console.error('[ai/supervisor-prep] response_times insert failed:', error.message, error.code);
+    })();
 
     const text = data.content?.[0]?.text ?? '';
     let questions;
