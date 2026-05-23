@@ -94,7 +94,7 @@ async function handleValidate(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
 
     if (response.ok && data.content?.[0]?.text) {
       try {
@@ -208,7 +208,7 @@ async function handleLitMap(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
 
     if (response.ok && data.content?.[0]?.text) {
       try {

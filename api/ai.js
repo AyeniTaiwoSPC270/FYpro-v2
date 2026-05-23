@@ -109,7 +109,7 @@ async function handleGeneral(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
 
     if (response.ok) {
       const duration = Date.now() - start;
@@ -228,7 +228,7 @@ async function handleDefense(req, res) {
 
     const data = await response.json();
     console.log('[ai/defense] Anthropic status:', response.status);
-    if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     if (response.ok) {
       const duration = Date.now() - start;
       (async () => {
@@ -316,7 +316,7 @@ async function handleSupervisorPrep(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error?.message || 'Anthropic error' });

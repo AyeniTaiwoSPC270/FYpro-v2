@@ -9,7 +9,8 @@ function todayDate() {
 }
 
 /**
- * Fire-and-forget — call after every Claude response.
+ * Awaitable — call with `await` before sending the response, otherwise
+ * Vercel terminates the function before the Supabase write completes.
  * Never throws; logs errors only.
  * Primary path: supabaseAdmin.rpc('increment_daily_usage') — atomic, race-safe.
  * Fallback path: direct SELECT + UPDATE/INSERT — non-atomic but ensures rows

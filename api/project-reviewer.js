@@ -114,7 +114,7 @@ const handler = async (req, res) => {
     const data = await response.json();
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
-      trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     }
 
     return res.status(response.status).json(data);
