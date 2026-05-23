@@ -734,6 +734,7 @@ function AdminHealth() {
   // Preferred over /api/admin for these fields; falls back gracefully if RLS blocks
   // access (migration 0018 must be applied and admin seeded into admin_users).
   const fetchRtMetrics = useCallback(async () => {
+    console.log('[fetchRtMetrics] called')
     if (!isAdmin) return
     if (isFetchingRtRef.current) return
     isFetchingRtRef.current = true
@@ -963,6 +964,7 @@ function AdminHealth() {
   useEffect(() => {
     if (!isAdmin || !session) return
     rtPollTimerRef.current = setInterval(() => {
+      console.log('[poll] interval firing, isAdmin:', isAdmin)
       if (document.visibilityState !== 'visible') return
       fetchRtRef.current()
     }, POLL_VITALS)
@@ -1008,6 +1010,7 @@ function AdminHealth() {
         if (document.visibilityState === 'visible') { loadVitalsRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_usage' }, () => {
+        console.log('[realtime] daily_usage change received')
         if (document.visibilityState === 'visible') { loadVitalsRef.current(); fetchRtRef.current() }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'generation_failures' }, () => {
