@@ -99,6 +99,7 @@ const handler = async (req, res) => {
       }
     }
 
+    const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -115,6 +116,12 @@ const handler = async (req, res) => {
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
       await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    }
+
+    if (response.ok) {
+      const duration = Date.now() - start;
+      supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id })
+        .then(({ error }) => { if (error) console.error('[project-reviewer] response_times insert failed:', error.message); });
     }
 
     return res.status(response.status).json(data);

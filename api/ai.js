@@ -112,9 +112,8 @@ async function handleGeneral(req, res) {
   const cached = await getCached(cacheKey).catch(() => null);
 
   if (cached) {
-    const userId = extractUserId(req);
     (async () => {
-      const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: userId });
+      const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: user.id });
       if (error) console.error('[ai/general] response_times cache-hit insert failed:', error.message, error.code);
     })();
     res.setHeader('X-Cache', 'HIT');
@@ -140,9 +139,8 @@ async function handleGeneral(req, res) {
 
     if (response.ok) {
       const duration = Date.now() - start;
-      const userId   = extractUserId(req);
       (async () => {
-        const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: userId });
+        const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: user.id });
         if (error) console.error('[ai/general] response_times insert failed:', error.message, error.code);
       })();
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
@@ -333,6 +331,8 @@ async function handleSupervisorPrep(req, res) {
 
   if (cached) {
     res.setHeader('X-Cache', 'HIT');
+    supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: 0, user_id: user.id })
+      .then(({ error }) => { if (error) console.error('[ai/supervisor-prep] response_times cache-hit insert failed:', error.message); });
     return res.status(200).json(cached);
   }
 
