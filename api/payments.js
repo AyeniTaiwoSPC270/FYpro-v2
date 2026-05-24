@@ -299,17 +299,17 @@ async function handleVerify(req, res) {
           .single();
 
         if (payment) {
-          const { data: user } = await supabaseAdmin
+          const { data: dbUser } = await supabaseAdmin
             .from('users')
             .select('email')
             .eq('id', payment.user_id)
             .single();
 
-          if (user?.email) {
+          if (dbUser?.email) {
             const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
             const amountNGN = payment.amount_kobo / 100;
-            await sendReceiptEmail(user.email, planName, amountNGN, reference);
-            sendTelegramAlertOnce(`💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`, `tg:payment:${reference}`)
+            await sendReceiptEmail(dbUser.email, planName, amountNGN, reference);
+            sendTelegramAlertOnce(`💰 Payment received: ${dbUser.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`, `tg:payment:${reference}`)
           }
         }
       } catch (emailErr) {

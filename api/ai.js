@@ -9,6 +9,7 @@ import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
+import { isAllowedGeneralStep, getGeneralSystemPrompt } from './_lib/ai-prompts.js';
 
 export const config = { maxDuration: 60 };
 
@@ -34,31 +35,34 @@ async function handleGeneral(req, res) {
   }
 
   const {
-    system,
     messages,
     max_tokens: rawMaxTokens = 2000,
     model: rawModel = 'claude-sonnet-4-6',
     step,
+    previousSteps,
   } = req.body || {};
+
+  // Reject unknown steps immediately — closes the prompt injection surface.
+  // Client can no longer send an arbitrary system prompt; the server resolves one by step name.
+  if (!isAllowedGeneralStep(step)) {
+    return res.status(400).json({ error: 'Invalid or missing step.' });
+  }
 
   const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
   const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
-  const prefix      = step || 'general';
   const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
   const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-  const cacheKey    = buildCacheKey(prefix, system ?? '', userPrompt);
-  const ttl         = TTL_BY_STEP[prefix] ?? 21600;
 
-  let authResult, rl, cap, cached;
+  // Phase 1 — auth + rate limit + daily cap in parallel (none depend on each other)
+  let authResult, rl, cap;
   try {
-    [authResult, rl, cap, cached] = await Promise.all([
+    [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
       rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' }).catch(rlErr => {
         console.error('[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
         return { allowed: true, reason: '' };
       }),
       checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
-      getCached(cacheKey).catch(() => null),
     ]);
   } catch (authErr) {
     console.error('[ai/general] auth.getUser threw:', authErr.message);
@@ -76,17 +80,36 @@ async function handleGeneral(req, res) {
 
   const today = new Date().toISOString().slice(0, 10);
   if (!cap.allowed) {
-    sendTelegramAlertOnce(`⚠️ Spend cap hit: $${cap.spent.toFixed(2)} spent today. Claude requests blocked.`, `tg:spend:cap:${today}`)
+    sendTelegramAlertOnce(`⚠️ Spend cap hit: $${cap.spent.toFixed(2)} spent today. Claude requests blocked.`, `tg:spend:cap:${today}`);
     return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
   }
   if (cap.spent / cap.cap >= 0.8) {
-    sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`)
+    sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`);
   }
+
+  // Phase 2 — fetch entitlements (sequential: needs verified user.id from phase 1)
+  const { data: entData } = await supabaseAdmin
+    .from('user_entitlements')
+    .select('paid_features')
+    .eq('user_id', user.id)
+    .maybeSingle()
+    .catch(() => ({ data: null }));
+
+  const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
+  const isPaid = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
+
+  // System prompt resolved server-side — client never controls this
+  const system   = getGeneralSystemPrompt(step, { isPaid, previousSteps });
+  const cacheKey = buildCacheKey(step, system, userPrompt);
+  const ttl      = TTL_BY_STEP[step] ?? 21600;
+
+  // Phase 3 — cache check (sequential: needs cache key from phase 2)
+  const cached = await getCached(cacheKey).catch(() => null);
 
   if (cached) {
     const userId = extractUserId(req);
     (async () => {
-      const { error } = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: 0, user_id: userId });
+      const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: userId });
       if (error) console.error('[ai/general] response_times cache-hit insert failed:', error.message, error.code);
     })();
     res.setHeader('X-Cache', 'HIT');
@@ -94,7 +117,6 @@ async function handleGeneral(req, res) {
   }
 
   try {
-
     const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -115,7 +137,7 @@ async function handleGeneral(req, res) {
       const duration = Date.now() - start;
       const userId   = extractUserId(req);
       (async () => {
-        const { error } = await supabaseAdmin.from('response_times').insert({ feature: prefix, duration_ms: duration, user_id: userId });
+        const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: userId });
         if (error) console.error('[ai/general] response_times insert failed:', error.message, error.code);
       })();
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
@@ -130,9 +152,8 @@ async function handleGeneral(req, res) {
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
     console.error('[ai/general] error:', err.message);
-    const feature  = req.body?.step || 'general'
-    const userId   = extractUserId(req) || 'anonymous'
-    await sendTelegramAlert(`🔴 Generation failed: ${feature} for ${userId} - ${err.message}`)
+    const userId = extractUserId(req) || 'anonymous';
+    await sendTelegramAlert(`🔴 Generation failed: ${step} for ${userId} - ${err.message}`);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
@@ -263,6 +284,10 @@ Format: return ONLY a JSON array of 8 strings. No preamble. No markdown.`;
 const SUPERVISOR_PREP_TTL = 21600; // 6 hours
 
 async function handleSupervisorPrep(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
@@ -272,20 +297,31 @@ async function handleSupervisorPrep(req, res) {
     return res.status(400).json({ error: 'Project stage is required.' });
   }
 
-  const fbWords = !lastFeedback ? 0 : lastFeedback.trim().split(/\s+/).length;
-  const stWords = !stuckOn     ? 0 : stuckOn.trim().split(/\s+/).length;
-  if (fbWords > 500 || stWords > 500) {
+  const stageWords = stage.trim().split(/\s+/).length;
+  const fbWords    = !lastFeedback ? 0 : lastFeedback.trim().split(/\s+/).length;
+  const stWords    = !stuckOn      ? 0 : stuckOn.trim().split(/\s+/).length;
+  if (stageWords > 100 || fbWords > 500 || stWords > 500) {
     return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
   }
 
   const userPrompt = `Stage: ${stage.trim()}. Last feedback: ${lastFeedback || 'none'}. Stuck on: ${stuckOn || 'nothing specific'}.`;
   const cacheKey   = buildCacheKey('supervisor-prep', SUPERVISOR_PREP_SYSTEM, userPrompt);
 
-  const [rl, cap, cached] = await Promise.all([
-    rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' }).catch(() => ({ allowed: true, reason: '' })),
-    checkDailyCap().catch(() => ({ allowed: true })),
-    getCached(cacheKey).catch(() => null),
-  ]);
+  let authResult, rl, cap, cached;
+  try {
+    [authResult, rl, cap, cached] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' }).catch(() => ({ allowed: true, reason: '' })),
+      checkDailyCap().catch(() => ({ allowed: true })),
+      getCached(cacheKey).catch(() => null),
+    ]);
+  } catch (err) {
+    console.error('[ai/supervisor-prep] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
 
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
@@ -323,9 +359,8 @@ async function handleSupervisorPrep(req, res) {
     }
 
     const duration = Date.now() - start;
-    const userId   = extractUserId(req);
     (async () => {
-      const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: userId });
+      const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: user.id });
       if (error) console.error('[ai/supervisor-prep] response_times insert failed:', error.message, error.code);
     })();
 

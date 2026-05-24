@@ -8,6 +8,7 @@ import { checkDailyCap, trackUsage }      from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
+import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts.js';
 
 export const config = { maxDuration: 60 };
 
@@ -21,7 +22,7 @@ async function handleValidate(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
-  const { system, messages, max_tokens = 2000, topic } = req.body || {};
+  const { messages, max_tokens = 2000, topic } = req.body || {};
 
   if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
     return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
@@ -33,7 +34,8 @@ async function handleValidate(req, res) {
 
   const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
   const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-  const claudeKey   = buildCacheKey('topic-validator', system ?? '', userPrompt);
+  // Cache key uses the server-side system prompt — client can no longer influence it
+  const claudeKey   = buildCacheKey('topic-validator', TOPIC_VALIDATOR_SYSTEM, userPrompt);
 
   let authResult, rl, cap, claudeCached;
   try {
@@ -62,7 +64,7 @@ async function handleValidate(req, res) {
 
     const papersResult = await fetchPapersForValidation(topic.trim());
 
-    let augmentedSystem = system ?? '';
+    let augmentedSystem = TOPIC_VALIDATOR_SYSTEM;
     if (papersResult.papers.length > 0) {
       const papersList = papersResult.papers
         .map((p, i) => {
@@ -130,7 +132,7 @@ async function handleLitMap(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
-  const { system, messages, max_tokens = 3000, topic } = req.body || {};
+  const { messages, max_tokens = 3000, topic } = req.body || {};
 
   if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
     return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
@@ -138,7 +140,8 @@ async function handleLitMap(req, res) {
 
   const userContent = messages?.find(m => m.role === 'user')?.content ?? '';
   const userPrompt  = typeof userContent === 'string' ? userContent : JSON.stringify(userContent);
-  const claudeKey   = buildCacheKey('literature-map', system ?? '', userPrompt);
+  // Cache key uses the server-side system prompt — client can no longer influence it
+  const claudeKey   = buildCacheKey('literature-map', LITERATURE_MAP_SYSTEM, userPrompt);
 
   let authResult, rl, cap, claudeCached;
   try {
@@ -188,7 +191,7 @@ async function handleLitMap(req, res) {
       })
       .join('\n');
 
-    const augmentedSystem = (system ?? '') +
+    const augmentedSystem = LITERATURE_MAP_SYSTEM +
       `\n\nReal papers in this area:\n${papersList}\n\n` +
       `Cluster these real papers into 4–6 themes. Use ONLY the papers provided. ` +
       `Do NOT invent papers or add citations not in this list. ` +

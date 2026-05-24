@@ -1,15 +1,15 @@
 import {
-  buildTopicValidatorPrompt, TOPIC_VALIDATOR_SYSTEM,
-  buildChapterArchitectPrompt, CHAPTER_ARCHITECT_SYSTEM,
-  buildMethodologyAdvisorPrompt, METHODOLOGY_ADVISOR_SYSTEM,
-  buildInstrumentBuilderPrompt, INSTRUMENT_BUILDER_SYSTEM,
-  buildWritingPlannerPrompt, WRITING_PLANNER_SYSTEM,
-  buildSupervisorEmailPrompt, SUPERVISOR_EMAIL_SYSTEM,
+  buildTopicValidatorPrompt,
+  buildChapterArchitectPrompt,
+  buildMethodologyAdvisorPrompt,
+  buildInstrumentBuilderPrompt,
+  buildWritingPlannerPrompt,
+  buildSupervisorEmailPrompt,
   buildRedFlagPrompt, RED_FLAG_DETECTOR_SYSTEM,
   buildThreeExaminerPanelSystem, THREE_EXAMINER_FIRST_QUESTION_PROMPT,
   buildThreeExaminerFollowUpPrompt, THREE_EXAMINER_SUMMARY_PROMPT,
-  buildAbstractGeneratorPrompt, ABSTRACT_GENERATOR_SYSTEM,
-  buildLiteratureMapPrompt, LITERATURE_MAP_SYSTEM,
+  buildAbstractGeneratorPrompt,
+  buildLiteratureMapPrompt,
   buildProjectReviewerPrompt, PROJECT_REVIEWER_SYSTEM,
   buildProjectReviewerPDFPrompt,
   buildDocumentRelevanceCheckPrompt, DOCUMENT_RELEVANCE_CHECK_SYSTEM,
@@ -29,15 +29,14 @@ async function getAccessToken() {
   return session?.access_token ?? null;
 }
 
-async function callClaude(system, messages, maxTokens = 2000, step = null) {
+async function callClaude(step, messages, maxTokens = 2000, extraParams = {}) {
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
     err.code = 'UNAUTHORIZED';
     throw err;
   }
-  const body = { system, messages, max_tokens: maxTokens };
-  if (step) body.step = step;
+  const body = { step, messages, max_tokens: maxTokens, ...extraParams };
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
@@ -100,7 +99,7 @@ async function callClaude(system, messages, maxTokens = 2000, step = null) {
 }
 
 // Calls /api/research?action=validate — passes raw topic for paper fetching
-async function callTopicValidator(system, messages, topic) {
+async function callTopicValidator(messages, topic) {
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -112,7 +111,7 @@ async function callTopicValidator(system, messages, topic) {
   const res = await fetch(TOPIC_VALIDATOR_ENDPOINT, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ system, messages, max_tokens: 2000, topic }),
+    body: JSON.stringify({ messages, max_tokens: 2000, topic }),
   });
 
   if (res.status === 401) {
@@ -157,7 +156,7 @@ async function callTopicValidator(system, messages, topic) {
 }
 
 // Calls /api/research?action=lit-map — passes topic for real-paper fetching; handles no_papers_found
-async function callLiteratureMap(system, messages, topic) {
+async function callLiteratureMap(messages, topic) {
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -169,7 +168,7 @@ async function callLiteratureMap(system, messages, topic) {
   const res = await fetch(LITERATURE_MAP_ENDPOINT, {
     method:  'POST',
     headers,
-    body:    JSON.stringify({ system, messages, max_tokens: 3000, topic }),
+    body:    JSON.stringify({ messages, max_tokens: 3000, topic }),
   });
 
   if (res.status === 401) {
@@ -339,7 +338,6 @@ async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000, e
 // ── Step 1: Topic Validator ──────────────────────────────────────────────────
 export async function validateTopic(studentCtx, roughTopic) {
   return callTopicValidator(
-    TOPIC_VALIDATOR_SYSTEM,
     [{ role: 'user', content: buildTopicValidatorPrompt(studentCtx, roughTopic) }],
     roughTopic
   );
@@ -347,12 +345,9 @@ export async function validateTopic(studentCtx, roughTopic) {
 
 // ── Step 2: Chapter Architect ────────────────────────────────────────────────
 export async function buildChapters(studentCtx, validatedTopic, structureType, totalWordCount, features = []) {
-  const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
-  const system = isFree
-    ? CHAPTER_ARCHITECT_SYSTEM + '\n\nProvide a basic chapter outline only. List chapter titles and one sentence per chapter. Do not provide detailed breakdowns, subsections, or content guidance.'
-    : CHAPTER_ARCHITECT_SYSTEM;
+  // Free vs paid system prompt is now resolved server-side from the user's JWT entitlements
   return callClaude(
-    system,
+    'chapter-architect',
     [{ role: 'user', content: buildChapterArchitectPrompt(studentCtx, structureType, totalWordCount) }],
     3000
   );
@@ -361,7 +356,7 @@ export async function buildChapters(studentCtx, validatedTopic, structureType, t
 // ── Step 2 companion: Abstract Generator ────────────────────────────────────
 export async function generateAbstract(studentCtx, validatedTopic, chapterStructure) {
   return callClaude(
-    ABSTRACT_GENERATOR_SYSTEM,
+    'abstract-generator',
     [{ role: 'user', content: buildAbstractGeneratorPrompt(studentCtx, chapterStructure) }]
   );
 }
@@ -369,7 +364,6 @@ export async function generateAbstract(studentCtx, validatedTopic, chapterStruct
 // ── Step 2 companion: Literature Map ─────────────────────────────────────────
 export async function generateLiteratureMap(studentCtx, validatedTopic, chapterStructure) {
   return callLiteratureMap(
-    LITERATURE_MAP_SYSTEM,
     [{ role: 'user', content: buildLiteratureMapPrompt(studentCtx, chapterStructure) }],
     validatedTopic
   );
@@ -377,22 +371,18 @@ export async function generateLiteratureMap(studentCtx, validatedTopic, chapterS
 
 // ── Step 3: Methodology Advisor ──────────────────────────────────────────────
 export async function adviseMethodology(studentCtx, validatedTopic, chapterStructure, features = []) {
-  const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
-  const system = isFree
-    ? METHODOLOGY_ADVISOR_SYSTEM + '\n\nProvide a methodology recommendation only. State which methodology is most suitable and give one paragraph of reasoning. Do not include the defense_answer_template field in your JSON response — omit it entirely.'
-    : METHODOLOGY_ADVISOR_SYSTEM;
+  // Free vs paid system prompt is now resolved server-side from the user's JWT entitlements
   return callClaude(
-    system,
+    'methodology-advisor',
     [{ role: 'user', content: buildMethodologyAdvisorPrompt(studentCtx) }],
-    4000,
-    'methodology-advisor'
+    4000
   );
 }
 
 // ── Step 3 inline: Instrument Builder ───────────────────────────────────────
 export async function buildInstrument(studentCtx, validatedTopic, chosenMethodology, chapterStructure) {
   return callClaude(
-    INSTRUMENT_BUILDER_SYSTEM,
+    'instrument-builder',
     [{ role: 'user', content: buildInstrumentBuilderPrompt(studentCtx, chosenMethodology) }],
     4000
   );
@@ -401,11 +391,12 @@ export async function buildInstrument(studentCtx, validatedTopic, chosenMethodol
 // ── Step 4: Writing Planner ──────────────────────────────────────────────────
 export async function buildWritingPlan(studentCtx, submissionDeadline, currentDate, previousSteps = {}, features = []) {
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack');
-  const contextBlock = buildPreviousStepsContext(previousSteps);
-  const system = contextBlock ? contextBlock + '\n\n' + WRITING_PLANNER_SYSTEM : WRITING_PLANNER_SYSTEM;
+  // previousSteps sent as structured data — server builds the context prefix server-side
   const result = await callClaude(
-    system,
-    [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }]
+    'writing-planner',
+    [{ role: 'user', content: buildWritingPlannerPrompt(studentCtx, submissionDeadline, currentDate) }],
+    2000,
+    { previousSteps }
   );
 
   // Safety net: enforce actual word count from Chapter Architect regardless of what Claude returned.
@@ -516,12 +507,23 @@ export async function panelSummary(system, apiMessages) {
 
 // ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────
 export async function prepareSupervisorMeeting(stage, lastFeedback, stuckOn) {
+  const token = await getAccessToken();
+  if (!token) {
+    const err = new Error('Session expired');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
   const res = await fetch('/api/ai?action=supervisor-prep', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ stage, lastFeedback: lastFeedback || '', stuckOn: stuckOn || '' }),
   });
 
+  if (res.status === 401) {
+    const err = new Error('Session expired');
+    err.code = 'UNAUTHORIZED';
+    throw err;
+  }
   if (res.status === 429) {
     const err = new Error('Rate limited');
     err.code = 'RATE_LIMIT';
@@ -546,7 +548,7 @@ export async function prepareSupervisorMeeting(stage, lastFeedback, stuckOn) {
 // ── Bonus: Supervisor Email ──────────────────────────────────────────────────
 export async function generateEmail(studentCtx, validatedTopic, chapterStructure, methodology) {
   return callClaude(
-    SUPERVISOR_EMAIL_SYSTEM,
+    'supervisor-email',
     [{ role: 'user', content: buildSupervisorEmailPrompt(studentCtx, chapterStructure) }]
   );
 }
