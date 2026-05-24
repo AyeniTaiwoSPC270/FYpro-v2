@@ -135,11 +135,12 @@ async function handleGeneral(req, res) {
     if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
 
     if (response.ok) {
-      const duration = Date.now() - start;
-      (async () => {
-        const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: user.id });
-        if (error) console.error('[ai/general] response_times insert failed:', error.message, error.code);
-      })();
+      const duration       = Date.now() - start;
+      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: user.id });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+        console.error('[ai/general] response_times insert failed:', err.message);
+      });
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
 
@@ -251,11 +252,12 @@ async function handleDefense(req, res) {
     console.log('[ai/defense] Anthropic status:', response.status);
     if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
     if (response.ok) {
-      const duration = Date.now() - start;
-      (async () => {
-        const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id });
-        if (error) console.error('[ai/defense] response_times insert failed:', error.message, error.code);
-      })();
+      const duration       = Date.now() - start;
+      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+        console.error('[ai/defense] response_times insert failed:', err.message);
+      });
     }
     return res.status(response.status).json(data);
   } catch (err) {
@@ -359,11 +361,12 @@ async function handleSupervisorPrep(req, res) {
       return res.status(response.status).json({ error: data.error?.message || 'Anthropic error' });
     }
 
-    const duration = Date.now() - start;
-    (async () => {
-      const { error } = await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: user.id });
-      if (error) console.error('[ai/supervisor-prep] response_times insert failed:', error.message, error.code);
-    })();
+    const duration       = Date.now() - start;
+    const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: user.id });
+    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+    await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+      console.error('[ai/supervisor-prep] response_times insert failed:', err.message);
+    });
 
     const text = data.content?.[0]?.text ?? '';
     let questions;
