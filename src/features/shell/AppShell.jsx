@@ -34,6 +34,8 @@ const STEP_COMPONENTS = [
   DefensePrep,
 ]
 
+const STEP_COLORS = ['#0066FF', '#06B6D4', '#F59E0B', '#16A34A', '#8B5CF6', '#DC2626']
+
 const CHECK_PATH = 'M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z'
 const LOCK_PATH  = 'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
@@ -254,7 +256,10 @@ export default function AppShell() {
                   onClick={isAccessible ? () => { setShowSupervisorEmail(false); navigateStep(i) } : undefined}
                   title={isAccessible ? `Go to ${name}` : undefined}
                 >
-                  <div className="step-list__badge">
+                  <div
+                    className="step-list__badge"
+                    style={(isCompleted || isCurrent) ? { background: STEP_COLORS[i], borderColor: STEP_COLORS[i] } : undefined}
+                  >
                     {isCompleted ? (
                       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
                         <path d={CHECK_PATH} />
@@ -342,6 +347,7 @@ export default function AppShell() {
                       isCompleted ? 'nav-pill--completed' : '',
                       isCurrent   ? 'nav-pill--current'   : '',
                     ].filter(Boolean).join(' ')}
+                    data-step={String(i + 1)}
                     style={isAccessible ? { cursor: 'pointer' } : undefined}
                     onClick={isAccessible ? () => navigateStep(i) : undefined}
                     title={name}
