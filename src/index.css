@@ -10861,3 +10861,78 @@ html {
   user-select: none;
   z-index: 0;
 }
+
+/* ── A4. Nav pill per-step accent colors ─────────────────────────── */
+/* Requires data-step attribute on each .nav-pill (added in Task 3)   */
+
+/* Step 1 — Blue */
+.nav-pill[data-step="1"].nav-pill--current,
+.nav-pill[data-step="1"].nav-pill--completed {
+  background: #0066FF !important;
+  border-color: #0066FF !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0,102,255,0.45) !important;
+}
+
+/* Step 2 — Cyan */
+.nav-pill[data-step="2"].nav-pill--current,
+.nav-pill[data-step="2"].nav-pill--completed {
+  background: #06B6D4 !important;
+  border-color: #06B6D4 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(6,182,212,0.45) !important;
+}
+
+/* Step 3 — Amber (dark text for contrast on light amber) */
+.nav-pill[data-step="3"].nav-pill--current,
+.nav-pill[data-step="3"].nav-pill--completed {
+  background: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #000000 !important;
+  box-shadow: 0 0 12px rgba(245,158,11,0.45) !important;
+}
+
+/* Step 4 — Green */
+.nav-pill[data-step="4"].nav-pill--current,
+.nav-pill[data-step="4"].nav-pill--completed {
+  background: #16A34A !important;
+  border-color: #16A34A !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(22,163,74,0.45) !important;
+}
+
+/* Step 5 — Violet */
+.nav-pill[data-step="5"].nav-pill--current,
+.nav-pill[data-step="5"].nav-pill--completed {
+  background: #8B5CF6 !important;
+  border-color: #8B5CF6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(139,92,246,0.45) !important;
+}
+
+/* Step 6 — Red */
+.nav-pill[data-step="6"].nav-pill--current,
+.nav-pill[data-step="6"].nav-pill--completed {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(220,38,38,0.45) !important;
+}
+
+/* ── A4b. Nav connector per-step gradients ───────────────────────── */
+/* Adjacent sibling selector: pill (completed) → its connector        */
+.nav-pill[data-step="1"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #0066FF, #06B6D4) !important;
+}
+.nav-pill[data-step="2"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #06B6D4, #F59E0B) !important;
+}
+.nav-pill[data-step="3"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #F59E0B, #16A34A) !important;
+}
+.nav-pill[data-step="4"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #16A34A, #8B5CF6) !important;
+}
+.nav-pill[data-step="5"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #8B5CF6, #DC2626) !important;
+}
