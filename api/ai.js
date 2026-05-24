@@ -112,10 +112,7 @@ async function handleGeneral(req, res) {
   const cached = await getCached(cacheKey).catch(() => null);
 
   if (cached) {
-    (async () => {
-      const { error } = await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: user.id });
-      if (error) console.error('[ai/general] response_times cache-hit insert failed:', error.message, error.code);
-    })();
+    await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: user.id }).catch(() => {});
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
@@ -330,9 +327,8 @@ async function handleSupervisorPrep(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (cached) {
+    await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: 0, user_id: user.id }).catch(() => {});
     res.setHeader('X-Cache', 'HIT');
-    supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: 0, user_id: user.id })
-      .then(({ error }) => { if (error) console.error('[ai/supervisor-prep] response_times cache-hit insert failed:', error.message); });
     return res.status(200).json(cached);
   }
 
