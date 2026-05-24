@@ -229,7 +229,14 @@ export default async function handler(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let authResult;
+  try {
+    authResult = await supabaseAdmin.auth.getUser(token);
+  } catch (err) {
+    console.error('[certificate] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+  const { data: { user }, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired token' });
 
   // Parse body

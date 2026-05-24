@@ -51,7 +51,13 @@ async function logAttempt(email, ip, action, success) {
 async function handleLogin(req, res) {
   const ip = getIp(req);
 
-  const rl = await makeIpLimiter(10, '15 m', 'login').limit(ip);
+  let rl;
+  try {
+    rl = await makeIpLimiter(10, '15 m', 'login').limit(ip);
+  } catch (rlErr) {
+    console.error('[auth/login] rate limiter threw (failing open):', rlErr.message);
+    rl = { success: true };
+  }
   if (!rl.success) {
     return res.status(429).json({
       error: 'Too many login attempts from your location. Please wait 15 minutes and try again.',
@@ -63,13 +69,18 @@ async function handleLogin(req, res) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
-    body:    JSON.stringify({ email, password }),
-  });
-
-  const data    = await response.json();
+  let response, data;
+  try {
+    response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
+      body:    JSON.stringify({ email, password }),
+    });
+    data = await response.json();
+  } catch (fetchErr) {
+    console.error('[auth/login] GoTrue fetch failed:', fetchErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
   const success = response.ok && !!data.access_token;
 
   logAttempt(email, ip, 'login', success);
@@ -91,7 +102,13 @@ async function handleLogin(req, res) {
 async function handleSignup(req, res) {
   const ip = getIp(req);
 
-  const rl = await makeIpLimiter(5, '1 h', 'signup').limit(ip);
+  let rl;
+  try {
+    rl = await makeIpLimiter(5, '1 h', 'signup').limit(ip);
+  } catch (rlErr) {
+    console.error('[auth/signup] rate limiter threw (failing open):', rlErr.message);
+    rl = { success: true };
+  }
   if (!rl.success) {
     return res.status(429).json({
       error: 'Too many signup attempts from your location. Please try again later.',
@@ -152,7 +169,13 @@ async function handleSignup(req, res) {
 async function handleForgotPassword(req, res) {
   const ip = getIp(req);
 
-  const rl = await makeIpLimiter(5, '1 h', 'forgot').limit(ip);
+  let rl;
+  try {
+    rl = await makeIpLimiter(5, '1 h', 'forgot').limit(ip);
+  } catch (rlErr) {
+    console.error('[auth/forgot] rate limiter threw (failing open):', rlErr.message);
+    rl = { success: true };
+  }
   if (!rl.success) {
     return res.status(429).json({
       error: 'Too many requests. Please try again later.',

@@ -119,6 +119,10 @@ const handler = async (req, res) => {
 
     return res.status(response.status).json(data);
   } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      console.error('[project-reviewer] Anthropic request timed out after 50s');
+      return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
     console.error('[project-reviewer] error:', err.message);
     writeSystemLog({
       severity: 'error',

@@ -95,7 +95,13 @@ async function handleWebhook(req, res, rawBody) {
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
-  const event = JSON.parse(rawBody.toString('utf8'));
+  let event;
+  try {
+    event = JSON.parse(rawBody.toString('utf8'));
+  } catch (parseErr) {
+    console.warn('[webhook] malformed JSON body from Paystack:', parseErr.message);
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
 
   switch (event.event) {
     case 'charge.success': {

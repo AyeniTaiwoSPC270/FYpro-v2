@@ -69,11 +69,24 @@ const handler = async (req, res) => {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+  let authResult;
+  try {
+    authResult = await supabaseAdmin.auth.getUser(token);
+  } catch (err) {
+    console.error('[speak] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+  const { data: { user }, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
 
   // Rate limit: 30 TTS calls per user per day, 60 per IP per day
-  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' });
+  let rl;
+  try {
+    rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' });
+  } catch (rlErr) {
+    console.error('[speak] rate limiter threw (failing open):', rlErr.message);
+    rl = { allowed: true };
+  }
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   // Guard: EL_API_KEY must be set in Vercel environment variables.

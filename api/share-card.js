@@ -265,7 +265,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   // ── Rate limit: 30 share cards per user per day ───────────────────────────
-  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'share-card' })
+  let rl;
+  try {
+    rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'share-card' });
+  } catch (rlErr) {
+    console.error('[share-card] rate limiter threw (failing open):', rlErr.message);
+    rl = { allowed: true };
+  }
   if (!rl.allowed) return res.status(429).json({ error: rl.reason })
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -273,7 +279,14 @@ export default async function handler(req, res) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
   if (!token) return res.status(401).json({ error: 'Authentication required' })
 
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  let authResult;
+  try {
+    authResult = await supabaseAdmin.auth.getUser(token);
+  } catch (err) {
+    console.error('[share-card] auth.getUser threw:', err.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+  const { data: { user }, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired token' })
 
   // ── Fetch defense result (server reads the score — client cannot fake it) ─

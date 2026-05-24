@@ -125,6 +125,10 @@ async function handleValidate(req, res) {
     }
     return res.status(response.status).json(data);
   } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      console.error('[research/validate] Anthropic request timed out after 50s');
+      return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
     console.error('[research/validate]', err.message);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
@@ -246,6 +250,10 @@ async function handleLitMap(req, res) {
     }
     return res.status(response.status).json(data);
   } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      console.error('[research/lit-map] Anthropic request timed out after 50s');
+      return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
     console.error('[research/lit-map]', err.message);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
