@@ -88,12 +88,17 @@ async function handleGeneral(req, res) {
   }
 
   // Phase 2 — fetch entitlements (sequential: needs verified user.id from phase 1)
-  const { data: entData } = await supabaseAdmin
-    .from('user_entitlements')
-    .select('paid_features')
-    .eq('user_id', user.id)
-    .maybeSingle()
-    .catch(() => ({ data: null }));
+  let entData = null;
+  try {
+    const { data } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('paid_features')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    entData = data;
+  } catch (e) {
+    console.error('[ai/general] entitlements fetch error:', e.message);
+  }
 
   const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
   const isPaid = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
