@@ -10936,3 +10936,32 @@ html {
 .nav-pill[data-step="5"].nav-pill--completed + .nav-connector--completed {
   background: linear-gradient(90deg, #8B5CF6, #DC2626) !important;
 }
+
+/* ── A5. Confirm button CTAs → green ─────────────────────────────── */
+/* ma-btn-confirm and wp-btn-confirm are "Confirm" CTAs (user commits  */
+/* to a methodology / plan) — green matches CTA semantic convention.  */
+
+.app-content .ma-btn-confirm {
+  background: linear-gradient(135deg, #16A34A, #15803D) !important;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.35) !important;
+}
+.app-content .ma-btn-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22C55E, #16A34A) !important;
+  box-shadow: 0 0 24px rgba(22,163,74,0.5) !important;
+}
+
+.app-content .wp-btn-confirm {
+  background: linear-gradient(135deg, #16A34A, #15803D) !important;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.35) !important;
+}
+.app-content .wp-btn-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22C55E, #16A34A) !important;
+  box-shadow: 0 0 24px rgba(22,163,74,0.5) !important;
+}
+
+/* ── A5b. Defense score display → JetBrains Mono ─────────────────── */
+/* The final panel score (e.g. "7/10") should feel like a readout.   */
+
+.dp-results-bar__score {
+  font-family: 'JetBrains Mono', monospace !important;
+}
