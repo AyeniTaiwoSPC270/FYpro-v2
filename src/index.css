@@ -10765,3 +10765,99 @@ html {
   position: relative !important;
   overflow: hidden !important;
 }
+
+/* ── A3. Step-number watermarks via ::before ─────────────────────── */
+/* Large faded number, accent color at 5% opacity, top-right of card  */
+
+.app-content .tv-card::before {
+  content: '1';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(0,102,255,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .ca-card::before,
+.app-content .ag-card::before,
+.app-content .lm-card::before {
+  content: '2';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(6,182,212,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .ma-card::before,
+.app-content .di-card::before {
+  content: '3';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(245,158,11,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .wp-card::before {
+  content: '4';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(22,163,74,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .pr-card::before {
+  content: '5';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(139,92,246,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .dp-card::before {
+  content: '6';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(220,38,38,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
