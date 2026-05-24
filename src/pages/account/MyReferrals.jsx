@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchMyReferrals } from '../../lib/referral'
 import { showToast } from '../../components/Toast'
 
-const BASE_URL = 'https://fypro.com.ng'
+const BASE_URL = 'https://www.fypro.com.ng'
 
 function formatDate(iso) {
   if (!iso) return '—'

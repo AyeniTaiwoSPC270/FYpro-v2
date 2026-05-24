@@ -57,6 +57,7 @@ async function handleValidate(req, res) {
 
   if (claudeCached) {
     res.setHeader('X-Cache', 'HIT');
+    supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/validate] response_times cache-hit insert failed:', error.message); });
     return res.status(200).json(claudeCached);
   }
 
@@ -84,6 +85,7 @@ async function handleValidate(req, res) {
       augmentedSystem += '\n\nNo real papers were found for this topic. Validate the topic based on its construction and feasibility alone. Mention to the student that we could not find directly related published work — this may be a research gap or may indicate the topic needs reframing.';
     }
 
+    const start = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -116,7 +118,11 @@ async function handleValidate(req, res) {
     }
 
     res.setHeader('X-Cache', 'MISS');
-    if (response.ok) setCached(claudeKey, data, CLAUDE_TTL);
+    if (response.ok) {
+      setCached(claudeKey, data, CLAUDE_TTL);
+      const duration = Date.now() - start;
+      supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/validate] response_times insert failed:', error.message); });
+    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[research/validate]', err.message);
@@ -163,6 +169,7 @@ async function handleLitMap(req, res) {
 
   if (claudeCached) {
     res.setHeader('X-Cache', 'HIT');
+    supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/lit-map] response_times cache-hit insert failed:', error.message); });
     return res.status(200).json(claudeCached);
   }
 
@@ -199,6 +206,7 @@ async function handleLitMap(req, res) {
       `include a "paper_indices" array of integers in each thematic_area object.` +
       (papersResult.sparse_literature ? '\nNote: limited published work was found — acknowledge this as a potential research gap in the synthesis_guide.' : '');
 
+    const start = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
       headers: {
@@ -231,7 +239,11 @@ async function handleLitMap(req, res) {
     }
 
     res.setHeader('X-Cache', 'MISS');
-    if (response.ok) setCached(claudeKey, data, CLAUDE_TTL);
+    if (response.ok) {
+      setCached(claudeKey, data, CLAUDE_TTL);
+      const duration = Date.now() - start;
+      supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/lit-map] response_times insert failed:', error.message); });
+    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[research/lit-map]', err.message);
