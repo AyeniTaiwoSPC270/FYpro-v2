@@ -21,14 +21,14 @@ export default memo(function DashProgressJourney({ STEPS, STUDENT }) {
     <section
       ref={sectionRef}
       aria-labelledby="journey-heading"
-      className="rounded-2xl border border-slate-800/80 p-8 mb-7"
+      className="rounded-2xl border border-slate-800/80 p-4 sm:p-6 md:p-8 mb-5 md:mb-7"
       style={{
         ...revealStyle(sectionVisible),
         background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
         boxShadow: '0 8px 40px rgba(59,130,246,0.06)',
       }}
     >
-      <div className="flex items-baseline justify-between mb-7">
+      <div className="flex items-start justify-between flex-wrap gap-2 mb-4 md:mb-7">
         <div>
           <h2 id="journey-heading" className="font-serif text-[1.45rem] text-white leading-[1.2] mb-1">
             Your Research Journey

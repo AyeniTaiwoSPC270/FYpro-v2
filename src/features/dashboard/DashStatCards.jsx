@@ -18,7 +18,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
   const [rowRef, rowVisible] = useReveal()
 
   return (
-    <div ref={rowRef} style={revealStyle(rowVisible)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-7">
+    <div ref={rowRef} style={revealStyle(rowVisible)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 mb-5 md:mb-7">
 
       {/* Card 1: Circular Progress */}
       <motion.div
@@ -27,7 +27,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
         initial="hidden"
         animate="visible"
         whileHover={{ y: -5, boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.12)' }}
-        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex items-center gap-[22px] transition-shadow duration-200"
+        className="rounded-2xl border border-slate-800/80 p-4 md:p-7 relative overflow-hidden flex flex-col sm:flex-row items-center gap-4 sm:gap-[22px] transition-shadow duration-200"
         style={{
           background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
           borderLeft: '4px solid #3B82F6',
@@ -37,10 +37,12 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
         <span aria-hidden="true" className="absolute right-[-12px] top-[-18px] font-mono text-[130px] font-bold leading-none select-none pointer-events-none" style={{ color: 'rgba(59,130,246,0.04)' }}>
           ✦
         </span>
-        <ProgressRing completed={STUDENT.stepsCompleted} total={STUDENT.totalSteps} />
-        <div>
+        <div className="db-progress-ring-wrapper">
+          <ProgressRing completed={STUDENT.stepsCompleted} total={STUDENT.totalSteps} />
+        </div>
+        <div className="text-center sm:text-left">
           <div className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-blue-400 mb-2">Overall Progress</div>
-          <div className="font-serif text-[1.35rem] text-white leading-[1.2] mb-[7px]">
+          <div className="font-serif text-[1.25rem] md:text-[1.35rem] text-white leading-[1.2] mb-[7px]">
             {STUDENT.stepsCompleted} Steps<br />Completed
           </div>
           <div className="font-sans text-[0.73rem] text-slate-500 leading-[1.5]">
@@ -56,7 +58,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
         initial="hidden"
         animate="visible"
         whileHover={{ y: -5, boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 32px rgba(22,163,74,0.14)' }}
-        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col justify-between gap-[18px] transition-shadow duration-200"
+        className="rounded-2xl border border-slate-800/80 p-4 md:p-7 relative overflow-hidden flex flex-col justify-between gap-3 md:gap-[18px] transition-shadow duration-200"
         style={{
           background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-green-mid) 60%, var(--bg-input) 100%)',
           borderLeft: '4px solid #16A34A',
@@ -101,7 +103,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
         initial="hidden"
         animate="visible"
         whileHover={{ y: -5, boxShadow: '0 14px 40px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.1)' }}
-        className="rounded-2xl border border-slate-800/80 p-7 relative overflow-hidden flex flex-col gap-[14px] transition-shadow duration-200"
+        className="rounded-2xl border border-slate-800/80 p-4 md:p-7 relative overflow-hidden flex flex-col gap-3 md:gap-[14px] transition-shadow duration-200"
         style={{
           background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
           borderLeft: '4px solid #3B82F6',

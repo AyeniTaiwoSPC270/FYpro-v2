@@ -675,9 +675,8 @@ function Hero() {
         opacity: { duration: 0.6 },
         backgroundPosition: { duration: 8, ease: 'easeInOut', repeat: Infinity },
       }}
-      className="min-h-screen flex flex-col items-center text-center relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center text-center relative overflow-hidden pt-[90px] sm:pt-[140px] pb-16 sm:pb-20 px-6"
       style={{
-        padding: '140px 24px 80px',
         background: 'linear-gradient(135deg, var(--pub-bg) 0%, var(--pub-bg-alt) 28%, var(--pub-bg-mid) 54%, var(--pub-bg-alt) 80%, var(--pub-bg) 100%)',
         backgroundSize: '400% 400%',
       }}
@@ -818,7 +817,7 @@ function FeatureCardWrapper({ f, i }) {
         onMouseLeave={() => setHovered(false)}
       >
         <MagneticCard
-          className="relative overflow-hidden rounded-2xl p-9 h-full cursor-default"
+          className="relative overflow-hidden rounded-2xl p-6 md:p-9 h-full cursor-default"
           style={{
             background: 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
             border: '1px solid',
@@ -976,13 +975,12 @@ function PricingSection() {
             <Reveal key={p.tier} delay={i * 0.08}>
               <div className={p.featured ? 'lp-pricing-pulse-wrap' : ''}>
               <motion.div
-                className="relative rounded-2xl py-9 px-8"
+                className={`relative rounded-2xl py-7 px-6 md:py-9 md:px-8${p.featured ? ' md:scale-[1.025]' : ''}`}
                 style={{
                   background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, var(--pub-bg-mid) 100%)' : 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
                   border: '1px solid',
                   borderColor: p.featured ? '#0066FF' : 'var(--pub-border-dim)',
                   boxShadow: p.featured ? '0 0 48px rgba(0,102,255,0.12)' : 'none',
-                  transform: p.featured ? 'scale(1.025)' : 'none',
                 }}
                 whileHover={{ y: -6, boxShadow: p.featured ? '0 0 64px rgba(0,102,255,0.3), 0 20px 56px rgba(0,0,0,0.45)' : '0 20px 56px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,102,255,0.22)', transition: { duration: 0.25 } }}
               >

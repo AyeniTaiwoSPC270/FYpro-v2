@@ -297,14 +297,14 @@ export default function Signup() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-12"
+      className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12"
       style={{ backgroundColor: 'var(--bg-base)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md rounded-2xl border border-slate-800 p-10"
+        className="w-full max-w-md rounded-2xl border border-slate-800 p-6 sm:p-10"
         style={{
           backgroundColor: 'var(--bg-card)',
           boxShadow: '0 8px 40px rgba(59,130,246,0.08)',

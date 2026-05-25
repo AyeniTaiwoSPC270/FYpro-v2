@@ -49,7 +49,7 @@ function ToggleRow({ title, desc, checked, onChange, disabled = false }) {
 function Navbar() {
   return (
     <header
-      className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0"
+      className="h-[68px] flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 flex-shrink-0"
       style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid var(--border-subtle)' }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
@@ -161,7 +161,7 @@ export default function EmailPreferences() {
     >
       <Navbar />
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -187,7 +187,7 @@ export default function EmailPreferences() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-8 p-8"
+              className="mt-8 p-5 sm:p-8"
               style={cardStyle}
             >
               <div
@@ -229,7 +229,7 @@ export default function EmailPreferences() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.16, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 p-8"
+              className="mt-6 p-5 sm:p-8"
               style={{
                 ...cardStyle,
                 border: isUnsubscribed

@@ -473,6 +473,7 @@ html, body {
   border-bottom: 1px solid rgba(0,0,0,0.07);
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
   z-index: 10;
+  position: relative;
 }
 .nav-track {
   display: flex;
@@ -5002,14 +5003,15 @@ html, body {
 /* ── Sidebar toggle button ──────────────────────────────────────── */
 .sidebar-toggle-btn {
   display: none;
-  position: fixed;
-  top: 12px;
+  position: absolute;
+  top: 50%;
   left: 12px;
-  z-index: 1001;
+  transform: translateY(-50%);
+  z-index: 20;
   width: 40px;
   height: 40px;
-  background: var(--color-bg-dark);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0D1B2A;
+  border: 1px solid rgba(13, 27, 42, 0.18);
   border-radius: 8px;
   flex-direction: column;
   align-items: center;
@@ -5062,9 +5064,10 @@ html, body {
     width: 100% !important;
   }
 
-  /* Navigator: smaller pills, hide step labels */
+  /* Navigator: smaller pills, hide step labels, leave room for hamburger */
   .step-navigator {
-    padding: 12px 16px 16px;
+    padding: 12px 16px 16px 60px; /* left padding = hamburger (40px) + gap (12px) + edge (8px) */
+    min-height: 64px;
   }
   .nav-pill {
     width: 28px;
@@ -5117,9 +5120,10 @@ html, body {
 
 /* ── 480px mobile ──────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  /* Navigator: even smaller */
+  /* Navigator: even smaller, keep left padding for hamburger */
   .step-navigator {
-    padding: 10px 10px 12px;
+    padding: 10px 8px 12px 56px;
+    min-height: 56px;
   }
   .nav-pill {
     width: 22px;
@@ -5136,13 +5140,13 @@ html, body {
 
   /* Content scroll */
   .app-content__scroll {
-    padding: 24px 14px 56px !important;
+    padding: 20px 12px 56px !important;
   }
 
   /* Cards: reduce padding */
   .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
   .se-card, .placeholder-card {
-    padding: 28px 20px 32px !important;
+    padding: 24px 16px 28px !important;
   }
 
   /* Onboarding: tight padding */
@@ -5152,8 +5156,7 @@ html, body {
 
   /* Sidebar toggle: slightly smaller */
   .sidebar-toggle-btn {
-    top: 10px;
-    left: 10px;
+    left: 8px;
     width: 36px;
     height: 36px;
   }
@@ -11037,3 +11040,191 @@ html {
 [data-theme="light"] [data-pub] .border-white\/\[0\.08\],
 [data-theme="light"] [data-pub] .border-white\/\[0\.1\],
 [data-theme="light"] [data-pub] .border-white\/5 { border-color: var(--pub-border-dim) !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
+   Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard section headings: scale down on mobile ─────────── */
+@media (max-width: 480px) {
+  /* Section headings in dashboard */
+  .font-serif.text-\[1\.45rem\] {
+    font-size: 1.2rem !important;
+  }
+
+  /* Progress ring wrapper: normalize for flex-col layout on mobile */
+  .db-progress-ring-wrapper {
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  /* Dashboard topbar: tighter greeting text */
+  .db-header-enter .font-serif {
+    font-size: 0.95rem !important;
+  }
+
+  /* DashProgressJourney: timeline step circle stays readable */
+  .w-11.h-11 { min-width: 36px; }
+}
+
+/* ── ProjectCard: more compact on very small screens ─────────── */
+@media (max-width: 400px) {
+  /* Project card padding */
+  .db-project-card {
+    padding: 18px 16px 16px !important;
+  }
+
+  /* Step navigator: use minimal connector on tiny screens */
+  .nav-connector {
+    width: 6px !important;
+  }
+
+  /* Stat card grid: reduce gap further */
+  .db-stat-grid {
+    gap: 10px !important;
+  }
+}
+
+/* ── AppShell app-content scroll: safe area for iOS notch ──────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .app-content__scroll {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+  @media (max-width: 480px) {
+    .app-content__scroll {
+      padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* ── Dashboard main: iOS safe area ─────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .dashboard-main {
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Touch targets: all interactive elements min 44px ──────────── */
+@media (max-width: 768px) {
+  /* Step list items in sidebar */
+  .step-list__item {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  /* Nav pills already have pseudo-element tap area but set min-height too */
+  .nav-pill {
+    min-width: 28px;
+  }
+
+  /* Dashboard sidebar items */
+  .db-sidebar-item {
+    min-height: 44px;
+  }
+
+  /* Quick actions grid: 1 column on mobile */
+  .grid.grid-cols-1.sm\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Suppress horizontal overflow globally on mobile */
+  .app-content,
+  .app-content__scroll {
+    overflow-x: hidden;
+  }
+}
+
+/* ── Onboarding card: full-width safe on very small screens ──────── */
+@media (max-width: 360px) {
+  .onboarding__card {
+    padding: 28px 14px 36px;
+  }
+
+  /* Level buttons: compact */
+  .level-btn {
+    font-size: 0.82rem;
+    padding: 9px 0;
+  }
+}
+
+/* ── Dashboard: "My Projects" header ─────────────────────────── */
+@media (max-width: 480px) {
+  .db-projects-header h1 {
+    font-size: 1.3rem !important;
+  }
+}
+
+/* ── Light mode nav on mobile: ensure pills are visible ────────── */
+@media (max-width: 768px) {
+  [data-theme="light"] .step-navigator,
+  .light .step-navigator {
+    background: rgba(240, 244, 248, 0.98);
+  }
+}
+
+/* ── Prevent overflow from large watermark numbers in cards ─────── */
+.tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .pr-card {
+  overflow: hidden;
+}
+
+/* ── DashProgressJourney: timeline wrapping on mobile ─────────── */
+@media (max-width: 480px) {
+  /* Timeline content: reduce left column width slightly */
+  .db-journey-timeline-col {
+    width: 36px;
+    min-width: 36px;
+  }
+}
+
+/* ── Dashboard warning banner: wrap text on narrow screens ─────── */
+@media (max-width: 480px) {
+  .db-validate-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── ProjectsGrid: header on narrow screens ─────────────────────── */
+@media (max-width: 480px) {
+  .db-projects-grid h1 {
+    font-size: 1.3rem;
+  }
+}
+
+/* ── Fix: dashboard content area min-width so flex doesn't shrink ── */
+.flex-1.flex.flex-col.overflow-hidden.min-w-0 {
+  min-width: 0;
+}
+
+/* ── PUBLIC PAGES: mobile overflow guard ─────────────────────────── */
+/* Prevent any scaled/wide elements from causing horizontal scroll    */
+@media (max-width: 768px) {
+  /* Landing page, Pricing, About, Contact */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Testimonials ticker: reduce fade edge width on narrow screens */
+  .absolute.left-0.top-0.bottom-0.w-\[120px\] {
+    width: 40px !important;
+  }
+  .absolute.right-0.top-0.bottom-0.w-\[120px\] {
+    width: 40px !important;
+  }
+
+  /* LandingPage hero CTA buttons: stack on very small screens */
+  .lp-hero-cta .flex.gap-3 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ── Pricing page: extra-small card prices ──────────────────────── */
+@media (max-width: 400px) {
+  .lp-pricing-card-price {
+    font-size: 2rem !important;
+  }
+}

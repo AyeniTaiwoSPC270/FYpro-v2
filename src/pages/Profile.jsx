@@ -87,7 +87,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
 
   return (
     <header
-      className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0 relative"
+      className="h-[68px] flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 flex-shrink-0 relative"
       style={{
         background: 'var(--bg-sidebar)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -522,7 +522,7 @@ export default function Profile() {
       <style>{PROFILE_KEYFRAMES}</style>
       <ProfileNavbar initials={initials} name={form.name} avatarUrl={avatarUrl} />
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         {/* Page header */}
         <motion.div
@@ -542,7 +542,7 @@ export default function Profile() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 p-8 flex flex-col sm:flex-row gap-6 items-start"
+          className="mt-8 p-5 sm:p-8 flex flex-col sm:flex-row gap-6 items-start"
           style={cardStyle}
         >
           {/* Avatar */}
@@ -638,7 +638,7 @@ export default function Profile() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Personal Information</SectionLabel>
@@ -731,7 +731,7 @@ export default function Profile() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.24, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Academic Information</SectionLabel>
@@ -759,7 +759,7 @@ export default function Profile() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.32, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={{ ...cardStyle, borderColor: 'rgba(239,68,68,0.2)' }}
         >
           <SectionLabel danger>Danger Zone</SectionLabel>

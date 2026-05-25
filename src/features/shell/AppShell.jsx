@@ -204,18 +204,6 @@ export default function AppShell() {
         aria-hidden="true"
       />
 
-      {/* ── Mobile hamburger toggle ─────────────────────────────────────────── */}
-      <button
-        className={`sidebar-toggle-btn${sidebarOpen ? ' is-open' : ''}`}
-        onClick={() => setSidebarOpen(o => !o)}
-        aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
-        aria-expanded={sidebarOpen}
-      >
-        <span />
-        <span />
-        <span />
-      </button>
-
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
       <aside className={`sidebar${sidebarOpen ? ' is-open' : ''}`} id="app-sidebar">
 
@@ -333,6 +321,17 @@ export default function AppShell() {
 
         {/* Top step navigator */}
         <div className="step-navigator" id="step-navigator" role="navigation" aria-label="Step progress">
+          {/* Mobile hamburger — inline within nav bar on mobile, hidden on desktop */}
+          <button
+            className={`sidebar-toggle-btn${sidebarOpen ? ' is-open' : ''}`}
+            onClick={() => setSidebarOpen(o => !o)}
+            aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={sidebarOpen}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
           <div className="nav-track">
             {STEPS.map((name, i) => {
               const isCompleted  = state.stepsCompleted[i]

@@ -434,13 +434,13 @@ function PricingCards() {
           {/* ── Free ── */}
           <Reveal delay={0}>
             <motion.div
-              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8"
+              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 sm:p-8"
               whileHover={{ y: -4, borderColor: 'rgba(37,99,235,0.35)', transition: { duration: 0.2 } }}
             >
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
                 Free
               </div>
-              <div className="font-serif text-5xl text-white mt-2">₦0</div>
+              <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦0</div>
               <div className="text-slate-500 text-sm mt-1">forever</div>
               <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
@@ -464,7 +464,7 @@ function PricingCards() {
                 Most Popular
               </div>
               <motion.div
-                className="bg-[var(--bg-card)] rounded-2xl border-2 border-blue-500 p-8"
+                className="bg-[var(--bg-card)] rounded-2xl border-2 border-blue-500 p-5 sm:p-8"
                 style={{ boxShadow: '0 0 40px rgba(59,130,246,0.15)' }}
                 whileHover={{
                   boxShadow: '0 0 56px rgba(59,130,246,0.26)',
@@ -474,7 +474,7 @@ function PricingCards() {
                 <div className="font-mono text-sm font-semibold text-blue-400 uppercase tracking-wider">
                   Student Plan
                 </div>
-                <div className="font-serif text-5xl text-white mt-2">₦2,000</div>
+                <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦2,000</div>
                 <div className="text-slate-400 text-sm mt-1">per project, one-time</div>
                 <div className="border-t border-[var(--border-color)] my-6" />
                 <ul className="flex flex-col gap-3">
@@ -501,14 +501,14 @@ function PricingCards() {
           {/* ── Defense Plan ── */}
           <Reveal delay={0.16}>
             <motion.div
-              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8"
+              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 sm:p-8"
               whileHover={{ y: -4, borderColor: 'rgba(37,99,235,0.35)', transition: { duration: 0.2 } }}
             >
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
                 Defense Plan
               </div>
               <div className="flex items-baseline gap-2 mt-2">
-                <div className="font-serif text-5xl text-white">
+                <div className="font-serif text-4xl sm:text-5xl text-white">
                   {isUpgrader ? '₦1,500' : '₦3,500'}
                 </div>
                 {isUpgrader && (

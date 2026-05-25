@@ -105,7 +105,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                     ? () => { if (action.path === '/app') sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined
                 }
-                className={`relative flex flex-col items-start gap-4 p-6 rounded-2xl text-left transition-all duration-200 w-full db-quick-card ${
+                className={`relative flex flex-col items-start gap-3 md:gap-4 p-4 md:p-6 rounded-2xl text-left transition-all duration-200 w-full db-quick-card ${
                   isLockedAction ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 style={{

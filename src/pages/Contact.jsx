@@ -416,7 +416,7 @@ export default function Contact() {
 
           {/* Left — Contact Form */}
           <Reveal>
-            <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8">
+            <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 sm:p-8">
               <h2 className="text-white font-semibold text-lg mb-6 font-sans">Send us a message</h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
@@ -529,7 +529,7 @@ export default function Contact() {
       {/* ── FAQ Teaser ────────────────────────────────────────────────────── */}
       <div className="mt-20 max-w-2xl mx-auto text-center px-6 pb-24">
         <Reveal>
-          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-10">
+          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-6 sm:p-10">
             <h2 className="text-white font-semibold text-xl font-sans">Looking for quick answers?</h2>
             <p className="text-slate-400 text-sm mt-2 leading-relaxed font-sans">
               Check our frequently asked questions — most common issues are answered there.

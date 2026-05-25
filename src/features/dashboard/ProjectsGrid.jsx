@@ -173,7 +173,7 @@ export default function ProjectsGrid({ projects, features, featuresLoading, onCo
           {projects.length} project{projects.length !== 1 ? 's' : ''}
         </p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 16 }}>
         {projects.map(p => (
           <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} />
         ))}

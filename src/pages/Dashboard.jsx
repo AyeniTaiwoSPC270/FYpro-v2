@@ -199,8 +199,8 @@ export default function Dashboard() {
 
         {!projectsLoading && projects.length > 0 && !state.stepsCompleted[0] && (
           <div
-            className="flex-shrink-0 flex items-center justify-between gap-3 px-4 md:px-8"
-            style={{ background: 'rgba(245,158,11,0.06)', borderBottom: '1px solid rgba(245,158,11,0.18)', padding: '10px 32px' }}
+            className="flex-shrink-0 flex items-center flex-wrap justify-between gap-2 px-4 md:px-8"
+            style={{ background: 'rgba(245,158,11,0.06)', borderBottom: '1px solid rgba(245,158,11,0.18)', paddingTop: 10, paddingBottom: 10 }}
           >
             <p className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>
               You haven't validated your topic yet. That's the most important first step.
@@ -232,12 +232,12 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                style={{ background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)', border: '1px solid var(--border-color)', borderRadius: 20, padding: '56px 48px 48px', width: '100%', maxWidth: 480, textAlign: 'center', boxShadow: '0 8px 48px rgba(0,0,0,0.18)' }}
+                style={{ background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)', border: '1px solid var(--border-color)', borderRadius: 20, padding: 'clamp(28px, 6vw, 56px) clamp(20px, 5vw, 48px) clamp(24px, 5vw, 48px)', width: '100%', maxWidth: 480, textAlign: 'center', boxShadow: '0 8px 48px rgba(0,0,0,0.18)' }}
               >
                 <motion.div animate={{ y: [0, -9, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }} className="flex justify-center mb-7">
                   <ShieldIcon size={64} color="#0066FF" />
                 </motion.div>
-                <h1 className="font-serif text-white mb-3" style={{ fontSize: '1.85rem', lineHeight: 1.2 }}>
+                <h1 className="font-serif text-white mb-3" style={{ fontSize: 'clamp(1.4rem, 5vw, 1.85rem)', lineHeight: 1.2 }}>
                   Let's start your FYP journey
                 </h1>
                 <p className="font-sans text-slate-400 leading-relaxed" style={{ fontSize: '0.9rem', maxWidth: '38ch', margin: '0 auto 32px' }}>

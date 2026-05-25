@@ -124,7 +124,7 @@ function SettingsNavbar({ initials, name }) {
 
   return (
     <header
-      className="h-[68px] flex items-center justify-between px-8 sticky top-0 z-30 flex-shrink-0 relative"
+      className="h-[68px] flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 flex-shrink-0 relative"
       style={{
         background: 'var(--bg-sidebar)',
         borderBottom: '1px solid var(--border-subtle)',
@@ -513,7 +513,7 @@ export default function Settings() {
     >
       <SettingsNavbar initials={initials} name={name} />
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         {/* Page header */}
         <motion.div
@@ -533,7 +533,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={motionDelay(1)}
-          className="mt-8 p-8"
+          className="mt-8 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Change Password</SectionLabel>
@@ -577,7 +577,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={motionDelay(2)}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Notifications</SectionLabel>
@@ -611,7 +611,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={motionDelay(3)}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Appearance</SectionLabel>
@@ -662,7 +662,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={motionDelay(4)}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Connected Accounts</SectionLabel>
@@ -715,7 +715,7 @@ export default function Settings() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={motionDelay(5)}
-          className="mt-6 p-8"
+          className="mt-6 p-5 sm:p-8"
           style={cardStyle}
         >
           <SectionLabel>Session</SectionLabel>
