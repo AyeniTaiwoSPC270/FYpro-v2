@@ -120,10 +120,11 @@ const handler = async (req, res) => {
 
     if (response.ok) {
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id })
-        .then(({ error }) => {
-          if (error) console.error('[project-reviewer] response_times insert failed:', error.message, error.code, error.details, error.hint);
-        });
+      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+        console.error('[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+      });
     }
 
     return res.status(response.status).json(data);

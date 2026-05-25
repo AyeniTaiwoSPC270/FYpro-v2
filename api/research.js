@@ -123,8 +123,10 @@ async function handleValidate(req, res) {
     if (response.ok) {
       setCached(claudeKey, data, CLAUDE_TTL);
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id }).then(({ error }) => {
-        if (error) console.error('[research/validate] response_times insert failed:', error.message, error.code, error.details, error.hint);
+      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+        console.error('[research/validate] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
     }
     return res.status(response.status).json(data);
@@ -252,8 +254,10 @@ async function handleLitMap(req, res) {
     if (response.ok) {
       setCached(claudeKey, data, CLAUDE_TTL);
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id }).then(({ error }) => {
-        if (error) console.error('[research/lit-map] response_times insert failed:', error.message, error.code, error.details, error.hint);
+      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+        console.error('[research/lit-map] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
     }
     return res.status(response.status).json(data);
