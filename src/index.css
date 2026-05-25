@@ -4913,6 +4913,7 @@ html, body {
 .app-content .ag-scaffold-notice { background: rgba(245,158,11,0.08) !important; border-color: rgba(245,158,11,0.20) !important; color: #FCD34D !important; }
 .app-content .ag-btn-copy        { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
 .app-content .ag-companion-badge { background: rgba(124,58,237,0.14) !important; color: #C4B5FD !important; border-color: rgba(124,58,237,0.30) !important; }
+.app-content .ag-description     { color: rgba(255,255,255,0.55) !important; }
 
 /* ── 19. LM literature map sub-elements ────────────────────────── */
 .app-content .lm-theme-card     { background: linear-gradient(135deg,rgba(22,163,74,0.08) 0%,rgba(10,25,41,0.9) 100%) !important; border-color: rgba(22,163,74,0.18) !important; }

@@ -472,7 +472,6 @@ export default function ProjectReviewer() {
 
   return (
     <div className="pr-card" id="pr-card">
-      <span className="pr-watermark" aria-hidden="true">5</span>
 
       {/* ── Input Section ──────────────────────────────────────── */}
       <div
