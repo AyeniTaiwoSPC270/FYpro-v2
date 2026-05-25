@@ -248,7 +248,7 @@ function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
     <motion.div
       className="lp-testi-card flex flex-col gap-[18px] p-7 rounded-2xl border border-white/[0.1] transition-colors duration-200"
       style={{
-        background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
+        background: 'linear-gradient(150deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
         ...(fixed ? { width: 'clamp(280px, 80vw, 380px)', flexShrink: 0 } : {}),
       }}
@@ -323,8 +323,8 @@ function TestimonialsTickerSection() {
       onMouseEnter={() => animRef.current?.pause()}
       onMouseLeave={() => animRef.current?.play()}
     >
-      <div className="absolute left-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to right, #060E18, transparent)' }} />
-      <div className="absolute right-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to left, #060E18, transparent)' }} />
+      <div className="absolute left-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to right, var(--pub-bg), transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to left, var(--pub-bg), transparent)' }} />
       <div ref={scope} className="flex gap-[18px]" style={{ width: 'max-content' }}>
         {[...TESTI_DATA, ...TESTI_DATA].map((t, i) => <TestiCard key={i} {...t} fixed />)}
       </div>
@@ -343,7 +343,7 @@ function StatItem({ renderNumber, target, label, delay, urgent }) {
       <div ref={ref} className="lp-stat-num-wrap font-serif leading-none mb-2" style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
         {renderNumber(count)}
       </div>
-      <div className="text-[0.82rem] font-medium" style={{ color: urgent ? 'rgba(248,113,113,0.75)' : 'rgba(255,255,255,0.65)' }}>{label}</div>
+      <div className="text-[0.82rem] font-medium" style={{ color: urgent ? 'rgba(248,113,113,0.75)' : 'var(--pub-text-muted)' }}>{label}</div>
     </Reveal>
   )
 }
@@ -380,10 +380,10 @@ function Navbar() {
       <nav
         className="fixed top-0 left-0 right-0 z-[200] h-[66px] flex items-center justify-between px-5 md:px-12"
         style={{
-          background: scrolled ? 'rgba(6,14,24,0.85)' : 'transparent',
+          background: scrolled ? 'var(--pub-nav-scrolled)' : 'transparent',
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(255,255,255,0.04)',
+          borderBottom: scrolled ? '1px solid rgba(0,102,255,0.18)' : '1px solid var(--pub-border-dim)',
           boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.35)' : 'none',
           transition: 'all 0.3s ease',
         }}
@@ -445,7 +445,7 @@ function Navbar() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             className="md:hidden fixed top-[66px] left-0 right-0 z-[190] border-b border-white/[0.07] px-6 pt-5 pb-7 flex flex-col gap-5 pointer-events-auto"
-            style={{ background: 'rgba(6,14,24,0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+            style={{ background: 'var(--pub-nav-solid)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
             aria-hidden={!mobileOpen}
           >
             <div className="flex flex-col gap-1">
@@ -588,7 +588,7 @@ function HeroMockup() {
                         </div>
                       </>
                     ) : (
-                      <div className="text-[0.66rem] leading-[1.5]" style={{ color: 'rgba(255,255,255,0.3)' }}>{q}</div>
+                      <div className="text-[0.66rem] leading-[1.5]" style={{ color: 'var(--pub-text-dim)' }}>{q}</div>
                     )}
                   </div>
                 )
@@ -678,7 +678,7 @@ function Hero() {
       className="min-h-screen flex flex-col items-center text-center relative overflow-hidden"
       style={{
         padding: '140px 24px 80px',
-        background: 'linear-gradient(135deg, #060E18 0%, #091623 28%, #0D1B2A 54%, #07111E 80%, #060E18 100%)',
+        background: 'linear-gradient(135deg, var(--pub-bg) 0%, var(--pub-bg-alt) 28%, var(--pub-bg-mid) 54%, var(--pub-bg-alt) 80%, var(--pub-bg) 100%)',
         backgroundSize: '400% 400%',
       }}
     >
@@ -688,7 +688,7 @@ function Hero() {
         backgroundSize: '100% 100%, 28px 28px',
       }} />
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, #060E18)' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--pub-bg))' }} />
       {/* Cursor spotlight */}
       <div className="absolute pointer-events-none w-[700px] h-[700px] rounded-full z-0 will-change-[left,top]"
         style={{ left: spotPos.x, top: spotPos.y, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(0,102,255,0.07) 0%, transparent 65%)', transition: 'left 0.1s ease, top 0.1s ease' }} />
@@ -820,9 +820,9 @@ function FeatureCardWrapper({ f, i }) {
         <MagneticCard
           className="relative overflow-hidden rounded-2xl p-9 h-full cursor-default"
           style={{
-            background: 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)',
+            background: 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
             border: '1px solid',
-            borderColor: hovered ? 'rgba(0,102,255,0.4)' : 'rgba(255,255,255,0.07)',
+            borderColor: hovered ? 'rgba(0,102,255,0.4)' : 'var(--pub-border-dim)',
             borderLeft: `3px solid ${c.border}`,
             boxShadow: hovered ? '0 8px 32px rgba(0,102,255,0.12)' : 'none',
             transition: 'border-color 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1)',
@@ -850,7 +850,7 @@ function FeatureCardWrapper({ f, i }) {
 
 function FeaturesSection() {
   return (
-    <section id="features" className="py-24 relative" style={{ background: '#060E18' }}>
+    <section id="features" className="py-24 relative" style={{ background: 'var(--pub-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
@@ -900,7 +900,7 @@ function StepItem({ s, i }) {
         transition: `opacity 0.55s cubic-bezier(0.22,1,0.36,1) ${i * 120}ms, transform 0.55s cubic-bezier(0.22,1,0.36,1) ${i * 120}ms`,
       }}
     >
-      <div className="w-12 h-12 rounded-full border-2 border-blue-brand flex items-center justify-center font-mono text-[0.8rem] font-semibold text-blue-brand relative z-[1] flex-shrink-0" style={{ background: '#060E18' }}>{s.num}</div>
+      <div className="w-12 h-12 rounded-full border-2 border-blue-brand flex items-center justify-center font-mono text-[0.8rem] font-semibold text-blue-brand relative z-[1] flex-shrink-0" style={{ background: 'var(--pub-bg)' }}>{s.num}</div>
       <div className="pt-2">
         <div className="font-serif text-[1.15rem] text-white mb-1.5">{s.title}</div>
         <div className="text-[0.875rem] text-white/65 leading-[1.7]">{s.desc}</div>
@@ -931,7 +931,7 @@ function HowItWorks() {
 
 function TestimonialsSection() {
   return (
-    <section className="py-24 relative" style={{ background: '#060E18' }}>
+    <section className="py-24 relative" style={{ background: 'var(--pub-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
@@ -978,9 +978,9 @@ function PricingSection() {
               <motion.div
                 className="relative rounded-2xl py-9 px-8"
                 style={{
-                  background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, #0A1929 100%)' : 'linear-gradient(150deg,#0D1B2A 0%,#091420 100%)',
+                  background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, var(--pub-bg-mid) 100%)' : 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
                   border: '1px solid',
-                  borderColor: p.featured ? '#0066FF' : 'rgba(255,255,255,0.08)',
+                  borderColor: p.featured ? '#0066FF' : 'var(--pub-border-dim)',
                   boxShadow: p.featured ? '0 0 48px rgba(0,102,255,0.12)' : 'none',
                   transform: p.featured ? 'scale(1.025)' : 'none',
                 }}
@@ -1097,17 +1097,17 @@ function LandingFAQSection() {
       <div className="max-w-3xl mx-auto px-5 md:px-10">
         <Reveal delay={0.05}>
           <div style={{
-            background: 'linear-gradient(150deg, #0D1B2A 0%, #091420 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'linear-gradient(150deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%)',
+            border: '1px solid var(--pub-border-dim)',
             borderRadius: '16px',
             overflow: 'hidden',
           }}>
             <div style={{ padding: '24px 24px 0' }}>
               <div style={{ fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#60A5FA', marginBottom: '8px' }}>Common Questions</div>
-              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'white', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
-              <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '20px' }}>Everything you need to know before you start.</p>
+              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--pub-text)', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--pub-text-muted)', marginBottom: '20px' }}>Everything you need to know before you start.</p>
             </div>
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+            <div style={{ height: '1px', background: 'var(--pub-border-dim)' }} />
             <div style={{ padding: '0 24px' }}>
               {LANDING_FAQ_ITEMS.map((item, i) => (
                 <LandingFAQItem
@@ -1154,7 +1154,7 @@ function TrustedCounter() {
   if (!label) return null
 
   return (
-    <div className="py-8 relative" style={{ background: '#060E18' }}>
+    <div className="py-8 relative" style={{ background: 'var(--pub-bg)' }}>
       <Reveal className="flex justify-center">
         <div
           className="inline-flex items-center gap-3 rounded-full px-6 py-2.5"
@@ -1185,7 +1185,7 @@ function TrustedCounter() {
 
 function FinalCTA() {
   return (
-    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: '#060E18' }}>
+    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: 'var(--pub-bg)' }}>
       <div className="lp-cta-glow" aria-hidden="true" />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
@@ -1195,7 +1195,7 @@ function FinalCTA() {
           </Reveal>
           <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-4">
             Every question an examiner can ask, FYPro has already asked you first.<br />
-            Most students who fail their defense say the same thing: <em style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>"I thought I was prepared."</em>
+            Most students who fail their defense say the same thing: <em style={{ color: 'var(--pub-text-em)', fontStyle: 'italic' }}>"I thought I was prepared."</em>
           </Reveal>
           <Reveal delay={0.12}>
             <div className="flex items-center justify-center gap-2 mb-7">
@@ -1217,8 +1217,8 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06]" style={{ background: '#030A12', padding: '56px 0 28px' }}>
-      <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, #060E18, transparent)' }} />
+    <footer className="relative border-t border-white/[0.06]" style={{ background: 'var(--pub-bg)', padding: '56px 0 28px' }}>
+      <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, var(--pub-bg), transparent)' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
           <Reveal>
@@ -1305,7 +1305,8 @@ export default function LandingPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
       data-landing-page="true"
-      style={{ background: '#060E18' }}
+      data-pub="true"
+      style={{ background: 'var(--pub-bg)' }}
     >
       <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: scrollProgress + '%', backgroundColor: '#2563EB', zIndex: 9999, transition: 'width 0.1s linear' }} />
       <Navbar />

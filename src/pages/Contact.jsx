@@ -84,7 +84,7 @@ function Navbar() {
           scrolled ? 'border-[rgba(0,102,255,0.18)]' : 'border-white/[0.06]'
         }`}
         style={{
-          background: scrolled ? 'rgba(6,14,24,0.94)' : 'rgba(6,14,24,0.82)',
+          background: scrolled ? 'var(--pub-nav-scrolled)' : 'var(--pub-nav-bg)',
           backdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
           WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'blur(16px)',
           boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.4)' : 'none',
@@ -156,7 +156,7 @@ function Navbar() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             className="md:hidden fixed top-[66px] left-0 right-0 z-[190] border-b border-white/[0.07] px-6 pt-5 pb-7 flex flex-col gap-5"
-            style={{ background: 'rgba(6,14,24,0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+            style={{ background: 'var(--pub-nav-solid)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
           >
             <div className="flex flex-col gap-1">
               {navLinks.map(({ label, href }) => (
@@ -383,6 +383,7 @@ export default function Contact() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen"
+      data-pub="true"
       style={{ background: 'var(--bg-base)' }}
     >
       <style>{CONTACT_KEYFRAMES}</style>
