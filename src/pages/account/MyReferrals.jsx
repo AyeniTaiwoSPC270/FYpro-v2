@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchMyReferrals } from '../../lib/referral'
 import { showToast } from '../../components/Toast'
+import { useTheme } from '../../context/ThemeContext'
 
 const BASE_URL = 'https://www.fypro.com.ng'
 
@@ -38,25 +39,25 @@ function StatusBadge({ status }) {
   )
 }
 
-function StatCard({ label, value, sub }) {
+function StatCard({ label, value, sub, isDark }) {
   return (
     <div style={{
-      background: '#0d1f35',
+      background: isDark ? '#0d1f35' : 'linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%)',
       borderRadius: 12,
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+      border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
       padding: '20px 24px',
       flex: 1,
       minWidth: 120,
     }}>
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '1.75rem', fontWeight: 700, color: '#FFFFFF', margin: 0, lineHeight: 1 }}>
+      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '1.75rem', fontWeight: 700, color: isDark ? '#FFFFFF' : '#0D1B2A', margin: 0, lineHeight: 1 }}>
         {value}
       </p>
-      <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', margin: '6px 0 0', lineHeight: 1.3 }}>
+      <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(13,27,42,0.55)', margin: '6px 0 0', lineHeight: 1.3 }}>
         {label}
       </p>
       {sub && (
-        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', margin: '4px 0 0' }}>
+        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.7rem', color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(13,27,42,0.35)', margin: '4px 0 0' }}>
           {sub}
         </p>
       )}
@@ -64,7 +65,7 @@ function StatCard({ label, value, sub }) {
   )
 }
 
-function MilestoneBar({ qualifiedCount }) {
+function MilestoneBar({ qualifiedCount, isDark }) {
   const inBatch = qualifiedCount % 3
   const filled = inBatch === 0 && qualifiedCount > 0 ? 3 : inBatch
   const pct = Math.round((filled / 3) * 100)
@@ -72,14 +73,14 @@ function MilestoneBar({ qualifiedCount }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)' }}>
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.8rem', color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(13,27,42,0.55)' }}>
           Next free Defense session
         </span>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 600 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: isDark ? '#FFFFFF' : '#0D1B2A', fontWeight: 600 }}>
           {filled} / 3
         </span>
       </div>
-      <div style={{ height: 8, background: 'rgba(13,27,42,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+      <div style={{ height: 8, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(13,27,42,0.08)', borderRadius: 999, overflow: 'hidden' }}>
         <div style={{
           height: '100%',
           width: pct + '%',
@@ -93,29 +94,29 @@ function MilestoneBar({ qualifiedCount }) {
   )
 }
 
-function ReferralRow({ referral, index }) {
+function ReferralRow({ referral, index, isDark }) {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto auto',
-        alignItems: 'center',
-        gap: 16,
-        padding: '14px 20px',
-        background: index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr auto auto',
+      alignItems: 'center',
+      gap: 16,
+      padding: '14px 20px',
+      background: index % 2 === 0
+        ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)')
+        : 'transparent',
+      borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(13,27,42,0.06)',
+    }}>
       <div>
-        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.8125rem', color: '#FFFFFF', margin: 0, fontWeight: 500 }}>
+        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.8125rem', color: isDark ? '#FFFFFF' : '#0D1B2A', margin: 0, fontWeight: 500 }}>
           Friend #{index + 1}
         </p>
-        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>
+        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(13,27,42,0.45)', margin: '2px 0 0' }}>
           Invited {formatDate(referral.created_at)}
         </p>
       </div>
       <StatusBadge status={referral.status} />
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', margin: 0, minWidth: 90, textAlign: 'right' }}>
+      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem', color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(13,27,42,0.4)', margin: 0, minWidth: 90, textAlign: 'right' }}>
         {referral.status === 'qualified' && referral.qualified_at
           ? formatDate(referral.qualified_at)
           : referral.status === 'rewarded' && referral.rewarded_at
@@ -130,6 +131,8 @@ export default function MyReferrals() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   useEffect(() => {
     fetchMyReferrals()
@@ -152,8 +155,28 @@ export default function MyReferrals() {
   const totalInvited   = data?.referrals.length ?? 0
   const rewardedCount  = data ? data.referrals.filter((r) => r.status === 'rewarded').length : 0
 
+  const pageBg        = isDark ? '#060E18' : '#F0F4F8'
+  const dotColor      = isDark ? 'rgba(0,102,255,0.05)' : 'rgba(0,102,255,0.06)'
+  const textPrimary   = isDark ? '#FFFFFF' : '#0D1B2A'
+  const textSecondary = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(13,27,42,0.6)'
+  const textMuted     = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(13,27,42,0.45)'
+  const cardBg        = isDark ? 'linear-gradient(145deg, #0D1B2A 0%, #0F2235 100%)' : 'linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%)'
+  const cardBorder    = isDark ? '1px solid rgba(0,102,255,0.25)' : '1px solid rgba(0,102,255,0.18)'
+  const cardShadow    = isDark ? '0 8px 32px rgba(0,0,0,0.15)' : '0 4px 24px rgba(0,0,0,0.08)'
+  const milestoneCard = isDark ? '#0d1f35' : 'linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%)'
+  const milestoneBorder = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)'
+  const listBg        = isDark ? '#0a1928' : '#ffffff'
+  const listBorder    = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)'
+  const listHeaderBg  = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'
+  const listHeaderText = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(13,27,42,0.45)'
+  const codeChipBg    = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(13,27,42,0.04)'
+  const codeChipBorder = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(13,27,42,0.1)'
+  const codeChipText  = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(13,27,42,0.6)'
+  const emptyBg       = isDark ? 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)' : 'linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%)'
+  const emptyBorder   = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)'
+
   return (
-    <div style={{ minHeight: '100vh', background: '#060E18', backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.05) 1px, transparent 1px)', backgroundSize: '28px 28px', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: pageBg, backgroundImage: `radial-gradient(circle, ${dotColor} 1px, transparent 1px)`, backgroundSize: '28px 28px', padding: '40px 20px' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
         {/* Back link */}
@@ -162,7 +185,7 @@ export default function MyReferrals() {
           style={{
             fontFamily: "'Poppins', sans-serif",
             fontSize: '0.8125rem',
-            color: 'rgba(255,255,255,0.4)',
+            color: textMuted,
             textDecoration: 'none',
             display: 'inline-flex',
             alignItems: 'center',
@@ -175,10 +198,10 @@ export default function MyReferrals() {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: textPrimary, margin: 0, lineHeight: 1.2 }}>
             Refer a Friend
           </h1>
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)', marginTop: 8 }}>
+          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem', color: textSecondary, marginTop: 8 }}>
             Share your link. Every 3 friends who qualify earns you a free Defense session.
           </p>
         </div>
@@ -195,25 +218,25 @@ export default function MyReferrals() {
             <style>{`@keyframes mr-spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : !data ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '40px 0' }}>
+          <p style={{ fontFamily: "'Poppins', sans-serif", color: textMuted, textAlign: 'center', padding: '40px 0' }}>
             Could not load referral data. Please refresh the page.
           </p>
         ) : (
           <>
             {/* Referral code card */}
             <div style={{
-              background: 'linear-gradient(145deg, #0D1B2A 0%, #0F2235 100%)',
+              background: cardBg,
               borderRadius: 16,
-              border: '1px solid rgba(0,102,255,0.25)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              border: cardBorder,
+              boxShadow: cardShadow,
               padding: '28px 32px',
               marginBottom: 20,
               animation: 'card-enter 0.4s ease forwards',
             }}>
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem', color: textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px' }}>
                 Your referral code
               </p>
-              <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '2.25rem', fontWeight: 700, color: '#ffffff', margin: '0 0 16px', letterSpacing: '0.08em' }}>
+              <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '2.25rem', fontWeight: 700, color: textPrimary, margin: '0 0 16px', letterSpacing: '0.08em' }}>
                 {data.referralCode ?? '—'}
               </p>
 
@@ -222,9 +245,9 @@ export default function MyReferrals() {
                   <code style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: '0.78rem',
-                    color: 'rgba(255,255,255,0.6)',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: codeChipText,
+                    background: codeChipBg,
+                    border: codeChipBorder,
                     borderRadius: 8,
                     padding: '6px 12px',
                     userSelect: 'all',
@@ -256,28 +279,29 @@ export default function MyReferrals() {
 
             {/* Stats row */}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-              <StatCard label="Friends invited" value={totalInvited} />
-              <StatCard label="Qualified" value={qualifiedCount} sub="Email confirmed + topic validated" />
-              <StatCard label="Rewarded" value={rewardedCount} />
+              <StatCard label="Friends invited" value={totalInvited} isDark={isDark} />
+              <StatCard label="Qualified" value={qualifiedCount} sub="Email confirmed + topic validated" isDark={isDark} />
+              <StatCard label="Rewarded" value={rewardedCount} isDark={isDark} />
               <StatCard
                 label="Free sessions available"
                 value={data.freeSessionsAvailable}
                 sub="Ready to use"
+                isDark={isDark}
               />
             </div>
 
             {/* Milestone progress */}
             <div style={{
-              background: '#0d1f35',
+              background: milestoneCard,
               borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: milestoneBorder,
               padding: '20px 24px',
               marginBottom: 20,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
               animation: 'card-enter 0.4s ease forwards',
             }}>
-              <MilestoneBar qualifiedCount={qualifiedCount} />
-              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', margin: '12px 0 0' }}>
+              <MilestoneBar qualifiedCount={qualifiedCount} isDark={isDark} />
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: textMuted, margin: '12px 0 0' }}>
                 Every 3 friends who verify their email and complete their first Topic Validator run earns you 1 free Defence Simulator session.
               </p>
             </div>
@@ -285,11 +309,11 @@ export default function MyReferrals() {
             {/* Referral list */}
             {data.referrals.length > 0 ? (
               <div style={{
-                background: '#0a1928',
+                background: listBg,
                 borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: listBorder,
                 overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
                 animation: 'card-enter 0.4s ease forwards',
               }}>
                 {/* Table header */}
@@ -298,31 +322,31 @@ export default function MyReferrals() {
                   gridTemplateColumns: '1fr auto auto',
                   gap: 16,
                   padding: '12px 20px',
-                  background: 'rgba(255,255,255,0.04)',
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  background: listHeaderBg,
+                  borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)',
                 }}>
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Friend</span>
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</span>
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Date</span>
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: listHeaderText, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Friend</span>
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: listHeaderText, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</span>
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: listHeaderText, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Date</span>
                 </div>
 
                 {data.referrals.map((r, i) => (
-                  <ReferralRow key={r.id} referral={r} index={i} />
+                  <ReferralRow key={r.id} referral={r} index={i} isDark={isDark} />
                 ))}
               </div>
             ) : (
               <div style={{
-                background: 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
+                background: emptyBg,
                 borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: emptyBorder,
                 padding: '40px 24px',
                 textAlign: 'center',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
               }}>
-                <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: '#FFFFFF', margin: '0 0 8px' }}>
+                <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
                   No referrals yet
                 </p>
-                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.84rem', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+                <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.84rem', color: textSecondary, margin: 0 }}>
                   Share your link above and start earning free Defence sessions.
                 </p>
               </div>
