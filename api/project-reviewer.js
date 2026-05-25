@@ -121,7 +121,9 @@ const handler = async (req, res) => {
     if (response.ok) {
       const duration = Date.now() - start;
       supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id })
-        .then(({ error }) => { if (error) console.error('[project-reviewer] response_times insert failed:', error.message); });
+        .then(({ error }) => {
+          if (error) console.error('[project-reviewer] response_times insert failed:', error.message, error.code, error.details, error.hint);
+        });
     }
 
     return res.status(response.status).json(data);

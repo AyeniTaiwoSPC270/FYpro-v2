@@ -112,7 +112,9 @@ async function handleGeneral(req, res) {
   const cached = await getCached(cacheKey).catch(() => null);
 
   if (cached) {
-    await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: user.id }).catch(() => {});
+    await supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: 0, user_id: user.id }).catch(err => {
+      console.error('[ai/general] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
@@ -139,7 +141,7 @@ async function handleGeneral(req, res) {
       const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: user.id });
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[ai/general] response_times insert failed:', err.message);
+        console.error('[ai/general] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
@@ -256,7 +258,7 @@ async function handleDefense(req, res) {
       const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id });
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[ai/defense] response_times insert failed:', err.message);
+        console.error('[ai/defense] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
     }
     return res.status(response.status).json(data);
@@ -329,7 +331,9 @@ async function handleSupervisorPrep(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (cached) {
-    await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: 0, user_id: user.id }).catch(() => {});
+    await supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: 0, user_id: user.id }).catch(err => {
+      console.error('[ai/supervisor-prep] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
@@ -365,7 +369,7 @@ async function handleSupervisorPrep(req, res) {
     const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: user.id });
     const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
     await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-      console.error('[ai/supervisor-prep] response_times insert failed:', err.message);
+      console.error('[ai/supervisor-prep] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
     });
 
     const text = data.content?.[0]?.text ?? '';

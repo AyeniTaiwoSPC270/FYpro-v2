@@ -56,7 +56,9 @@ async function handleValidate(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (claudeCached) {
-    await supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id }).catch(() => {});
+    await supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id }).catch(err => {
+      console.error('[research/validate] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
@@ -121,7 +123,9 @@ async function handleValidate(req, res) {
     if (response.ok) {
       setCached(claudeKey, data, CLAUDE_TTL);
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/validate] response_times insert failed:', error.message); });
+      supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id }).then(({ error }) => {
+        if (error) console.error('[research/validate] response_times insert failed:', error.message, error.code, error.details, error.hint);
+      });
     }
     return res.status(response.status).json(data);
   } catch (err) {
@@ -172,7 +176,9 @@ async function handleLitMap(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (claudeCached) {
-    await supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id }).catch(() => {});
+    await supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id }).catch(err => {
+      console.error('[research/lit-map] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
@@ -246,7 +252,9 @@ async function handleLitMap(req, res) {
     if (response.ok) {
       setCached(claudeKey, data, CLAUDE_TTL);
       const duration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id }).then(({ error }) => { if (error) console.error('[research/lit-map] response_times insert failed:', error.message); });
+      supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id }).then(({ error }) => {
+        if (error) console.error('[research/lit-map] response_times insert failed:', error.message, error.code, error.details, error.hint);
+      });
     }
     return res.status(response.status).json(data);
   } catch (err) {
