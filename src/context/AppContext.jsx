@@ -176,7 +176,7 @@ export function AppProvider({ children }) {
     async function hydrateFromSupabase() {
       const { data: profile } = await supabase
         .from('users')
-        .select('full_name, faculty, department, level')
+        .select('full_name, university, faculty, department, level')
         .eq('id', user.id)
         .maybeSingle()
 
@@ -198,6 +198,7 @@ export function AppProvider({ children }) {
         ...prev,
         // Prefer DB name; fall back to Google/OAuth metadata; never inherit a previous user's name
         name:       profile.full_name ?? user.user_metadata?.full_name ?? '',
+        university: profile.university ?? prev.university,
         faculty:    profile.faculty    ?? prev.faculty,
         department: profile.department ?? prev.department,
         level:      profile.level      ?? prev.level,

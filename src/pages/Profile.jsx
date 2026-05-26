@@ -427,6 +427,7 @@ export default function Profile() {
     setSaving(true)
     try {
       const profileUpdates = {
+        university: form.university,
         faculty:    form.faculty,
         department: form.department,
         level:      form.level,

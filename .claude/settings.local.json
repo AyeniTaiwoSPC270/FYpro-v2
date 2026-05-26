@@ -168,7 +168,22 @@
       "mcp__supabase__get_edge_function",
       "Bash(Select-String *)",
       "mcp__plugin_supabase_supabase__execute_sql",
-      "mcp__plugin_supabase_supabase__get_logs"
+      "mcp__plugin_supabase_supabase__get_logs",
+      "Bash(npx eslint *)",
+      "Bash(bash *)",
+      "Bash(xargs grep -l \"AuthChangeEvent\")",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(echo \"EXIT_CODE:$?\")",
+      "Bash(Copy-Item *)",
+      "Bash(Get-Item \"C:\\\\Users\\\\FEYISAYO ATINUKE\\\\Downloads\\\\fypro-v2\\\\src\\\\pages\\\\*.jsx\")",
+      "Bash(Select-Object Name, Length)",
+      "Bash(dir fypro-instagram-profile.png fypro-twitter-profile.png)",
+      "Bash(powershell *)",
+      "Bash(start-process node *)",
+      "Bash(Select-Object Id)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(Write-Host \"Server started\")",
+      "Bash(del fypro-twitter-header-preview.jpg fypro-twitter-header-norm.png fypro-twitter-header-thumb.jpg fypro-twitter-header-tiny.png fypro-twitter-header-clean.png)"
     ]
   }
 }

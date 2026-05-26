@@ -284,17 +284,16 @@ export default async function handler(req, res) {
 
   let cert = existing;
 
-  // Fetch faculty/department once — needed for both new and re-downloaded certs
+  // Fetch profile once — needed for both new and re-downloaded certs.
+  // users table is the source of truth for profile data.
   const { data: userProfile } = await supabaseAdmin
     .from('users')
-    .select('faculty, department')
+    .select('full_name, faculty, department')
     .eq('id', user.id)
     .maybeSingle();
 
   if (!cert) {
-    // Full name is stored in auth user metadata by the profile page
-    // (supabase.auth.updateUser({ data: { full_name } }))
-    const fullName = user.user_metadata?.full_name || '';
+    const fullName = userProfile?.full_name || user.user_metadata?.full_name || '';
     if (!fullName) {
       return res.status(422).json({
         error:   'NAME_REQUIRED',
@@ -336,11 +335,13 @@ export default async function handler(req, res) {
     sendTelegramAlert(`🏆 Certificate issued: ${fullName} (${user.email}) scored ${sessionScore}/10\n<code>${newCert.certificate_number}</code>`).catch(() => null);
   }
 
-  // Generate PDF (stateless — no storage, generated fresh every download)
+  // Generate PDF (stateless — no storage, generated fresh every download).
+  // Precedence: users table (source of truth) → auth metadata → stored recipient_name.
+  const currentName = userProfile?.full_name || user.user_metadata?.full_name || cert.recipient_name;
   await ensureFonts();
   try {
     const pdfBuffer = buildCertificatePDF({
-      recipientName: cert.recipient_name,
+      recipientName: currentName,
       faculty:       cert.faculty       || userProfile?.faculty    || '',
       department:    cert.department    || userProfile?.department || '',
       topicTitle:    cert.topic_title,
