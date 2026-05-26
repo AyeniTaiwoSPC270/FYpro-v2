@@ -8,6 +8,9 @@ import { supabase } from '../../lib/supabase'
 import { resetUser } from '../../lib/analytics'
 import { showToast } from '../../components/Toast'
 import { BellIcon, GearIcon, SunIcon, MoonIcon, PlusIcon } from './_shared'
+import { useUser } from '../../hooks/useUser'
+import { useNotifications } from '../../hooks/useNotifications'
+import NotificationPanel from '../../components/NotificationPanel'
 
 export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const navigate = useNavigate()
@@ -20,7 +23,9 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
   const { features } = usePaidFeatures()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
 
-  const [notifications] = useState([])
+  const { user } = useUser()
+  const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(user?.id)
+  const [panelOpen, setPanelOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const avatarRef = useRef(null)
 
@@ -85,25 +90,52 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
           <PlusIcon /> New Session
         </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.09 }}
-          whileTap={{ scale: 0.94 }}
-          aria-label="Notifications"
-          onClick={() => showToast(notifications.length > 0 ? `You have ${notifications.length} notification${notifications.length > 1 ? 's' : ''}` : 'No new notifications')}
-          className="db-header__icon-btn relative w-[30px] h-[30px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
-          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
-        >
-          <BellIcon />
-          {notifications.length > 0 && (
-            <span
-              aria-label={`${notifications.length} unread notifications`}
-              className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center font-mono font-bold"
-              style={{ fontSize: '0.55rem' }}
-            >
-              {notifications.length}
-            </span>
-          )}
-        </motion.button>
+        <div style={{ position: 'relative' }}>
+          <motion.button
+            whileHover={{ scale: 1.09 }}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Notifications"
+            onClick={() => {
+              if (!panelOpen) refetch()
+              setPanelOpen(v => !v)
+            }}
+            className="db-header__icon-btn relative w-[30px] h-[30px] sm:w-[38px] sm:h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+            style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
+          >
+            <BellIcon />
+            {unreadCount > 0 && (
+              <span
+                aria-label={`${unreadCount} unread notifications`}
+                className="absolute font-bold text-white rounded-full"
+                style={{
+                  width: '16px', height: '16px',
+                  background: '#DC2626',
+                  fontSize: '0.55rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  top: '-4px', right: '-4px',
+                  border: '2px solid var(--bg-sidebar)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </motion.button>
+
+          <AnimatePresence>
+            {panelOpen && (
+              <NotificationPanel
+                notifications={notifications}
+                loading={loading}
+                error={error}
+                unreadCount={unreadCount}
+                onMarkAllRead={markAllRead}
+                onRetry={refetch}
+                onClose={() => setPanelOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+        </div>
 
         <motion.button
           whileHover={{ scale: 1.09 }}
