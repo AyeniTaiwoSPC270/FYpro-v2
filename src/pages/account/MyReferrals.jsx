@@ -130,6 +130,7 @@ function ReferralRow({ referral, index, isDark }) {
 export default function MyReferrals() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [copied, setCopied] = useState(false)
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -137,7 +138,7 @@ export default function MyReferrals() {
   useEffect(() => {
     fetchMyReferrals()
       .then(setData)
-      .catch(() => setData(null))
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
 
@@ -217,10 +218,41 @@ export default function MyReferrals() {
             }} />
             <style>{`@keyframes mr-spin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : !data ? (
-          <p style={{ fontFamily: "'Poppins', sans-serif", color: textMuted, textAlign: 'center', padding: '40px 0' }}>
-            Could not load referral data. Please refresh the page.
-          </p>
+        ) : error ? (
+          <div style={{
+            background: isDark
+              ? 'linear-gradient(145deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.04) 100%)'
+              : 'linear-gradient(145deg, #fff5f5 0%, #fff 100%)',
+            borderRadius: 16,
+            border: isDark ? '1px solid rgba(220,38,38,0.25)' : '1px solid rgba(220,38,38,0.2)',
+            padding: '40px 32px',
+            textAlign: 'center',
+            boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
+            animation: 'card-enter 0.4s ease forwards',
+          }}>
+            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
+              Could not load referrals
+            </p>
+            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.84rem', color: textSecondary, margin: '0 0 20px' }}>
+              Something went wrong. Please refresh the page and try again.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                background: '#DC2626',
+                border: 'none',
+                borderRadius: 8,
+                padding: '9px 20px',
+                cursor: 'pointer',
+              }}
+            >
+              Refresh page
+            </button>
+          </div>
         ) : (
           <>
             {/* Referral code card */}

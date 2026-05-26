@@ -644,87 +644,99 @@ export default function Profile() {
         >
           <SectionLabel>Personal Information</SectionLabel>
 
-          <div className="flex flex-col gap-5">
-            <FormField label="Full Name">
-              <AnimatedInput
-                className={inputCls}
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                autoComplete="name"
-              />
-            </FormField>
+          {!user ? (
+            <div className="flex flex-col gap-5">
+              {[{ w: 'w-24' }, { w: 'w-28' }, { w: 'w-20' }, { w: 'w-16' }, { w: 'w-24' }, { w: 'w-14' }].map((_, i) => (
+                <div key={i}>
+                  <div className="animate-pulse bg-slate-700/40 rounded h-3 w-20 mb-1.5" />
+                  <div className="animate-pulse bg-slate-700/30 rounded-xl h-[46px] w-full" />
+                </div>
+              ))}
+              <div className="animate-pulse bg-slate-700/40 rounded-xl h-[46px] w-32 mt-2" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              <FormField label="Full Name">
+                <AnimatedInput
+                  className={inputCls}
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  autoComplete="name"
+                />
+              </FormField>
 
-            <FormField label="Email Address" hint="Email changes require verification">
-              <AnimatedInput
-                className={inputCls}
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                autoComplete="email"
-              />
-            </FormField>
+              <FormField label="Email Address" hint="Email changes require verification">
+                <AnimatedInput
+                  className={inputCls}
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                />
+              </FormField>
 
-            <FormField label="University">
-              <AnimatedInput
-                className={inputCls}
-                type="text"
-                name="university"
-                value={form.university}
-                onChange={handleChange}
-              />
-            </FormField>
+              <FormField label="University">
+                <AnimatedInput
+                  className={inputCls}
+                  type="text"
+                  name="university"
+                  value={form.university}
+                  onChange={handleChange}
+                />
+              </FormField>
 
-            <FormField label="Faculty">
-              <AnimatedInput
-                className={inputCls}
-                type="text"
-                name="faculty"
-                value={form.faculty}
-                onChange={handleChange}
-              />
-            </FormField>
+              <FormField label="Faculty">
+                <AnimatedInput
+                  className={inputCls}
+                  type="text"
+                  name="faculty"
+                  value={form.faculty}
+                  onChange={handleChange}
+                />
+              </FormField>
 
-            <FormField label="Department">
-              <AnimatedInput
-                className={inputCls}
-                type="text"
-                name="department"
-                value={form.department}
-                onChange={handleChange}
-              />
-            </FormField>
+              <FormField label="Department">
+                <AnimatedInput
+                  className={inputCls}
+                  type="text"
+                  name="department"
+                  value={form.department}
+                  onChange={handleChange}
+                />
+              </FormField>
 
-            <FormField label="Level">
-              <AnimatedSelect
-                className={inputCls}
-                name="level"
-                value={form.level}
-                onChange={handleChange}
+              <FormField label="Level">
+                <AnimatedSelect
+                  className={inputCls}
+                  name="level"
+                  value={form.level}
+                  onChange={handleChange}
+                >
+                  {['100', '200', '300', '400', '500'].map((l) => (
+                    <option key={l} value={l}>{l} Level</option>
+                  ))}
+                </AnimatedSelect>
+              </FormField>
+
+              <motion.button
+                whileHover={!saving ? { y: -2 } : {}}
+                whileTap={!saving ? { scale: 0.97 } : {}}
+                onClick={!saving ? handleSaveChanges : undefined}
+                disabled={saving}
+                className={`relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2 flex items-center gap-2 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                style={{ background: '#2563EB', border: 'none' }}
+                onMouseEnter={!saving ? e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' } : undefined}
+                onMouseLeave={!saving ? e => { e.currentTarget.style.boxShadow = 'none' } : undefined}
               >
-                {['100', '200', '300', '400', '500'].map((l) => (
-                  <option key={l} value={l}>{l} Level</option>
-                ))}
-              </AnimatedSelect>
-            </FormField>
-
-            <motion.button
-              whileHover={!saving ? { y: -2 } : {}}
-              whileTap={!saving ? { scale: 0.97 } : {}}
-              onClick={!saving ? handleSaveChanges : undefined}
-              disabled={saving}
-              className={`relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2 flex items-center gap-2 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
-              style={{ background: '#2563EB', border: 'none' }}
-              onMouseEnter={!saving ? e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' } : undefined}
-              onMouseLeave={!saving ? e => { e.currentTarget.style.boxShadow = 'none' } : undefined}
-            >
-              {saving ? (
-                <><SpinnerIcon />Saving…</>
-              ) : 'Save Changes'}
-            </motion.button>
-          </div>
+                {saving ? (
+                  <><SpinnerIcon />Saving…</>
+                ) : 'Save Changes'}
+              </motion.button>
+            </div>
+          )}
         </motion.div>
 
         {/* ── Section 3: Academic Information ── */}

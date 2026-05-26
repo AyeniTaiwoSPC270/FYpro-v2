@@ -84,20 +84,28 @@ const cardStyle = {
 
 export default function EmailPreferences() {
   const { user } = useUser()
-  const [prefs,   setPrefs]   = useState(DEFAULTS)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [hasRow,  setHasRow]  = useState(false)
+  const [prefs,       setPrefs]       = useState(DEFAULTS)
+  const [loading,     setLoading]     = useState(true)
+  const [saving,      setSaving]      = useState(false)
+  const [hasRow,      setHasRow]      = useState(false)
+  const [loadError,   setLoadError]   = useState(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
 
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('email_preferences')
         .select('welcome_enabled, defense_nudge_enabled, urgency_reminder_enabled, unsubscribed_all')
         .eq('user_id', user.id)
         .maybeSingle()
+
+      if (error) {
+        setLoadError('Could not load your email preferences. Please refresh the page.')
+        setLoading(false)
+        return
+      }
 
       if (data) {
         setPrefs({
@@ -111,7 +119,7 @@ export default function EmailPreferences() {
       setLoading(false)
     }
     load()
-  }, [user?.id])
+  }, [user?.id, loadAttempt])
 
   async function persist(updated, previous) {
     if (!user?.id) return
@@ -180,6 +188,33 @@ export default function EmailPreferences() {
           <div className="mt-16 flex justify-center">
             <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
           </div>
+        ) : loadError ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 p-6 sm:p-8 text-center"
+            style={{
+              background:    'rgba(220,38,38,0.08)',
+              borderRadius:  '1rem',
+              border:        '1px solid rgba(220,38,38,0.25)',
+              boxShadow:     '0 4px 20px rgba(0,0,0,0.35)',
+            }}
+          >
+            <p className="font-sans text-sm font-semibold mb-2" style={{ color: '#F87171' }}>
+              Failed to load preferences
+            </p>
+            <p className="font-sans text-xs mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {loadError}
+            </p>
+            <button
+              onClick={() => { setLoadError(null); setLoading(true); setLoadAttempt(a => a + 1) }}
+              className="font-sans font-semibold text-white text-sm rounded-xl px-5 py-2.5 cursor-pointer border-0"
+              style={{ background: '#DC2626' }}
+            >
+              Retry
+            </button>
+          </motion.div>
         ) : (
           <>
             {/* Per-type toggles */}
