@@ -526,6 +526,7 @@ export default function DefensePrep() {
   const [sessionTerminated, setSessionTerminated]   = useState(false)
   const [turnCount, setTurnCount]                   = useState(0)
   const [sessionComplete, setSessionComplete]       = useState(false)
+  const [downloadingTranscript, setDownloadingTranscript] = useState(false)
   const dpWordCount = countWords(inputValue)
 
   // ── refs (survive async boundaries, never trigger re-renders) ─────────────
@@ -1257,6 +1258,8 @@ export default function DefensePrep() {
   }
 
   async function downloadDefenseTranscript() {
+    if (downloadingTranscript) return
+    setDownloadingTranscript(true)
     function esc(str) {
       if (str == null) return ''
       return String(str)
@@ -1333,6 +1336,7 @@ export default function DefensePrep() {
         .save()
     } finally {
       document.body.removeChild(container)
+      setDownloadingTranscript(false)
     }
   }
 
@@ -1637,8 +1641,20 @@ export default function DefensePrep() {
                       <button className="dp-circuit-complete__btn-restart" onClick={handleRestartSimulator}>
                         Restart Simulator
                       </button>
-                      <button className="dp-circuit-complete__btn-download" onClick={downloadDefenseTranscript}>
-                        Download Session Report
+                      <button
+                        className="dp-circuit-complete__btn-download"
+                        onClick={downloadDefenseTranscript}
+                        disabled={downloadingTranscript}
+                        style={downloadingTranscript ? { opacity: 0.65, cursor: 'not-allowed' } : {}}
+                      >
+                        {downloadingTranscript ? (
+                          <>
+                            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}>
+                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                            </svg>
+                            Generating PDF…
+                          </>
+                        ) : 'Download Session Report'}
                       </button>
                     </div>
                     <FeedbackThumbs feature="defense_simulator" contextId={projectId || undefined} />
