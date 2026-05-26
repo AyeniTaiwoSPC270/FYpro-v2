@@ -93,7 +93,7 @@ export default function NotificationPanel({
           </span>
           {unreadCount > 0 && (
             <span style={{
-              background: '#0066FF',
+              background: 'var(--color-blue-primary)',
               color: '#fff',
               padding: '1px 7px',
               borderRadius: '999px',
@@ -113,7 +113,7 @@ export default function NotificationPanel({
               border: 'none',
               fontSize: '0.7rem',
               fontWeight: 500,
-              color: '#3B82F6',
+              color: 'var(--color-blue-light)',
               cursor: 'pointer',
               padding: '4px 8px',
               borderRadius: '6px',
@@ -161,13 +161,13 @@ export default function NotificationPanel({
             <button
               onClick={onRetry}
               style={{
-                background: 'rgba(0,102,255,0.15)',
-                border: '1px solid rgba(0,102,255,0.3)',
+                background: 'var(--color-blue-glow)',
+                border: '1px solid var(--color-border-blue)',
                 borderRadius: '8px',
                 padding: '6px 16px',
                 fontSize: '0.75rem',
                 fontWeight: 600,
-                color: '#3B82F6',
+                color: 'var(--color-blue-light)',
                 cursor: 'pointer',
                 fontFamily: "'Poppins', sans-serif",
               }}
@@ -246,7 +246,7 @@ export default function NotificationPanel({
                 {!n.read && (
                   <div style={{
                     width: '6px', height: '6px', borderRadius: '50%',
-                    background: '#0066FF', flexShrink: 0,
+                    background: 'var(--color-blue-primary)', flexShrink: 0,
                   }} />
                 )}
                 <span style={{
