@@ -418,6 +418,9 @@ export default function Settings() {
     ? name.split(' ').map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase()
     : user?.email?.[0]?.toUpperCase() ?? '?'
 
+  const isGoogleUser = user?.app_metadata?.provider === 'google' ||
+    (user?.identities?.length > 0 && user.identities.every(id => id.provider !== 'email'))
+
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' })
   function handlePasswordChange(e) {
     const { name: field, value } = e.target
@@ -459,6 +462,7 @@ export default function Settings() {
         .from('email_preferences')
         .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' })
       if (error) showToast('Failed to save preference', 'error')
+      else showToast('Preference saved')
     } finally {
       setSavingNotif(false)
     }
@@ -485,6 +489,14 @@ export default function Settings() {
     }
     setUpdatingPassword(true)
     try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: passwords.current,
+      })
+      if (signInError) {
+        showToast('Current password is incorrect', 'error')
+        return
+      }
       const { error } = await supabase.auth.updateUser({ password: passwords.newPass })
       if (error) {
         showToast(error.message || 'Password update failed. Please try again.', 'error')
@@ -547,38 +559,51 @@ export default function Settings() {
         >
           <SectionLabel>Change Password</SectionLabel>
 
-          <div className="flex flex-col gap-5">
-            <PasswordInput
-              label="Current Password"
-              name="current"
-              value={passwords.current}
-              onChange={handlePasswordChange}
-            />
-            <PasswordInput
-              label="New Password"
-              name="newPass"
-              value={passwords.newPass}
-              onChange={handlePasswordChange}
-              showStrength
-            />
-            <PasswordInput
-              label="Confirm New Password"
-              name="confirm"
-              value={passwords.confirm}
-              onChange={handlePasswordChange}
-            />
-
-            <motion.button
-              whileHover={!updatingPassword ? { y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' } : {}}
-              whileTap={!updatingPassword ? { scale: 0.97 } : {}}
-              onClick={!updatingPassword ? handleUpdatePassword : undefined}
-              disabled={updatingPassword}
-              className={`font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0 flex items-center gap-2 ${updatingPassword ? 'opacity-60 cursor-not-allowed' : ''}`}
-              style={{ background: '#2563EB' }}
+          {isGoogleUser ? (
+            <div
+              className="rounded-xl px-5 py-4 font-sans text-sm"
+              style={{
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-muted)',
+              }}
             >
-              {updatingPassword ? <><SpinnerIcon />Updating…</> : 'Update Password'}
-            </motion.button>
-          </div>
+              Your account uses Google Sign-In. Password management is handled by Google — there's no password to change here.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              <PasswordInput
+                label="Current Password"
+                name="current"
+                value={passwords.current}
+                onChange={handlePasswordChange}
+              />
+              <PasswordInput
+                label="New Password"
+                name="newPass"
+                value={passwords.newPass}
+                onChange={handlePasswordChange}
+                showStrength
+              />
+              <PasswordInput
+                label="Confirm New Password"
+                name="confirm"
+                value={passwords.confirm}
+                onChange={handlePasswordChange}
+              />
+
+              <motion.button
+                whileHover={!updatingPassword ? { y: -2, boxShadow: '0 8px 20px rgba(59,130,246,0.4)' } : {}}
+                whileTap={!updatingPassword ? { scale: 0.97 } : {}}
+                onClick={!updatingPassword ? handleUpdatePassword : undefined}
+                disabled={updatingPassword}
+                className={`font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0 flex items-center gap-2 ${updatingPassword ? 'opacity-60 cursor-not-allowed' : ''}`}
+                style={{ background: '#2563EB' }}
+              >
+                {updatingPassword ? <><SpinnerIcon />Updating…</> : 'Update Password'}
+              </motion.button>
+            </div>
+          )}
         </motion.div>
 
         {/* ── Section 2: Notification Preferences ── */}
