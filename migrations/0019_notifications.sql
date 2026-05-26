@@ -1,4 +1,4 @@
--- migrations/0015_notifications.sql
+-- migrations/0019_notifications.sql
 -- Notification system: persistent, user-scoped notifications
 
 CREATE TABLE IF NOT EXISTS notifications (
