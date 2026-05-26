@@ -333,6 +333,18 @@ export default async function handler(req, res) {
 
     cert = newCert;
     sendTelegramAlert(`🏆 Certificate issued: ${fullName} (${user.email}) scored ${sessionScore}/10\n<code>${newCert.certificate_number}</code>`).catch(() => null);
+
+    // Notify user — best-effort
+    supabaseAdmin
+      .from('notifications')
+      .insert({
+        user_id:  user.id,
+        type:     'certificate_unlocked',
+        title:    'Defense certificate unlocked',
+        message:  `You scored ${sessionScore}/10 — ${newCert.certificate_number} is ready.`,
+        metadata: { certificate_number: newCert.certificate_number, score: sessionScore },
+      })
+      .catch(e => console.error('[certificate] notification insert failed:', e.message));
   }
 
   // Generate PDF (stateless — no storage, generated fresh every download).
