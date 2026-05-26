@@ -219,6 +219,14 @@ async function listAllAuthUsers() {
   return allUsers;
 }
 
+/**
+ * Comprehensive admin analytics: users table, revenue/signups charts, feature usage,
+ * drop-off funnel, never-converted list, daily spend, cache hit rate, and live event feed.
+ * Gated to ADMIN_EMAIL by server-side JWT verification (not just a client-side check).
+ * @param {object} req - Vercel request; expects Authorization: Bearer <admin JWT>
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 // action: "dashboard" — comprehensive admin analytics
 async function handleDashboard(req, res) {
   // Server-side admin gate: verify JWT and check email
@@ -542,6 +550,14 @@ async function verifyAdmin(req, res) {
   }
 }
 
+/**
+ * Real-time API health vitals: avg latency (last 10 fresh calls), last call timestamp,
+ * failure count today, request count today, and distinct active sessions in the last 30 min.
+ * Gated to ADMIN_EMAIL via verifyAdmin.
+ * @param {object} req - Vercel request; expects Authorization: Bearer <admin JWT>
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 // action: "vitals"
 async function handleVitals(req, res) {
   const caller = await verifyAdmin(req, res);

@@ -9,6 +9,15 @@ import { setCorsHeaders } from './_lib/cors.js';
 
 export const config = { maxDuration: 60 };
 
+/**
+ * Project Reviewer — accepts a PDF (base64-encoded in the messages array) and returns
+ * a Claude AI review. Requires a valid JWT with defense_pack entitlement. Validates PDF
+ * magic bytes (%PDF) and enforces a 10 MB file size limit server-side before forwarding.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with system, messages, model, max_tokens
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ * @throws {Error} If Anthropic request times out after 50s (returns 504)
+ */
 const handler = async (req, res) => {
   setCorsHeaders(req, res);
 

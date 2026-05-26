@@ -14,6 +14,15 @@ export const config = { maxDuration: 60 };
 
 const CLAUDE_TTL = 86400; // 24h
 
+/**
+ * Topic Validator — fetches up to 5 real papers from Semantic Scholar/OpenAlex, augments the
+ * system prompt with them, then calls Claude. Injects paper metadata into the JSON verdict before
+ * caching. Responses cached for 24h.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with topic, messages, max_tokens
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ * @throws {Error} If Anthropic request times out after 50s (returns 504)
+ */
 async function handleValidate(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -140,6 +149,14 @@ async function handleValidate(req, res) {
   }
 }
 
+/**
+ * Literature Map — fetches up to 20 papers and asks Claude to cluster them into 4–6 themes.
+ * Returns 422 if no papers are found after sparse-literature filtering. Responses cached 24h.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with topic, messages, max_tokens
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ * @throws {Error} If Anthropic request times out after 50s (returns 504)
+ */
 async function handleLitMap(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -271,6 +288,13 @@ async function handleLitMap(req, res) {
   }
 }
 
+/**
+ * Returns the total count of registered users. CDN-cached for 1h via Cache-Control.
+ * Fails open — returns 0 on DB error rather than exposing a 5xx to the landing page.
+ * @param {object} req - Vercel request (GET, no auth required)
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 async function handleUserCount(req, res) {
   res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=3600');
   try {

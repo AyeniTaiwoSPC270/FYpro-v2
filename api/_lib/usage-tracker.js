@@ -9,12 +9,13 @@ function todayDate() {
 }
 
 /**
- * Awaitable — call with `await` before sending the response, otherwise
- * Vercel terminates the function before the Supabase write completes.
- * Never throws; logs errors only.
- * Primary path: supabaseAdmin.rpc('increment_daily_usage') — atomic, race-safe.
- * Fallback path: direct SELECT + UPDATE/INSERT — non-atomic but ensures rows
- *   are written even if the RPC EXECUTE privilege is misconfigured.
+ * Records token usage and estimated USD cost for a single Anthropic API call.
+ * Must be awaited before sending the response — Vercel terminates the function after the response is sent.
+ * Never throws; falls back from the atomic RPC to a direct table write if the RPC privilege is missing.
+ * @param {number} tokensIn  - Input (prompt) token count from data.usage.input_tokens
+ * @param {number} tokensOut - Output (completion) token count from data.usage.output_tokens
+ * @param {string} model     - Model ID used for the call (e.g. 'claude-sonnet-4-6')
+ * @returns {Promise<void>}
  */
 export async function trackUsage(tokensIn, tokensOut, model) {
   const cost =
@@ -79,9 +80,9 @@ export async function trackUsage(tokensIn, tokensOut, model) {
 }
 
 /**
- * Call before every Claude response.
+ * Checks whether today's cumulative Claude spend is still under DAILY_CAP_USD.
  * Fails open (returns allowed: true) if the DB is unreachable — never blocks users on infra errors.
- * @returns {{ allowed: boolean, spent: number, cap: number }}
+ * @returns {Promise<{ allowed: boolean, spent: number, cap: number }>}
  */
 export async function checkDailyCap() {
   const cap = parseFloat(process.env.DAILY_CAP_USD || '10');

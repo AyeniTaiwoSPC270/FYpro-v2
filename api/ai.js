@@ -23,6 +23,14 @@ const TTL_BY_STEP = {
   'writing-planner':     21600,
 };
 
+/**
+ * General Claude proxy for all six workflow steps (topic-validator, chapter-architect, etc.).
+ * Validates the JWT, checks rate limits and daily spend cap, resolves the system prompt
+ * server-side, and returns a cached or fresh Anthropic response.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with step, messages, model, max_tokens
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 async function handleGeneral(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -161,6 +169,13 @@ async function handleGeneral(req, res) {
   }
 }
 
+/**
+ * Defense Simulator proxy. Requires defense_pack entitlement — enforced server-side.
+ * Not cached (each turn is unique). Enforces a 300-word answer limit to prevent token abuse.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with system, messages, model, max_tokens, answerWordCount
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 async function handleDefense(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -287,6 +302,13 @@ Format: return ONLY a JSON array of 8 strings. No preamble. No markdown.`;
 
 const SUPERVISOR_PREP_TTL = 21600; // 6 hours
 
+/**
+ * Generates 8 targeted supervisor meeting questions based on project stage and last feedback.
+ * Requires a valid JWT. Input word counts are validated before forwarding. Responses cached 6h.
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with stage, lastFeedback, stuckOn
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
 async function handleSupervisorPrep(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;

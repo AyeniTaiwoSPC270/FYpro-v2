@@ -37,14 +37,15 @@ function utcDateKey() {
 }
 
 /**
- * rateLimitCheck — call at the top of any serverless handler.
- *
- * @param {object} req    — Vercel request object
- * @param {object} limits — { userDay, ipDay, prefix }
- *   userDay: max requests per authenticated user per calendar day (UTC midnight reset)
- *   ipDay:   max requests per IP per calendar day (UTC midnight reset)
- *   prefix:  short string that scopes the Redis keys (e.g. 'claude', 'defense')
- * @returns {{ allowed: boolean, reason: string }}
+ * Enforces per-IP and per-user daily rate limits via Upstash Redis fixedWindow counters.
+ * Call at the top of any serverless handler; callers should `.catch()` with a fail-open default.
+ * @param {object} req            - Vercel request object (reads x-forwarded-for and Authorization)
+ * @param {object} limits         - Rate limit configuration
+ * @param {number} limits.userDay - Max requests per authenticated user per UTC calendar day
+ * @param {number} limits.ipDay   - Max requests per IP per UTC calendar day
+ * @param {string} limits.prefix  - Redis key namespace (e.g. 'claude', 'defense')
+ * @returns {Promise<{ allowed: boolean, reason: string }>}
+ * @throws {Error} If Redis is unavailable (callers should catch and fail open)
  */
 export async function rateLimitCheck(req, limits) {
   const { userDay, ipDay, prefix = 'default' } = limits;
