@@ -699,6 +699,8 @@ async function handleDeleteUser(req, res) {
     // Explicitly delete from tables that may not have CASCADE DELETE on the FK chain.
     // Same pattern as handleSelfDelete — prevents FK constraint violations in deleteUser.
     const tablesToClear = [
+      'notifications',
+      'user_progress',
       'defense_certificates',
       'defense_credits',
       'feature_feedback',
@@ -996,6 +998,8 @@ async function handleSelfDelete(req, res) {
     // 1. Explicitly delete from tables not guaranteed to CASCADE.
     //    Each delete is independent — a missing table or empty result is non-fatal.
     const singleColumnTables = [
+      'notifications',
+      'user_progress',
       'defense_certificates',
       'defense_credits',
       'feature_feedback',
