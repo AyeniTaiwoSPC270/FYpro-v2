@@ -136,6 +136,23 @@ async function handleSignup(req, res) {
 
   if (success) {
     sendTelegramAlert(`👤 New signup: ${email} (free)`);
+    // Welcome notification — fire-and-forget, best-effort
+    supabaseAdmin
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', 'welcome')
+      .then(({ count }) => {
+        if (count === 0) {
+          return supabaseAdmin.from('notifications').insert({
+            user_id: userId,
+            type:    'welcome',
+            title:   'Welcome to FYPro',
+            message: "Your research journey starts here. Let's go.",
+          })
+        }
+      })
+      .catch(e => console.error('[auth/signup] welcome notification failed:', e.message));
     // Fire welcome email immediately — don't wait for cron (up to 24h delay)
     if (process.env.CRON_SECRET) {
       fetch(`${APP_URL}/api/send-nurture-email`, {
