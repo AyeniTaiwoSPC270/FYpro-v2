@@ -272,15 +272,18 @@ function SectionLabel({ children }) {
 
 // ─── ToggleSwitch ─────────────────────────────────────────────────────────────
 
-function ToggleSwitch({ checked, onChange, ariaLabel }) {
+function ToggleSwitch({ checked, onChange, ariaLabel, disabled = false }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
-      onClick={onChange}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
-        checked ? 'bg-blue-600' : 'bg-slate-700'
+      onClick={disabled ? undefined : onChange}
+      disabled={disabled}
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+      } ${
+        checked && !disabled ? 'bg-blue-600' : disabled ? 'bg-slate-600' : 'bg-slate-700'
       }`}
     >
       <span
@@ -294,14 +297,14 @@ function ToggleSwitch({ checked, onChange, ariaLabel }) {
 
 // ─── ToggleRow ────────────────────────────────────────────────────────────────
 
-function ToggleRow({ title, desc, checked, onChange }) {
+function ToggleRow({ title, desc, checked, onChange, disabled = false }) {
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className={`flex items-center justify-between gap-4 ${disabled ? 'opacity-60' : ''}`}>
       <div className="flex-1 min-w-0">
         <div className="font-sans text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{title}</div>
         <div className="font-sans text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</div>
       </div>
-      <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={title} />
+      <ToggleSwitch checked={checked} onChange={onChange} ariaLabel={title} disabled={disabled} />
     </div>
   )
 }
@@ -426,6 +429,7 @@ export default function Settings() {
 
   const [updatingPassword, setUpdatingPassword] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [savingNotif, setSavingNotif] = useState(false)
 
   // Load email preferences from Supabase on mount
   useEffect(() => {
@@ -449,10 +453,15 @@ export default function Settings() {
   // Persist a single preference change to Supabase
   async function saveNotifPref(updates) {
     if (!user?.id) return
-    const { error } = await supabase
-      .from('email_preferences')
-      .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' })
-    if (error) showToast('Failed to save preference', 'error')
+    setSavingNotif(true)
+    try {
+      const { error } = await supabase
+        .from('email_preferences')
+        .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' })
+      if (error) showToast('Failed to save preference', 'error')
+    } finally {
+      setSavingNotif(false)
+    }
   }
 
   const SpinnerIcon = () => (
@@ -588,6 +597,7 @@ export default function Settings() {
               desc="Get weekly reminders to keep your FYP on track"
               checked={notifs.email}
               onChange={() => { const val = !notifs.email; setNotifs((p) => ({ ...p, email: val })); saveNotifPref({ welcome_enabled: val }) }}
+              disabled={savingNotif}
             />
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow
@@ -595,6 +605,7 @@ export default function Settings() {
               desc="Hear about new FYPro features and improvements"
               checked={notifs.updates}
               onChange={() => { const val = !notifs.updates; setNotifs((p) => ({ ...p, updates: val })); saveNotifPref({ urgency_reminder_enabled: val }) }}
+              disabled={savingNotif}
             />
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow
@@ -602,8 +613,15 @@ export default function Settings() {
               desc="Receive exam preparation tips before your defense date"
               checked={notifs.defense}
               onChange={() => { const val = !notifs.defense; setNotifs((p) => ({ ...p, defense: val })); saveNotifPref({ defense_nudge_enabled: val }) }}
+              disabled={savingNotif}
             />
           </div>
+          {savingNotif && (
+            <div className="mt-2 flex items-center gap-2 justify-end px-1">
+              <div className="w-3 h-3 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+              <span className="font-sans text-xs" style={{ color: 'var(--text-muted)' }}>Saving…</span>
+            </div>
+          )}
         </motion.div>
 
         {/* ── Section 3: Appearance ── */}
