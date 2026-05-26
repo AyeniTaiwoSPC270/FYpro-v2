@@ -6,7 +6,7 @@ const STEP_LABELS = {
   methodology_advisor: 'Methodology Advisor',
   writing_planner:     'Writing Planner',
   project_reviewer:    'Project Reviewer',
-  defense_prep:        'Defence Prep',
+  defense_prep:        'Defense Prep',
 }
 
 const STEP_KEYS = Object.keys(STEP_LABELS)
