@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { STEP_NAME_TO_NUM, DotsHorizontalIcon, LockIcon, PlusIcon, TrashIcon, ArrowRightIcon } from './_shared'
 
-function ProjectCard({ project, onContinue, onDelete }) {
+function ProjectCard({ project, onContinue, onDelete, isLoading }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -87,20 +87,30 @@ function ProjectCard({ project, onContinue, onDelete }) {
 
       {/* Continue button */}
       <motion.button
-        whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.35)' }}
-        whileTap={{ scale: 0.97 }}
-        onClick={() => onContinue(project.id)}
-        style={{ width: '100%', background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 20px', fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'background 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#15803D' }}
+        whileHover={!isLoading ? { y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.35)' } : {}}
+        whileTap={!isLoading ? { scale: 0.97 } : {}}
+        onClick={() => { if (!isLoading) onContinue(project.id) }}
+        disabled={isLoading}
+        style={{ width: '100%', background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 20px', fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.85rem', cursor: isLoading ? 'default' : 'pointer', transition: 'background 0.15s ease, opacity 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4, opacity: isLoading ? 0.65 : 1 }}
+        onMouseEnter={e => { if (!isLoading) e.currentTarget.style.background = '#15803D' }}
         onMouseLeave={e => { e.currentTarget.style.background = '#16A34A' }}
       >
-        Continue <ArrowRightIcon size={13} />
+        {isLoading ? (
+          <>
+            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            Loading…
+          </>
+        ) : (
+          <>Continue <ArrowRightIcon size={13} /></>
+        )}
       </motion.button>
     </motion.div>
   )
 }
 
-function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay }) {
+function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay, isStarting }) {
   const hasProjectReset = !featuresLoading && Array.isArray(features) && features.includes('project_reset')
   const isDefense = Array.isArray(features) && features.includes('defense_pack')
   const hasDefenseFreeSlot = !featuresLoading && isDefense && Array.isArray(projects) && projects.length === 0
@@ -139,12 +149,22 @@ function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay
             New Project
           </p>
           <motion.button
-            whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.35)' }}
-            whileTap={{ scale: 0.97 }}
-            onClick={onStartNew}
-            style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 20px', fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', transition: 'background 0.15s ease' }}
+            whileHover={!isStarting ? { y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.35)' } : {}}
+            whileTap={!isStarting ? { scale: 0.97 } : {}}
+            onClick={() => { if (!isStarting) onStartNew() }}
+            disabled={isStarting}
+            style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 20px', fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.82rem', cursor: isStarting ? 'default' : 'pointer', transition: 'background 0.15s ease, opacity 0.15s ease', opacity: isStarting ? 0.65 : 1, display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            Start New Project
+            {isStarting ? (
+              <>
+                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Starting…
+              </>
+            ) : (
+              'Start New Project'
+            )}
           </motion.button>
         </>
       ) : (
@@ -162,7 +182,7 @@ function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay
   )
 }
 
-export default function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay, onDelete }) {
+export default function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay, onDelete, isStartingProject, continuingProjectId }) {
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
@@ -175,9 +195,9 @@ export default function ProjectsGrid({ projects, features, featuresLoading, onCo
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 16 }}>
         {projects.map(p => (
-          <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} />
+          <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} isLoading={continuingProjectId === p.id} />
         ))}
-        <NewProjectCard features={features} featuresLoading={featuresLoading} projects={projects} onStartNew={onStartNew} onPay={onPay} />
+        <NewProjectCard features={features} featuresLoading={featuresLoading} projects={projects} onStartNew={onStartNew} onPay={onPay} isStarting={isStartingProject} />
       </div>
     </div>
   )

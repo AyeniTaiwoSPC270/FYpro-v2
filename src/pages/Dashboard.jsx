@@ -40,12 +40,16 @@ export default function Dashboard() {
   const { user } = useUser()
   const [projects, setProjects] = useState([])
   const [projectsLoading, setProjectsLoading] = useState(true)
+  const [projectsError, setProjectsError] = useState(null)
 
   useEffect(() => {
     if (!user?.id) { setProjectsLoading(false); return }
     let cancelled = false
     setProjectsLoading(true)
-    getAllUserProjects(user.id).then(p => { if (!cancelled) { setProjects(p); setProjectsLoading(false) } })
+    setProjectsError(null)
+    getAllUserProjects(user.id)
+      .then(p => { if (!cancelled) { setProjects(p); setProjectsLoading(false) } })
+      .catch(err => { if (!cancelled) { setProjectsError(err?.message || 'Failed to load projects'); setProjectsLoading(false) } })
     return () => { cancelled = true }
   }, [user?.id])
 
@@ -76,6 +80,8 @@ export default function Dashboard() {
   const [toastMsg, setToastMsg] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const toastTimer = useRef(null)
+  const mountedRef = useRef(true)
+  useEffect(() => () => { mountedRef.current = false }, [])
 
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
@@ -119,14 +125,24 @@ export default function Dashboard() {
   function handleModalClose() { setShowNewSessionModal(false) }
   function handleModalConfirm() { setShowNewSessionModal(false); handlePay('project_reset') }
 
+  const [continuingProjectId, setContinuingProjectId] = useState(null)
+
   async function handleContinueProject(projectId) {
-    await updateProject(projectId, { status: 'active' })
-    setSearchParams({ project: projectId })
+    setContinuingProjectId(projectId)
+    try {
+      await updateProject(projectId, { status: 'active' })
+      setSearchParams({ project: projectId })
+    } finally {
+      setContinuingProjectId(null)
+    }
   }
+
+  const [isStartingProject, setIsStartingProject] = useState(false)
 
   async function handleStartNewProject() {
     if (isStartingProjectRef.current) return
     isStartingProjectRef.current = true
+    setIsStartingProject(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
@@ -154,6 +170,7 @@ export default function Dashboard() {
       navigate('/app')
     } finally {
       isStartingProjectRef.current = false
+      setIsStartingProject(false)
     }
   }
 
@@ -226,6 +243,31 @@ export default function Dashboard() {
               <div style={{ width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: '#0066FF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
+          ) : projectsError ? (
+            <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 16, padding: '32px 40px', textAlign: 'center', maxWidth: 440 }}
+              >
+                <p className="font-sans font-semibold" style={{ color: 'var(--color-red, #DC2626)', fontSize: '1rem', margin: '0 0 8px' }}>Failed to load projects</p>
+                <p className="font-sans" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0 0 20px' }}>{projectsError}</p>
+                <button
+                  onClick={() => {
+                    setProjectsError(null)
+                    setProjectsLoading(true)
+                    getAllUserProjects(user.id)
+                      .then(p => { if (mountedRef.current) { setProjects(p); setProjectsLoading(false) } })
+                      .catch(err => { if (mountedRef.current) { setProjectsError(err?.message || 'Failed to load projects'); setProjectsLoading(false) } })
+                  }}
+                  className="font-sans font-semibold text-white rounded-xl px-5 py-2.5 cursor-pointer border-0"
+                  style={{ background: '#DC2626', fontSize: '0.875rem' }}
+                >
+                  Try Again
+                </button>
+              </motion.div>
+            </div>
           ) : projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
               <motion.div
@@ -289,6 +331,8 @@ export default function Dashboard() {
               onStartNew={handleStartNewProject}
               onPay={() => handlePay('project_reset')}
               onDelete={handleDeleteProject}
+              isStartingProject={isStartingProject}
+              continuingProjectId={continuingProjectId}
             />
           )}
         </main>
