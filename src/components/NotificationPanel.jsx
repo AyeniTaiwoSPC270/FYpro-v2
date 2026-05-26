@@ -66,9 +66,9 @@ export default function NotificationPanel({
         right: 0,
         width: '320px',
         background: 'var(--bg-card)',
-        border: '1px solid rgba(0,102,255,0.2)',
+        border: '1px solid var(--dropdown-border)',
         borderRadius: '14px',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
         overflow: 'hidden',
         zIndex: 50,
       }}
@@ -79,7 +79,7 @@ export default function NotificationPanel({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--border-subtle)',
         background: 'rgba(0,102,255,0.04)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -136,16 +136,16 @@ export default function NotificationPanel({
               }}>
                 <div style={{
                   width: '32px', height: '32px', borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.06)', flexShrink: 0,
+                  background: 'var(--skeleton-base)', flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{
                     height: '12px', borderRadius: '4px', marginBottom: '6px',
-                    background: 'rgba(255,255,255,0.06)', width: '70%',
+                    background: 'var(--skeleton-base)', width: '70%',
                   }} />
                   <div style={{
                     height: '10px', borderRadius: '4px',
-                    background: 'rgba(255,255,255,0.04)', width: '90%',
+                    background: 'var(--skeleton-shimmer)', width: '90%',
                   }} />
                 </div>
               </div>
@@ -155,7 +155,7 @@ export default function NotificationPanel({
 
         {!loading && error && (
           <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', marginBottom: '12px' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '12px', fontFamily: "'Poppins', sans-serif" }}>
               Couldn't load notifications
             </div>
             <button
@@ -182,14 +182,14 @@ export default function NotificationPanel({
             <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>🔔</div>
             <div style={{
               fontSize: '0.82rem', fontWeight: 600,
-              color: 'rgba(255,255,255,0.4)',
+              color: 'var(--text-secondary)',
               fontFamily: "'Poppins', sans-serif",
             }}>
               You're all caught up
             </div>
             <div style={{
               fontSize: '0.7rem',
-              color: 'rgba(255,255,255,0.2)',
+              color: 'var(--text-muted)',
               marginTop: '4px',
               fontFamily: "'Poppins', sans-serif",
             }}>
@@ -206,7 +206,7 @@ export default function NotificationPanel({
               display: 'flex',
               gap: '12px',
               alignItems: 'flex-start',
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              borderBottom: '1px solid var(--border-subtle)',
               background: n.read ? 'transparent' : 'rgba(0,102,255,0.04)',
             }}
           >
@@ -214,7 +214,7 @@ export default function NotificationPanel({
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              background: TYPE_ICON_BG[n.type] ?? 'rgba(255,255,255,0.08)',
+              background: TYPE_ICON_BG[n.type] ?? 'var(--bg-input)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -251,7 +251,7 @@ export default function NotificationPanel({
                 )}
                 <span style={{
                   fontSize: '0.62rem',
-                  color: 'rgba(255,255,255,0.25)',
+                  color: 'var(--text-muted)',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}>
                   {relativeTime(n.created_at)}
@@ -266,13 +266,13 @@ export default function NotificationPanel({
       {!loading && !error && notifications.length > 0 && (
         <div style={{
           padding: '10px 16px',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
+          borderTop: '1px solid var(--border-subtle)',
           textAlign: 'center',
-          background: 'rgba(0,0,0,0.15)',
+          background: 'var(--bg-input)',
         }}>
           <span style={{
             fontSize: '0.65rem',
-            color: 'rgba(255,255,255,0.2)',
+            color: 'var(--text-muted)',
             fontFamily: "'Poppins', sans-serif",
           }}>
             Showing last 50 notifications
