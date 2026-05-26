@@ -27,4 +27,5 @@ CREATE POLICY "users_insert_own_notifications"
 
 CREATE POLICY "users_update_own_notifications"
   ON notifications FOR UPDATE
-  USING (user_id = auth.uid());
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
