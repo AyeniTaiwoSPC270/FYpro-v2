@@ -10,6 +10,8 @@ import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+import { useUser } from '../../hooks/useUser'
+import { notifyStepCompleted } from '../../lib/notifications'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -33,6 +35,7 @@ export default function WritingPlanner() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
+  const { user } = useUser()
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('writing_planner')
@@ -154,9 +157,11 @@ export default function WritingPlanner() {
 
   function handleConfirm() {
     if (!data) return
+    const isFirstWritingCompletion = !state.stepsCompleted[3]
     completeStep(3, { writingPlan: data, submissionDeadline: dateValue })
     saveStep('writing_planner', { ...data, submission_deadline: dateValue }, dateValue)
     markStepComplete('writing_planner')
+    if (isFirstWritingCompletion) notifyStepCompleted(user?.id, 'writing_planner', 3).catch(() => {})
     showToast('Writing plan created ✓')
   }
 

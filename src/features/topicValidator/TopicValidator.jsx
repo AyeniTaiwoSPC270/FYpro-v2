@@ -12,6 +12,8 @@ import { markStepComplete } from '../../lib/progress'
 import { callCreditReferral } from '../../lib/referral'
 import { trackEvent } from '../../lib/analytics'
 import { useOnboardingState } from '../../hooks/useOnboardingState'
+import { useUser } from '../../hooks/useUser'
+import { notifyStepCompleted } from '../../lib/notifications'
 
 const LOADING_MESSAGES = [
   'Analyzing your topic...',
@@ -28,6 +30,7 @@ export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
+  const { user } = useUser()
 
   // If already completed, restore straight to result section
   const restored = Boolean(state.stepsCompleted[0] && state.topicValidation)
@@ -207,6 +210,7 @@ export default function TopicValidator() {
     markStepComplete('topic_validator').then(() => {
       if (isFirstCompletion) callCreditReferral().catch(() => {})
     })
+    if (isFirstCompletion) notifyStepCompleted(user?.id, 'topic_validator', 0).catch(() => {})
     showToast('Topic validated ✓')
   }
 

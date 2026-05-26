@@ -10,6 +10,8 @@ import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+import { useUser } from '../../hooks/useUser'
+import { notifyStepCompleted } from '../../lib/notifications'
 
 const MA_LOADING_MESSAGES = [
   'Evaluating research approaches...',
@@ -27,6 +29,7 @@ export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
+  const { user } = useUser()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const maOverLimit = isOverLimit('methodology_advisor')
@@ -145,6 +148,7 @@ export default function MethodologyAdvisor() {
 
   function handleConfirm() {
     if (!maData || !selectedMethodology) return
+    const isFirstMethodologyCompletion = !state.stepsCompleted[2]
     const updatedStepsCompleted = [...state.stepsCompleted]
     updatedStepsCompleted[2] = true
     set({
@@ -154,6 +158,7 @@ export default function MethodologyAdvisor() {
     })
     saveStep('methodology_advisor', { ...maData, chosen_methodology: selectedMethodology })
     markStepComplete('methodology_advisor')
+    if (isFirstMethodologyCompletion) notifyStepCompleted(user?.id, 'methodology_advisor', 2).catch(() => {})
     showToast('Methodology confirmed ✓')
     setConfirmDone(true)
     setDiVisible(true)

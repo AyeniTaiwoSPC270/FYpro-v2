@@ -11,6 +11,8 @@ import LoadingMessages from '../../components/LoadingMessages'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+import { useUser } from '../../hooks/useUser'
+import { notifyStepCompleted } from '../../lib/notifications'
 
 const CHAPTER_LOADING_MESSAGES = [
   'Building your chapter structure...',
@@ -156,6 +158,7 @@ export default function ChapterArchitect() {
   const { state, set, studentContext, completeStep, navigateStep } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
+  const { user } = useUser()
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const overLimit   = isOverLimit('chapter_architect')
@@ -438,9 +441,11 @@ export default function ChapterArchitect() {
     if (!data) return
     const wc = parseInt(wordCount, 10) || 0
     const structure = { ...data, chapters }
+    const isFirstChapterCompletion = !state.stepsCompleted[1]
     completeStep(1, { chapterStructure: structure, structureType, totalWordCount: wc })
     saveStep('chapter_architect', structure)
     markStepComplete('chapter_architect')
+    if (isFirstChapterCompletion) notifyStepCompleted(user?.id, 'chapter_architect', 1).catch(() => {})
     showToast('Chapter structure confirmed ✓')
   }
 

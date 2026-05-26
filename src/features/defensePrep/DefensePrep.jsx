@@ -28,6 +28,7 @@ import { useProjectState } from '../../hooks/useProjectState'
 import { useUser } from '../../hooks/useUser'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete, markDefenseSimulatorRun, tryAwardDefenseReady } from '../../lib/progress'
+import { notifyStepCompleted } from '../../lib/notifications'
 import { fetchShareCardBlob, shareToWhatsApp } from '../../lib/shareCard'
 import DefenseShareCard from '../../components/share/DefenseShareCard'
 import CertificateUnlock from '../../components/defense/CertificateUnlock'
@@ -1110,6 +1111,7 @@ export default function DefensePrep() {
       })
 
       // Mark complete without advancing currentStep past the last step
+      const isFirstDefenseCompletion = !state.stepsCompleted[5]
       const newCompleted = [...state.stepsCompleted]
       newCompleted[5] = true
       set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
@@ -1130,6 +1132,7 @@ export default function DefensePrep() {
       markStepComplete('defense_prep')
         .then(() => markDefenseSimulatorRun())
         .then(() => tryAwardDefenseReady())
+      if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
 
       // Update defense_sessions row with the final score and completion time.
       // Awaited so the certificate endpoint always finds a complete row.

@@ -10,6 +10,8 @@ import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
+import { useUser } from '../../hooks/useUser'
+import { notifyStepCompleted } from '../../lib/notifications'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -223,6 +225,7 @@ export default function ProjectReviewer() {
   const { state, set, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
+  const { user } = useUser()
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('project_reviewer')
 
@@ -437,6 +440,7 @@ export default function ProjectReviewer() {
 
   function handleConfirm() {
     if (!reviewData) return
+    const isFirstReviewerCompletion = !state.stepsCompleted[4]
     const fileName = selectedFile
       ? selectedFile.name
       : (state.uploadedProject?.fileName || 'uploaded-project')
@@ -454,6 +458,7 @@ export default function ProjectReviewer() {
       examiner_questions:  reviewData.examiner_questions,
     })
     markStepComplete('project_reviewer')
+    if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
     showToast('Project reviewed ✓')
   }
 
