@@ -9,6 +9,8 @@ import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
 import { updateUserProfile } from '../lib/db'
 import { resetUser } from '../lib/analytics'
+import { useNotifications } from '../hooks/useNotifications'
+import NotificationPanel from '../components/NotificationPanel'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +75,10 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
   const { features } = usePaidFeatures()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const { user: navUser } = useUser()
+  const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(navUser?.id)
 
   useEffect(() => {
     function handleOutside(e) {
@@ -101,21 +106,48 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
       {/* Right controls */}
       <div className="flex items-center gap-2.5">
         {/* Bell */}
-        <motion.button
-          whileHover={{ scale: 1.09 }}
-          whileTap={{ scale: 0.94 }}
-          aria-label="Notifications"
-          onClick={() => showToast('No new notifications')}
-          className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
-          style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
-        >
-          <BellIcon />
-          <span
-            aria-hidden="true"
-            className="absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full"
-            style={{ background: '#0066FF', border: '1.5px solid var(--bg-sidebar)' }}
-          />
-        </motion.button>
+        <div style={{ position: 'relative' }}>
+          <motion.button
+            whileHover={{ scale: 1.09 }}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Notifications"
+            onClick={() => { if (!panelOpen) refetch(); setPanelOpen(v => !v) }}
+            className="relative w-[38px] h-[38px] flex items-center justify-center rounded-xl cursor-pointer text-slate-400 hover:text-white transition-all duration-200"
+            style={{ background: 'var(--header-btn-bg)', border: '1px solid var(--header-btn-border)' }}
+          >
+            <BellIcon />
+            {unreadCount > 0 && (
+              <span
+                aria-label={`${unreadCount} unread notifications`}
+                className="absolute font-bold text-white rounded-full"
+                style={{
+                  width: '16px', height: '16px',
+                  background: '#DC2626',
+                  fontSize: '0.55rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  top: '-4px', right: '-4px',
+                  border: '2px solid var(--bg-sidebar)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </motion.button>
+          <AnimatePresence>
+            {panelOpen && (
+              <NotificationPanel
+                notifications={notifications}
+                loading={loading}
+                error={error}
+                unreadCount={unreadCount}
+                onMarkAllRead={markAllRead}
+                onRetry={refetch}
+                onClose={() => setPanelOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={dropdownRef}>
