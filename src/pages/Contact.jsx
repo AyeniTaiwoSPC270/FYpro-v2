@@ -520,6 +520,7 @@ export default function Contact() {
                 title="Follow us"
                 value="@fypro_app"
                 note="Updates, tips, and student wins"
+                href="https://x.com/fypro_app"
               />
             </Reveal>
           </div>
