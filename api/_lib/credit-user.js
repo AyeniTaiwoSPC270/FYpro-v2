@@ -76,6 +76,25 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
   // 7. Grant entitlement
   await grantEntitlement(payment.user_id, payment.tier, payment.amount_kobo);
 
+  // Notify user — best-effort
+  const TIER_LABELS = {
+    student_pack:         'Student Pack',
+    defense_pack:         'Defense Pack',
+    defense_pack_upgrade: 'Defense Pack',
+    project_reset:        'Project Reset',
+  };
+  const tierLabel = TIER_LABELS[payment.tier] || payment.tier;
+  supabaseAdmin
+    .from('notifications')
+    .insert({
+      user_id:  payment.user_id,
+      type:     'payment_confirmed',
+      title:    'Payment confirmed',
+      message:  `${tierLabel} activated on your account.`,
+      metadata: { tier: payment.tier, amount_ngn: Math.floor(payment.amount_kobo / 100) },
+    })
+    .catch(e => console.error('[creditUser] notification insert failed:', e.message));
+
   return { status: 'success', reference, tier: payment.tier };
 }
 
