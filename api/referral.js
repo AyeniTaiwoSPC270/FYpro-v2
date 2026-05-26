@@ -118,6 +118,24 @@ async function handleTrack(req, res) {
 
   sendTelegramAlert(`🔗 Referral signup: ${normalEmail} used code <code>${code}</code>`).catch(() => null);
 
+  // Notify the referrer — best-effort
+  supabaseAdmin
+    .from('users')
+    .select('full_name')
+    .eq('id', newUser.id)
+    .maybeSingle()
+    .then(({ data: profile }) => {
+      const referredName = profile?.full_name || normalEmail
+      return supabaseAdmin.from('notifications').insert({
+        user_id:  referrer.id,
+        type:     'referral_join',
+        title:    'Referral joined',
+        message:  `${referredName} signed up using your referral link.`,
+        metadata: { referred_name: referredName },
+      })
+    })
+    .catch(e => console.error('[referral/track] notification insert failed:', e.message));
+
   return res.status(200).json({ tracked: true });
 }
 
@@ -204,6 +222,18 @@ async function awardMilestoneCredit(referrerId, triggerReferralId, now) {
       return sendTelegramAlert(`🎯 Referral milestone: ${email} earned a free defense credit (3 qualified referrals)`);
     })
     .catch(() => null);
+
+  // Notify the referrer — best-effort
+  supabaseAdmin
+    .from('notifications')
+    .insert({
+      user_id:  referrerId,
+      type:     'referral_credit',
+      title:    'Referral credit earned',
+      message:  "You've earned a defense credit — 3 referrals qualified.",
+      metadata: {},
+    })
+    .catch(e => console.error('[referral/credit] notification insert failed:', e.message));
 
   const { data: toReward } = await supabaseAdmin
     .from('referrals')
