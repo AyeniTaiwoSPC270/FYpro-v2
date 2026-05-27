@@ -762,19 +762,24 @@ async function handleTelegramBot(req, res) {
   if (lowerMsg === '/broadcast' || lowerMsg.startsWith('/broadcast ') ||
       lowerMsg === '/broadcast_paid' || lowerMsg.startsWith('/broadcast_paid ')) {
     const adminId = Number(process.env.TELEGRAM_ADMIN_ID)
-    if (!adminId || message.from?.id !== adminId) return res.status(200).end()
+    if (!adminId || Number(message.from?.id) !== adminId) return res.status(200).end()
 
     const paidOnly = lowerMsg.startsWith('/broadcast_paid')
     const prefix   = paidOnly ? '/broadcast_paid' : '/broadcast'
-    const body     = msgText.slice(prefix.length).trim()
+    const broadcastText = msgText.slice(prefix.length).trim()
 
-    if (!body) {
+    if (!broadcastText) {
       await sendReply(chatId, `❌ Usage: ${prefix} &lt;message&gt;`)
       return res.status(200).end()
     }
 
+    if (broadcastText.length > 2000) {
+      await sendReply(chatId, `❌ Broadcast body too long (${broadcastText.length} chars). Maximum is 2000.`)
+      return res.status(200).end()
+    }
+
     try {
-      const count = await cmdBroadcast(body, paidOnly)
+      const count = await cmdBroadcast(broadcastText, paidOnly)
       await sendReply(chatId, `✅ Broadcast sent to ${count} users`)
     } catch (err) {
       console.error('[notify/broadcast] failed:', err.message)
