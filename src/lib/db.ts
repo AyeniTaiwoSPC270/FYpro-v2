@@ -53,6 +53,7 @@ export interface ProjectStep {
   result_json: Record<string, unknown>
   input_summary: string | null
   created_at: string
+  updated_at: string
 }
 
 export interface UserState {
