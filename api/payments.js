@@ -297,26 +297,22 @@ async function handleVerify(req, res) {
     });
 
     if (result.status === 'success') {
+      // user.email comes from the auth check earlier in handleVerify — no extra queries needed
       try {
         const { data: payment } = await supabaseAdmin
           .from('payments')
-          .select('user_id, amount_kobo, tier')
+          .select('amount_kobo, tier')
           .eq('paystack_reference', reference)
           .single();
 
-        if (payment) {
-          const { data: dbUser } = await supabaseAdmin
-            .from('users')
-            .select('email')
-            .eq('id', payment.user_id)
-            .single();
-
-          if (dbUser?.email) {
-            const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
-            const amountNGN = payment.amount_kobo / 100;
-            await sendReceiptEmail(dbUser.email, planName, amountNGN, reference);
-            sendTelegramAlertOnce(`💰 Payment received: ${dbUser.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`, `tg:payment:${reference}`)
-          }
+        if (payment && user.email) {
+          const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
+          const amountNGN = payment.amount_kobo / 100;
+          await sendReceiptEmail(user.email, planName, amountNGN, reference);
+          sendTelegramAlertOnce(
+            `💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`,
+            `tg:payment:${reference}`
+          );
         }
       } catch (emailErr) {
         console.error('[payments/verify] receipt email failed', { reference, message: emailErr.message });
