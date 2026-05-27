@@ -218,11 +218,14 @@ async function handleDefense(req, res) {
     .from('user_entitlements')
     .select('paid_features')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();  // maybeSingle: returns null (not an error) when row doesn't exist
 
-  if (entError || !entitlements) return res.status(403).json({ error: 'Feature not unlocked.' });
+  if (entError) {
+    console.error('[ai/defense] entitlements fetch error:', entError.message);
+    return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+  }
 
-  const paidFeatures = Array.isArray(entitlements.paid_features) ? entitlements.paid_features : [];
+  const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
   if (!paidFeatures.includes('defense_pack')) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
