@@ -23,6 +23,16 @@ const TTL_BY_STEP = {
   'writing-planner':     21600,
 };
 
+// Server-enforced per-step limits for free-tier users.
+// Mirrors the FREE_LIMITS object in src/hooks/useRunLimit.js.
+// Keep these two in sync when adjusting free tier quotas.
+const SERVER_FREE_LIMITS = {
+  'topic-validator':     3,
+  'chapter-architect':   1,
+  'methodology-advisor': 1,
+  'writing-planner':     1,
+};
+
 /**
  * General Claude proxy for all six workflow steps (topic-validator, chapter-architect, etc.).
  * Validates the JWT, checks rate limits and daily spend cap, resolves the system prompt
@@ -100,7 +110,7 @@ async function handleGeneral(req, res) {
   try {
     const { data } = await supabaseAdmin
       .from('user_entitlements')
-      .select('paid_features')
+      .select('paid_features, run_counts')
       .eq('user_id', user.id)
       .maybeSingle();
     entData = data;
@@ -110,6 +120,21 @@ async function handleGeneral(req, res) {
 
   const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
   const isPaid = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
+
+  // Server-side run limit gate — only applies to free (unpaid) users.
+  if (!isPaid && SERVER_FREE_LIMITS[step] !== undefined) {
+    const dbRunCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
+      ? entData.run_counts
+      : {};
+    // DB stores keys as snake_case (topic_validator); step param uses kebab-case (topic-validator)
+    const dbKey = step.replace(/-/g, '_');
+    const serverCount = typeof dbRunCounts[dbKey] === 'number' ? dbRunCounts[dbKey] : 0;
+    if (serverCount >= SERVER_FREE_LIMITS[step]) {
+      return res.status(429).json({
+        error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
+      });
+    }
+  }
 
   // System prompt resolved server-side — client never controls this
   const system   = getGeneralSystemPrompt(step, { isPaid, previousSteps });
@@ -152,6 +177,23 @@ async function handleGeneral(req, res) {
         console.error('[ai/general] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
+
+      // Increment server-side run count for free users — fire-and-forget, eventual consistency.
+      if (!isPaid && SERVER_FREE_LIMITS[step] !== undefined) {
+        const dbKey = step.replace(/-/g, '_');
+        const existingCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
+          ? entData.run_counts
+          : {};
+        const newCount = (typeof existingCounts[dbKey] === 'number' ? existingCounts[dbKey] : 0) + 1;
+        const updatedCounts = { ...existingCounts, [dbKey]: newCount };
+        supabaseAdmin
+          .from('user_entitlements')
+          .upsert(
+            { user_id: user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id' }
+          )
+          .catch(err => console.error('[ai/general] run count increment failed:', err?.message));
+      }
     }
 
     if (!response.ok && response.status >= 500) {
