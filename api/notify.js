@@ -754,8 +754,35 @@ async function handleTelegramBot(req, res) {
 
   if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) return res.status(200).end()
 
-  const chatId = message.chat.id
-  const raw    = (message.text || '').trim().toLowerCase().split('@')[0]
+  const chatId  = message.chat.id
+  const msgText = (message.text || '').trim()
+
+  // ── Broadcast commands — handled before generic command parser ───────────
+  if (msgText.toLowerCase().startsWith('/broadcast')) {
+    const adminId = Number(process.env.TELEGRAM_ADMIN_ID)
+    if (!adminId || message.from?.id !== adminId) return res.status(200).end()
+
+    const paidOnly = msgText.toLowerCase().startsWith('/broadcast_paid')
+    const prefix   = paidOnly ? '/broadcast_paid' : '/broadcast'
+    const body     = msgText.slice(prefix.length).trim()
+
+    if (!body) {
+      await sendReply(chatId, `❌ Usage: ${prefix} &lt;message&gt;`)
+      return res.status(200).end()
+    }
+
+    try {
+      const count = await cmdBroadcast(body, paidOnly)
+      await sendReply(chatId, `✅ Broadcast sent to ${count} users`)
+    } catch (err) {
+      console.error('[notify/broadcast] failed:', err.message)
+      await sendReply(chatId, `❌ Broadcast failed — check server logs`)
+    }
+    return res.status(200).end()
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const raw    = msgText.toLowerCase().split('@')[0]
 
   if (!raw.startsWith('/')) return res.status(200).end()
 
