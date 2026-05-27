@@ -65,9 +65,10 @@ async function handleValidate(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (claudeCached) {
-    await supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id }).catch(err => {
-      console.error('[research/validate] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-    });
+    const { error: cacheInsertErr } = await supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id });
+    if (cacheInsertErr) {
+      console.error('[research/validate] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
+    }
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
@@ -195,9 +196,10 @@ async function handleLitMap(req, res) {
   if (!cap.allowed) return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
 
   if (claudeCached) {
-    await supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id }).catch(err => {
-      console.error('[research/lit-map] response_times insert failed (cache-hit):', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-    });
+    const { error: cacheInsertErr } = await supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id });
+    if (cacheInsertErr) {
+      console.error('[research/lit-map] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
+    }
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
