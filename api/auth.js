@@ -135,25 +135,31 @@ async function handleSignup(req, res) {
   logAttempt(email, ip, 'signup', success);
 
   if (success) {
-    await sendTelegramAlert(`👤 New signup: ${email} (free)`);
-    // Welcome notification — fire-and-forget, best-effort
-    supabaseAdmin
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('type', 'welcome')
-      .then(({ count }) => {
-        if (count === 0) {
-          return supabaseAdmin.from('notifications').insert({
-            user_id: userId,
-            type:    'welcome',
-            title:   'Welcome to FYPro',
-            message: "Your research journey starts here. Let's go.",
-          })
+    // Run Telegram alert and welcome notification insert in parallel so both
+    // complete before res.json() — Vercel freezes the function on response.
+    await Promise.all([
+      sendTelegramAlert(`👤 New signup: ${email} (free)`),
+      (async () => {
+        try {
+          const { count } = await supabaseAdmin
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('type', 'welcome');
+          if (count === 0) {
+            await supabaseAdmin.from('notifications').insert({
+              user_id: userId,
+              type:    'welcome',
+              title:   'Welcome to FYPro',
+              message: "Your research journey starts here. Let's go.",
+            });
+          }
+        } catch (e) {
+          console.error('[auth/signup] welcome notification failed:', e.message);
         }
-      })
-      .catch(e => console.error('[auth/signup] welcome notification failed:', e.message));
-    // Fire welcome email immediately — don't wait for cron (up to 24h delay)
+      })(),
+    ]);
+    // Fire welcome email — fire-and-forget, not on the critical path
     if (process.env.CRON_SECRET) {
       fetch(`${APP_URL}/api/send-nurture-email`, {
         method:  'POST',

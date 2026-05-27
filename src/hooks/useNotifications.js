@@ -29,6 +29,24 @@ export function useNotifications(userId) {
     fetch()
   }, [fetch])
 
+  // Realtime: prepend new notifications instantly so the badge updates
+  // without the user needing to open the panel.
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on('postgres_changes', {
+        event:  'INSERT',
+        schema: 'public',
+        table:  'notifications',
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        setNotifications(prev => [payload.new, ...prev])
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId])
+
   const unreadCount = notifications.filter(n => !n.read).length
 
   const markAllRead = useCallback(async () => {
