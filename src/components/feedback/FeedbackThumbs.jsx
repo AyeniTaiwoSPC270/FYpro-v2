@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { hasFeedbackGiven, submitFeedback } from '../../lib/feedback'
+import { hasFeedbackGiven, fetchFeedbackGiven, submitFeedback } from '../../lib/feedback'
 
 const THUMB_UP = (
   <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
@@ -18,7 +18,15 @@ export default function FeedbackThumbs({ feature, contextId }) {
   const [errMsg, setErrMsg]   = useState('')
 
   useEffect(() => {
-    if (hasFeedbackGiven(feature, contextId)) setStatus('confirmed')
+    // Instant localStorage check — no flash for same-session users
+    if (hasFeedbackGiven(feature, contextId)) {
+      setStatus('confirmed')
+      return
+    }
+    // Supabase check — restores state after logout/login or on a new device
+    fetchFeedbackGiven(feature, contextId)
+      .then(given => { if (given) setStatus('confirmed') })
+      .catch(() => {}) // non-fatal — stays idle on network error
   }, [feature, contextId])
 
   async function handleRate(rating) {

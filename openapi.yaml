@@ -1,0 +1,1225 @@
+openapi: 3.0.3
+
+info:
+  title: FYPro API
+  description: |
+    Backend API for FYPro — the AI-powered final year project companion for Nigerian university students.
+
+    All AI calls are proxied server-side; the Anthropic API key is never exposed to clients.
+    Authentication uses Supabase JWTs passed as `Authorization: Bearer <token>`.
+    Rate limits are enforced per-user-day and per-IP-day via Upstash Redis.
+    A global daily spend cap (`DAILY_CAP_USD`, default $10) blocks all AI endpoints when reached.
+
+    ### Caching
+    The `X-Cache` response header is present on AI endpoints: `HIT` (served from Upstash) or `MISS` (fresh Anthropic call).
+    Cache TTLs by step: Topic Validator 24 h · Chapter Architect 24 h · Methodology Advisor 12 h · Writing Planner 6 h · Supervisor Prep 6 h.
+    Defense Simulator and Project Reviewer are **never cached**.
+
+    ### Error shape
+    All error responses use `{ "error": "<message>" }` unless documented otherwise.
+  version: "2.0.0"
+  contact:
+    name: FYPro Support
+    email: hello@fypro.com.ng
+
+servers:
+  - url: https://www.fypro.com.ng
+    description: Production
+
+tags:
+  - name: AI
+    description: Claude AI proxy endpoints (workflow steps, defense, supervisor prep, project review)
+  - name: Research
+    description: Paper-augmented research endpoints (topic validation, literature map, user count)
+  - name: Payments
+    description: Paystack payment initiation, verification, and webhook
+  - name: Admin
+    description: Admin-only analytics and health endpoints (requires ADMIN_EMAIL JWT)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Supabase JWT obtained after email/password login. Include as `Authorization: Bearer <token>`.
+        Tokens are verified server-side via the Supabase admin client — expired or forged tokens return 401.
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Authentication required.
+
+    Message:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          description: String for simple messages; array of content blocks (text, document) for multi-part messages.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
+
+    AnthropicContentBlock:
+      type: object
+      description: A single content block in an Anthropic response.
+      properties:
+        type:
+          type: string
+          example: text
+        text:
+          type: string
+          description: |
+            The text content. For workflow steps this is a JSON string containing the step result.
+            For research endpoints the JSON is enriched with `papers`, `papers_status`, and `sparse_literature` fields before being returned.
+
+    AnthropicUsage:
+      type: object
+      properties:
+        input_tokens:
+          type: integer
+          example: 1240
+        output_tokens:
+          type: integer
+          example: 520
+
+    AnthropicResponse:
+      type: object
+      description: Raw Anthropic Messages API response forwarded to the client.
+      properties:
+        id:
+          type: string
+          example: msg_01XvXvXvXvXvXvXvXvXvXvXv
+        type:
+          type: string
+          example: message
+        role:
+          type: string
+          example: assistant
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnthropicContentBlock'
+        model:
+          type: string
+          example: claude-sonnet-4-6
+        stop_reason:
+          type: string
+          example: end_turn
+        usage:
+          $ref: '#/components/schemas/AnthropicUsage'
+
+    Paper:
+      type: object
+      description: A research paper fetched from Semantic Scholar or OpenAlex.
+      properties:
+        title:
+          type: string
+        authors:
+          type: array
+          items:
+            type: string
+        year:
+          type: integer
+          nullable: true
+        abstract:
+          type: string
+          nullable: true
+        citationCount:
+          type: integer
+          nullable: true
+
+paths:
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # /api/ai  (POST)
+  # Three actions: general (default), defense, supervisor-prep
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  /api/ai:
+    post:
+      tags: [AI]
+      operationId: aiProxy
+      summary: AI proxy — workflow steps, Defense Simulator, or Supervisor Prep
+      description: |
+        Single endpoint dispatching to three sub-handlers based on the `action` query parameter.
+
+        | `?action`        | Sub-handler             | Auth          | Entitlement required |
+        |------------------|-------------------------|---------------|----------------------|
+        | *(omitted)*      | General workflow proxy  | Bearer JWT    | none                 |
+        | `general`        | General workflow proxy  | Bearer JWT    | none                 |
+        | `defense`        | Defense Simulator turn  | Bearer JWT    | `defense_pack`       |
+        | `supervisor-prep`| Supervisor Meeting Prep | Bearer JWT    | none                 |
+
+        Each sub-handler is documented below.
+
+        ---
+
+        ### `?action=general` (default)
+
+        Validates the JWT, checks rate limits and daily spend cap, resolves the system prompt server-side
+        (the client cannot supply or override the system prompt — this closes the prompt-injection surface),
+        and returns a cached or fresh Claude response.
+
+        Allowed steps: `topic-validator`, `chapter-architect`, `methodology-advisor`, `writing-planner`,
+        `instrument-builder`, `abstract-generator`.
+
+        **Rate limits:** 30 requests/user/day · 60 requests/IP/day.
+        **Cache TTL:** topic-validator 24 h · chapter-architect 24 h · methodology-advisor 12 h · writing-planner 6 h.
+
+        ---
+
+        ### `?action=defense`
+
+        Handles a single Defense Simulator question-answer turn.
+        Requires `defense_pack` entitlement — checked server-side after JWT verification.
+        Responses are **never cached** (each turn is unique).
+        Enforces a 300-word limit on `answerWordCount` to prevent token abuse.
+
+        **Rate limits:** 20 requests/user/day · 40 requests/IP/day.
+
+        ---
+
+        ### `?action=supervisor-prep`
+
+        Generates exactly 8 targeted supervisor meeting questions based on project stage and last feedback.
+        Input word-count limits: `stage` ≤ 100 words · `lastFeedback` ≤ 500 words · `stuckOn` ≤ 500 words.
+        Returns `{ questions: string[] }` (not a raw Anthropic response).
+
+        **Rate limits:** 5 requests/user/day · 15 requests/IP/hour.
+        **Cache TTL:** 6 h.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: action
+          in: query
+          required: false
+          description: Sub-handler selector. Omit or set to `general` for workflow steps.
+          schema:
+            type: string
+            enum: [general, defense, supervisor-prep, sync-run-counts]
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: General workflow request
+                  description: Used when `?action` is omitted or `general`.
+                  type: object
+                  required: [step, messages]
+                  properties:
+                    step:
+                      type: string
+                      description: Workflow step name. Unknown values return 400.
+                      enum:
+                        - topic-validator
+                        - chapter-architect
+                        - methodology-advisor
+                        - writing-planner
+                        - instrument-builder
+                        - abstract-generator
+                    messages:
+                      type: array
+                      description: Anthropic messages array. Must contain at least one `user` message.
+                      items:
+                        $ref: '#/components/schemas/Message'
+                    max_tokens:
+                      type: integer
+                      description: Maximum Claude response tokens. Capped server-side at 4096.
+                      default: 2000
+                      maximum: 4096
+                    model:
+                      type: string
+                      description: Claude model ID. Unknown models silently fall back to `claude-sonnet-4-6`.
+                      enum:
+                        - claude-sonnet-4-6
+                        - claude-haiku-4-5-20251001
+                      default: claude-sonnet-4-6
+                    previousSteps:
+                      type: object
+                      description: Optional map of previously completed step results used to enrich the server-side system prompt.
+                      additionalProperties: true
+
+                - title: Defense Simulator request
+                  description: Used when `?action=defense`.
+                  type: object
+                  required: [system, messages]
+                  properties:
+                    system:
+                      type: string
+                      description: System prompt for the current examiner persona (Methodologist, Subject Expert, or External Examiner).
+                    messages:
+                      type: array
+                      description: Full conversation history for the current defense session turn.
+                      items:
+                        $ref: '#/components/schemas/Message'
+                    max_tokens:
+                      type: integer
+                      default: 2000
+                      maximum: 4096
+                    model:
+                      type: string
+                      enum:
+                        - claude-sonnet-4-6
+                        - claude-haiku-4-5-20251001
+                      default: claude-sonnet-4-6
+                    answerWordCount:
+                      type: integer
+                      description: Word count of the student's answer. If provided and > 300, the request is rejected with 400.
+                      maximum: 300
+
+                - title: Supervisor Prep request
+                  description: Used when `?action=supervisor-prep`.
+                  type: object
+                  required: [stage]
+                  properties:
+                    stage:
+                      type: string
+                      description: The student's current project stage (≤ 100 words).
+                    lastFeedback:
+                      type: string
+                      description: Last feedback received from the supervisor (≤ 500 words). Omit or send empty string if none.
+                    stuckOn:
+                      type: string
+                      description: What the student is currently stuck on (≤ 500 words). Omit if nothing specific.
+
+      responses:
+        '200':
+          description: |
+            Success. Response shape depends on `action`:
+            - `general` / `defense`: raw Anthropic response (see `AnthropicResponse` schema).
+            - `supervisor-prep`: `{ questions: string[] }` — exactly 8 questions.
+          headers:
+            X-Cache:
+              description: Present on `general` and `supervisor-prep`. `HIT` = served from Upstash cache; `MISS` = fresh Anthropic call.
+              schema:
+                type: string
+                enum: [HIT, MISS]
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AnthropicResponse'
+                  - type: object
+                    title: Supervisor Prep response
+                    required: [questions]
+                    properties:
+                      questions:
+                        type: array
+                        items:
+                          type: string
+                        minItems: 8
+                        maxItems: 8
+                        example:
+                          - "How do you justify your choice of purposive sampling over random sampling?"
+                          - "What steps did you take to establish the validity of your instrument?"
+
+        '400':
+          description: |
+            Invalid request body. Possible causes:
+            - `general`: invalid or missing `step`
+            - `defense`: `answerWordCount` > 300
+            - `supervisor-prep`: missing `stage`, or any input exceeds word-count limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidStep:
+                  summary: Invalid step (general)
+                  value:
+                    error: Invalid or missing step.
+                answerTooLong:
+                  summary: Answer too long (defense)
+                  value:
+                    error: Input too long. Please shorten your text to continue.
+                missingStage:
+                  summary: Missing stage (supervisor-prep)
+                  value:
+                    error: Project stage is required.
+
+        '401':
+          description: Missing or invalid Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                noToken:
+                  value:
+                    error: Authentication required.
+                expiredToken:
+                  value:
+                    error: Invalid or expired authentication token.
+
+        '403':
+          description: "`defense` only — user does not have the `defense_pack` entitlement."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Feature not unlocked. Please purchase the Defense Pack.
+
+        '429':
+          description: Rate limit exceeded (user-day or IP-day).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Unexpected server error, Anthropic API key not configured, or Claude response could not be parsed (supervisor-prep).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '503':
+          description: |
+            Authentication service unavailable (Supabase unreachable), or the global daily spend cap has been reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                authUnavailable:
+                  value:
+                    error: Authentication service unavailable. Please try again.
+                spendCap:
+                  value:
+                    error: FYPro is at capacity for today. Please try again tomorrow.
+
+        '504':
+          description: Anthropic API request timed out after 50 s.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Request timed out. Please try again.
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # /api/research  (POST + GET)
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  /api/research:
+    post:
+      tags: [Research]
+      operationId: researchPost
+      summary: Research proxy — Topic Validator or Literature Map
+      description: |
+        Dispatches to either the Topic Validator (`?action=validate`) or the Literature Map (`?action=lit-map`).
+
+        Both handlers:
+        1. Verify the JWT and check rate limits / daily spend cap in parallel.
+        2. Fetch real academic papers from Semantic Scholar and OpenAlex (free APIs, no key required).
+        3. Augment the server-side system prompt with the papers.
+        4. Call Claude and inject the paper metadata into the response JSON before caching and returning.
+
+        The injected fields on the `content[0].text` JSON object are:
+        - `papers` — array of paper objects (title, authors, year, abstract, citationCount)
+        - `papers_status` — `"full"` | `"metadata_only"` | `"none"`
+        - `sparse_literature` — boolean; if true, the topic has limited published prior work
+
+        Sparse literature is framed as an *originality opportunity*, not a failure.
+
+        ---
+
+        ### `?action=validate`
+
+        Fetches up to 5 papers. Returns Claude's viability verdict as a JSON string in `content[0].text`.
+
+        **Rate limits:** 10 requests/user/day · 30 requests/IP/day.
+        **Cache TTL:** 24 h.
+
+        ---
+
+        ### `?action=lit-map`
+
+        Fetches up to 20 papers and asks Claude to cluster them into 4–6 thematic areas.
+        Returns 422 if no papers survive sparse-literature filtering.
+
+        **Rate limits:** 20 requests/user/day · 60 requests/IP/day.
+        **Cache TTL:** 24 h.
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [validate, lit-map]
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [topic, messages]
+              properties:
+                topic:
+                  type: string
+                  description: |
+                    The research topic string. Minimum 5 characters.
+                    For `validate`: also validated to ≤ 500 words.
+                  minLength: 5
+                messages:
+                  type: array
+                  description: Anthropic messages array. Must contain at least one `user` message with the full user prompt.
+                  items:
+                    $ref: '#/components/schemas/Message'
+                max_tokens:
+                  type: integer
+                  description: Maximum Claude response tokens. Defaults differ by action.
+                  default: 2000
+
+      responses:
+        '200':
+          description: |
+            Anthropic response with paper metadata injected into `content[0].text`.
+            `content[0].text` is a JSON string; parse it to access the verdict or lit-map object plus `papers`, `papers_status`, and `sparse_literature`.
+          headers:
+            X-Cache:
+              schema:
+                type: string
+                enum: [HIT, MISS]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnthropicResponse'
+
+        '400':
+          description: Topic is missing, fewer than 5 characters, or exceeds 500 words (`validate` only).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                tooShort:
+                  value:
+                    error: Topic must be at least 5 characters.
+                tooLong:
+                  value:
+                    error: Input too long. Please shorten your text to continue.
+
+        '401':
+          description: Missing or invalid Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '422':
+          description: |
+            `lit-map` only — no papers found after sparse-literature filtering.
+            The client should prompt the student to broaden their topic or remove geographic specifics such as "in Nigeria".
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, message]
+                properties:
+                  error:
+                    type: string
+                    example: no_papers_found
+                  message:
+                    type: string
+                    example: "We couldn't find papers for this topic. Try broadening it (remove geographic specifics like 'in Nigeria') or check the spelling."
+
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '503':
+          description: Authentication service unavailable or daily spend cap reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '504':
+          description: Anthropic API timed out after 50 s.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags: [Research]
+      operationId: researchUserCount
+      summary: User count — public social proof counter
+      description: |
+        Returns the total number of registered users. No authentication required.
+
+        CDN-cached for 1 hour (`Cache-Control: s-maxage=3600, stale-while-revalidate=3600`).
+        Fails open — returns `{ count: 0 }` on database error rather than exposing a 5xx to the landing page.
+
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [user-count]
+
+      responses:
+        '200':
+          description: Total registered user count. Always returns 200 (fails open on database error).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count]
+                properties:
+                  count:
+                    type: integer
+                    example: 1247
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # /api/project-reviewer  (POST)
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  /api/project-reviewer:
+    post:
+      tags: [AI]
+      operationId: projectReviewer
+      summary: Project Reviewer — AI review of a student PDF (Defense Pack)
+      description: |
+        Accepts a PDF embedded as a base64 document block in the `messages` array and returns a Claude AI review.
+
+        **Entitlement required:** `defense_pack` — verified server-side after JWT validation.
+
+        **Server-side PDF validation (before forwarding to Anthropic):**
+        - Magic-byte check: first 4 bytes must be `%PDF` (25 50 44 46). Non-PDF files are rejected with 400.
+        - Size limit: base64-encoded data must be ≤ ~13.3 MB (≈ 10 MB decoded). Larger files are rejected with 400.
+
+        **Embed the PDF in the messages array as follows:**
+        ```json
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "document",
+              "source": {
+                "type": "base64",
+                "media_type": "application/pdf",
+                "data": "<base64-encoded-pdf>"
+              }
+            },
+            { "type": "text", "text": "Please review this project." }
+          ]
+        }
+        ```
+
+        **Rate limits:** 10 requests/user/day · 100 requests/IP/day.
+        Not cached.
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [system, messages]
+              properties:
+                system:
+                  type: string
+                  description: System prompt for the review (e.g. research-methods criteria).
+                messages:
+                  type: array
+                  description: Anthropic messages array. The first user message content array must include a `document` block with the base64-encoded PDF.
+                  items:
+                    $ref: '#/components/schemas/Message'
+                max_tokens:
+                  type: integer
+                  default: 2000
+                  maximum: 4096
+                model:
+                  type: string
+                  enum:
+                    - claude-sonnet-4-6
+                    - claude-haiku-4-5-20251001
+                  default: claude-sonnet-4-6
+
+      responses:
+        '200':
+          description: Claude review response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnthropicResponse'
+
+        '400':
+          description: PDF exceeds 10 MB or magic-byte check failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                tooLarge:
+                  summary: File exceeds 10 MB
+                  value:
+                    error: File too large. Maximum size is 10 MB.
+                invalidType:
+                  summary: File is not a PDF
+                  value:
+                    error: Invalid file type. Only PDF files are accepted.
+
+        '401':
+          description: Missing or invalid Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '403':
+          description: User does not have the `defense_pack` entitlement.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Feature not unlocked. Please purchase the Defense Pack.
+
+        '429':
+          description: Rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Unexpected server error or Anthropic API key not configured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '503':
+          description: Authentication service unavailable or daily spend cap reached.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '504':
+          description: Anthropic API timed out after 50 s.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # /api/payments  (POST — Paystack webhook)
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  /api/payments:
+    post:
+      tags: [Payments]
+      operationId: paymentsWebhook
+      summary: Paystack webhook receiver
+      description: |
+        Receives Paystack webhook events and processes `charge.success`.
+
+        **HMAC verification:** The raw request body is signed with HMAC-SHA512 using `PAYSTACK_SECRET_KEY`.
+        The computed hash must match the `x-paystack-signature` header (timing-safe comparison).
+        Requests with a missing or mismatched signature are rejected with 400.
+
+        **`bodyParser` is disabled** on this function so the raw body bytes are available for HMAC verification.
+
+        **Processing logic for `charge.success`:**
+        1. Validates the Paystack reference exists in the `payments` table with `status = 'pending'` (idempotency guard — prevents double-crediting if both webhook and client-side verify fire).
+        2. Verifies `amount` matches the expected kobo amount for the tier.
+        3. Updates `user_entitlements.paid_features` via the service-role client (bypasses RLS).
+        4. Fires a Telegram alert (deduplicated per reference).
+
+        All other event types (`charge.failed`, etc.) return `{ received: true, ignored: "<event>" }`.
+
+        This endpoint is called by Paystack, not by the FYPro frontend.
+
+      parameters:
+        - name: x-paystack-signature
+          in: header
+          required: true
+          description: HMAC-SHA512 of the raw request body, keyed with `PAYSTACK_SECRET_KEY`.
+          schema:
+            type: string
+            example: 7a3f2b...
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event, data]
+              description: Paystack webhook event envelope.
+              properties:
+                event:
+                  type: string
+                  description: Paystack event type.
+                  example: charge.success
+                data:
+                  type: object
+                  description: Event payload.
+                  required: [reference, amount, status, currency]
+                  properties:
+                    reference:
+                      type: string
+                      description: FYPro payment reference (format `FYP_<userId>_<timestamp>_<rand>`).
+                      example: FYP_abc12345_1716800000000_A1B2
+                    amount:
+                      type: integer
+                      description: Amount in kobo.
+                      example: 350000
+                    status:
+                      type: string
+                      example: success
+                    currency:
+                      type: string
+                      example: NGN
+                    customer:
+                      type: object
+                      properties:
+                        email:
+                          type: string
+                          example: student@unilag.edu.ng
+
+      responses:
+        '200':
+          description: |
+            Webhook received. Shape varies:
+            - `charge.success` processed successfully: `{ received: true, status: "success" }`
+            - `charge.success` rejected (already processed / amount mismatch): `{ received: true, rejected: "<reason>" }`
+            - Any other event type: `{ received: true, ignored: "<event>" }`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [received]
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    description: Present for successfully processed `charge.success` events.
+                    example: success
+                  rejected:
+                    type: string
+                    description: Present when the event was received but rejected (known error, e.g. already processed).
+                    example: already_credited
+                  ignored:
+                    type: string
+                    description: Present when the event type is not `charge.success`.
+                    example: charge.failed
+
+        '400':
+          description: Missing or invalid HMAC signature, or malformed JSON body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingSignature:
+                  value:
+                    error: Missing signature
+                invalidSignature:
+                  value:
+                    error: Invalid signature
+                malformedBody:
+                  value:
+                    error: Invalid request body
+
+        '405':
+          description: Non-POST request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Method not allowed
+
+        '500':
+          description: Internal error during `creditUser()` processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Internal error
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # /api/admin  (GET)
+  # Actions: dashboard, vitals
+  # ──────────────────────────────────────────────────────────────────────────────
+
+  /api/admin:
+    get:
+      tags: [Admin]
+      operationId: adminGet
+      summary: Admin analytics — dashboard or real-time vitals
+      description: |
+        Admin-only endpoint dispatching to sub-handlers based on `?action`.
+        **Authentication:** valid Bearer JWT whose email matches `ADMIN_EMAIL` (server-side timing-safe comparison).
+
+        | `?action`    | Description |
+        |--------------|-------------|
+        | `dashboard`  | Full analytics: user table, 30-day revenue/signup charts, feature usage, drop-off funnel, never-converted list, daily spend, cache hit rate, live event feed. |
+        | `vitals`     | Real-time API health: avg latency (last 10 fresh calls), last call timestamp, failures today, requests today, active sessions (last 30 min). |
+        | `health`     | Today's usage summary: spend vs cap, token counts, payment revenue, signup counts, cache hit count. |
+
+      security:
+        - bearerAuth: []
+
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [dashboard, vitals, health]
+
+      responses:
+        '200':
+          description: Analytics data. Shape varies by `action` — see schemas below.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - title: Dashboard response (`?action=dashboard`)
+                    type: object
+                    properties:
+                      overview:
+                        type: object
+                        description: Top-level KPIs for today.
+                        properties:
+                          total_users:
+                            type: integer
+                            example: 1247
+                          active_today:
+                            type: integer
+                          active_this_week:
+                            type: integer
+                          total_paid:
+                            type: integer
+                            description: Number of distinct paying users (all time).
+                          total_revenue_ngn:
+                            type: integer
+                            description: Cumulative revenue in NGN.
+                          conversion_rate:
+                            type: string
+                            description: Percentage of users who have paid (as a string with 1 decimal place).
+                            example: "12.4"
+                          signups_today:
+                            type: integer
+                      users:
+                        type: array
+                        description: Full user roster, one row per auth user.
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            email:
+                              type: string
+                            signup_date:
+                              type: string
+                              format: date-time
+                            last_active:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            plan:
+                              type: string
+                              enum: [Free, Student, Defense]
+                            project_count:
+                              type: integer
+                            status:
+                              type: string
+                              enum: [active, inactive, churned, never_used, banned]
+                              description: |
+                                `active` = logged in within 7 days and has a project.
+                                `inactive` = 8–30 days.
+                                `churned` = > 30 days.
+                                `never_used` = no project created.
+                                `banned` = `banned_until` is in the future.
+                            paid_amount:
+                              type: integer
+                              description: Total lifetime spend in NGN.
+                      revenue_chart:
+                        type: array
+                        description: Daily revenue for the last 30 days.
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            amount:
+                              type: integer
+                              description: Revenue in NGN for that day.
+                      signups_chart:
+                        type: array
+                        description: Daily signup count for the last 30 days.
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            count:
+                              type: integer
+                      feature_usage:
+                        type: array
+                        description: Per-feature run counts (from `user_entitlements.run_counts`), sorted descending.
+                        items:
+                          type: object
+                          properties:
+                            feature:
+                              type: string
+                              example: topic_validator
+                            count:
+                              type: integer
+                      funnel:
+                        type: array
+                        description: Drop-off funnel across the 5 key workflow steps.
+                        items:
+                          type: object
+                          properties:
+                            step:
+                              type: string
+                            count:
+                              type: integer
+                              description: Number of distinct users who have used this step.
+                            dropoff_pct:
+                              type: string
+                              description: Percentage drop-off from the previous funnel step.
+                              example: "23.5"
+                            pct_of_total:
+                              type: string
+                              description: Percentage of all users who have reached this step.
+                              example: "41.2"
+                      never_converted:
+                        type: array
+                        description: Users who signed up > 3 days ago, have at least one project, but have never paid.
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            email:
+                              type: string
+                            signup_date:
+                              type: string
+                              format: date-time
+                            last_active:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            steps_completed:
+                              type: integer
+                      daily_spend:
+                        type: object
+                        properties:
+                          spent_usd:
+                            type: number
+                          cap_usd:
+                            type: number
+                          remaining_usd:
+                            type: number
+                          request_count:
+                            type: integer
+                      cache_hit_rate:
+                        type: object
+                        properties:
+                          hits_total:
+                            type: integer
+                            description: Cache hits today (daily Redis counter).
+                          hit_rate_pct:
+                            type: number
+                            description: Hits / (hits + fresh calls) × 100, capped at 100.
+                            example: 62.3
+                      top_active_users:
+                        type: array
+                        description: Top 3 users by total cumulative run count.
+                        items:
+                          type: object
+                          properties:
+                            email:
+                              type: string
+                            total_runs:
+                              type: integer
+                            top_feature:
+                              type: string
+                              nullable: true
+                      failed_payments_today:
+                        type: integer
+                      signups_yesterday:
+                        type: integer
+                      revenue_today_ngn:
+                        type: integer
+                      paying_users_today:
+                        type: integer
+                      ngn_per_usd:
+                        type: number
+                        description: Exchange rate used for USD↔NGN display. From `NGN_PER_USD` env var, default 1600.
+                        example: 1600
+                      recent_events:
+                        type: array
+                        description: Last 20 events across signups, payments, and feature completions.
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum: [signup, payment, feature]
+                            label:
+                              type: string
+                              example: topic validator
+                            user_prefix:
+                              type: string
+                              description: Email prefix before `@` (partial anonymisation).
+                              example: oluwaseun
+                            time:
+                              type: string
+                              format: date-time
+
+                  - title: Vitals response (`?action=vitals`)
+                    type: object
+                    properties:
+                      avg_response_ms:
+                        type: integer
+                        nullable: true
+                        description: Average duration of the last 10 fresh (non-cached) Anthropic calls in the past 24 h. Null if no fresh calls recorded.
+                        example: 3240
+                      last_call_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                        description: Timestamp of the most recent row in `response_times`.
+                      failures_today:
+                        type: integer
+                        description: Count of `generation_failures` rows created today.
+                        example: 2
+                      requests_today:
+                        type: integer
+                        description: Count of `response_times` rows created today (includes cache hits with duration_ms=0).
+                        example: 148
+                      active_sessions:
+                        type: integer
+                        description: Distinct `user_id` values in `response_times` with `created_at` within the last 30 minutes.
+                        example: 7
+
+                  - title: Health response (`?action=health`)
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      date:
+                        type: string
+                        format: date
+                      usage:
+                        type: object
+                        properties:
+                          spent_usd:
+                            type: number
+                            example: 2.47
+                          cap_usd:
+                            type: number
+                            example: 10
+                          request_count:
+                            type: integer
+                            example: 83
+                          tokens_in:
+                            type: integer
+                            example: 124800
+                          tokens_out:
+                            type: integer
+                            example: 41600
+                      payments:
+                        type: object
+                        properties:
+                          success_count_today:
+                            type: integer
+                            example: 3
+                          total_revenue_ngn:
+                            type: integer
+                            example: 10500
+                      signups:
+                        type: object
+                        properties:
+                          count_today:
+                            type: integer
+                            example: 12
+                          count_this_week:
+                            type: integer
+                            example: 67
+                      cache:
+                        type: object
+                        properties:
+                          hits_total:
+                            type: integer
+                            example: 31
+
+        '401':
+          description: Missing or invalid Bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Unauthorized
+
+        '403':
+          description: Authenticated user's email does not match `ADMIN_EMAIL`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Forbidden
+
+        '500':
+          description: Internal server error (database query failed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Internal server error

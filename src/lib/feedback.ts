@@ -36,6 +36,36 @@ function markFeedbackGiven(feature: string, contextId?: string): void {
   }
 }
 
+// Queries Supabase to check whether this user has already rated this item.
+// Falls back gracefully (returns false) when unauthenticated or on network error.
+// Also repopulates localStorage so hasFeedbackGiven() fast-checks work next time.
+export async function fetchFeedbackGiven(
+  feature: string,
+  contextId?: string,
+): Promise<boolean> {
+  if (hasFeedbackGiven(feature, contextId)) return true
+
+  const user = await sessionUser()
+  if (!user) return false
+
+  let query = supabase
+    .from('feature_feedback')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('feature', feature)
+    .limit(1)
+
+  query = contextId
+    ? query.eq('context_id', contextId)
+    : query.is('context_id', null)
+
+  const { data, error } = await query
+  if (error || !data?.length) return false
+
+  markFeedbackGiven(feature, contextId)
+  return true
+}
+
 export async function submitFeedback(
   feature: string,
   rating: 1 | -1,

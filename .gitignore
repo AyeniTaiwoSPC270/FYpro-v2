@@ -53,3 +53,5 @@ dist-ssr
 # Temporary/local docs
 PRODUCT.md
 supabase/.temp/
+
+.env*.local

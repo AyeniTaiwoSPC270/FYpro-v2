@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write  # needed to post the success comment
+
+jobs:
+  ci:
+    name: Audit · Lint · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail the build if any moderate, high, or critical vulnerability is found.
+      # Run with --audit-level=moderate as specified — informational/low advisories
+      # are reported but do not block the build.
+      - name: Security audit
+        run: npm audit --audit-level=moderate
+
+      # ESLint v9 flat config (eslint.config.js) is present in this repo.
+      # The check is guarded anyway so the step degrades gracefully if the
+      # config is ever renamed or removed.
+      - name: Lint
+        run: |
+          if [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f eslint.config.cjs ] \
+            || [ -f .eslintrc.js ] || [ -f .eslintrc.json ] \
+            || [ -f .eslintrc.yml ] || [ -f .eslintrc.yaml ] || [ -f .eslintrc ]; then
+            npm run lint
+          else
+            echo "No ESLint config found — skipping lint."
+          fi
+
+      - name: Build
+        run: npm run build
+
+      # Only post on pull requests (not on pushes to main, where there's no PR to comment on).
+      - name: Post success comment
+        if: success() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                '### CI passed',
+                '',
+                '| Check | Result |',
+                '|-------|--------|',
+                '| Security audit (`--audit-level=moderate`) | ✅ Clean |',
+                '| ESLint | ✅ No errors |',
+                '| Vite build | ✅ Success |',
+              ].join('\n')
+            })

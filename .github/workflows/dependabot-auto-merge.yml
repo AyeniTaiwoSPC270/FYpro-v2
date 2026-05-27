@@ -1,0 +1,37 @@
+name: Dependabot auto-merge
+
+# Triggers on every PR so we can inspect the actor and update type.
+# Only patch-version Dependabot PRs proceed to the merge step.
+on: pull_request
+
+permissions:
+  contents: write       # required to merge
+  pull-requests: write  # required to approve and enable auto-merge
+
+jobs:
+  auto-merge:
+    name: Auto-merge patch updates
+    runs-on: ubuntu-latest
+    # Exit immediately for any PR that isn't from Dependabot.
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only patch bumps (e.g. 1.2.3 → 1.2.4) are auto-merged.
+      # Minor and major updates require human review.
+      #
+      # The --auto flag tells GitHub to merge only after ALL required status
+      # checks pass. Set the "CI / Audit · Lint · Build" job as a required
+      # check in Settings → Branches → Branch protection rules so the security
+      # audit must be green before this merge fires.
+      - name: Enable auto-merge for patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
