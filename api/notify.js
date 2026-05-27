@@ -562,6 +562,73 @@ async function cmdMaintenance(args) {
   }
 }
 
+async function cmdBroadcast(body, paidOnly) {
+  // 1. Fetch all auth users
+  const allUsers = await listAllUsers()
+
+  // 2. Narrow to paid users if requested
+  let targetUsers = allUsers
+  if (paidOnly) {
+    const { data: payments } = await supabaseAdmin
+      .from('payments')
+      .select('user_id')
+      .eq('status', 'success')
+    const paidIds = new Set((payments || []).map(p => p.user_id))
+    targetUsers = allUsers.filter(u => paidIds.has(u.id))
+  }
+
+  // 3. Remove globally unsubscribed users
+  const { data: optedOut } = await supabaseAdmin
+    .from('email_preferences')
+    .select('user_id')
+    .eq('unsubscribed_all', true)
+  const optedOutIds = new Set((optedOut || []).map(r => r.user_id))
+  targetUsers = targetUsers.filter(u => u.email && !optedOutIds.has(u.id))
+
+  if (targetUsers.length === 0) return 0
+
+  // 4. Send emails in batches of 10
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const html   = buildBroadcastHtml(body)
+  let sentCount = 0
+
+  for (let i = 0; i < targetUsers.length; i += 10) {
+    const batch = targetUsers.slice(i, i + 10)
+    await Promise.all(
+      batch.map(async u => {
+        try {
+          const { error } = await resend.emails.send({
+            from:    'FYPro <hello@fypro.com.ng>',
+            to:      u.email,
+            subject: 'FYPro Announcement',
+            html,
+          })
+          if (!error) sentCount++
+        } catch (err) {
+          console.error('[notify/broadcast] Resend failed for', u.email, err.message)
+        }
+      })
+    )
+  }
+
+  // 5. Bulk-insert in-app notifications (best-effort)
+  const { error: insertError } = await supabaseAdmin
+    .from('notifications')
+    .insert(
+      targetUsers.map(u => ({
+        user_id: u.id,
+        type:    'announcement',
+        title:   'Announcement from FYPro',
+        message: body,
+      }))
+    )
+  if (insertError) {
+    console.error('[notify/broadcast] notification insert failed:', insertError.message)
+  }
+
+  return sentCount
+}
+
 function cmdHelp() {
   return `🛡️ <b>FYPro Admin Bot</b>
 
