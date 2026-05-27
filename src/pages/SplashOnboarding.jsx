@@ -167,20 +167,7 @@ export default function SplashOnboarding() {
           <div className="onboarding__card">
 
             <div className={`onboarding__brand reveal-item${visible ? ' is-visible' : ''}`}>
-              <svg
-                className="onboarding__shield"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 256 256"
-                width="44"
-                height="44"
-                fill="#0066FF"
-                aria-hidden="true"
-              >
-                <path d={SHIELD_D} />
-              </svg>
-              <span className="onboarding__wordmark">
-                <span>FY</span><span style={{ color: '#0066FF' }}>Pro</span>
-              </span>
+              <img src="/fypro-logo.png" alt="FYPro" style={{ height: 44, width: 'auto' }} />
             </div>
 
             <p className={`onboarding__tagline reveal-item${visible ? ' is-visible' : ''}`}>
