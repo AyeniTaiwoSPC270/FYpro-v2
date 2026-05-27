@@ -1,7 +1,9 @@
 // scripts/register-telegram-webhook.js
 //
-// Registers https://fypro.com.ng/api/notify as the Telegram bot webhook.
+// Registers https://www.fypro.com.ng/api/notify as the Telegram bot webhook.
 // Run this once after the first deployment, or whenever the webhook URL changes.
+// NOTE: Must use www.fypro.com.ng — the apex domain redirects with 307 and
+// Telegram does not follow redirects, causing all bot updates to silently fail.
 //
 // Usage:
 //   TELEGRAM_BOT_TOKEN=xxx TELEGRAM_WEBHOOK_SECRET=xxx node scripts/register-telegram-webhook.js
@@ -17,7 +19,7 @@ if (!TOKEN || !SECRET) {
   process.exit(1)
 }
 
-const WEBHOOK_URL = 'https://fypro.com.ng/api/notify'
+const WEBHOOK_URL = 'https://www.fypro.com.ng/api/notify'
 
 async function register() {
   const res = await fetch(`https://api.telegram.org/bot${TOKEN}/setWebhook`, {
