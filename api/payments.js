@@ -167,7 +167,7 @@ async function handleCheckStatus(req, res) {
     .eq('user_id', user.id)
     .single();
 
-  if (error || !data) return res.status(200).json({ status: 'not_found' });
+  if (error || !data) return res.status(404).json({ status: 'not_found' });
 
   return res.status(200).json({
     status: data.status === 'success' ? 'success' : 'pending',
