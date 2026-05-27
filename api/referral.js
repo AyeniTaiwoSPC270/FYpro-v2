@@ -5,7 +5,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { extractUserId } from './_lib/rate-limit.js';
-import { sendTelegramAlert } from './_lib/telegram.js';
+import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js';
 
 const CODE_RE  = /^[A-Z0-9]{6}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,7 +116,7 @@ async function handleTrack(req, res) {
 
   if (creditErr) console.error('[referral/track] credit insert:', creditErr.message);
 
-  sendTelegramAlert(`🔗 Referral signup: ${normalEmail} used code <code>${code}</code>`).catch(() => null);
+  sendTelegramAlert(`🔗 Referral signup: ${escapeTgHtml(normalEmail)} used code <code>${escapeTgHtml(code)}</code>`).catch(() => null);
 
   // Notify the referrer — best-effort
   supabaseAdmin
@@ -219,7 +219,7 @@ async function awardMilestoneCredit(referrerId, triggerReferralId, now) {
   supabaseAdmin.auth.admin.getUserById(referrerId)
     .then(({ data }) => {
       const email = data?.user?.email || referrerId;
-      return sendTelegramAlert(`🎯 Referral milestone: ${email} earned a free defense credit (3 qualified referrals)`);
+      return sendTelegramAlert(`🎯 Referral milestone: ${escapeTgHtml(email)} earned a free defense credit (3 qualified referrals)`);
     })
     .catch(() => null);
 

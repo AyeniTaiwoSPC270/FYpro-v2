@@ -154,16 +154,21 @@ async function handleGeneral(req, res) {
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
     }
 
+    if (!response.ok && response.status >= 500) {
+      const uid = extractUserId(req) || 'anonymous';
+      sendTelegramAlert(`🔴 Anthropic ${response.status}: ${step} for ${uid}`);
+    }
     res.setHeader('X-Cache', 'MISS');
     return res.status(response.status).json(data);
   } catch (err) {
     // AbortSignal.timeout() throws a DOMException with name 'TimeoutError' in Node 18+
+    const userId = extractUserId(req) || 'anonymous';
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[ai/general] Anthropic request timed out after 50s');
+      await sendTelegramAlert(`⏱️ Generation timed out: ${step} for ${userId}`);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
     console.error('[ai/general] error:', err.message);
-    const userId = extractUserId(req) || 'anonymous';
     await sendTelegramAlert(`🔴 Generation failed: ${step} for ${userId} - ${err.message}`);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }

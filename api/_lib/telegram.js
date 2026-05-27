@@ -1,5 +1,10 @@
 import { Redis } from '@upstash/redis'
 
+/** Escape HTML special chars for Telegram parse_mode:'HTML' messages. */
+export function escapeTgHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 let _redis = null
 
 function getRedis() {

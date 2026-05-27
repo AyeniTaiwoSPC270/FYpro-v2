@@ -135,7 +135,7 @@ async function handleSignup(req, res) {
   logAttempt(email, ip, 'signup', success);
 
   if (success) {
-    sendTelegramAlert(`👤 New signup: ${email} (free)`);
+    await sendTelegramAlert(`👤 New signup: ${email} (free)`);
     // Welcome notification — fire-and-forget, best-effort
     supabaseAdmin
       .from('notifications')

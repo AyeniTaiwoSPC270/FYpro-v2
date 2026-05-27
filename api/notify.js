@@ -6,7 +6,7 @@
 
 import { Resend } from 'resend'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
-import { sendTelegramAlert } from './_lib/telegram.js'
+import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
 
@@ -493,10 +493,11 @@ async function cmdLogs() {
 async function cmdResolve(id) {
   if (!id || id.length < 4) return '❌ Usage: /resolve &lt;log-id-prefix&gt; (min 4 chars)'
 
+  const safeId = id.replace(/[%_]/g, '')
   const { data: rows } = await supabaseAdmin
     .from('system_logs')
     .select('id, plain_message')
-    .ilike('id', `${id}%`)
+    .ilike('id', `${safeId}%`)
     .eq('resolved', false)
     .limit(2)
 
@@ -516,7 +517,7 @@ async function cmdResolve(id) {
 async function cmdMaintenance(args) {
   const onOff = args[0]?.toLowerCase()
   if (onOff !== 'on' && onOff !== 'off') {
-    return '❌ Usage: /maintenance on [message] | /maintenance off'
+    return '❌ Usage: /maintenance on | /maintenance off'
   }
 
   const enabled = onOff === 'on'
@@ -524,8 +525,7 @@ async function cmdMaintenance(args) {
   try {
     await setMaintenanceMode(enabled)
     const status = enabled ? '🔴 ENABLED' : '🟢 DISABLED'
-    const msg    = args.slice(1).join(' ').trim()
-    return `🔧 Maintenance mode ${status}${msg ? `\nMessage: ${msg}` : ''}`
+    return `🔧 Maintenance mode ${status}`
   } catch (err) {
     return `❌ Failed to toggle maintenance mode: ${err.message}`
   }
@@ -554,7 +554,7 @@ Tap a button or type a command:
 
 <b>Actions</b>
 /resolve &lt;id&gt; — mark error resolved
-/maintenance on|off [msg] — toggle maintenance mode`
+/maintenance on|off — toggle maintenance mode`
 }
 
 const KEYBOARD = {
@@ -644,7 +644,7 @@ async function handleTelegramBot(req, res) {
     } catch (err) {
       console.error('[notify/bot] callback error:', err.message)
       await answerCallbackQuery(cq.id)
-      await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`, KEYBOARD)
+      await sendReply(chatId, `❌ Command failed — check server logs`, KEYBOARD)
     }
 
     return res.status(200).end()
@@ -672,7 +672,7 @@ async function handleTelegramBot(req, res) {
     await sendReply(chatId, reply, KEYBOARD)
   } catch (err) {
     console.error('[notify/bot] command error:', err.message)
-    await sendReply(chatId, `❌ Error: ${err.message.slice(0, 120)}`, KEYBOARD)
+    await sendReply(chatId, `❌ Command failed — check server logs`, KEYBOARD)
   }
 
   // Respond AFTER sendReply — Vercel freezes the function on res.end(),
@@ -698,17 +698,17 @@ async function handleNotify(req, res) {
   if (action === 'defense_completed') {
     const score = Number(payload?.score)
     if (!isNaN(score)) {
-      await sendTelegramAlert(`🎓 Defense completed: ${email} scored <b>${score}/10</b>`)
+      await sendTelegramAlert(`🎓 Defense completed: ${escapeTgHtml(email)} scored <b>${score}/10</b>`)
     }
   }
 
   if (action === 'project_created') {
     const title = String(payload?.title || 'untitled').slice(0, 80)
-    await sendTelegramAlert(`📁 New project: ${email} started '<b>${title}</b>'`)
+    await sendTelegramAlert(`📁 New project: ${escapeTgHtml(email)} started '<b>${escapeTgHtml(title)}</b>'`)
   }
 
   if (action === 'oauth_signup') {
-    await sendTelegramAlert(`👤 New signup: ${email} (Google, free)`)
+    await sendTelegramAlert(`👤 New signup: ${escapeTgHtml(email)} (Google, free)`)
   }
 
   return res.status(200).json({ ok: true })
@@ -803,7 +803,7 @@ async function handleContact(req, res) {
     return res.status(500).json({ error: 'Failed to send message. Please email us directly at hello@fypro.com.ng.' })
   }
 
-  await sendTelegramAlert(`📬 Contact form: <b>${safeName}</b> (${safeEmail})\nSubject: ${safeSubject}`).catch(() => null)
+  await sendTelegramAlert(`📬 Contact form: <b>${escapeTgHtml(safeName)}</b> (${escapeTgHtml(safeEmail)})\nSubject: ${escapeTgHtml(safeSubject)}`).catch(() => null)
 
   return res.status(200).json({ ok: true })
 }

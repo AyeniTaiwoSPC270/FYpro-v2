@@ -1339,7 +1339,7 @@ async function handleTestAllAlerts(req, res) {
         const r    = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ chat_id: chatId, text: message }),
+          body:    JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
         });
         const data = await r.json();
         return { key, ok: r.ok && data.ok === true, http_status: r.status };

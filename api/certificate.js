@@ -8,7 +8,7 @@
 //   3. Cross-user access blocked: .eq('user_id', user.id) on every DB fetch.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
-import { sendTelegramAlert } from './_lib/telegram.js';
+import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { jsPDF } from 'jspdf';
 import fs from 'fs';
@@ -332,7 +332,7 @@ export default async function handler(req, res) {
     }
 
     cert = newCert;
-    sendTelegramAlert(`🏆 Certificate issued: ${fullName} (${user.email}) scored ${sessionScore}/10\n<code>${newCert.certificate_number}</code>`).catch(() => null);
+    sendTelegramAlert(`🏆 Certificate issued: ${escapeTgHtml(fullName)} (${escapeTgHtml(user.email)}) scored ${sessionScore}/10\n<code>${escapeTgHtml(newCert.certificate_number)}</code>`).catch(() => null);
 
     // Notify user — best-effort
     supabaseAdmin
