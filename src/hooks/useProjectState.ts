@@ -21,7 +21,23 @@ import {
   Project,
 } from '../lib/db'
 import { enqueue, getStatus } from '../lib/sync-queue'
-import { useApp } from '../context/AppContext'
+// AppContext is a plain-JS file (allowJs). TypeScript infers useApp() → null
+// from createContext(null). Declare the subset this file actually uses so the
+// compiler can check it correctly without requiring as any.
+interface AppContextValue {
+  state: {
+    faculty: string
+    department: string
+    level: string
+    validatedTopic: string
+    roughTopic: string
+    [key: string]: unknown
+  }
+  set: (partial: Record<string, unknown>) => void
+  markOnboardingResolved: (opts?: { faculty?: string; department?: string; metaOnboarded?: boolean }) => void
+}
+import { useApp as _useApp } from '../context/AppContext'
+const useApp = _useApp as unknown as () => AppContextValue
 import { useUser } from './useUser'
 import { showToast } from '../components/Toast'
 
@@ -208,8 +224,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         if (Object.keys(hydration).length > 0) set(hydration)
 
         markOnboardingResolved({
-          faculty:       userState.profile?.faculty    ?? null,
-          department:    userState.profile?.department ?? null,
+          faculty:       userState.profile?.faculty    ?? undefined,
+          department:    userState.profile?.department ?? undefined,
           metaOnboarded: userRef.current?.user_metadata?.onboarding_completed === true,
         })
 
