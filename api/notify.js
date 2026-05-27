@@ -44,6 +44,37 @@ function bar(value, max, len = 10) {
   return '█'.repeat(filled) + '░'.repeat(len - filled)
 }
 
+function buildBroadcastHtml(body) {
+  const safe = body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
+  return `<!DOCTYPE html><html><head>
+    <style>
+      body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
+      .wrapper { max-width:560px; margin:32px auto; }
+      .header { background:#0f172a; border-radius:12px 12px 0 0; padding:24px; text-align:center; }
+      .header img { height:36px; width:auto; }
+      .box { background:#fff; border-radius:0 0 12px 12px; padding:40px; }
+      .msg { font-size:15px; color:#111827; line-height:1.7; }
+      hr { border:none; border-top:1px solid #E5E7EB; margin:24px 0; }
+      .foot { font-size:12px; color:#9CA3AF; }
+    </style>
+  </head><body>
+    <div class="wrapper">
+      <div class="header">
+        <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" />
+      </div>
+      <div class="box">
+        <p class="msg">${safe}</p>
+        <hr>
+        <p class="foot">You're receiving this because you have an account at fypro.com.ng.</p>
+      </div>
+    </div>
+  </body></html>`
+}
+
 // ─── Telegram send ────────────────────────────────────────────────────────────
 
 async function sendReply(chatId, text, keyboard = null) {
