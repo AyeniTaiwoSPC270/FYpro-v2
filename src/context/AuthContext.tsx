@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { clearRoutingCache } from '../lib/routingCache'
+import { clearUserLocalStorage } from '../lib/storage'
 
 export interface AuthContextValue {
   user: User | null
@@ -31,9 +32,14 @@ let signingOut = false
 async function forceSignOut(): Promise<void> {
   if (signingOut) return
   signingOut = true
-  try { await supabase.auth.signOut() } catch { /* ignore — user may already be deleted */ }
-  localStorage.clear()
-  sessionStorage.clear()
+  try {
+    await supabase.auth.signOut()
+  } catch {
+    // ignore — user may already be deleted or token invalid
+  } finally {
+    signingOut = false  // always reset so retries are possible after transient failures
+  }
+  clearUserLocalStorage()
   window.location.replace('/login?session_expired=1')
 }
 
