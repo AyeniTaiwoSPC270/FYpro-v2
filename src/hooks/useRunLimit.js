@@ -114,7 +114,7 @@ async function syncRunCountsToSupabase(updatedCounts) {
     console.error('syncRunCounts: no session')
     return
   }
-  const res = await fetch('/api/ai?action=sync-run-counts', {
+  const res = await fetch('/api/admin?action=sync-run-counts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

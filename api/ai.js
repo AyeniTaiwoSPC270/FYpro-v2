@@ -461,66 +461,12 @@ async function handleSupervisorPrep(req, res) {
   }
 }
 
+// Moved to /api/admin?action=sync-run-counts — kept as 410 stub for 30 days
+// to handle any stale client code. Remove after 2026-06-27.
 async function handleSyncRunCounts(req, res) {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Authentication required.' });
-
-  let user;
-  try {
-    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-    user = data.user;
-  } catch (authErr) {
-    console.error('[ai/sync-run-counts] auth.getUser threw:', authErr.message);
-    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
-  }
-
-  const { run_counts } = req.body || {};
-  if (!run_counts || typeof run_counts !== 'object' || Array.isArray(run_counts)) {
-    return res.status(400).json({ error: 'run_counts must be a plain object.' });
-  }
-
-  try {
-    // Read existing counts from DB so we can take Math.max — prevents clients
-    // from gaming the system by submitting artificially low values.
-    const { data: existing } = await supabaseAdmin
-      .from('user_entitlements')
-      .select('run_counts')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const serverCounts = (existing?.run_counts && typeof existing.run_counts === 'object')
-      ? existing.run_counts
-      : {};
-
-    const merged = { ...serverCounts };
-    for (const k of Object.keys(run_counts)) {
-      if (k === '_reset_at') { merged[k] = run_counts[k]; continue; }
-      const clientVal = typeof run_counts[k] === 'number' ? run_counts[k] : 0;
-      const serverVal = typeof serverCounts[k] === 'number' ? serverCounts[k] : 0;
-      merged[k] = Math.max(clientVal, serverVal);
-    }
-
-    // Only write run_counts — paid_features is never touched here.
-    const { error } = await supabaseAdmin
-      .from('user_entitlements')
-      .upsert(
-        { user_id: user.id, run_counts: merged, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id' }
-      )
-      .select('user_id');
-
-    if (error) {
-      console.error('[ai/sync-run-counts] upsert error:', error.message);
-      return res.status(500).json({ error: 'Failed to sync run counts.' });
-    }
-
-    return res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error('[ai/sync-run-counts] error:', err.message);
-    return res.status(500).json({ error: 'Unexpected error syncing run counts.' });
-  }
+  return res.status(410).json({
+    error: 'This action has moved. Use /api/admin?action=sync-run-counts instead.',
+  });
 }
 
 export default async function handler(req, res) {

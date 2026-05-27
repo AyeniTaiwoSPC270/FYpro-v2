@@ -1739,6 +1739,68 @@ async function handleMaintenanceInfo(req, res) {
   }
 }
 
+// ─── action: sync-run-counts ──────────────────────────────────────────────────
+// Moved from api/ai.js — belongs in admin/entitlements surface, not the AI proxy.
+
+async function handleSyncRunCounts(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  let user;
+  try {
+    const { data, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !data?.user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+    user = data.user;
+  } catch (authErr) {
+    console.error('[admin/sync-run-counts] auth.getUser threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+
+  const { run_counts } = req.body || {};
+  if (!run_counts || typeof run_counts !== 'object' || Array.isArray(run_counts)) {
+    return res.status(400).json({ error: 'run_counts must be a plain object.' });
+  }
+
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('run_counts')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const serverCounts = (existing?.run_counts && typeof existing.run_counts === 'object')
+      ? existing.run_counts
+      : {};
+
+    const merged = { ...serverCounts };
+    for (const k of Object.keys(run_counts)) {
+      if (k === '_reset_at') { merged[k] = run_counts[k]; continue; }
+      const clientVal = typeof run_counts[k] === 'number' ? run_counts[k] : 0;
+      const serverVal = typeof serverCounts[k] === 'number' ? serverCounts[k] : 0;
+      merged[k] = Math.max(clientVal, serverVal);
+    }
+
+    const { error } = await supabaseAdmin
+      .from('user_entitlements')
+      .upsert(
+        { user_id: user.id, run_counts: merged, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+      .select('user_id');
+
+    if (error) {
+      console.error('[admin/sync-run-counts] upsert error:', error.message);
+      return res.status(500).json({ error: 'Failed to sync run counts.' });
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('[admin/sync-run-counts] error:', err.message);
+    return res.status(500).json({ error: 'Unexpected error syncing run counts.' });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -1794,6 +1856,10 @@ export default async function handler(req, res) {
   if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
   if (action === 'set-maintenance-mode')    return handleSetMaintenanceMode(req, res);
   if (action === 'maintenance-info')        return handleMaintenanceInfo(req, res);
+  if (action === 'sync-run-counts') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    return handleSyncRunCounts(req, res);
+  }
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
 }
