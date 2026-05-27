@@ -284,10 +284,13 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
       try {
         await withRetry(() => supabaseSaveStep(pid, stepType, resultJson, inputSummary))
         if (NEXT_STEP[stepType]) {
-          updateProject(pid, { current_step: NEXT_STEP[stepType] }).catch(() => {})
-        }
-        if (stepType === 'topic_validator' && resultJson.refined_topic) {
-          updateProject(pid, { title: resultJson.refined_topic as string }).catch(() => {})
+          const projectUpdates: Partial<Pick<import('../lib/db').Project, 'title' | 'current_step' | 'status'>> = {
+            current_step: NEXT_STEP[stepType],
+          }
+          if (stepType === 'topic_validator' && resultJson.refined_topic) {
+            projectUpdates.title = resultJson.refined_topic as string
+          }
+          updateProject(pid, projectUpdates).catch(() => {})
         }
       } catch {
         enqueue({ projectId: pid, stepType, resultJson, inputSummary: inputSummary ?? null })
