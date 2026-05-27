@@ -225,7 +225,7 @@ async function handleDefense(req, res) {
     return res.status(503).json({ error: 'Service unavailable. Please try again.' });
   }
 
-  const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
+  const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements?.paid_features : [];
   if (!paidFeatures.includes('defense_pack')) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
