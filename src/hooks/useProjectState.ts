@@ -112,7 +112,7 @@ const ProjectStateContext = createContext<ProjectStateValue | null>(null)
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function ProjectStateProvider({ children }: { children: ReactNode }) {
-  const { set, state } = useApp()
+  const { set, state, markOnboardingResolved } = useApp()
   const { user, loading: authLoading } = useUser()
   const [projectId, setProjectId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -163,6 +163,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           channelRef.current = null
         }
         setIsLoading(false)
+        markOnboardingResolved({})
         return
       }
 
@@ -206,6 +207,12 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
         if (Object.keys(hydration).length > 0) set(hydration)
 
+        markOnboardingResolved({
+          faculty:       userState.profile?.faculty    ?? null,
+          department:    userState.profile?.department ?? null,
+          metaOnboarded: userRef.current?.user_metadata?.onboarding_completed === true,
+        })
+
         // Check if anonymous localStorage session exists but no Supabase project
         if (!userState.project) {
           const raw = localStorage.getItem('fypro_session')
@@ -220,6 +227,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('[useProjectState] load error:', err)
+        markOnboardingResolved({})  // fail open — unblock navigation
       } finally {
         if (!cancelled) setIsLoading(false)
       }

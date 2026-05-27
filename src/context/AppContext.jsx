@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
 import { AuthContext } from './AuthContext'
 import { USER_STORAGE_KEYS, clearUserLocalStorage } from '../lib/storage'
 
@@ -105,9 +104,6 @@ export function AppProvider({ children }) {
     const saved = loadFromStorage()
     return saved ? { ...DEFAULT_STATE, ...saved } : DEFAULT_STATE
   })
-  const [hydrateError, setHydrateError] = useState(false)
-  const [_hydrateRetryCount, setHydrateRetryCount] = useState(0)
-
   // Persist to localStorage on every state change
   useEffect(() => {
     try {
@@ -123,77 +119,6 @@ export function AppProvider({ children }) {
       try { localStorage.setItem('fypro_session_owner', session.user.id) } catch {}
     }
   }, [session?.user?.id])
-
-  // Tracks the user ID from the previous render to detect mid-session user switches
-  // (e.g. User A signs out and User B signs in without a page reload).
-  const prevUserIdRef = useRef(null)
-
-  // Hydrate faculty/department/level from Supabase whenever the authenticated
-  // user changes. Reads session from AuthContext — no direct getSession() call.
-  // _hydrateRetryCount in the dep array lets retryHydrate() force a re-run.
-  useEffect(() => {
-    if (!session?.user) {
-      prevUserIdRef.current = null
-      return
-    }
-    const user = session.user
-
-    setHydrateError(false)
-
-    // Mid-session user switch: clear all stale data before loading the new user.
-    // The page-reload case is handled by loadFromStorage() rejecting the stale
-    // fypro_session when its fypro_session_owner doesn't match the auth user.
-    if (prevUserIdRef.current !== null && prevUserIdRef.current !== user.id) {
-      clearUserLocalStorage()
-      setState(DEFAULT_STATE)
-      setOnboardedFlag(false)
-    }
-    prevUserIdRef.current = user.id
-
-    async function hydrateFromSupabase() {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('full_name, university, faculty, department, level')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (!profile) {
-        setOnboardingResolved(true)
-        return
-      }
-
-      const metaOnboarded = user.user_metadata?.onboarding_completed === true
-      if (metaOnboarded || (profile.faculty && profile.department)) {
-        localStorage.setItem('isOnboarded', 'true')
-        setOnboardedFlag(true)
-      } else {
-        localStorage.removeItem('isOnboarded')
-        setOnboardedFlag(false)
-      }
-
-      setState(prev => ({
-        ...prev,
-        // Prefer DB name; fall back to Google/OAuth metadata; never inherit a previous user's name
-        name:       profile.full_name ?? user.user_metadata?.full_name ?? '',
-        university: profile.university ?? prev.university,
-        faculty:    profile.faculty    ?? prev.faculty,
-        department: profile.department ?? prev.department,
-        level:      profile.level      ?? prev.level,
-      }))
-
-      setOnboardingResolved(true)
-    }
-    hydrateFromSupabase().catch(err => {
-      console.error('[AppContext] hydrateFromSupabase failed:', err?.message)
-      setHydrateError(true)
-      setOnboardingResolved(true) // unblock on error — localStorage cache is the fallback
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, _hydrateRetryCount])
-
-  const retryHydrate = useCallback(() => {
-    setHydrateRetryCount(c => c + 1)
-  }, [])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   const set = useCallback((partial) => {
@@ -235,6 +160,22 @@ export function AppProvider({ children }) {
         currentStep: stepIndex + 1,
       }
     })
+  }, [])
+
+  const markOnboardingResolved = useCallback(({
+    faculty,
+    department,
+    metaOnboarded = false,
+  } = {}) => {
+    const shouldMark = metaOnboarded === true || Boolean(faculty && department)
+    if (shouldMark) {
+      try { localStorage.setItem('isOnboarded', 'true') } catch {}
+      setOnboardedFlag(true)
+    } else {
+      try { localStorage.removeItem('isOnboarded') } catch {}
+      setOnboardedFlag(false)
+    }
+    setOnboardingResolved(true)
   }, [])
 
   // Mirrors vanilla State.studentContext getter — passed to every API call
@@ -281,9 +222,8 @@ export function AppProvider({ children }) {
     studentContext,
     isOnboarded,
     onboardingResolved,
-    hydrateError,
-    retryHydrate,
-  }), [state, set, clearState, clearProjectData, navigateStep, completeStep, studentContext, isOnboarded, onboardingResolved, hydrateError, retryHydrate])
+    markOnboardingResolved,
+  }), [state, set, clearState, clearProjectData, navigateStep, completeStep, studentContext, isOnboarded, onboardingResolved, markOnboardingResolved])
 
   return (
     <AppContext.Provider value={contextValue}>
