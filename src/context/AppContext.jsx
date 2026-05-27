@@ -98,8 +98,7 @@ function loadFromStorage() {
 export function AppProvider({ children }) {
   const { session } = useContext(AuthContext)
   const [state, setState] = useState(() => {
-    // Skip localStorage for authenticated users — Supabase hydration will populate real data.
-    // Prevents a flash of stale session data before hydrateFromSupabase() runs.
+    // Skip localStorage for authenticated users — ProjectStateProvider will populate real data.
     if (getCurrentAuthUserId()) return DEFAULT_STATE
     const saved = loadFromStorage()
     return saved ? { ...DEFAULT_STATE, ...saved } : DEFAULT_STATE
