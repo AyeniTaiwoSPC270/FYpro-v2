@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase'
 import { AuthContext } from './AuthContext'
 import { USER_STORAGE_KEYS, clearUserLocalStorage } from '../lib/storage'
 
-export { clearUserLocalStorage }
-
 const AppContext = createContext(null)
 
 const DEFAULT_STATE = {

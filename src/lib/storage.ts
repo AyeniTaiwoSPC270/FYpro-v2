@@ -5,7 +5,6 @@ export const USER_STORAGE_KEYS = [
   'fypro_session',
   'fypro_session_owner',
   'isOnboarded',
-  'fypro_run_counts',
   'fypro_autosave_topic_validator',
   'fypro_autosave_chapter_architect',
   'fypro_autosave_supervisor_prep',
