@@ -10,6 +10,7 @@ import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { isAllowedGeneralStep, getGeneralSystemPrompt } from './_lib/ai-prompts.js';
+import { callAnthropic } from './_lib/anthropic-proxy.js';
 
 export const config = { maxDuration: 60 };
 
@@ -45,12 +46,6 @@ async function handleGeneral(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('[ai/general] ANTHROPIC_API_KEY is not set');
-    return res.status(500).json({ error: 'API key not configured on server.' });
-  }
 
   const {
     messages,
@@ -150,29 +145,16 @@ async function handleGeneral(req, res) {
   }
 
   try {
-    const start    = Date.now();
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta':    'pdfs-2024-09-25',
-      },
-      body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(50000),
+    const { response, data } = await callAnthropic({
+      feature:    step,
+      userId:     user.id,
+      model,
+      max_tokens,
+      system,
+      messages,
     });
 
-    const data = await response.json();
-    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
-
     if (response.ok) {
-      const duration       = Date.now() - start;
-      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: step, duration_ms: duration, user_id: user.id });
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[ai/general] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-      });
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
 
       // Increment server-side run count for free users — fire-and-forget, eventual consistency.
@@ -182,30 +164,28 @@ async function handleGeneral(req, res) {
           ? entData.run_counts
           : {};
         const newCount = (typeof existingCounts[dbKey] === 'number' ? existingCounts[dbKey] : 0) + 1;
-        const updatedCounts = { ...existingCounts, [dbKey]: newCount };
         supabaseAdmin
           .from('user_entitlements')
           .upsert(
-            { user_id: user.id, run_counts: updatedCounts, updated_at: new Date().toISOString() },
+            { user_id: user.id, run_counts: { ...existingCounts, [dbKey]: newCount }, updated_at: new Date().toISOString() },
             { onConflict: 'user_id' }
           )
           .catch(err => console.error('[ai/general] run count increment failed:', err?.message));
       }
     }
 
-    if (!response.ok && response.status >= 500) {
-      const uid = extractUserId(req) || 'anonymous';
-      sendTelegramAlert(`🔴 Anthropic ${response.status}: ${step} for ${uid}`);
-    }
     res.setHeader('X-Cache', 'MISS');
     return res.status(response.status).json(data);
   } catch (err) {
-    // AbortSignal.timeout() throws a DOMException with name 'TimeoutError' in Node 18+
     const userId = extractUserId(req) || 'anonymous';
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[ai/general] Anthropic request timed out after 50s');
       await sendTelegramAlert(`⏱️ Generation timed out: ${step} for ${userId}`);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
+    }
+    if (err.isConfig) {
+      console.error('[ai/general] ANTHROPIC_API_KEY is not set');
+      return res.status(500).json({ error: 'API key not configured on server.' });
     }
     console.error('[ai/general] error:', err.message);
     await sendTelegramAlert(`🔴 Generation failed: ${step} for ${userId} - ${err.message}`);
@@ -224,8 +204,6 @@ async function handleDefense(req, res) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
 
   // Parallelize auth + rate limit + daily cap
   let authResult, rl, cap;
@@ -278,51 +256,31 @@ async function handleDefense(req, res) {
     sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`)
   }
 
-  if (!apiKey) {
-    console.error('[ai/defense] ANTHROPIC_API_KEY is not set');
-    return res.status(500).json({ error: 'API key not configured on server.' });
+  const {
+    system,
+    messages,
+    max_tokens: rawMaxTokens = 2000,
+    model: rawModel = 'claude-sonnet-4-6',
+    answerWordCount,
+  } = req.body || {};
+
+  const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+  const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
+
+  if (answerWordCount !== undefined && answerWordCount > 300) {
+    return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
   }
 
   try {
-    const {
+    const { response, data } = await callAnthropic({
+      feature:    'defense-simulator',
+      userId:     user.id,
+      model,
+      max_tokens,
       system,
       messages,
-      max_tokens: rawMaxTokens = 2000,
-      model: rawModel = 'claude-sonnet-4-6',
-      answerWordCount,
-    } = req.body || {};
-
-    const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
-    const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
-
-    if (answerWordCount !== undefined && answerWordCount > 300) {
-      return res.status(400).json({ error: 'Input too long. Please shorten your text to continue.' });
-    }
-
-    const start    = Date.now();
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta':    'pdfs-2024-09-25',
-      },
-      body:   JSON.stringify({ model, max_tokens, system, messages, temperature: 0 }),
-      signal: AbortSignal.timeout(50000),
     });
-
-    const data = await response.json();
     console.log('[ai/defense] Anthropic status:', response.status);
-    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
-    if (response.ok) {
-      const duration       = Date.now() - start;
-      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'defense-simulator', duration_ms: duration, user_id: user.id });
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[ai/defense] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-      });
-    }
     return res.status(response.status).json(data);
   } catch (err) {
     console.error('[ai/defense] error:', err.message);
