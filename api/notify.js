@@ -758,11 +758,13 @@ async function handleTelegramBot(req, res) {
   const msgText = (message.text || '').trim()
 
   // ── Broadcast commands — handled before generic command parser ───────────
-  if (msgText.toLowerCase().startsWith('/broadcast')) {
+  const lowerMsg = msgText.toLowerCase()
+  if (lowerMsg === '/broadcast' || lowerMsg.startsWith('/broadcast ') ||
+      lowerMsg === '/broadcast_paid' || lowerMsg.startsWith('/broadcast_paid ')) {
     const adminId = Number(process.env.TELEGRAM_ADMIN_ID)
     if (!adminId || message.from?.id !== adminId) return res.status(200).end()
 
-    const paidOnly = msgText.toLowerCase().startsWith('/broadcast_paid')
+    const paidOnly = lowerMsg.startsWith('/broadcast_paid')
     const prefix   = paidOnly ? '/broadcast_paid' : '/broadcast'
     const body     = msgText.slice(prefix.length).trim()
 
