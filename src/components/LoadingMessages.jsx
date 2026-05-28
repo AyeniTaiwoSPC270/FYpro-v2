@@ -22,7 +22,7 @@ export default function LoadingMessages({ messages, className }) {
       <p className="fy-loading-status">{messages[index]}</p>
       {showLongWait && (
         <p className="fy-loading-long-wait">
-          Still working — Claude usually takes 15–30 seconds on first run. Don't close this page.
+          Still working — FYPro usually takes 15–30 seconds on first run. Don't close this page.
         </p>
       )}
     </div>

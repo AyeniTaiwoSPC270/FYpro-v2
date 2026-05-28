@@ -64,7 +64,7 @@ export const roadmap: RoadmapItem[] = [
     status: 'done',
     title: 'Project Reviewer',
     description:
-      'Upload your draft chapter as a PDF and Claude reviews it against your methodology, flags gaps, and gives structured feedback — available on the Defense Pack.',
+      'Upload your draft chapter as a PDF and FYPro reviews it against your methodology, flags gaps, and gives structured feedback — available on the Defense Pack.',
     shippedDate: '2026-05-05',
   },
   {

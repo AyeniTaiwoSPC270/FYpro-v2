@@ -289,7 +289,7 @@ export default function MethodologyAdvisor() {
           <p className="ma-step-label">Step 3: Methodology Advisor</p>
           <p className="ma-description">
             FYPro will analyse all three research paradigms for your specific topic — Quantitative,
-            Qualitative, and Mixed Methods — and explain the trade-offs of each. Claude will
+            Qualitative, and Mixed Methods — and explain the trade-offs of each. FYPro will
             recommend one, but the final choice is yours.
           </p>
           <ApiErrorBox error={maError} onRetry={handleAnalyse} />
@@ -346,7 +346,7 @@ export default function MethodologyAdvisor() {
             <>
               {/* CLAUDE RECOMMENDS banner */}
               <div id="ma-rec-banner" className="ma-rec-banner">
-                <p className="ma-rec-label">Claude Recommends</p>
+                <p className="ma-rec-label">FYPro Recommends</p>
                 <p id="ma-rec-name" className="ma-rec-name">{maData.recommended || ''}</p>
                 <p id="ma-rec-reason" className="ma-rec-reason">{maData.recommended_reason || ''}</p>
               </div>
