@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -124,8 +125,8 @@ export default function SupervisorEmail({ onClose }) {
           objectives, methodology, and a meeting request. All in one.
         </p>
         <ApiErrorBox error={error} onRetry={handleGenerate} />
-        <button className="se-btn-generate" onClick={handleGenerate} disabled={section === 'loading'}>
-          {section === 'loading' ? 'Working…' : 'Generate Email'}
+        <button className="se-btn-generate" onClick={handleGenerate} disabled={section === 'loading'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {section === 'loading' ? <><Spinner /> Working…</> : 'Generate Email'}
         </button>
       </div>
 
@@ -197,11 +198,11 @@ export default function SupervisorEmail({ onClose }) {
               </button>
               <button
                 className="se-btn-generate"
-                style={{ marginLeft: 8, width: 'auto', padding: '11px 20px' }}
+                style={{ marginLeft: 8, width: 'auto', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                 onClick={handleGenerate}
                 disabled={section === 'loading'}
               >
-                {section === 'loading' ? 'Working…' : 'Regenerate'}
+                {section === 'loading' ? <><Spinner /> Working…</> : 'Regenerate'}
               </button>
             </div>
 

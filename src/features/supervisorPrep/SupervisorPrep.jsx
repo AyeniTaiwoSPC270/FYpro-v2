@@ -6,6 +6,7 @@ import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -233,8 +234,9 @@ export default function SupervisorPrep() {
               ].filter(Boolean).join(' ')}
               onClick={handleSubmit}
               disabled={btnDisabled || !stage || feedbackWordCount > 500 || stuckWordCount > 500}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
             >
-              {btnDisabled ? 'Working…' : 'Prepare Me'}
+              {btnDisabled ? <><Spinner /> Working…</> : 'Prepare Me'}
             </button>
           </>
         )}

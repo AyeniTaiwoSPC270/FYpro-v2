@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
@@ -312,9 +313,9 @@ export default function TopicValidator() {
           className="tv-btn-validate"
           onClick={handleValidate}
           disabled={btnDisabled || overLimit || wordCount > 500}
-          style={(overLimit || wordCount > 500) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...((overLimit || wordCount > 500) ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
         >
-          {btnDisabled ? 'Working…' : 'Validate Topic'}
+          {btnDisabled ? <><Spinner /> Working…</> : 'Validate Topic'}
         </button>
         {overLimit && (
           <p className="tv-error-text" style={{ marginTop: 8 }}>

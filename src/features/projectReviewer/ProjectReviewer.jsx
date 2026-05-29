@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
@@ -565,9 +566,9 @@ export default function ProjectReviewer() {
           className="pr-btn-review"
           disabled={!selectedFile || isProcessing || overLimit}
           onClick={handleReview}
-          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
         >
-          {isProcessing ? 'Working…' : 'Review My Project'}
+          {isProcessing ? <><Spinner /> Working…</> : 'Review My Project'}
         </button>
         {overLimit && (
           <p className="pr-error-text tv-section--visible" style={{ marginTop: 8 }}>

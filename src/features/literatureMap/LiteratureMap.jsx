@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 
 const LOADING_MESSAGES = [
@@ -152,9 +153,9 @@ export default function LiteratureMap({ chapters }) {
             className={`lm-btn-generate${(!state.validatedTopic?.trim() || overLimit) ? ' opacity-60 cursor-not-allowed' : ''}`}
             onClick={handleGenerate}
             disabled={!state.validatedTopic?.trim() || btnDisabled || overLimit}
-            style={(!state.validatedTopic?.trim() || overLimit) ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...((!state.validatedTopic?.trim() || overLimit) ? { opacity: 0.6, cursor: 'not-allowed' } : {}) }}
           >
-            {btnDisabled ? 'Working…' : 'Generate Literature Map'}
+            {btnDisabled ? <><Spinner /> Working…</> : 'Generate Literature Map'}
           </button>
           {overLimit && (
             <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>

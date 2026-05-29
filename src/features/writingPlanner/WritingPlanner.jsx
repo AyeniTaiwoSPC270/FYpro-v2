@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
@@ -230,9 +231,9 @@ export default function WritingPlanner() {
           className="wp-btn-generate"
           onClick={handleGenerate}
           disabled={!generateEnabled}
-          style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
         >
-          {btnDisabled ? 'Working…' : 'Generate Writing Plan'}
+          {btnDisabled ? <><Spinner /> Working…</> : 'Generate Writing Plan'}
         </button>
         {overLimit && (
           <p className="wp-error-text" style={{ marginTop: 8 }}>

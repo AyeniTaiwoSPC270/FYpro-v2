@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import { useProjectState } from '../../hooks/useProjectState'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
@@ -298,9 +299,9 @@ export default function MethodologyAdvisor() {
             className="ma-btn-analyse"
             onClick={handleAnalyse}
             disabled={maBtnDisabled || maOverLimit}
-            style={maOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(maOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
           >
-            {maBtnDisabled ? 'Working…' : 'Analyse Methodology'}
+            {maBtnDisabled ? <><Spinner /> Working…</> : 'Analyse Methodology'}
           </button>
           {maOverLimit && (
             <p className="ma-error-text" style={{ marginTop: 8 }}>
@@ -495,9 +496,9 @@ export default function MethodologyAdvisor() {
               className="di-btn-generate"
               onClick={handleGenerateInstrument}
               disabled={diGenBtnDisabled || diOverLimit}
-              style={diOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(diOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
             >
-              {diGenBtnDisabled ? 'Working…' : 'Generate Instrument'}
+              {diGenBtnDisabled ? <><Spinner /> Working…</> : 'Generate Instrument'}
             </button>
             {diOverLimit && (
               <p className="di-error-text" style={{ marginTop: 8 }}>

@@ -8,6 +8,7 @@ import { useProjectState } from '../../hooks/useProjectState'
 import LiteratureMap from '../literatureMap/LiteratureMap'
 import ApiErrorBox from '../../components/ApiErrorBox'
 import LoadingMessages from '../../components/LoadingMessages'
+import Spinner from '../../components/Spinner'
 import FeedbackThumbs from '../../components/feedback/FeedbackThumbs'
 import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
@@ -576,9 +577,9 @@ export default function ChapterArchitect() {
             className="ca-btn-generate"
             onClick={handleGenerate}
             disabled={btnDisabled || overLimit}
-            style={overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(overLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
           >
-            {btnDisabled ? 'Working…' : 'Generate Chapters'}
+            {btnDisabled ? <><Spinner /> Working…</> : 'Generate Chapters'}
           </button>
           {overLimit && (
             <p className="ca-error-text" style={{ marginTop: 8 }}>
@@ -667,9 +668,9 @@ export default function ChapterArchitect() {
                 className="ag-btn-generate"
                 onClick={handleGenerateAbstract}
                 disabled={agBtnDisabled || agOverLimit}
-                style={agOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...(agOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
               >
-                {agBtnDisabled ? 'Working…' : 'Generate Abstract'}
+                {agBtnDisabled ? <><Spinner /> Working…</> : 'Generate Abstract'}
               </button>
               {agOverLimit && (
                 <p className="ca-error-text" style={{ marginTop: 8 }}>

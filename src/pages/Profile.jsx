@@ -9,6 +9,7 @@ import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
 import { updateUserProfile } from '../lib/db'
 import { resetUser } from '../lib/analytics'
+import Spinner from '../components/Spinner'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationPanel from '../components/NotificationPanel'
 
@@ -76,6 +77,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   const dropdownRef = useRef(null)
   const { user: navUser } = useUser()
   const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(navUser?.id)
@@ -222,11 +224,32 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
 
                 <div className="py-1.5 border-t border-slate-800/80">
                   <button
-                    onClick={async () => { await supabase.auth.signOut(); resetUser(); clearState(); navigate('/') }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors duration-150 cursor-pointer"
+                    onClick={async () => {
+                      if (signingOut) return
+                      setSigningOut(true)
+                      try {
+                        await supabase.auth.signOut()
+                        resetUser()
+                        clearState()
+                        navigate('/')
+                      } finally {
+                        setSigningOut(false)
+                      }
+                    }}
+                    disabled={signingOut}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 transition-colors duration-150 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <span className="text-red-400"><LogOutIcon /></span>
-                    <span className="font-sans text-[0.82rem] text-red-400">Sign Out</span>
+                    {signingOut ? (
+                      <>
+                        <span className="text-red-400"><Spinner size={14} /></span>
+                        <span className="font-sans text-[0.82rem] text-red-400">Signing out…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-red-400"><LogOutIcon /></span>
+                        <span className="font-sans text-[0.82rem] text-red-400">Sign Out</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>

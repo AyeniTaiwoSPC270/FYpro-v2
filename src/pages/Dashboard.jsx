@@ -13,6 +13,7 @@ import { downloadProgressReport } from '../lib/generateReport'
 import { showToast } from '../components/Toast'
 import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
 import PaymentIssueModal from '../components/PaymentIssueModal'
+import Spinner from '../components/Spinner'
 import BadgeRow from '../components/badges/BadgeRow'
 import Footer from '../components/Footer'
 
@@ -261,10 +262,11 @@ export default function Dashboard() {
                       .then(p => { if (mountedRef.current) { setProjects(p); setProjectsLoading(false) } })
                       .catch(err => { if (mountedRef.current) { setProjectsError(err?.message || 'Failed to load projects'); setProjectsLoading(false) } })
                   }}
-                  className="font-sans font-semibold text-white rounded-xl px-5 py-2.5 cursor-pointer border-0"
+                  disabled={projectsLoading}
+                  className="font-sans font-semibold text-white rounded-xl px-5 py-2.5 cursor-pointer border-0 flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ background: '#DC2626', fontSize: '0.875rem' }}
                 >
-                  Try Again
+                  {projectsLoading ? <><Spinner size={13} /> Retrying…</> : 'Try Again'}
                 </button>
               </motion.div>
             </div>
