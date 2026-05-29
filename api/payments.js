@@ -117,13 +117,13 @@ async function handleWebhook(req, res, rawBody) {
           const email     = event.data.customer?.email || 'unknown'
           const amountNGN = (event.data.amount / 100).toLocaleString('en-NG')
           const planName  = PLAN_DISPLAY_NAMES[result.tier] || result.tier
-          sendTelegramAlertOnce(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`, `tg:payment:${event.data.reference}`)
+          await sendTelegramAlertOnce(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`, `tg:payment:${event.data.reference}`)
         }
         return res.status(200).json({ received: true, status: result.status });
       } catch (err) {
         if (err.code === 'KNOWN_REJECTION') {
           const email = event.data.customer?.email || 'unknown'
-          sendTelegramAlert(`❌ Payment failed: ${email} - ${err.message}`)
+          await sendTelegramAlert(`❌ Payment failed: ${email} - ${err.message}`)
           console.warn('[webhook] known rejection', { reference: event.data.reference, reason: err.message });
           return res.status(200).json({ received: true, rejected: err.message });
         }
@@ -308,11 +308,13 @@ async function handleVerify(req, res) {
         if (payment && user.email) {
           const planName  = PLAN_DISPLAY_NAMES[payment.tier] || payment.tier;
           const amountNGN = payment.amount_kobo / 100;
-          await sendReceiptEmail(user.email, planName, amountNGN, reference);
-          sendTelegramAlertOnce(
-            `💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`,
-            `tg:payment:${reference}`
-          );
+          await Promise.all([
+            sendReceiptEmail(user.email, planName, amountNGN, reference),
+            sendTelegramAlertOnce(
+              `💰 Payment received: ${user.email} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`,
+              `tg:payment:${reference}`
+            ),
+          ]);
         }
       } catch (emailErr) {
         console.error('[payments/verify] receipt email failed', { reference, message: emailErr.message });
@@ -322,7 +324,7 @@ async function handleVerify(req, res) {
     return res.status(200).json({ status: result.status, tier: result.tier });
   } catch (err) {
     if (err.code === 'KNOWN_REJECTION') {
-      sendTelegramAlert(`❌ Payment failed: ${user.email} - ${err.message}`)
+      await sendTelegramAlert(`❌ Payment failed: ${user.email} - ${err.message}`)
       console.warn('[payments/verify] known rejection', { reference, reason: err.message });
       return res.status(400).json({ error: 'Payment could not be verified' });
     }

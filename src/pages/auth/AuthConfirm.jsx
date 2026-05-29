@@ -102,8 +102,13 @@ export default function AuthConfirm() {
             // Non-fatal — onboarding will collect and save profile data
           }
 
-          // Alert admin of new Google signup (fire-and-forget, never blocks navigation)
-          if (!hasOnboarded && oauthData.session?.access_token) {
+          // Alert admin only for genuinely new Google accounts (created within last 2 minutes).
+          // Using account age rather than onboarding_completed because Supabase can overwrite
+          // user_metadata with Google profile data when an existing user links their Google
+          // account, which would otherwise cause a false "new signup" alert on every login.
+          const accountAgeMs = Date.now() - new Date(u.created_at).getTime()
+          const isNewGoogleSignup = accountAgeMs < 2 * 60 * 1000
+          if (isNewGoogleSignup && oauthData.session?.access_token) {
             fetch('/api/notify', {
               method: 'POST',
               headers: {

@@ -14,6 +14,7 @@ export const USER_STORAGE_KEYS = [
   'fypro_feedback_given',
   'fypro_ref_code',
   'fypro_ref_expiry',
+  'fypro_run_counts',
 ] as const
 
 export function clearUserLocalStorage(): void {
