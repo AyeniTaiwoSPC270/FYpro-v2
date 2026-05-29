@@ -57,6 +57,16 @@ export default function AuthConfirm() {
     const type          = params.get('type')
 
     async function confirm() {
+      // Safety-net: if the callback landed on the bare domain (fypro.com.ng)
+      // instead of www, the PKCE verifier won't be found because it was stored
+      // under the www origin. Hard-redirect to www, preserving all params.
+      if (import.meta.env.PROD && window.location.hostname === 'fypro.com.ng') {
+        window.location.replace(
+          `https://www.fypro.com.ng${window.location.pathname}${window.location.search}${window.location.hash}`
+        )
+        return
+      }
+
       let error = null
 
       if (access_token && refresh_token) {

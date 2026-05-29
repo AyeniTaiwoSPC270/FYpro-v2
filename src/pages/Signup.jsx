@@ -237,9 +237,14 @@ export default function Signup() {
     googleClickedRef.current = true
     setTimeout(() => { googleClickedRef.current = false }, 3000)
     setGoogleLoading(true)
+    // Always redirect to the canonical www origin so the PKCE code verifier
+    // is stored and retrieved from the same localStorage origin.
+    const callbackOrigin = import.meta.env.PROD
+      ? 'https://www.fypro.com.ng'
+      : window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${callbackOrigin}/auth/callback` },
     })
     if (error) {
       showToast('Google sign-in failed. Please try again.')
