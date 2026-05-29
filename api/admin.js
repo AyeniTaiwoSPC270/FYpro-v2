@@ -1356,6 +1356,48 @@ async function handleTestAllAlerts(req, res) {
   return res.status(200).json({ all_ok: allOk, sent: results.length, failures: failures.length, results });
 }
 
+// action: "test-sentry-webhook" — POSTs a fake signed Sentry payload to the webhook endpoint
+// and returns whether the signature check passed and Telegram alert was sent.
+async function handleTestSentryWebhook(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const secret = process.env.SENTRY_WEBHOOK_SECRET;
+  if (!secret) {
+    return res.status(500).json({ ok: false, error: 'SENTRY_WEBHOOK_SECRET is not set in Vercel env — webhook will reject all Sentry requests' });
+  }
+
+  const appUrl = process.env.APP_URL || 'https://www.fypro.com.ng';
+  const payload = JSON.stringify({
+    action: 'created',
+    data: {
+      event: {
+        level:   'error',
+        title:   '[TEST] Sentry webhook self-test — FYPro admin',
+        tags:    [['feature', 'sentry-webhook-test']],
+      },
+    },
+  });
+
+  const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+
+  try {
+    const r = await fetch(`${appUrl}/api/admin?action=sentry_webhook`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':                    'application/json',
+        'sentry-hook-signature':           sig,
+        'sentry-hook-resource':            'event_alert',
+      },
+      body: payload,
+    });
+    const data = await r.json().catch(() => ({}));
+    return res.status(200).json({ ok: r.ok, status: r.status, response: data });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+}
+
 // action: "feedback-summary" — per-feature thumbs aggregates, last 30 days
 async function handleFeedbackSummary(req, res) {
   const caller = await verifyAdmin(req, res);
@@ -1848,10 +1890,11 @@ export default async function handler(req, res) {
   if (action === 'payment-issues')         return handlePaymentIssues(req, res);
   if (action === 'resolve-payment-issue')  return handleResolvePaymentIssue(req, res);
   if (action === 'system_logs')        return handleSystemLogs(req, res);
-  if (action === 'resolve_log')        return handleResolveLog(req, res);
+  if (action === 'resolve_log')         return handleResolveLog(req, res);
   if (action === 'feedback-summary')        return handleFeedbackSummary(req, res);
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
+  if (action === 'test-sentry-webhook')     return handleTestSentryWebhook(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
   if (action === 'dispatch-nurture-emails') return handleDispatchNurtureEmails(req, res);
   if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);
