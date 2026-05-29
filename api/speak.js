@@ -7,6 +7,7 @@
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
+import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
@@ -96,6 +97,7 @@ const handler = async (req, res) => {
   const apiKey = process.env.EL_API_KEY;
   if (!apiKey) {
     console.error('[speak] EL_API_KEY is not set in the Vercel environment');
+    sendTelegramAlertOnce('🔴 ElevenLabs TTS broken: EL_API_KEY is not set in Vercel env', 'tg:speak:no-key').catch(() => null);
     return res.status(500).json({ error: 'TTS API key not configured on server.' });
   }
 
@@ -144,6 +146,8 @@ const handler = async (req, res) => {
         hasApiKey: !!apiKey,
         detail:    errBody.slice(0, 500),
       });
+      const today = new Date().toISOString().slice(0, 10);
+      sendTelegramAlertOnce(`🔴 ElevenLabs TTS error ${ttsResponse.status} — examiner voices down in Defense Simulator`, `tg:speak:err:${ttsResponse.status}:${today}`).catch(() => null);
       return res.status(ttsResponse.status).json({ error: 'ElevenLabs error', detail: errBody });
     }
 
@@ -159,6 +163,7 @@ const handler = async (req, res) => {
     // Catches network failures, JSON parse errors, and any unexpected throws.
     // Returns 500 so the frontend .catch() triggers browser TTS fallback.
     console.error('[speak] error:', err.message);
+    sendTelegramAlert(`🔴 TTS failed for user:${user?.id?.slice(0, 8) || 'unknown'} — ${err.message}`).catch(() => null);
     return res.status(500).json({ error: err.message });
   }
 };

@@ -15,6 +15,7 @@ import { ImageResponse }    from '@vercel/og'
 import { supabaseAdmin }    from './_lib/supabase-admin.js'
 import { rateLimitCheck }   from './_lib/rate-limit.js'
 import { setCorsHeaders }   from './_lib/cors.js'
+import { sendTelegramAlert } from './_lib/telegram.js'
 import * as React           from 'react'
 
 const WIDTH  = 1080
@@ -345,6 +346,7 @@ export default async function handler(req, res) {
     return res.end(Buffer.from(arrayBuffer))
   } catch (err) {
     console.error('[share-card] render failed:', err.message)
+    sendTelegramAlert(`🔴 Share card render failed — ${err.message}`).catch(() => null)
     return res.status(500).json({ error: 'Image generation failed' })
   }
 }

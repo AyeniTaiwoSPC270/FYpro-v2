@@ -368,6 +368,7 @@ export default async function handler(req, res) {
     return res.end(pdfBuffer);
   } catch (err) {
     console.error('[certificate] PDF generation failed:', err.message);
+    sendTelegramAlert(`🔴 Certificate PDF failed for user:${user?.email || 'unknown'} (cert exists, download broken) — ${err.message}`).catch(() => null);
     return res.status(500).json({ error: 'PDF generation failed. Please try again.' });
   }
 }

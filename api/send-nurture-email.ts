@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
+import { sendTelegramAlert } from './_lib/telegram.js'
 
 const BASE_URL    = 'https://fypro.com.ng'
 const FROM        = 'FYPro <hello@fypro.com.ng>'
@@ -164,6 +165,7 @@ export default async function handler(req: any, res: any) {
       emailType,
       message: (err as Error).message,
     })
+    sendTelegramAlert(`🔴 Nurture email failed: ${emailType} for user:${userId} — ${(err as Error).message}`).catch(() => null)
   }
 
   try {

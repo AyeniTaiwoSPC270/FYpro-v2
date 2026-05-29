@@ -64,8 +64,8 @@ export async function callAnthropic({
     await Promise.race([insertPromise, timeoutPromise]).catch(err =>
       console.error(`[anthropic-proxy] response_times insert failed (${feature}):`, err?.message)
     );
-  } else if (response.status >= 500) {
-    sendTelegramAlert(`🔴 Anthropic ${response.status}: ${feature} for user:${userId.slice(0, 8)}`);
+  } else {
+    sendTelegramAlert(`🔴 Generation failed: ${feature} for user:${userId.slice(0, 8)} — Anthropic ${response.status}: ${String(data?.error?.message || data?.type || '').slice(0, 120)}`);
   }
 
   return { response, data, durationMs };

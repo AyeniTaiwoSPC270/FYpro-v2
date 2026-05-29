@@ -6,7 +6,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
-import { sendTelegramAlert } from './_lib/telegram.js';
+import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
 const redis = new Redis({
   url:   process.env.UPSTASH_REDIS_REST_URL,
@@ -59,6 +59,8 @@ async function handleLogin(req, res) {
     rl = { success: true };
   }
   if (!rl.success) {
+    const today = new Date().toISOString().slice(0, 10);
+    sendTelegramAlertOnce(`⚠️ Brute-force detected: 10+ login attempts from IP ${ip}`, `tg:auth:bruteforce:${ip}:${today}`).catch(() => null);
     return res.status(429).json({
       error: 'Too many login attempts from your location. Please wait 15 minutes and try again.',
     });

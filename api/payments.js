@@ -128,6 +128,7 @@ async function handleWebhook(req, res, rawBody) {
           return res.status(200).json({ received: true, rejected: err.message });
         }
         console.error('[webhook] creditUser failed', { reference: event.data.reference, message: err.message });
+        await sendTelegramAlert(`🚨 PAYMENT PROCESSING FAILED: ${event.data.customer?.email || 'unknown'} paid but entitlement not granted.\nRef: ${event.data.reference}\nError: ${err.message}\nManual fix required.`);
         return res.status(500).json({ error: 'Internal error' });
       }
     }

@@ -6,6 +6,7 @@ import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
+import { sendTelegramAlert } from './_lib/telegram.js';
 
 export const config = { maxDuration: 60 };
 
@@ -140,9 +141,11 @@ const handler = async (req, res) => {
   } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[project-reviewer] Anthropic request timed out after 50s');
+      sendTelegramAlert(`⏱️ Project Reviewer timed out for user:${user.id.slice(0, 8)} (Defense Pack)`).catch(() => null);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
     console.error('[project-reviewer] error:', err.message);
+    sendTelegramAlert(`🔴 Project Reviewer failed for user:${user.id.slice(0, 8)} — ${err.message}`).catch(() => null);
     writeSystemLog({
       severity: 'error',
       feature: 'Project Reviewer',
