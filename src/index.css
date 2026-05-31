@@ -11081,6 +11081,35 @@ html {
   border-top-color: rgba(13,27,42,0.09) !important;
 }
 
+/* ── Feature cards: white gradient + real shadow ─────────────────── */
+[data-theme="light"] [data-pub] .lp-feat-lift > div {
+  background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+  border-color: rgba(13,27,42,0.07) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+
+/* ── Feature card watermark: blue tint visible on white ─────────── */
+[data-theme="light"] [data-pub] .lp-feat-wm {
+  color: rgba(0,102,255,0.05) !important;
+}
+
+/* ── Testimonial cards: white with light border ──────────────────── */
+[data-theme="light"] [data-pub] .lp-testi-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Testimonial quote mark: softer blue on white ────────────────── */
+[data-theme="light"] [data-pub] .lp-testi-card span.font-serif {
+  color: rgba(0,102,255,0.15) !important;
+}
+
+/* ── Stat numbers: darker blue for legibility on light bg ────────── */
+[data-theme="light"] [data-pub] .lp-stat-num-wrap:not(.lp-stat-urgent) {
+  color: #0066FF !important;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
    Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
