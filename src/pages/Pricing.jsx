@@ -219,7 +219,7 @@ function PricingHero() {
   return (
     <section className="pt-24 pb-16 text-center relative overflow-hidden">
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="lp-pricing-hero-overlay absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
             'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(37,99,235,0.13) 0%, transparent 60%), radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',

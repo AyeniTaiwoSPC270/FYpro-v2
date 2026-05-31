@@ -514,7 +514,7 @@ function HeroMockup() {
         .lp-typing-dot:nth-child(3) { animation: lp-blink 1.2s ease-in-out infinite 0.4s; }
         .lp-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #F87171; animation: lp-pulse-red 1.4s ease-in-out infinite; flex-shrink: 0; }
       `}</style>
-      <div className="relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
+      <div className="lp-hero-mockup-outer relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
         {/* Chrome */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-white/[0.03]">
           <div className="flex gap-1.5">
@@ -530,7 +530,7 @@ function HeroMockup() {
         {/* Shell */}
         <div className="grid min-h-[370px] grid-cols-1 md:grid-cols-[220px_1fr]">
           {/* Sidebar */}
-          <div className="hidden md:block border-r border-white/5 py-5 bg-black/20">
+          <div className="lp-hero-mockup-sidebar hidden md:block border-r border-white/5 py-5 bg-black/20">
             <div className="flex items-center gap-2 px-5 pb-4 border-b border-white/5 mb-3">
               <img src="/fypro-logo.png" alt="FYPro" height="32" style={{ objectFit: 'contain' }} />
             </div>
@@ -542,7 +542,7 @@ function HeroMockup() {
           </div>
 
           {/* Content */}
-          <div className="p-6 flex flex-col gap-3.5">
+          <div className="lp-hero-mockup-content-area p-6 flex flex-col gap-3.5">
             <div className="border-b border-white/5 pb-3.5">
               <div className="font-mono text-[0.62rem] tracking-[0.12em] uppercase text-blue-brand mb-1">Step 6 of 6 — Defense Prep</div>
               <div className="font-serif text-[1.1rem] text-white">Three-Examiner Panel Simulation</div>
@@ -566,7 +566,7 @@ function HeroMockup() {
                     key={name}
                     onMouseEnter={() => setHoveredCard(name)}
                     onMouseLeave={() => setHoveredCard(null)}
-                    className="rounded-xl p-3.5 cursor-default"
+                    className={`lp-mockup-examiner${asking ? ' lp-mockup-examiner--asking' : ''} rounded-xl p-3.5 cursor-default`}
                     style={{
                       background: asking ? 'rgba(0,102,255,0.07)' : 'rgba(255,255,255,0.03)',
                       border: hovered ? '1px solid rgba(59,130,246,0.5)' : asking ? '1px solid rgba(0,102,255,0.4)' : '1px solid rgba(255,255,255,0.08)',
@@ -682,7 +682,7 @@ function Hero() {
       }}
     >
       {/* Dot grid + blue radial */}
-      <div className="absolute inset-0 pointer-events-none" style={{
+      <div className="lp-hero-overlay absolute inset-0 pointer-events-none" style={{
         backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 10%, rgba(0,102,255,0.18) 0%, transparent 65%), radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
         backgroundSize: '100% 100%, 28px 28px',
       }} />

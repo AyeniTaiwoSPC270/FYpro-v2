@@ -11162,6 +11162,73 @@ html {
   background: var(--pub-bg-sand) !important;
 }
 
+/* ── Nav: global light-mode text/border fixes (all pages, not just data-pub) ── */
+[data-theme="light"] nav .text-white\/65,
+[data-theme="light"] nav .text-white\/40 { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] nav .text-white { color: #0D1B2A !important; }
+[data-theme="light"] nav .text-white\/85 { color: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] nav .border-white\/\[0\.22\] { border-color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] nav .border-white\/\[0\.18\] { border-color: rgba(13,27,42,0.15) !important; }
+[data-theme="light"] nav .hover\:text-white:hover { color: #0D1B2A !important; }
+[data-theme="light"] nav .bg-white\/\[0\.04\] { background: rgba(0,0,0,0.02) !important; }
+[data-theme="light"] nav .bg-white\/85 { background: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] nav .bg-white\/\[0\.08\] { background: rgba(0,0,0,0.06) !important; }
+
+/* ── Hero overlay: keep dot grid, remove blue ellipse radial ─────── */
+[data-theme="light"] [data-pub] .lp-hero-overlay {
+  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Pricing page hero: remove blue ellipse radial ───────────────── */
+[data-theme="light"] .lp-pricing-hero-overlay {
+  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Defense Simulator mockup: light mode app appearance ─────────── */
+[data-theme="light"] [data-pub] .lp-hero-mockup-outer {
+  background: #F0F4F8 !important;
+  box-shadow: 0 0 0 1px rgba(13,27,42,0.1), 0 16px 48px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04) !important;
+  border-color: rgba(13,27,42,0.12) !important;
+}
+/* Chrome bar on light mockup */
+[data-theme="light"] [data-pub] .lp-hero-mockup-outer > div:first-child {
+  background: rgba(0,0,0,0.02) !important;
+  border-bottom-color: rgba(0,0,0,0.06) !important;
+}
+/* Sidebar always stays dark navy — matches real app */
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar {
+  background: #0D1B2A !important;
+  border-right-color: rgba(255,255,255,0.05) !important;
+}
+/* Restore white text in the dark sidebar */
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white,
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white\/40 { color: rgba(255,255,255,0.8) !important; }
+/* Content panel: white workspace */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area {
+  background: #FFFFFF !important;
+}
+/* Content text: dark on white */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white { color: #0D1B2A !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/65 { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/35 { color: rgba(13,27,42,0.35) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/\[0\.62\] { color: rgba(13,27,42,0.55) !important; }
+/* Content dividers */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .border-white\/5 { border-color: rgba(0,0,0,0.07) !important; }
+/* Examiner cards on white panel */
+[data-theme="light"] [data-pub] .lp-mockup-examiner {
+  background: rgba(0,0,0,0.03) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  box-shadow: none !important;
+}
+[data-theme="light"] [data-pub] .lp-mockup-examiner--asking {
+  background: rgba(0,102,255,0.06) !important;
+  border: 1px solid rgba(0,102,255,0.25) !important;
+  box-shadow: 0 0 12px rgba(0,102,255,0.08) !important;
+  opacity: 1 !important;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
    Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
