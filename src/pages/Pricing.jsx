@@ -671,7 +671,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Can I upgrade my plan mid-project?',
-    a: 'Yes. You can upgrade from Free to Student Plan or from Student Plan to Defense Plan at any time. Each plan is a separate one-time payment — your previous payment is not deducted.',
+    a: 'Yes. If you upgrade from Student Plan to Defense Plan, you only pay the ₦1,500 difference — the discount is applied at checkout so the correct amount is shown in Paystack before you confirm.',
   },
   {
     q: 'Is my project data saved?',

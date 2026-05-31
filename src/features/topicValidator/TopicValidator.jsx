@@ -134,7 +134,14 @@ export default function TopicValidator() {
     inflightRef.current = true
     setBtnDisabled(true)
 
-    const allowed = await checkAndRecord('topic_validator', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('topic_validator', features)
+    } catch {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       inflightRef.current = false
       setBtnDisabled(false)

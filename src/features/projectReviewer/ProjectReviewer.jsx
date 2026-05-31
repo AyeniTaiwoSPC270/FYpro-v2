@@ -351,7 +351,14 @@ export default function ProjectReviewer() {
     inflightRef.current = true
     setIsProcessing(true)
 
-    const allowed = await checkAndRecord('project_reviewer', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('project_reviewer', features)
+    } catch {
+      inflightRef.current = false
+      setIsProcessing(false)
+      return
+    }
     if (!allowed) {
       inflightRef.current = false
       setIsProcessing(false)

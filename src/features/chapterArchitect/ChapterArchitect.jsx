@@ -358,7 +358,14 @@ export default function ChapterArchitect() {
     caInflightRef.current = true
     setBtnDisabled(true)
 
-    const allowed = await checkAndRecord('chapter_architect', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('chapter_architect', features)
+    } catch {
+      caInflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       caInflightRef.current = false
       setBtnDisabled(false)

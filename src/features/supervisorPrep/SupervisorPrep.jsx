@@ -86,7 +86,14 @@ export default function SupervisorPrep() {
     inflightRef.current = true
     setBtnDisabled(true)
 
-    const allowed = await checkAndRecord('meeting_prep', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('meeting_prep', features)
+    } catch {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       inflightRef.current = false
       setBtnDisabled(false)

@@ -65,7 +65,14 @@ export default function LiteratureMap({ chapters }) {
     inflightRef.current = true
     setBtnDisabled(true)
 
-    const allowed = await checkAndRecord('literature_map', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('literature_map', features)
+    } catch {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       inflightRef.current = false
       setBtnDisabled(false)

@@ -20,6 +20,18 @@ const FEATURE_META = {
   },
 }
 
+const UPGRADE_META = {
+  defense_pack: {
+    label: 'Defense Pack Upgrade',
+    description:
+      "You're on the Student Plan. Pay just ₦1,500 to unlock the Defense Simulator " +
+      'and walk into your viva prepared.',
+    price: '₦1,500',
+    originalPrice: '₦3,500',
+    buttonText: 'Upgrade to Defense Pack',
+  },
+}
+
 function hasAccess(requiredPack, hasPaidFeature) {
   if (requiredPack === 'student_pack') {
     return hasPaidFeature('student_pack') || hasPaidFeature('defense_pack')
@@ -30,9 +42,10 @@ function hasAccess(requiredPack, hasPaidFeature) {
 const LOCK_PATH =
   'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
-function UpgradeCard({ requiredPack }) {
+function UpgradeCard({ requiredPack, isUpgrader }) {
   const navigate = useNavigate()
-  const meta = FEATURE_META[requiredPack] ?? {
+  const upgradeMeta = isUpgrader ? UPGRADE_META[requiredPack] : null
+  const meta = upgradeMeta ?? FEATURE_META[requiredPack] ?? {
     label: requiredPack,
     description: 'This feature requires a paid upgrade.',
     price: '₦3,500',
@@ -51,7 +64,7 @@ function UpgradeCard({ requiredPack }) {
         background: 'var(--bg-card)',
         borderRadius: '16px',
         border: '1px solid rgba(255,255,255,0.08)',
-        borderLeft: '4px solid #0066FF',
+        borderLeft: `4px solid ${isUpgrader ? '#16A34A' : '#0066FF'}`,
         boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
         padding: '40px',
         maxWidth: '480px',
@@ -63,7 +76,7 @@ function UpgradeCard({ requiredPack }) {
           width: '56px',
           height: '56px',
           borderRadius: '50%',
-          background: 'rgba(0, 102, 255, 0.08)',
+          background: isUpgrader ? 'rgba(22, 163, 74, 0.08)' : 'rgba(0, 102, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -74,12 +87,30 @@ function UpgradeCard({ requiredPack }) {
             width="28"
             height="28"
             viewBox="0 0 256 256"
-            fill="#0066FF"
+            fill={isUpgrader ? '#16A34A' : '#0066FF'}
             aria-hidden="true"
           >
             <path d={LOCK_PATH} />
           </svg>
         </div>
+
+        {isUpgrader && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(22, 163, 74, 0.08)',
+            border: '1px solid rgba(22, 163, 74, 0.25)',
+            borderRadius: '999px',
+            padding: '4px 12px',
+            marginBottom: '16px',
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#4ADE80', letterSpacing: '0.04em' }}>
+              Student Plan credit applied
+            </span>
+          </div>
+        )}
 
         <p style={{
           fontFamily: "'DM Serif Display', serif",
@@ -105,8 +136,8 @@ function UpgradeCard({ requiredPack }) {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          background: 'rgba(0, 102, 255, 0.06)',
-          border: '1px solid rgba(0, 102, 255, 0.2)',
+          background: isUpgrader ? 'rgba(22, 163, 74, 0.06)' : 'rgba(0, 102, 255, 0.06)',
+          border: `1px solid ${isUpgrader ? 'rgba(22, 163, 74, 0.2)' : 'rgba(0, 102, 255, 0.2)'}`,
           borderRadius: '999px',
           padding: '6px 16px',
           marginBottom: '24px',
@@ -120,11 +151,21 @@ function UpgradeCard({ requiredPack }) {
           }}>
             One-time
           </span>
+          {isUpgrader && meta.originalPrice && (
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.875rem',
+              color: 'rgba(255,255,255,0.25)',
+              textDecoration: 'line-through',
+            }}>
+              {meta.originalPrice}
+            </span>
+          )}
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '1rem',
             fontWeight: 600,
-            color: 'var(--text-primary)',
+            color: isUpgrader ? '#4ADE80' : 'var(--text-primary)',
           }}>
             {meta.price}
           </span>
@@ -196,7 +237,8 @@ export default function PaidFeatureGate({ requiredPack, children, fallback }) {
   if (loading) return <Spinner />
 
   if (!hasAccess(requiredPack, hasPaidFeature)) {
-    return fallback ?? <UpgradeCard requiredPack={requiredPack} />
+    const isUpgrader = requiredPack === 'defense_pack' && hasPaidFeature('student_pack')
+    return fallback ?? <UpgradeCard requiredPack={requiredPack} isUpgrader={isUpgrader} />
   }
 
   return children

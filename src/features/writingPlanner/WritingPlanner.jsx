@@ -110,7 +110,14 @@ export default function WritingPlanner() {
     inflightRef.current = true
     setBtnDisabled(true)
 
-    const allowed = await checkAndRecord('writing_planner', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('writing_planner', features)
+    } catch {
+      inflightRef.current = false
+      setBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       inflightRef.current = false
       setBtnDisabled(false)

@@ -824,7 +824,12 @@ export default function DefensePrep() {
 
   async function startRedFlagScan() {
     setScanError(null)
-    const allowed = await checkAndRecord('red_flag_detector', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('red_flag_detector', features)
+    } catch {
+      return
+    }
     if (!allowed) return
     setIsScanning(true)
     setHasSubmitted(true)
@@ -886,7 +891,12 @@ export default function DefensePrep() {
   // ── enter defense mode ────────────────────────────────────────────────────
 
   async function enterDefenseMode() {
-    const allowed = await checkAndRecord('defense_simulator', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('defense_simulator', features)
+    } catch {
+      return
+    }
     if (!allowed) return
     trackEvent('workflow_step_started', { step: 'defense_prep' })
     trackEvent('defense_simulator_started')

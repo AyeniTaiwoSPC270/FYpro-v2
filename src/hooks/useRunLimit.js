@@ -142,8 +142,12 @@ export async function checkAndRecord(stepKey, features) {
   // regardless of whether this step has a finite limit or is unlimited.
   counts[stepKey] = current + 1
   localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
-  window.dispatchEvent(new Event('fypro_run_counts_updated'))
+  // Dispatch AFTER the sync so the UI update (overLimit → true) batches with
+  // the calling component's setSection('loading') call. Without this ordering,
+  // the event fires during the Supabase await and React renders the limit message
+  // while the input section is still visible.
   await syncRunCountsToSupabase(counts)
+  window.dispatchEvent(new Event('fypro_run_counts_updated'))
   return true
 }
 

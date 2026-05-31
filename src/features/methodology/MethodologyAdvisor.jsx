@@ -106,7 +106,14 @@ export default function MethodologyAdvisor() {
     maInflightRef.current = true
     setMaBtnDisabled(true)
 
-    const allowed = await checkAndRecord('methodology_advisor', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('methodology_advisor', features)
+    } catch {
+      maInflightRef.current = false
+      setMaBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       maInflightRef.current = false
       setMaBtnDisabled(false)
@@ -179,7 +186,14 @@ export default function MethodologyAdvisor() {
     diInflightRef.current = true
     setDiGenBtnDisabled(true)
 
-    const allowed = await checkAndRecord('instrument_builder', features)
+    let allowed
+    try {
+      allowed = await checkAndRecord('instrument_builder', features)
+    } catch {
+      diInflightRef.current = false
+      setDiGenBtnDisabled(false)
+      return
+    }
     if (!allowed) {
       diInflightRef.current = false
       setDiGenBtnDisabled(false)
