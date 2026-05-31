@@ -11110,6 +11110,58 @@ html {
   color: #0066FF !important;
 }
 
+/* ── Pricing plan cards ───────────────────────────────────────────── */
+[data-theme="light"] [data-pub] .lp-plan-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+
+[data-theme="light"] [data-pub] .lp-plan-card--featured {
+  background: linear-gradient(145deg, rgba(0,102,255,0.05) 0%, #FFFFFF 100%) !important;
+  border-color: #0066FF !important;
+  box-shadow: 0 0 0 2px rgba(0,102,255,0.12), 0 4px 16px rgba(0,102,255,0.08) !important;
+}
+
+/* Plan card divider line */
+[data-theme="light"] [data-pub] .lp-plan-card hr {
+  border-top-color: rgba(13,27,42,0.08) !important;
+}
+
+/* Ghost CTA buttons inside plan cards */
+[data-theme="light"] [data-pub] .lp-plan-card button.bg-transparent {
+  border-color: rgba(13,27,42,0.2) !important;
+  color: #0D1B2A !important;
+}
+
+/* ── FAQ container card ───────────────────────────────────────────── */
+[data-theme="light"] [data-pub] .lp-faq-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+}
+
+/* FAQ chevron icon */
+[data-theme="light"] [data-pub] .lp-faq-card .text-slate-500 {
+  color: rgba(13,27,42,0.4) !important;
+}
+
+/* ── Hero eyebrow pill: softer on warm light bg ───────────────────── */
+[data-theme="light"] [data-pub] .lp-hero-eyebrow {
+  background: rgba(0,102,255,0.07) !important;
+  border-color: rgba(0,102,255,0.2) !important;
+  color: #0066FF !important;
+}
+
+/* ── Final CTA glow: much softer on light bg ─────────────────────── */
+[data-theme="light"] [data-pub] .lp-cta-glow {
+  background: radial-gradient(ellipse 60% 50% at 50% 70%, rgba(0,102,255,0.07) 0%, transparent 70%) !important;
+}
+
+/* ── How It Works step circle: sand bg so it floats on sand ─────── */
+[data-theme="light"] [data-pub] [data-hiw] .lp-step-row > div:first-child {
+  background: var(--pub-bg-sand) !important;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
    Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
