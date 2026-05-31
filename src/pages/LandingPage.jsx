@@ -340,7 +340,7 @@ function StatItem({ renderNumber, target, label, delay, urgent }) {
   const count = useCountUp(target ?? 0, inView)
   return (
     <Reveal delay={delay} className="text-center">
-      <div ref={ref} className="lp-stat-num-wrap font-serif leading-none mb-2" style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
+      <div ref={ref} className={`lp-stat-num-wrap font-serif leading-none mb-2${urgent ? ' lp-stat-urgent' : ''}`} style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
         {renderNumber(count)}
       </div>
       <div className="text-[0.82rem] font-medium" style={{ color: urgent ? 'rgba(248,113,113,0.75)' : 'var(--pub-text-muted)' }}>{label}</div>
@@ -697,7 +697,7 @@ function Hero() {
         initial={{ opacity: 0, y: 22 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-[1] inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-[0.68rem] font-medium text-[#60A5FA] tracking-[0.1em] uppercase mb-7"
+        className="lp-hero-eyebrow relative z-[1] inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-[0.68rem] font-medium text-[#60A5FA] tracking-[0.1em] uppercase mb-7"
         style={{ background: 'rgba(0,102,255,0.1)', border: '1px solid rgba(0,102,255,0.3)' }}
       >
         <motion.span
@@ -829,7 +829,7 @@ function FeatureCardWrapper({ f, i }) {
           hoverShadow={f.hoverShadow}
           dataN={f.n}
         >
-          <span aria-hidden="true" className="absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
+          <span aria-hidden="true" className="lp-feat-wm absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
           <motion.div
             className="w-11 h-11 rounded-xl flex items-center justify-center mb-5"
             style={{ background: c.iconBg }}
@@ -910,7 +910,7 @@ function StepItem({ s, i }) {
 
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 bg-bg-dark">
+    <section id="how-it-works" data-hiw="true" className="py-24 bg-bg-dark">
       <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">The Process</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Six steps. One defensible project.</Reveal>
@@ -964,7 +964,7 @@ const PLANS = [
 
 function PricingSection() {
   return (
-    <section id="pricing" className="py-24 bg-bg-dark">
+    <section id="pricing" data-pricing="true" className="py-24 bg-bg-dark">
       <div className="max-w-[1080px] mx-auto px-5 md:px-10">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Pricing</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Simple, honest pricing</Reveal>
@@ -975,7 +975,7 @@ function PricingSection() {
             <Reveal key={p.tier} delay={i * 0.08}>
               <div className={p.featured ? 'lp-pricing-pulse-wrap' : ''}>
               <motion.div
-                className={`relative rounded-2xl py-7 px-6 md:py-9 md:px-8${p.featured ? ' md:scale-[1.025]' : ''}`}
+                className={`lp-plan-card${p.featured ? ' lp-plan-card--featured' : ''} relative rounded-2xl py-7 px-6 md:py-9 md:px-8${p.featured ? ' md:scale-[1.025]' : ''}`}
                 style={{
                   background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, var(--pub-bg-mid) 100%)' : 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
                   border: '1px solid',
@@ -1091,10 +1091,10 @@ function LandingFAQItem({ q, a, isOpen, onToggle }) {
 function LandingFAQSection() {
   const [openIndex, setOpenIndex] = useState(null)
   return (
-    <section id="faq" className="pt-24 pb-14 bg-bg-dark">
+    <section id="faq" data-faq="true" className="pt-24 pb-14 bg-bg-dark">
       <div className="max-w-3xl mx-auto px-5 md:px-10">
         <Reveal delay={0.05}>
-          <div style={{
+          <div className="lp-faq-card" style={{
             background: 'linear-gradient(150deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%)',
             border: '1px solid var(--pub-border-dim)',
             borderRadius: '16px',
@@ -1215,7 +1215,7 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06]" style={{ background: 'var(--pub-bg)', padding: '56px 0 28px' }}>
+    <footer data-footer="true" className="relative border-t border-white/[0.06]" style={{ background: 'var(--pub-bg)', padding: '56px 0 28px' }}>
       <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, var(--pub-bg), transparent)' }} />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
