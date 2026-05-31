@@ -11046,6 +11046,42 @@ html {
 [data-theme="light"] [data-pub] .border-white\/5 { border-color: var(--pub-border-dim) !important; }
 
 /* ══════════════════════════════════════════════════════════════════
+   PUBLIC PAGES — WARM ACADEMIA LIGHT MODE
+   All overrides scoped to [data-theme="light"] [data-pub]
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Stats bar: bg-bg-dark is transparent (no Tailwind rule), but
+      explicit colour needed for differentiation ─────────────────── */
+[data-theme="light"] [data-pub] .bg-bg-dark {
+  background-color: var(--pub-bg-pricing) !important;
+}
+
+/* ── How It Works: warm sand break ───────────────────────────────── */
+[data-theme="light"] [data-pub] [data-hiw] {
+  background-color: var(--pub-bg-sand) !important;
+  background-image: radial-gradient(circle, rgba(13,27,42,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Pricing section container ───────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-pricing] {
+  background-color: var(--pub-bg-pricing) !important;
+  background-image: none !important;
+}
+
+/* ── FAQ section container ───────────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-faq] {
+  background-color: var(--pub-bg-pricing) !important;
+  background-image: none !important;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-footer] {
+  background: var(--pub-bg-footer) !important;
+  border-top-color: rgba(13,27,42,0.09) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
    COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
    Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
    ══════════════════════════════════════════════════════════════════ */
