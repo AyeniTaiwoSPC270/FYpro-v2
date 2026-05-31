@@ -93,7 +93,9 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
       message:  `${tierLabel} activated on your account.`,
       metadata: { tier: payment.tier, amount_ngn: Math.floor(payment.amount_kobo / 100) },
     })
-    .catch(e => console.error('[creditUser] notification insert failed:', e.message));
+    .then(({ error }) => {
+      if (error) console.error('[creditUser] notification insert failed:', error.message);
+    });
 
   return { status: 'success', reference, tier: payment.tier };
 }
