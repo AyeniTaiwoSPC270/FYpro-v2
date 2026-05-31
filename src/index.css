@@ -7999,18 +7999,22 @@ html, body {
   --accent-hover:        #1D4ED8;
   --card-shadow:         0 1px 3px rgba(0,0,0,0.08);
   --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px);
-  /* Public page tokens */
-  --pub-bg:           #EEF2FA;
-  --pub-bg-mid:       #E4ECF6;
-  --pub-bg-alt:       #E8EFF7;
-  --pub-nav-bg:       rgba(255,255,255,0.85);
-  --pub-nav-scrolled: rgba(255,255,255,0.97);
-  --pub-nav-solid:    rgba(255,255,255,0.99);
+  /* Public page tokens — warm academia palette */
+  --pub-bg:           #FAFAF7;
+  --pub-bg-mid:       #F2F0EA;
+  --pub-bg-alt:       #F7F5F0;
+  --pub-nav-bg:       rgba(250,250,247,0.88);
+  --pub-nav-scrolled: rgba(250,250,247,0.97);
+  --pub-nav-solid:    rgba(250,250,247,0.99);
   --pub-text:         #0D1B2A;
   --pub-text-muted:   rgba(13,27,42,0.60);
   --pub-text-em:      rgba(13,27,42,0.80);
   --pub-text-dim:     rgba(13,27,42,0.40);
   --pub-border-dim:   rgba(13,27,42,0.08);
+  --pub-bg-sand:      #F2EFE8;
+  --pub-bg-section:   #FFFFFF;
+  --pub-bg-pricing:   #F7F8FA;
+  --pub-bg-footer:    #F2F4F7;
   /* Component-specific tokens */
   --header-btn-bg:       rgba(0,0,0,0.05);
   --header-btn-border:   #E2E8F0;
