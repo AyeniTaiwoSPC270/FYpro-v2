@@ -29,9 +29,8 @@ const TTL_BY_STEP = {
 // Keep these two in sync when adjusting free tier quotas.
 const SERVER_FREE_LIMITS = {
   'topic-validator':     3,
-  'chapter-architect':   1,
-  'methodology-advisor': 1,
-  'writing-planner':     1,
+  'chapter-architect':   3,
+  'methodology-advisor': 3,
 };
 
 /**

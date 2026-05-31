@@ -9,11 +9,8 @@ import { useUser } from './useUser'
 
 const FREE_LIMITS = {
   topic_validator:     3,
-  chapter_architect:   1,
-  methodology_advisor: 1,
-  writing_planner:     1,
-  project_reviewer:    10,
-  defense_simulator:   5,
+  chapter_architect:   3,
+  methodology_advisor: 3,
   red_flag_detector:   3,
 }
 
