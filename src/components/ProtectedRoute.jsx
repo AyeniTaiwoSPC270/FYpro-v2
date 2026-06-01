@@ -40,7 +40,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#060E18',
+      background: 'var(--bg-base, #060E18)',
     }}>
       <div style={{
         width: 36,
@@ -67,7 +67,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#060E18',
+        background: 'var(--bg-base, #060E18)',
         fontFamily: "'Poppins', sans-serif",
         textAlign: 'center',
         padding: '32px',

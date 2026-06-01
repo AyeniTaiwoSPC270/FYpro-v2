@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Anti-flicker: set theme before first paint so light-mode users never see a dark flash -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('fypro_theme') || 'dark';
+          var d = document.documentElement;
+          d.setAttribute('data-theme', t);
+          if (t === 'light') { d.classList.add('light'); d.classList.remove('dark'); }
+          else               { d.classList.add('dark');  d.classList.remove('light'); }
+        } catch(e) {}
+      })();
+    </script>
     <!-- Font preconnect — eliminates DNS + TLS lag for Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

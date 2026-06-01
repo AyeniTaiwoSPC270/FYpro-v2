@@ -68,6 +68,10 @@ html, body {
   line-height: 1;
   user-select: none;
 }
+[data-theme="light"] .splash__wordmark,
+.light .splash__wordmark {
+  color: #0D1B2A;
+}
 
 /* ── Onboarding Screen ──────────────────────── */
 #onboarding-screen {
@@ -4978,7 +4982,8 @@ html, body {
 .app-content__scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
 /* ── 22. Sidebar polish ────────────────────────────────────────── */
-.sidebar {
+[data-theme="dark"] .sidebar,
+.dark .sidebar {
   background: linear-gradient(180deg,#0D1B2A 0%,#071016 100%) !important;
   border-right: 1px solid rgba(255,255,255,0.05) !important;
 }

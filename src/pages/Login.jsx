@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useState, useRef } from 'react'
+import { useNavigate, useSearchParams, Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
@@ -135,10 +135,6 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const { user, loading: authLoading } = useUser()
 
-  useEffect(() => {
-    if (!authLoading && user) navigate('/dashboard', { replace: true })
-  }, [user, authLoading, navigate])
-
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -216,6 +212,8 @@ export default function Login() {
       setLoading(false)
     }
   }
+
+  if (!authLoading && user) return <Navigate to="/dashboard" replace />
 
   return (
     <div
