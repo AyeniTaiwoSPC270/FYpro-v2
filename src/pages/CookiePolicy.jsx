@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import FyproLogo from '../components/FyproLogo'
 
 function Navbar() {
   return (
@@ -7,7 +8,7 @@ function Navbar() {
       style={{ background: 'var(--pub-nav-scrolled)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
     >
       <a href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
-        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        <FyproLogo className="h-9 w-auto" />
       </a>
       <a href="/login" className="relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all no-underline px-5 py-2 text-[0.8rem] bg-blue-600 text-white hover:bg-blue-500">
         Try Free
@@ -22,7 +23,7 @@ function Footer() {
       <div className="max-w-4xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
-            <img src="/fypro-logo.png" alt="FYPro" className="h-6 w-auto" />
+            <FyproLogo className="h-6 w-auto" />
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">© 2026 FYPro. Built for African students.</p>
           <div className="flex gap-6">

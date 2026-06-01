@@ -8,6 +8,7 @@ import {
   useAnimate,
 } from 'framer-motion'
 import ReferralCapture from '../components/onboarding/ReferralCapture'
+import FyproLogo from '../components/FyproLogo'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -389,7 +390,7 @@ function Navbar() {
         }}
       >
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+          <FyproLogo className="h-9 w-auto" />
         </div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -1226,7 +1227,7 @@ function Footer() {
               transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
               className="flex items-center gap-[9px] mb-3"
             >
-              <img src="/fypro-logo.png" alt="FYPro" className="h-6 w-auto" />
+              <FyproLogo className="h-6 w-auto" />
             </motion.div>
             <p className="text-[0.82rem] text-white/65 leading-[1.65]">The AI research companion built specifically for Nigerian final year students — from rough idea to defensible project.</p>
           </div>

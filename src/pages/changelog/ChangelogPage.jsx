@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { changelog } from '../../data/changelog'
 import ChangelogEntry from '../../components/changelog/ChangelogEntry'
 import Footer from '../../components/Footer'
+import FyproLogo from '../../components/FyproLogo'
 
 // ─── Shield Icon ─────────────────────────────────────────────────────────────
 
@@ -76,7 +77,7 @@ function Navbar() {
         }}
       >
         <a href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
-          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+          <FyproLogo className="h-9 w-auto" />
         </a>
 
         <div className="hidden md:flex items-center gap-8">

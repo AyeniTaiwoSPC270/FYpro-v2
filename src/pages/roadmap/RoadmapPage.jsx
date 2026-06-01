@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { roadmap } from '../../data/roadmap'
 import RoadmapColumn from './RoadmapColumn'
 import Footer from '../../components/Footer'
+import FyproLogo from '../../components/FyproLogo'
 
 const STATUSES = ['done', 'in_progress', 'coming_soon']
 
@@ -78,7 +79,7 @@ function Navbar() {
         }}
       >
         <a href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
-          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+          <FyproLogo className="h-9 w-auto" />
         </a>
 
         <div className="hidden md:flex items-center gap-8">

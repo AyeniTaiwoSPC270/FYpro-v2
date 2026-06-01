@@ -12,6 +12,7 @@ import { resetUser } from '../lib/analytics'
 import Spinner from '../components/Spinner'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationPanel from '../components/NotificationPanel'
+import FyproLogo from '../components/FyproLogo'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -102,7 +103,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
     >
       {/* Logo */}
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        <FyproLogo className="h-9 w-auto" />
       </Link>
 
       {/* Right controls */}

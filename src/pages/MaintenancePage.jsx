@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import FyproLogo from '../components/FyproLogo'
 
 const WA_URL = 'https://wa.me/2348029061967?text=Hi%2C%20FYPro%20seems%20to%20be%20in%20maintenance%20and%20I%20need%20urgent%20help.'
 
@@ -69,11 +70,7 @@ export default function MaintenancePage() {
       >
         {/* Logo */}
         <div style={{ marginBottom: '32px' }}>
-          <img
-            src="/fypro-logo.png"
-            alt="FYPro"
-            style={{ height: '40px', opacity: 0.9 }}
-          />
+          <FyproLogo style={{ height: '40px', opacity: 0.9 }} />
         </div>
 
         {/* Status indicator */}

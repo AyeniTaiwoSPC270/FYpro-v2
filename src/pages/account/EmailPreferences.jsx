@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { useUser } from '../../hooks/useUser'
 import { showToast } from '../../components/Toast'
+import FyproLogo from '../../components/FyproLogo'
 
 // ─── ToggleSwitch ─────────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ function Navbar() {
       style={{ background: 'var(--bg-sidebar)', borderBottom: '1px solid var(--border-subtle)' }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        <FyproLogo className="h-9 w-auto" />
       </Link>
       <Link
         to="/settings"

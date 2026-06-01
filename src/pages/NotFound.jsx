@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTheme } from '../context/ThemeContext'
+import FyproLogo from '../components/FyproLogo'
 
 const ShieldIcon = ({ className }) => (
   <svg
@@ -79,7 +80,7 @@ export default function NotFound() {
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', padding: 0 }}
           aria-label="FYPro home"
         >
-          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+          <FyproLogo className="h-9 w-auto" />
         </button>
       </motion.nav>
 

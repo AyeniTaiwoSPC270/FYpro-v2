@@ -25,7 +25,7 @@ async function loadLogoDataUrl() {
       resolve(c.toDataURL('image/png'))
     }
     img.onerror = () => resolve(null)
-    img.src = '/fypro-logo.png'
+    img.src = '/fypro-logo-light.png'
   })
 }
 

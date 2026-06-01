@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { useTheme } from '../context/ThemeContext'
+import FyproLogo from '../components/FyproLogo'
 import { showToast } from '../components/Toast'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { supabase } from '../lib/supabase'
@@ -136,7 +137,7 @@ function SettingsNavbar({ initials, name }) {
       }}
     >
       <Link to="/dashboard" className="flex items-center gap-2.5 no-underline">
-        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        <FyproLogo className="h-9 w-auto" />
       </Link>
 
       <div className="flex items-center gap-2.5">

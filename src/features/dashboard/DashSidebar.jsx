@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
 import { CheckIcon, LockIcon } from './_shared'
+import FyproLogo from '../../components/FyproLogo'
 
 export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen }) {
   const navigate = useNavigate()
@@ -19,7 +20,7 @@ export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen 
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-800/60 px-[22px] py-[26px]">
-        <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+        <FyproLogo className="h-9 w-auto" />
       </div>
 
       {/* Navigation label */}

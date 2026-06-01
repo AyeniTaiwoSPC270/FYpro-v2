@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { supabase } from '../lib/supabase'
+import FyproLogo from '../components/FyproLogo'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ function PricingNavbar() {
         }}
       >
         <a href="/" className="flex items-center gap-2.5 flex-shrink-0 no-underline">
-          <img src="/fypro-logo.png" alt="FYPro" className="h-9 w-auto" />
+          <FyproLogo className="h-9 w-auto" />
         </a>
 
         <div className="hidden md:flex items-center gap-8">
@@ -797,7 +798,7 @@ function PricingFooter() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
           <a href="/" className="flex items-center gap-2 no-underline">
-            <img src="/fypro-logo.png" alt="FYPro" className="h-6 w-auto" />
+            <FyproLogo className="h-6 w-auto" />
           </a>
           <p className="text-slate-500 text-sm text-center font-sans">
             © 2026 FYPro. Built for African students.
