@@ -612,6 +612,9 @@ function AdminHealth() {
   const [testAlertsBusy,   setTestAlertsBusy]   = useState(false)
   const [testAlertsResult, setTestAlertsResult] = useState(null)
 
+  const [sentrySending,   setSentrySending]   = useState(false)
+  const [sentryResult,    setSentryResult]    = useState(null) // null | 'ok' | 'fail'
+
   const [maintenanceMode,      setMaintenanceMode]      = useState(false)
   const [maintenanceLoading,   setMaintenanceLoading]   = useState(true)
   const [maintenanceBusy,      setMaintenanceBusy]      = useState(false)
@@ -1132,6 +1135,23 @@ function AdminHealth() {
       setTestAlertsResult({ all_ok: false, error: err.message, results: [] })
     } finally {
       setTestAlertsBusy(false)
+    }
+  }
+
+  async function handleSentryTest() {
+    if (sentrySending) return
+    setSentrySending(true)
+    setSentryResult(null)
+    try {
+      const Sentry = await import('@sentry/react')
+      Sentry.captureException(new Error('Manual Sentry test from admin'))
+      const flushed = await Sentry.flush(5000)
+      setSentryResult(flushed ? 'ok' : 'fail')
+    } catch {
+      setSentryResult('fail')
+    } finally {
+      setSentrySending(false)
+      setTimeout(() => setSentryResult(null), 4000)
     }
   }
 
@@ -1659,8 +1679,8 @@ function AdminHealth() {
             <button className="mc-topbar-utility" onClick={handleTestAlerts} disabled={testAlertsBusy} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:testAlertsBusy?MUTED:WHITE, background:testAlertsBusy?'rgba(255,255,255,0.05)':testAlertsResult?.all_ok===true?GREEN:testAlertsResult?.all_ok===false?RED:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'7px 14px', cursor:testAlertsBusy?'not-allowed':'pointer' }}>
               {testAlertsBusy ? 'Sending…' : testAlertsResult ? testAlertsResult.all_ok ? `✓ ${testAlertsResult.sent}/10` : `⚠ ${testAlertsResult.failures} failed` : '🔔 Alerts'}
             </button>
-            <button className="mc-topbar-utility" onClick={() => { import('@sentry/react').then(Sentry => { Sentry.captureException(new Error('Manual Sentry test from admin')) }).catch(() => {}) }} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:WHITE, background:'rgba(124,58,237,0.2)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:8, padding:'7px 12px', cursor:'pointer' }}>
-              Sentry
+            <button className="mc-topbar-utility" onClick={handleSentryTest} disabled={sentrySending} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:sentrySending?MUTED:WHITE, background:sentrySending?'rgba(255,255,255,0.05)':sentryResult==='ok'?'rgba(22,163,74,0.25)':sentryResult==='fail'?'rgba(220,38,38,0.25)':'rgba(124,58,237,0.2)', border:`1px solid ${sentryResult==='ok'?'rgba(22,163,74,0.5)':sentryResult==='fail'?'rgba(220,38,38,0.5)':'rgba(124,58,237,0.3)'}`, borderRadius:8, padding:'7px 12px', cursor:sentrySending?'not-allowed':'pointer', transition:'background 0.2s, border-color 0.2s' }}>
+              {sentrySending ? 'Sending…' : sentryResult === 'ok' ? '✓ Sent' : sentryResult === 'fail' ? '⚠ Failed' : 'Sentry'}
             </button>
             <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:WHITE }}>{userInitials}</span>
