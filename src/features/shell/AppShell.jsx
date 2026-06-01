@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment, useRef } from 'react'
+import { useEffect, useState, Fragment, useRef, lazy, Suspense } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
@@ -8,13 +8,13 @@ import AnonymousMigrationModal from '../../components/AnonymousMigrationModal'
 import PaidFeatureGate from '../../components/PaidFeatureGate'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useRunLimit } from '../../hooks/useRunLimit'
-import TopicValidator from '../topicValidator/TopicValidator'
-import ChapterArchitect from '../chapterArchitect/ChapterArchitect'
-import MethodologyAdvisor from '../methodology/MethodologyAdvisor'
-import WritingPlanner from '../writingPlanner/WritingPlanner'
-import ProjectReviewer from '../projectReviewer/ProjectReviewer'
-import DefensePrep from '../defensePrep/DefensePrep'
-import SupervisorEmail from '../supervisorEmail/SupervisorEmail'
+const TopicValidator     = lazy(() => import('../topicValidator/TopicValidator'))
+const ChapterArchitect   = lazy(() => import('../chapterArchitect/ChapterArchitect'))
+const MethodologyAdvisor = lazy(() => import('../methodology/MethodologyAdvisor'))
+const WritingPlanner     = lazy(() => import('../writingPlanner/WritingPlanner'))
+const ProjectReviewer    = lazy(() => import('../projectReviewer/ProjectReviewer'))
+const DefensePrep        = lazy(() => import('../defensePrep/DefensePrep'))
+const SupervisorEmail    = lazy(() => import('../supervisorEmail/SupervisorEmail'))
 import FyproLogo from '../../components/FyproLogo'
 
 const STEPS = [
@@ -97,6 +97,15 @@ function RunLimitBanner({ stepKey, onUpgrade }) {
       >
         Upgrade for ₦2,000
       </button>
+    </div>
+  )
+}
+
+function StepLoadingSkeleton() {
+  return (
+    <div style={{ width: '100%', maxWidth: 660, margin: '0 auto', padding: '32px 16px' }}>
+      <div className="skeleton-shimmer" style={{ height: 32, width: '55%', marginBottom: 20 }} />
+      <div className="skeleton-shimmer" style={{ height: 320, width: '100%', borderRadius: 16 }} />
     </div>
   )
 }
@@ -370,6 +379,7 @@ export default function AppShell() {
 
         {/* Current step or bonus feature */}
         <div className="app-content__scroll" ref={scrollRef}>
+          <Suspense fallback={<StepLoadingSkeleton />}>
           <AnimatePresence mode="wait" custom={directionRef.current}>
             <motion.div
               key={showSupervisorEmail ? 'supervisor' : String(state.currentStep)}
@@ -400,6 +410,7 @@ export default function AppShell() {
               )}
             </motion.div>
           </AnimatePresence>
+          </Suspense>
         </div>
 
       </main>
