@@ -1210,12 +1210,14 @@ async function handleSentryWebhook(req, res, rawBody) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
-  const event      = payload?.data?.event || {};
-  const level      = event.level || 'info';
-  const title      = String(event.title || 'Unknown Sentry event').slice(0, 200);
+  // Issue lifecycle webhooks (issue.created, issue.unresolved, etc.) use data.issue.
+  // Error Alert Rule webhooks use data.event. Support both.
+  const event      = payload?.data?.event || payload?.data?.issue || {};
+  const level      = event.level || 'error';
+  const title      = String(event.title || event.metadata?.value || 'Unknown Sentry event').slice(0, 200);
   const tags       = Array.isArray(event.tags) ? event.tags : [];
   const featureTag = tags.find(([k]) => k === 'feature');
-  const feature    = featureTag ? featureTag[1] : 'Unknown';
+  const feature    = featureTag ? featureTag[1] : (event.project?.slug || 'Unknown');
 
   await writeSystemLog({
     severity:      mapSentryLevel(level),
