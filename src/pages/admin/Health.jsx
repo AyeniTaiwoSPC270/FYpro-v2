@@ -1145,7 +1145,6 @@ function AdminHealth() {
     try {
       const Sentry = await import('@sentry/react')
       Sentry.captureException(new Error('Manual Sentry test from admin'))
-      await Sentry.flush(3000).catch(() => {})
       setSentryResult('ok')
     } catch {
       setSentryResult('fail')
