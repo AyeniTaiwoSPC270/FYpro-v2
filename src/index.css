@@ -11202,14 +11202,14 @@ html {
   background: rgba(0,0,0,0.02) !important;
   border-bottom-color: rgba(0,0,0,0.06) !important;
 }
-/* Sidebar always stays dark navy — matches real app */
+/* Sidebar: light in light mode — matches real app */
 [data-theme="light"] [data-pub] .lp-hero-mockup-sidebar {
-  background: #0D1B2A !important;
-  border-right-color: rgba(255,255,255,0.05) !important;
+  background: #EEF2F8 !important;
+  border-right-color: rgba(13,27,42,0.1) !important;
 }
-/* Restore white text in the dark sidebar */
-[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white,
-[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white\/40 { color: rgba(255,255,255,0.8) !important; }
+/* Sidebar text: dark on light background */
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white { color: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white\/40 { color: rgba(13,27,42,0.4) !important; }
 /* Content panel: white workspace */
 [data-theme="light"] [data-pub] .lp-hero-mockup-content-area {
   background: #FFFFFF !important;
