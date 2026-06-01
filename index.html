@@ -2,15 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Anti-flicker: set theme before first paint so light-mode users never see a dark flash -->
+    <!-- Anti-flicker: set theme synchronously so no dark flash ever appears -->
     <script>
       (function() {
         try {
           var t = localStorage.getItem('fypro_theme') || 'dark';
           var d = document.documentElement;
+          var isLight = t === 'light';
           d.setAttribute('data-theme', t);
-          if (t === 'light') { d.classList.add('light'); d.classList.remove('dark'); }
-          else               { d.classList.add('dark');  d.classList.remove('light'); }
+          d.classList.add(isLight ? 'light' : 'dark');
+          d.classList.remove(isLight ? 'dark' : 'light');
+          /* Force the bg-base variable and body background before any CSS loads */
+          var bg = isLight ? '#F8FAFC' : '#0A0F1C';
+          d.style.setProperty('--bg-base', bg);
+          d.style.background = bg;
         } catch(e) {}
       })();
     </script>

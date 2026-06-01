@@ -18,6 +18,11 @@ html, body {
   background: var(--bg-base, #060E18);
 }
 
+#root {
+  background: var(--bg-base, #060E18);
+  min-height: 100vh;
+}
+
 /* ── Splash Screen ──────────────────────────── */
 #splash-screen {
   position: fixed;

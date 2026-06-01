@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
@@ -44,15 +43,7 @@ import { AuthProvider } from './context/AuthContext'
 function AppRoutes() {
   const location = useLocation()
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.key}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { duration: 0.15, ease: 'easeOut' } }}
-        exit={{ opacity: 0, transition: { duration: 0 } }}
-        style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-      >
-        <Routes location={location}>
+    <Routes location={location}>
           {/* Public marketing */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -106,8 +97,6 @@ function AppRoutes() {
           {/* 404 catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </motion.div>
-    </AnimatePresence>
   )
 }
 
