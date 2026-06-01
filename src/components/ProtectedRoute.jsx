@@ -4,19 +4,53 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import WhatsAppButton from './WhatsAppButton'
 
+const BAN_CACHE_TTL = 30 * 60 * 1000 // 30 minutes
+
+function readBanCache(userId) {
+  try {
+    const raw = sessionStorage.getItem(`fypro_ban_${userId}`)
+    if (!raw) return null
+    const { banned, ts } = JSON.parse(raw)
+    if (Date.now() - ts < BAN_CACHE_TTL) return banned
+    return null // expired
+  } catch {
+    return null
+  }
+}
+
+function writeBanCache(userId, banned) {
+  try {
+    sessionStorage.setItem(`fypro_ban_${userId}`, JSON.stringify({ banned, ts: Date.now() }))
+  } catch {}
+}
+
 // SQL required (run once in Supabase SQL Editor):
 //   ALTER TABLE user_entitlements
 //   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useUser()
   const [banned, setBanned] = useState(false)
-  const [banChecking, setBanChecking] = useState(true)
+  // Lazy initializer: only show ban-check spinner if no valid cache exists for this user.
+  const [banChecking, setBanChecking] = useState(() => {
+    if (!user?.id) return false
+    return readBanCache(user.id) === null
+  })
 
   useEffect(() => {
     if (!user?.id) {
       setBanChecking(false)
       return
     }
+
+    const cached = readBanCache(user.id)
+    if (cached !== null) {
+      // Cache hit — no DB call, no spinner
+      if (cached) { supabase.auth.signOut(); setBanned(true) }
+      setBanChecking(false)
+      return
+    }
+
+    // Cache miss — run the query and cache the result
     setBanChecking(true)
     supabase
       .from('user_entitlements')
@@ -24,16 +58,15 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
       .eq('user_id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.banned_until && new Date(data.banned_until) > new Date()) {
-          supabase.auth.signOut()
-          setBanned(true)
-        }
+        const isBanned = !!(data?.banned_until && new Date(data.banned_until) > new Date())
+        writeBanCache(user.id, isBanned)
+        if (isBanned) { supabase.auth.signOut(); setBanned(true) }
       })
       .catch(() => {})
       .finally(() => setBanChecking(false))
   }, [user?.id])
 
-  // Show spinner while auth resolves or ban check is in flight.
+  // Show spinner while auth resolves or (first-visit only) ban check is in flight.
   if (loading || (banChecking && !!user?.id)) return (
     <div style={{
       minHeight: '100vh',
