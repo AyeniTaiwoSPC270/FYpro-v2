@@ -27,6 +27,27 @@ import DashUsageSection from '../features/dashboard/DashUsageSection'
 import ProjectsGrid from '../features/dashboard/ProjectsGrid'
 import { NewSessionModal, DeleteProjectModal } from '../features/dashboard/DashModals'
 
+function DashboardSkeleton() {
+  return (
+    <div style={{ padding: '4px 0 48px' }}>
+      {/* Stat cards row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} className="skeleton-shimmer" style={{ height: 96, borderRadius: 12 }} />
+        ))}
+      </div>
+      {/* Section heading placeholder */}
+      <div className="skeleton-shimmer" style={{ height: 22, width: 160, marginBottom: 16, borderRadius: 6 }} />
+      {/* Project cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+        {[0, 1].map(i => (
+          <div key={i} className="skeleton-shimmer" style={{ height: 140, borderRadius: 16 }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { state, clearProjectData, isOnboarded, onboardingResolved } = useApp()
@@ -240,10 +261,7 @@ export default function Dashboard() {
           style={{ backgroundColor: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
         >
           {projectsLoading ? (
-            <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)' }}>
-              <div style={{ width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: '#0066FF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
+            <DashboardSkeleton />
           ) : projectsError ? (
             <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
               <motion.div
