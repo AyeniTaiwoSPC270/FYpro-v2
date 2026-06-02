@@ -8,7 +8,12 @@ import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
-import FyproLogo from './components/FyproLogo'
+import {
+  AuthPageSkeleton,
+  PublicPageSkeleton,
+  DashboardPageSkeleton,
+  AppShellSkeleton,
+} from './components/skeletons/PageSkeletons'
 
 // Lazy-loaded route components
 const LandingPage       = lazy(() => import('./pages/LandingPage'))
@@ -40,23 +45,8 @@ const AppShell          = lazy(() => import('./features/shell/AppShell'))
 const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
 const AdminHealth       = lazy(() => import('./pages/admin/Health'))
 
-// Fullscreen branded loading shell — shown while any lazy route chunk loads.
-function AppLoadingShell() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-base, #060E18)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
-      <FyproLogo
-        height={48}
-        width={48}
-        style={{ animation: 'fypro-logo-pulse 1.4s ease-in-out infinite' }}
-      />
-    </div>
-  )
+function S({ fallback, children }) {
+  return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
 // Route transitions — lives inside BrowserRouter so useLocation() works.
@@ -66,59 +56,45 @@ function AppRoutes() {
   const location = useLocation()
   return (
     <Routes location={location}>
-          {/* Public marketing */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/maintenance" element={<MaintenancePage />} />
-          <Route path="/auth/confirm" element={<AuthConfirm />} />
-          <Route path="/auth/callback" element={<AuthConfirm />} />
-          <Route path="/changelog" element={<ChangelogPage />} />
-          <Route path="/roadmap" element={<RoadmapPage />} />
+      {/* Auth pages */}
+      <Route path="/login"           element={<S fallback={<AuthPageSkeleton />}><Login /></S>} />
+      <Route path="/signup"          element={<S fallback={<AuthPageSkeleton />}><Signup /></S>} />
+      <Route path="/forgot-password" element={<S fallback={<AuthPageSkeleton />}><ForgotPassword /></S>} />
+      <Route path="/reset-password"  element={<S fallback={<AuthPageSkeleton />}><ResetPassword /></S>} />
+      <Route path="/verify-email"    element={<S fallback={<AuthPageSkeleton />}><VerifyEmail /></S>} />
+      <Route path="/auth/confirm"    element={<S fallback={<AuthPageSkeleton />}><AuthConfirm /></S>} />
+      <Route path="/auth/callback"   element={<S fallback={<AuthPageSkeleton />}><AuthConfirm /></S>} />
 
-          {/* App entry — splash + onboarding */}
-          <Route path="/start" element={<ProtectedRoute><SplashOnboarding /></ProtectedRoute>} />
+      {/* Public pages */}
+      <Route path="/"            element={<S fallback={<PublicPageSkeleton />}><LandingPage /></S>} />
+      <Route path="/pricing"     element={<S fallback={<PublicPageSkeleton />}><Pricing /></S>} />
+      <Route path="/about"       element={<S fallback={<PublicPageSkeleton />}><About /></S>} />
+      <Route path="/contact"     element={<S fallback={<PublicPageSkeleton />}><Contact /></S>} />
+      <Route path="/privacy"     element={<S fallback={<PublicPageSkeleton />}><Privacy /></S>} />
+      <Route path="/terms"       element={<S fallback={<PublicPageSkeleton />}><Terms /></S>} />
+      <Route path="/cookie-policy" element={<S fallback={<PublicPageSkeleton />}><CookiePolicy /></S>} />
+      <Route path="/maintenance" element={<S fallback={<PublicPageSkeleton />}><MaintenancePage /></S>} />
+      <Route path="/changelog"   element={<S fallback={<PublicPageSkeleton />}><ChangelogPage /></S>} />
+      <Route path="/roadmap"     element={<S fallback={<PublicPageSkeleton />}><RoadmapPage /></S>} />
 
-          {/* Main app */}
-          <Route path="/app" element={<ProtectedRoute><AppShell /></ProtectedRoute>} />
+      {/* Dashboard + account pages */}
+      <Route path="/dashboard" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Dashboard /></S></ProtectedRoute>} />
+      <Route path="/start"     element={<ProtectedRoute><S fallback={<AuthPageSkeleton />}><SplashOnboarding /></S></ProtectedRoute>} />
+      <Route path="/profile"   element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Profile /></S></ProtectedRoute>} />
+      <Route path="/settings"  element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Settings /></S></ProtectedRoute>} />
+      <Route path="/account/email-preferences" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><EmailPreferences /></S></ProtectedRoute>} />
+      <Route path="/account/certificates"      element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyCertificates /></S></ProtectedRoute>} />
+      <Route path="/account/referrals"         element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyReferrals /></S></ProtectedRoute>} />
+      <Route path="/payment-success"           element={<ProtectedRoute><S fallback={<PublicPageSkeleton />}><PaymentSuccess /></S></ProtectedRoute>} />
+      <Route path="/admin/health"              element={<ProtectedRoute adminOnly><S fallback={<DashboardPageSkeleton />}><AdminHealth /></S></ProtectedRoute>} />
 
-          {/* Supervisor Meeting Prep */}
-          <Route path="/supervisor-prep" element={<ProtectedRoute><SupervisorPrep /></ProtectedRoute>} />
+      {/* App shell + supervisor */}
+      <Route path="/app"             element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><AppShell /></S></ProtectedRoute>} />
+      <Route path="/supervisor-prep" element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><SupervisorPrep /></S></ProtectedRoute>} />
 
-          {/* Dashboard */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-
-          {/* Profile */}
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-
-          {/* Settings */}
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-
-          {/* Email Preferences */}
-          <Route path="/account/email-preferences" element={<ProtectedRoute><EmailPreferences /></ProtectedRoute>} />
-
-          {/* My Certificates */}
-          <Route path="/account/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
-
-          {/* My Referrals */}
-          <Route path="/account/referrals" element={<ProtectedRoute><MyReferrals /></ProtectedRoute>} />
-
-          {/* Admin — lazy-loaded so recharts only downloads when admin visits */}
-          <Route path="/admin/health" element={<ProtectedRoute adminOnly><AdminHealth /></ProtectedRoute>} />
-
-          {/* 404 catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+      {/* 404 */}
+      <Route path="*" element={<S fallback={<PublicPageSkeleton />}><NotFound /></S>} />
+    </Routes>
   )
 }
 
@@ -132,7 +108,7 @@ export default function App() {
         <RouteProgressBar />
         <ToastProvider />
         <CookieBanner />
-        <Suspense fallback={<AppLoadingShell />}>
+        <Suspense fallback={null}>
           <AppRoutes />
         </Suspense>
         </ProjectStateProvider>
