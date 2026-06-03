@@ -9,6 +9,13 @@ import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
+import webpush from 'web-push'
+
+webpush.setVapidDetails(
+  'mailto:hello@fypro.com.ng',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+)
 
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -940,18 +947,73 @@ async function handleContact(req, res) {
   return res.status(200).json({ ok: true })
 }
 
+// ─── Push subscription management ────────────────────────────────────────────
+
+async function handleSubscribe(req, res) {
+  const authHeader = req.headers.authorization || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { subscription } = req.body || {}
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return res.status(400).json({ error: 'Invalid subscription object' })
+  }
+
+  const { error } = await supabaseAdmin
+    .from('push_subscriptions')
+    .upsert({ user_id: user.id, subscription }, { onConflict: 'user_id' })
+
+  if (error) {
+    console.error('[notify/subscribe] upsert error:', error.message)
+    return res.status(500).json({ error: 'Failed to save subscription' })
+  }
+
+  return res.status(200).json({ ok: true })
+}
+
+async function handleUnsubscribe(req, res) {
+  const authHeader = req.headers.authorization || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' })
+
+  await supabaseAdmin
+    .from('push_subscriptions')
+    .delete()
+    .eq('user_id', user.id)
+
+  return res.status(200).json({ ok: true })
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
   setCorsHeaders(req, res)
   if (req.method === 'OPTIONS') return res.status(200).end()
-  if (req.method !== 'POST')   return res.status(405).end()
+
+  // GET: cron-triggered actions
+  if (req.method === 'GET') {
+    const action = req.query?.action
+    if (action === 'send-nudges') return handleSendNudges(req, res)
+    return res.status(405).end()
+  }
+
+  if (req.method !== 'POST') return res.status(405).end()
 
   // Telegram updates always carry update_id; our notify calls never do.
   if (req.body?.update_id !== undefined) return handleTelegramBot(req, res)
 
   // Contact form — public, no JWT required
   if (req.body?.action === 'contact') return handleContact(req, res)
+
+  // Push subscription management — JWT required
+  if (req.body?.action === 'subscribe')   return handleSubscribe(req, res)
+  if (req.body?.action === 'unsubscribe') return handleUnsubscribe(req, res)
 
   return handleNotify(req, res)
 }
