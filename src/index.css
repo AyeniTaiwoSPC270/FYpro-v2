@@ -11695,3 +11695,60 @@ html {
   line-height: 1.6;
   margin: 0;
 }
+
+/* ── Past Sessions — light mode overrides ───────────────────────────────────── */
+
+[data-theme="light"] .dp-history-item,
+.light .dp-history-item {
+  background: #F8FAFC;
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="light"] .dp-history-item--expanded,
+.light .dp-history-item--expanded {
+  border-color: rgba(0, 102, 255, 0.25);
+}
+
+[data-theme="light"] .dp-history-item__date,
+.light .dp-history-item__date {
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .dp-history-item__count,
+.light .dp-history-item__count {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="light"] .dp-history-item__score,
+.light .dp-history-item__score {
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .dp-history-chevron,
+.light .dp-history-chevron {
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .dp-history-item__transcript,
+.light .dp-history-item__transcript {
+  border-top-color: var(--color-border);
+}
+
+[data-theme="light"] .dp-history-turn__label,
+.light .dp-history-turn__label {
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .dp-history-turn__answer .dp-history-turn__text,
+.light .dp-history-turn__answer .dp-history-turn__text {
+  color: var(--color-text-secondary);
+  background: rgba(13, 27, 42, 0.04);
+  border-left-color: rgba(13, 27, 42, 0.15);
+}
+
+[data-theme="light"] .dp-history-empty,
+.light .dp-history-empty {
+  background: rgba(13, 27, 42, 0.03);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
