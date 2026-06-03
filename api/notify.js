@@ -947,6 +947,135 @@ async function handleContact(req, res) {
   return res.status(200).json({ ok: true })
 }
 
+// ─── Push nudge delivery (cron) ───────────────────────────────────────────────
+
+const NUDGE_PAYLOADS = {
+  inactive_3: {
+    title: 'FYPro',
+    body: "Your project is waiting — you haven't worked on it in 3 days. Keep going.",
+    url: '/app',
+  },
+  inactive_7: {
+    title: 'FYPro',
+    body: "It's been a week. Your final year project needs you — don't let it drift.",
+    url: '/app',
+  },
+  defense_reminder: {
+    title: 'FYPro',
+    body: "You've done the research. Have you tried the AI defense panel yet?",
+    url: '/app',
+  },
+}
+
+const REQUIRED_STEPS_FOR_DEFENSE = [
+  'topic_validator',
+  'chapter_architect',
+  'methodology_advisor',
+  'writing_planner',
+]
+
+async function handleSendNudges(req, res) {
+  if (req.query?.secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  // Fetch all current subscriptions
+  const { data: subs, error: subErr } = await supabaseAdmin
+    .from('push_subscriptions')
+    .select('*')
+
+  if (subErr) {
+    console.error('[nudges] failed to fetch subscriptions:', subErr.message)
+    return res.status(500).json({ error: 'DB error' })
+  }
+
+  const now = Date.now()
+  const DAY_MS = 86_400_000
+  const results = { sent: 0, skipped: 0, cleaned: 0, errors: 0 }
+
+  for (const sub of subs) {
+    try {
+      // Last activity = most recent project_steps.completed_at for this user
+      const { data: lastStepRows } = await supabaseAdmin
+        .from('project_steps')
+        .select('completed_at')
+        .eq('user_id', sub.user_id)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+
+      const lastStepAt = lastStepRows?.[0]?.completed_at
+      if (!lastStepAt) { results.skipped++; continue } // no activity yet
+
+      const daysInactive    = (now - new Date(lastStepAt).getTime()) / DAY_MS
+      const daysSinceNudged = sub.last_nudged_at
+        ? (now - new Date(sub.last_nudged_at).getTime()) / DAY_MS
+        : Infinity
+
+      let nudgeKey = null
+
+      // Inactivity nudges — 7-day check takes priority
+      if (daysInactive >= 7 && daysSinceNudged > 7) {
+        nudgeKey = 'inactive_7'
+      } else if (daysInactive >= 3 && daysSinceNudged > 3) {
+        nudgeKey = 'inactive_3'
+      }
+
+      // Defense reminder — only if no inactivity nudge fired
+      if (!nudgeKey && daysSinceNudged > 7 && daysInactive >= 2) {
+        const { data: steps } = await supabaseAdmin
+          .from('project_steps')
+          .select('step_name')
+          .eq('user_id', sub.user_id)
+
+        const completedNames = steps?.map((s) => s.step_name) ?? []
+        const hasAllSteps = REQUIRED_STEPS_FOR_DEFENSE.every((s) => completedNames.includes(s))
+
+        if (hasAllSteps) {
+          const { count: defenseCount } = await supabaseAdmin
+            .from('defense_sessions')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', sub.user_id)
+
+          if (defenseCount === 0) nudgeKey = 'defense_reminder'
+        }
+      }
+
+      if (!nudgeKey) { results.skipped++; continue }
+
+      // Send the push notification
+      await webpush.sendNotification(
+        sub.subscription,
+        JSON.stringify(NUDGE_PAYLOADS[nudgeKey])
+      )
+
+      // Update last_nudged_at
+      await supabaseAdmin
+        .from('push_subscriptions')
+        .update({ last_nudged_at: new Date().toISOString() })
+        .eq('user_id', sub.user_id)
+
+      results.sent++
+      console.log(`[nudges] sent ${nudgeKey} to ${sub.user_id}`)
+    } catch (err) {
+      if (err.statusCode === 410) {
+        // Subscription expired or revoked — clean up
+        await supabaseAdmin
+          .from('push_subscriptions')
+          .delete()
+          .eq('user_id', sub.user_id)
+        results.cleaned++
+        console.log(`[nudges] cleaned expired subscription for ${sub.user_id}`)
+      } else {
+        results.errors++
+        console.error(`[nudges] error for ${sub.user_id}:`, err.message)
+      }
+    }
+  }
+
+  console.log('[nudges] run complete:', results)
+  return res.status(200).json({ ok: true, ...results })
+}
+
 // ─── Push subscription management ────────────────────────────────────────────
 
 async function handleSubscribe(req, res) {
