@@ -646,3 +646,24 @@ export async function logFailure(feature, err, inputPreview = '') {
     // silent — never affect UX
   }
 }
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+export async function subscribePush(subscriptionJson) {
+  const token = await getAccessToken();
+  if (!token) return;
+  await fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action: 'subscribe', subscription: subscriptionJson }),
+  });
+}
+
+export async function unsubscribePush() {
+  const token = await getAccessToken();
+  if (!token) return;
+  await fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action: 'unsubscribe' }),
+  });
+}
