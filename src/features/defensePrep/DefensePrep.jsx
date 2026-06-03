@@ -1069,8 +1069,14 @@ export default function DefensePrep() {
       setTurnCount(turnCountRef.current)
       if (turnCountRef.current >= 20) {
         setTypingVisible(false)
-        setSessionComplete(true)
-        setInputLocked(true)
+        doEndSession()
+        return
+      }
+
+      // Layer 4 — question limit: auto-end after 5 answered questions
+      if (qCount >= 5) {
+        setTypingVisible(false)
+        doEndSession()
         return
       }
 
