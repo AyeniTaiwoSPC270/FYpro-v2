@@ -553,6 +553,7 @@ export default function DefensePrep() {
 
   const [defenseSessionId, setDefenseSessionId] = useState(null)
   const defenseSessionIdRef = useRef(null)
+  const currentQuestionRef  = useRef('')
   const authUserRef    = useRef(authUser)
   const authSessionRef = useRef(authSession)
   useEffect(() => { authUserRef.current = authUser }, [authUser])
@@ -813,6 +814,7 @@ export default function DefensePrep() {
   // ── chat helpers ──────────────────────────────────────────────────────────
 
   function addMsg(msg) {
+    if (msg.type === 'examiner' && msg.text) currentQuestionRef.current = msg.text
     setChatMessages(prev => [...prev, { id: msgIdRef.current++, ...msg }])
   }
 
@@ -1043,6 +1045,23 @@ export default function DefensePrep() {
       // Inject scores into the student bubble we just rendered
       if (data.scores?.length) {
         patchMsg(studentMsgId, { scores: data.scores })
+      }
+
+      // Persist Q&A turn for session history — fire-and-forget
+      if (defenseSessionIdRef.current && authUserRef.current?.id) {
+        supabase
+          .from('defense_turns')
+          .insert({
+            session_id:        defenseSessionIdRef.current,
+            user_id:           authUserRef.current.id,
+            turn_number:       qCount,
+            examiner_question: currentQuestionRef.current,
+            student_answer:    answer,
+            scores:            data.scores ?? [],
+          })
+          .then(({ error: err }) => {
+            if (err) console.warn('[defense_turns] insert failed:', err.message)
+          })
       }
 
       // Layer 2 — low score tracking
