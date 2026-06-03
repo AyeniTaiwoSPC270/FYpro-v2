@@ -21,6 +21,12 @@ import {
   Project,
 } from '../lib/db'
 import { enqueue, getStatus } from '../lib/sync-queue'
+import {
+  persistSnapshot,
+  patchSnapshotStep,
+  readSnapshot,
+  clearSnapshot,
+} from '../lib/offline-snapshot'
 // AppContext is a plain-JS file (allowJs). TypeScript infers useApp() → null
 // from createContext(null). Declare the subset this file actually uses so the
 // compiler can check it correctly without requiring as any.
@@ -109,11 +115,21 @@ async function withRetry<T>(fn: () => Promise<T>, delays = [1000, 3000]): Promis
   throw lastErr
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('load_timeout')), ms)
+    ),
+  ])
+}
+
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 interface ProjectStateValue {
   projectId: string | null
   isLoading: boolean
+  isOfflineMode: boolean
   showMigrationModal: boolean
   dismissMigrationModal: () => void
   confirmMigration: () => void
@@ -133,6 +149,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showMigrationModal, setShowMigrationModal] = useState(false)
+  const [isOfflineMode, setIsOfflineMode] = useState(false)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const stateRef = useRef(state)
   const userRef = useRef(user)
@@ -185,8 +202,11 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(true)
       try {
-        const userState = await loadUserState(userId)
+        const userState = await withTimeout(loadUserState(userId), 5000)
         if (cancelled) return
+
+        // Persist snapshot for offline fallback before hydrating
+        persistSnapshot(userId, userState)
 
         const hydration: Record<string, unknown> = {}
 
@@ -208,8 +228,6 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           setProjectId(null)
         }
 
-        // Always derive stepsCompleted from Supabase for authenticated users —
-        // prevents stale localStorage values bleeding through on refresh.
         const completed = [false, false, false, false, false, false]
         for (const step of userState.steps) {
           const key = STEP_TO_STATE[step.step_type]
@@ -229,7 +247,6 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           metaOnboarded: userRef.current?.user_metadata?.onboarding_completed === true,
         })
 
-        // Check if anonymous localStorage session exists but no Supabase project
         if (!userState.project) {
           const raw = localStorage.getItem('fypro_session')
           if (raw) {
@@ -243,7 +260,51 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('[useProjectState] load error:', err)
-        markOnboardingResolved({})  // fail open — unblock navigation
+
+        // Supabase unreachable or timed out — attempt snapshot fallback
+        const snapshot = readSnapshot(userId)
+        if (snapshot) {
+          const hydration: Record<string, unknown> = {}
+
+          if (snapshot.profile) {
+            const name = snapshot.profile.full_name
+              ?? (userRef.current?.user_metadata?.full_name as string | undefined)
+              ?? null
+            if (name) hydration.name = name
+            if (snapshot.profile.faculty)    hydration.faculty    = snapshot.profile.faculty
+            if (snapshot.profile.department) hydration.department = snapshot.profile.department
+            if (snapshot.profile.level)      hydration.level      = snapshot.profile.level
+          }
+
+          if (snapshot.project) {
+            setProjectId(snapshot.project.id)
+            if (snapshot.project.title) hydration.validatedTopic = snapshot.project.title
+            // Do NOT call subscribeToProject — we are offline
+          }
+
+          const completed = [false, false, false, false, false, false]
+          for (const step of snapshot.steps) {
+            const key = STEP_TO_STATE[step.step_type]
+            if (key) hydration[key] = resolveStepResult(step.step_type, step.result_json)
+            const idx = STEP_TO_IDX[step.step_type]
+            if (idx !== undefined) completed[idx] = true
+          }
+          hydration.stepsCompleted = completed
+          const last = completed.lastIndexOf(true)
+          hydration.currentStep = last !== -1 ? Math.min(last + 1, 5) : 0
+
+          if (Object.keys(hydration).length > 0) set(hydration)
+
+          markOnboardingResolved({
+            faculty:       snapshot.profile?.faculty    ?? undefined,
+            department:    snapshot.profile?.department ?? undefined,
+            metaOnboarded: userRef.current?.user_metadata?.onboarding_completed === true,
+          })
+
+          setIsOfflineMode(true)
+        } else {
+          markOnboardingResolved({})  // fail open — unblock navigation
+        }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -288,6 +349,10 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     inputSummary?: string
   ): Promise<void> => {
     const pid = projectId ?? await ensureProject()
+
+    // Update offline snapshot immediately — result is available regardless of network
+    if (userRef.current?.id) patchSnapshotStep(userRef.current.id, stepType, resultJson)
+
     if (!pid) {
       enqueue({ projectId: '', stepType, resultJson, inputSummary: inputSummary ?? null })
       showToast('Saved locally — will sync when connected')
@@ -326,6 +391,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
         console.error('[resetProject] delete failed', err)
       }
     }
+    clearSnapshot()
     setProjectId(null)
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current)
@@ -427,6 +493,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const value: ProjectStateValue = {
     projectId,
     isLoading,
+    isOfflineMode,
     showMigrationModal,
     dismissMigrationModal,
     confirmMigration,
