@@ -11,6 +11,7 @@ import { resetUser } from '../lib/analytics'
 import { useUser } from '../hooks/useUser'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationPanel from '../components/NotificationPanel'
+import { unsubscribePush } from '../services/api'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -467,6 +468,36 @@ export default function Settings() {
   const [signingOut, setSigningOut] = useState(false)
   const [savingNotif, setSavingNotif] = useState(false)
 
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [savingPush, setSavingPush]   = useState(false)
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setPushEnabled(!!sub))
+      .catch(() => {})
+  }, [])
+
+  async function handlePushToggle() {
+    if (!pushEnabled) return // opt-in only via Step 1 — can't subscribe from Settings
+    setSavingPush(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) {
+        await sub.unsubscribe()
+        await unsubscribePush()
+      }
+      setPushEnabled(false)
+    } catch (err) {
+      console.error('[push] unsubscribe failed:', err)
+      showToast('Failed to update notification settings')
+    } finally {
+      setSavingPush(false)
+    }
+  }
+
   // Load email preferences from Supabase on mount
   useEffect(() => {
     if (!user?.id) return
@@ -650,6 +681,18 @@ export default function Settings() {
           <SectionLabel>Notifications</SectionLabel>
 
           <div className="flex flex-col gap-5">
+            <ToggleRow
+              title="Push notifications"
+              desc={
+                pushEnabled
+                  ? 'Nudges sent if you go quiet on your project for 3+ days'
+                  : 'Enable from Step 1 after validating your topic'
+              }
+              checked={pushEnabled}
+              onChange={handlePushToggle}
+              disabled={savingPush || !pushEnabled}
+            />
+            <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow
               title="Email reminders"
               desc="Get weekly reminders to keep your FYP on track"
