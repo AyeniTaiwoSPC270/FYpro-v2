@@ -20,7 +20,7 @@ console.log('screenshot-wide.png written (1280x800)')
 
 // Narrow (mobile) — 390×844
 const narrowP = await browser.newPage()
-await narrowP.setViewport({ width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 })
+await narrowP.setViewport({ width: 390, height: 844, isMobile: true })
 await narrowP.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: 15000 })
 await narrowP.screenshot({ path: resolve(outDir, 'screenshot-narrow.png') })
 console.log('screenshot-narrow.png written (390x844)')
