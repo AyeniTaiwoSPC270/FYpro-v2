@@ -15,6 +15,7 @@ export const USER_STORAGE_KEYS = [
   'fypro_ref_code',
   'fypro_ref_expiry',
   'fypro_run_counts',
+  'fypro_offline_snapshot',   // offline read cache — cleared on logout
 ] as const
 
 export function clearUserLocalStorage(): void {
