@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../context/ThemeContext'
 
 function sessionScoreLabel(score) {
   if (score >= 9) return 'distinction'
@@ -22,6 +23,9 @@ function formatDate(iso) {
 }
 
 export default function PastSessions({ projectId }) {
+  const { theme } = useTheme()
+  const skeletonClass = `skeleton-loader${theme === 'dark' ? ' skeleton-loader--dark' : ''}`
+
   const [sessions, setSessions]           = useState([])
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState(null)
@@ -73,7 +77,7 @@ export default function PastSessions({ projectId }) {
   if (loading) {
     return (
       <div className="dp-history-list">
-        <div className="skeleton-loader skeleton-loader--dark">
+        <div className={skeletonClass}>
           <div className="skeleton-bar" style={{ width: '100%' }} />
           <div className="skeleton-bar" style={{ width: '80%' }} />
           <div className="skeleton-bar" style={{ width: '90%' }} />
@@ -153,7 +157,7 @@ export default function PastSessions({ projectId }) {
             {isExpanded && (
               <div className="dp-history-item__transcript">
                 {isTurnsLoading ? (
-                  <div className="skeleton-loader skeleton-loader--dark" style={{ margin: '4px 0' }}>
+                  <div className={skeletonClass} style={{ margin: '4px 0' }}>
                     <div className="skeleton-bar" style={{ width: '100%' }} />
                     <div className="skeleton-bar" style={{ width: '75%' }} />
                   </div>
