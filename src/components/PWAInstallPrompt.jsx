@@ -31,18 +31,23 @@ export default function PWAInstallPrompt() {
     // Skip if student already dismissed or installed
     if (localStorage.getItem(DISMISSED_KEY)) return
 
+    let timerId = null
+
     function handler(e) {
       e.preventDefault()
       deferredPrompt.current = e
       // Wait 30s before showing — don't interrupt mid-task
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         setShowInstall(true)
         trackEvent('pwa_prompt_shown')
       }, PROMPT_DELAY_MS)
     }
 
     window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+      if (timerId) clearTimeout(timerId)
+    }
   }, [])
 
   async function handleInstall() {
@@ -94,7 +99,7 @@ export default function PWAInstallPrompt() {
           <span>New version available</span>
           <button
             className="pwa-update-toast__reload"
-            onClick={() => updateServiceWorker(true)}
+            onClick={() => updateServiceWorker()}
           >
             Reload
           </button>
