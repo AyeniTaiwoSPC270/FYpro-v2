@@ -498,6 +498,8 @@ export default function DefensePrep() {
   const uploadedReview = state.uploadedProject?.reviewData
 
   // ── card state ────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab]         = useState('session')
+  const [hasHistory, setHasHistory]       = useState(false)
   const [hasSubmitted, setHasSubmitted]   = useState(false)
   const [section, setSection]             = useState(state.defenseSummary ? 'summary' : (state.redFlags ? 'flags' : 'input'))
   const [redFlags, setRedFlags]           = useState(state.redFlags || null)
@@ -586,6 +588,19 @@ export default function DefensePrep() {
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase is a module-level singleton; only section and projectId are true dependencies
   }, [section, projectId])
+
+  // Show "Past Sessions" tab if the user has at least one completed session for this project
+  useEffect(() => {
+    if (!projectId) return
+    supabase
+      .from('defense_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', projectId)
+      .eq('status', 'completed')
+      .limit(1)
+      .then(({ count }) => { if (count > 0) setHasHistory(true) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
 
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {
@@ -1225,6 +1240,7 @@ export default function DefensePrep() {
       }
 
       showToast('Defence session complete ✓')
+      setHasHistory(true)
 
       setVerdictLoading(false)
       setSummaryData(data)
