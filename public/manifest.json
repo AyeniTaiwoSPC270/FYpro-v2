@@ -2,6 +2,7 @@
   "short_name": "FYPro",
   "name": "FYPro — Your Final Year Companion",
   "description": "AI-powered final year project companion for Nigerian university students.",
+  "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -27,6 +28,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FYPro desktop — research companion for final year students"
+    },
+    {
+      "src": "/screenshots/screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "FYPro mobile — your final year companion"
     }
   ]
 }
