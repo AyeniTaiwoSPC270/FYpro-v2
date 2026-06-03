@@ -236,7 +236,7 @@ export default function Dashboard() {
         <DashTopBar STUDENT={STUDENT} onNewSession={handleNewSession} onToggleSidebar={handleToggleSidebar} />
         <AnnouncementBanner />
 
-        {!projectsLoading && projects.length > 0 && !state.stepsCompleted[0] && (
+        {!projectsLoading && !projectStateLoading && projects.length > 0 && !state.stepsCompleted[0] && (
           <div
             className="flex-shrink-0 flex items-center flex-wrap justify-between gap-2 px-4 md:px-8"
             style={{ background: 'rgba(245,158,11,0.06)', borderBottom: '1px solid rgba(245,158,11,0.18)', paddingTop: 10, paddingBottom: 10 }}
