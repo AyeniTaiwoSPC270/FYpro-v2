@@ -52,11 +52,12 @@ export function persistSnapshot(userId: string, userState: UserState): void {
     }
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot))
   } catch {
-    // localStorage quota or serialisation error — never affect UX
+    // silent
   }
 }
 
 export function patchSnapshotStep(
+  userId: string,
   stepType: string,
   resultJson: Record<string, unknown>
 ): void {
@@ -64,6 +65,8 @@ export function patchSnapshotStep(
     const raw = localStorage.getItem(SNAPSHOT_KEY)
     if (!raw) return
     const snapshot: OfflineSnapshot = JSON.parse(raw)
+    if (!snapshot || !Array.isArray(snapshot.steps)) return
+    if (snapshot.userId !== userId) return
     const idx = snapshot.steps.findIndex(s => s.step_type === stepType)
     if (idx !== -1) {
       snapshot.steps[idx] = { step_type: stepType, result_json: resultJson }
@@ -89,6 +92,7 @@ export function readSnapshot(userId: string): OfflineSnapshot | null {
     }
     return snapshot
   } catch {
+    // silent
     return null
   }
 }
