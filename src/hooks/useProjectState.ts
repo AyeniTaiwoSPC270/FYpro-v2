@@ -228,6 +228,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           setProjectId(null)
         }
 
+        // Always derive stepsCompleted from Supabase for authenticated users —
+        // prevents stale localStorage values bleeding through on refresh.
         const completed = [false, false, false, false, false, false]
         for (const step of userState.steps) {
           const key = STEP_TO_STATE[step.step_type]
@@ -247,6 +249,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           metaOnboarded: userRef.current?.user_metadata?.onboarding_completed === true,
         })
 
+        // Check if anonymous localStorage session exists but no Supabase project
         if (!userState.project) {
           const raw = localStorage.getItem('fypro_session')
           if (raw) {
