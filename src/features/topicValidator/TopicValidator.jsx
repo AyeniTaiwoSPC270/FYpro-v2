@@ -245,6 +245,10 @@ export default function TopicValidator() {
     setPushAsked(true)
     localStorage.setItem('fypro_push_asked', '1')
     try {
+      if (!import.meta.env.VITE_VAPID_PUBLIC_KEY) {
+        console.error('[push] VITE_VAPID_PUBLIC_KEY not configured')
+        return
+      }
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') return
       const reg = await navigator.serviceWorker.ready
@@ -287,6 +291,7 @@ export default function TopicValidator() {
     !pushAsked &&
     typeof window !== 'undefined' &&
     'Notification' in window &&
+    Notification.permission !== 'denied' &&
     'serviceWorker' in navigator
 
   // ── Render ────────────────────────────────────────────────────────────────

@@ -11,11 +11,17 @@ import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  'mailto:hello@fypro.com.ng',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-)
+function getWebPush() {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    throw new Error('[push] VAPID keys not configured')
+  }
+  webpush.setVapidDetails(
+    'mailto:hello@fypro.com.ng',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  )
+  return webpush
+}
 
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -1036,14 +1042,14 @@ async function handleSendNudges(req, res) {
             .select('*', { count: 'exact', head: true })
             .eq('user_id', sub.user_id)
 
-          if (defenseCount === 0) nudgeKey = 'defense_reminder'
+          if ((defenseCount ?? 0) === 0) nudgeKey = 'defense_reminder'
         }
       }
 
       if (!nudgeKey) { results.skipped++; continue }
 
       // Send the push notification
-      await webpush.sendNotification(
+      await getWebPush().sendNotification(
         sub.subscription,
         JSON.stringify(NUDGE_PAYLOADS[nudgeKey])
       )
@@ -1057,7 +1063,7 @@ async function handleSendNudges(req, res) {
       results.sent++
       console.log(`[nudges] sent ${nudgeKey} to ${sub.user_id}`)
     } catch (err) {
-      if (err.statusCode === 410) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
         // Subscription expired or revoked — clean up
         await supabaseAdmin
           .from('push_subscriptions')
@@ -1111,10 +1117,15 @@ async function handleUnsubscribe(req, res) {
   const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token)
   if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' })
 
-  await supabaseAdmin
+  const { error: delErr } = await supabaseAdmin
     .from('push_subscriptions')
     .delete()
     .eq('user_id', user.id)
+
+  if (delErr) {
+    console.error('[notify/unsubscribe] delete error:', delErr.message)
+    return res.status(500).json({ error: 'Failed to remove subscription' })
+  }
 
   return res.status(200).json({ ok: true })
 }
