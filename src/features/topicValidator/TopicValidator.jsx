@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { validateTopic, handleApiError, logFailure } from '../../services/api'
+import { validateTopic, handleApiError, logFailure, subscribePush } from '../../services/api'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -27,6 +27,15 @@ function countWords(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
 }
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const output = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i)
+  return output
+}
+
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
   const { saveStep, projectId } = useProjectState()
@@ -49,6 +58,7 @@ export default function TopicValidator() {
     restored ? (state.topicValidation?.refined_topic || '') : ''
   )
   const [typewriterActive, setTypewriterActive] = useState(false)
+  const [pushAsked, setPushAsked] = useState(() => !!localStorage.getItem('fypro_push_asked'))
 
   const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
 
@@ -230,6 +240,29 @@ export default function TopicValidator() {
     setSection('input')
   }
 
+  // ── Push permission ───────────────────────────────────────────────────────
+  async function handlePushAccept() {
+    setPushAsked(true)
+    localStorage.setItem('fypro_push_asked', '1')
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') return
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+      })
+      await subscribePush(sub.toJSON())
+    } catch (err) {
+      console.error('[push] subscribe failed:', err)
+    }
+  }
+
+  function handlePushDecline() {
+    setPushAsked(true)
+    localStorage.setItem('fypro_push_asked', '1')
+  }
+
   // ── Derived classes ───────────────────────────────────────────────────────
   const verdictCardClass = data ? ({
     'Researchable':     'tv-card--green',
@@ -247,6 +280,14 @@ export default function TopicValidator() {
     const key = (d || 'moderate').toLowerCase()
     return ['easy', 'moderate', 'challenging'].includes(key) ? key : 'moderate'
   }
+
+  const showPushCard =
+    section === 'result' &&
+    !restored &&
+    !pushAsked &&
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    'serviceWorker' in navigator
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -425,6 +466,24 @@ export default function TopicValidator() {
             </button>
 
             <FeedbackThumbs feature="topic_validator" contextId={projectId || undefined} />
+
+            {showPushCard && (
+              <div className="tv-push-card">
+                <div className="tv-push-card__icon">🔔</div>
+                <div className="tv-push-card__text">
+                  <strong>Stay on track</strong>
+                  <p>Get a nudge if you go quiet for a few days. Research projects stall — we'll remind you.</p>
+                </div>
+                <div className="tv-push-card__actions">
+                  <button className="tv-push-card__btn--yes" onClick={handlePushAccept}>
+                    Yes, remind me
+                  </button>
+                  <button className="tv-push-card__btn--no" onClick={handlePushDecline}>
+                    No thanks
+                  </button>
+                </div>
+              </div>
+            )}
 
             {data.verdict === 'Not Suitable' && data.alternatives?.length > 0 && (
               <div id="tv-alternatives" className="tv-alternatives tv-section--visible">
