@@ -165,7 +165,7 @@ export default function PastSessions({ projectId }) {
                   <p style={{
                     fontFamily: "'Poppins', sans-serif",
                     fontSize: '0.8rem',
-                    color: 'rgba(255,255,255,0.35)',
+                    color: theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'var(--color-text-muted)',
                     margin: 0,
                   }}>
                     Transcript not available for this session.

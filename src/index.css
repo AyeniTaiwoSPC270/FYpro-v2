@@ -11752,3 +11752,10 @@ html {
   color: var(--color-text-muted);
   border-color: var(--color-border);
 }
+
+[data-theme="light"] .dp-history-turn__question .dp-history-turn__text,
+.light .dp-history-turn__question .dp-history-turn__text {
+  color: #1D4ED8;
+  background: rgba(59, 130, 246, 0.06);
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
