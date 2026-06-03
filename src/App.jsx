@@ -8,6 +8,7 @@ import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
+import PWAInstallPrompt from './components/PWAInstallPrompt'
 import {
   AuthPageSkeleton,
   PublicPageSkeleton,
@@ -108,6 +109,7 @@ export default function App() {
         <RouteProgressBar />
         <ToastProvider />
         <CookieBanner />
+        <PWAInstallPrompt />
         <Suspense fallback={null}>
           <AppRoutes />
         </Suspense>
