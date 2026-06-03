@@ -114,7 +114,7 @@ function StepLoadingSkeleton() {
 export default function AppShell() {
   const navigate = useNavigate()
   const { state, navigateStep, isOnboarded, onboardingResolved } = useApp()
-  const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration } = useProjectState()
+  const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration, isOfflineMode } = useProjectState()
 
   useEffect(() => {
     if (isLoading) return
@@ -196,7 +196,7 @@ export default function AppShell() {
     <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }}>
 
       {/* ── Offline / sync indicator ────────────────────────────────────────── */}
-      <OfflineBanner />
+      <OfflineBanner isOfflineMode={isOfflineMode} />
 
       {/* ── Anonymous session migration modal ───────────────────────────────── */}
       <AnimatePresence>
