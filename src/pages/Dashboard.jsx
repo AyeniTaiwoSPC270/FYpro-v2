@@ -16,6 +16,7 @@ import PaymentIssueModal from '../components/PaymentIssueModal'
 import Spinner from '../components/Spinner'
 import BadgeRow from '../components/badges/BadgeRow'
 import Footer from '../components/Footer'
+import { DashboardPageSkeleton } from '../components/skeletons/PageSkeletons'
 
 import { buildSteps, ShieldIcon, ArrowRightIcon } from '../features/dashboard/_shared'
 import DashSidebar from '../features/dashboard/DashSidebar'
@@ -220,6 +221,8 @@ export default function Dashboard() {
       setDeleting(false)
     }
   }
+
+  if (projectStateLoading || projectsLoading) return <DashboardPageSkeleton />
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
