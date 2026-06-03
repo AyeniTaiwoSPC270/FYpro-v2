@@ -36,6 +36,7 @@ import CertificateUnlock from '../../components/defense/CertificateUnlock'
 import { supabase } from '../../lib/supabase'
 import { trackEvent } from '../../lib/analytics'
 import Sentry from '../../lib/sentry'
+import PastSessions from './PastSessions'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -1444,189 +1445,213 @@ export default function DefensePrep() {
       {/* ── Card ─────────────────────────────────────────────────────────── */}
       <div className="dp-card" id="dp-card">
 
-        {/* Input section */}
-        <div
-          id="dp-input-section"
-          className={`dp-input-section ${section === 'input' ? 'dp-section--visible' : 'dp-section--hidden'}`}
-        >
-          <button className="fy-back-btn" onClick={() => navigateStep(4)}>
-            ← Back to Project Reviewer
-          </button>
-
-          {/* Pre-session empty state */}
-          <div
-            style={{
-              background: 'var(--color-bg-deep)',
-              minHeight: '400px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '48px 32px',
-              textAlign: 'center',
-              borderRadius: '16px',
-              marginTop: '16px',
-            }}
-          >
-            {/* Shield icon */}
-            <div style={{ marginBottom: '24px', opacity: 0.9 }}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width={52} height={52} fill="#0066FF" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 16px rgba(0,102,255,0.5))' }}>
-                <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z" />
-              </svg>
-            </div>
-
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.75rem', color: 'var(--color-text-white)', marginBottom: '12px', lineHeight: 1.2 }}>
-              Defense Simulator
-            </h2>
-            <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', color: 'var(--color-text-white-dim)', maxWidth: '420px', lineHeight: 1.7, marginBottom: '32px' }}>
-              Face a three-examiner panel before the real thing. Each session adapts to your answers — exposing gaps before they cost you marks.
-            </p>
-
-            {/* Three examiner personas */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '36px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {[
-                { name: 'The Methodologist', desc: 'Challenges your research design' },
-                { name: 'The Subject Expert', desc: 'Tests your domain knowledge' },
-                { name: 'The External Examiner', desc: 'Questions originality & contribution' },
-              ].map((examiner) => (
-                <div
-                  key={examiner.name}
-                  style={{
-                    background: 'rgba(0,102,255,0.08)',
-                    border: '1px solid rgba(0,102,255,0.2)',
-                    borderRadius: '10px',
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    minWidth: '160px',
-                  }}
-                >
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#3B82F6', fontWeight: 600, marginBottom: '4px' }}>
-                    {examiner.name}
-                  </div>
-                  <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
-                    {examiner.desc}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Start button — scans for red flags then enters defense flow */}
-            {scanError && (
-              <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', color: '#F87171', marginBottom: '16px', maxWidth: '380px', lineHeight: 1.5 }}>
-                {scanError}
-              </p>
-            )}
+        {/* Tab bar — only shown once the user has at least one completed session */}
+        {hasHistory && (
+          <div className="dp-tab-bar">
             <button
-              onClick={startRedFlagScan}
-              disabled={isScanning || rfOverLimit}
-              style={{
-                background: rfOverLimit ? 'rgba(0,102,255,0.35)' : 'var(--color-blue-primary)',
-                color: 'var(--color-text-white)',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px 32px',
-                cursor: (isScanning || rfOverLimit) ? 'not-allowed' : 'pointer',
-                opacity: (isScanning || rfOverLimit) ? 0.6 : 1,
-                boxShadow: '0 0 24px rgba(0,102,255,0.35)',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                if (!isScanning && !rfOverLimit) {
-                  e.currentTarget.style.boxShadow = '0 0 32px rgba(0,102,255,0.55)'
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                }
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.boxShadow = '0 0 24px rgba(0,102,255,0.35)'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
+              className={`dp-tab${activeTab === 'session' ? ' dp-tab--active' : ''}`}
+              onClick={() => setActiveTab('session')}
             >
-              {isScanning ? 'Scanning for vulnerabilities…' : 'Start Simulation'}
+              New Session
             </button>
-            {rfOverLimit && (
-              <p style={{ fontFamily: 'Poppins, sans-serif', color: '#F87171', fontSize: '0.78rem', marginTop: '12px' }}>
-                You've reached your limit for this feature. Start a new project or upgrade your plan.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Loading section */}
-        {section === 'loading' && hasSubmitted && (
-          <div id="dp-loading-section" className="dp-loading-section dp-section--visible">
-            <div className="skeleton-loader">
-              <div className="skeleton-bar" style={{ width: '100%' }} />
-              <div className="skeleton-bar" style={{ width: '75%' }} />
-              <div className="skeleton-bar" style={{ width: '90%' }} />
-              <div className="skeleton-bar" style={{ width: '60%' }} />
-            </div>
-            <p className="dp-step-label">Step 6: Defence Prep</p>
-            <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
+            <button
+              className={`dp-tab${activeTab === 'history' ? ' dp-tab--active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              Past Sessions
+            </button>
           </div>
         )}
 
-        {/* Flags section — visible while reviewing flags OR as context above the summary */}
-        <div
-          id="dp-flags-section"
-          className={`dp-flags-section ${(section === 'flags' || (section === 'summary' && redFlags && redFlags.length > 0)) ? 'dp-section--visible' : 'dp-section--hidden'}`}
-        >
-          <p className="dp-flags-header">Project Vulnerabilities Detected</p>
-          <div id="dp-flags-list">
-            {(redFlags || []).map((flag, idx) => (
-              <FlagItem key={idx} flag={flag} visible={visibleFlags.includes(idx)} />
-            ))}
-          </div>
-        </div>
+        {activeTab === 'session' ? (
+          <>
+            {/* Input section */}
+            <div
+              id="dp-input-section"
+              className={`dp-input-section ${section === 'input' ? 'dp-section--visible' : 'dp-section--hidden'}`}
+            >
+              <button className="fy-back-btn" onClick={() => navigateStep(4)}>
+                ← Back to Project Reviewer
+              </button>
 
-        {/* Buttons section */}
-        <div
-          id="dp-buttons-section"
-          className={`dp-buttons-section ${(section === 'flags' && buttonsVisible) ? 'dp-section--visible' : 'dp-section--hidden'}`}
-        >
-          <button
-            id="dp-btn-enter-defense"
-            className="dp-btn-enter-defense"
-            onClick={enterDefenseMode}
-            disabled={dsOverLimit}
-            style={dsOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-          >
-            Enter Defence Mode
-          </button>
-          {dsOverLimit && (
-            <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
-              You've reached your limit for this feature. Start a new project or upgrade your plan.
-            </p>
-          )}
-          <button
-            id="dp-btn-go-back"
-            className="dp-btn-go-back"
-            onClick={handleGoBackAndRevise}
-          >
-            Go Back and Revise
-          </button>
-          <button className="fy-back-btn" onClick={() => navigateStep(4)}>
-            ← Back to Project Reviewer
-          </button>
-        </div>
+              {/* Pre-session empty state */}
+              <div
+                style={{
+                  background: 'var(--color-bg-deep)',
+                  minHeight: '400px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '48px 32px',
+                  textAlign: 'center',
+                  borderRadius: '16px',
+                  marginTop: '16px',
+                }}
+              >
+                {/* Shield icon */}
+                <div style={{ marginBottom: '24px', opacity: 0.9 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width={52} height={52} fill="#0066FF" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 16px rgba(0,102,255,0.5))' }}>
+                    <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z" />
+                  </svg>
+                </div>
 
-        {/* Persisted summary section — shown on remount if defenseSummary exists */}
-        <div
-          id="dp-persisted-summary-section"
-          className={section === 'summary' ? 'dp-section--visible' : 'dp-section--hidden'}
-        >
-          {summaryData && (
-            <SummaryCard
-              data={summaryData}
-              onClose={handleCloseSummary}
-              projectId={projectId}
-              topic={state.validatedTopic || ''}
-              defenseSessionId={defenseSessionId}
-            />
-          )}
-        </div>
+                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.75rem', color: 'var(--color-text-white)', marginBottom: '12px', lineHeight: 1.2 }}>
+                  Defense Simulator
+                </h2>
+                <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', color: 'var(--color-text-white-dim)', maxWidth: '420px', lineHeight: 1.7, marginBottom: '32px' }}>
+                  Face a three-examiner panel before the real thing. Each session adapts to your answers — exposing gaps before they cost you marks.
+                </p>
+
+                {/* Three examiner personas */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '36px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {[
+                    { name: 'The Methodologist', desc: 'Challenges your research design' },
+                    { name: 'The Subject Expert', desc: 'Tests your domain knowledge' },
+                    { name: 'The External Examiner', desc: 'Questions originality & contribution' },
+                  ].map((examiner) => (
+                    <div
+                      key={examiner.name}
+                      style={{
+                        background: 'rgba(0,102,255,0.08)',
+                        border: '1px solid rgba(0,102,255,0.2)',
+                        borderRadius: '10px',
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        minWidth: '160px',
+                      }}
+                    >
+                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#3B82F6', fontWeight: 600, marginBottom: '4px' }}>
+                        {examiner.name}
+                      </div>
+                      <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                        {examiner.desc}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Start button */}
+                {scanError && (
+                  <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem', color: '#F87171', marginBottom: '16px', maxWidth: '380px', lineHeight: 1.5 }}>
+                    {scanError}
+                  </p>
+                )}
+                <button
+                  onClick={startRedFlagScan}
+                  disabled={isScanning || rfOverLimit}
+                  style={{
+                    background: rfOverLimit ? 'rgba(0,102,255,0.35)' : 'var(--color-blue-primary)',
+                    color: 'var(--color-text-white)',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 32px',
+                    cursor: (isScanning || rfOverLimit) ? 'not-allowed' : 'pointer',
+                    opacity: (isScanning || rfOverLimit) ? 0.6 : 1,
+                    boxShadow: '0 0 24px rgba(0,102,255,0.35)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={e => {
+                    if (!isScanning && !rfOverLimit) {
+                      e.currentTarget.style.boxShadow = '0 0 32px rgba(0,102,255,0.55)'
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.boxShadow = '0 0 24px rgba(0,102,255,0.35)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
+                >
+                  {isScanning ? 'Scanning for vulnerabilities…' : 'Start Simulation'}
+                </button>
+                {rfOverLimit && (
+                  <p style={{ fontFamily: 'Poppins, sans-serif', color: '#F87171', fontSize: '0.78rem', marginTop: '12px' }}>
+                    You've reached your limit for this feature. Start a new project or upgrade your plan.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Loading section */}
+            {section === 'loading' && hasSubmitted && (
+              <div id="dp-loading-section" className="dp-loading-section dp-section--visible">
+                <div className="skeleton-loader">
+                  <div className="skeleton-bar" style={{ width: '100%' }} />
+                  <div className="skeleton-bar" style={{ width: '75%' }} />
+                  <div className="skeleton-bar" style={{ width: '90%' }} />
+                  <div className="skeleton-bar" style={{ width: '60%' }} />
+                </div>
+                <p className="dp-step-label">Step 6: Defence Prep</p>
+                <LoadingMessages messages={GENERIC_LOADING_MESSAGES} />
+              </div>
+            )}
+
+            {/* Flags section — visible while reviewing flags OR as context above the summary */}
+            <div
+              id="dp-flags-section"
+              className={`dp-flags-section ${(section === 'flags' || (section === 'summary' && redFlags && redFlags.length > 0)) ? 'dp-section--visible' : 'dp-section--hidden'}`}
+            >
+              <p className="dp-flags-header">Project Vulnerabilities Detected</p>
+              <div id="dp-flags-list">
+                {(redFlags || []).map((flag, idx) => (
+                  <FlagItem key={idx} flag={flag} visible={visibleFlags.includes(idx)} />
+                ))}
+              </div>
+            </div>
+
+            {/* Buttons section */}
+            <div
+              id="dp-buttons-section"
+              className={`dp-buttons-section ${(section === 'flags' && buttonsVisible) ? 'dp-section--visible' : 'dp-section--hidden'}`}
+            >
+              <button
+                id="dp-btn-enter-defense"
+                className="dp-btn-enter-defense"
+                onClick={enterDefenseMode}
+                disabled={dsOverLimit}
+                style={dsOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              >
+                Enter Defence Mode
+              </button>
+              {dsOverLimit && (
+                <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
+                  You've reached your limit for this feature. Start a new project or upgrade your plan.
+                </p>
+              )}
+              <button
+                id="dp-btn-go-back"
+                className="dp-btn-go-back"
+                onClick={handleGoBackAndRevise}
+              >
+                Go Back and Revise
+              </button>
+              <button className="fy-back-btn" onClick={() => navigateStep(4)}>
+                ← Back to Project Reviewer
+              </button>
+            </div>
+
+            {/* Persisted summary section — shown on remount if defenseSummary exists */}
+            <div
+              id="dp-persisted-summary-section"
+              className={section === 'summary' ? 'dp-section--visible' : 'dp-section--hidden'}
+            >
+              {summaryData && (
+                <SummaryCard
+                  data={summaryData}
+                  onClose={handleCloseSummary}
+                  projectId={projectId}
+                  topic={state.validatedTopic || ''}
+                  defenseSessionId={defenseSessionId}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          projectId && <PastSessions projectId={projectId} />
+        )}
       </div>
 
       {/* ── Defence overlay (React portal over document.body) ─────────────── */}
