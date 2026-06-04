@@ -30,6 +30,7 @@ async function getAccessToken() {
 }
 
 async function callClaude(step, messages, maxTokens = 2000, extraParams = {}) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -100,6 +101,7 @@ async function callClaude(step, messages, maxTokens = 2000, extraParams = {}) {
 
 // Calls /api/research?action=validate — passes raw topic for paper fetching
 async function callTopicValidator(messages, topic) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -157,6 +159,7 @@ async function callTopicValidator(messages, topic) {
 
 // Calls /api/research?action=lit-map — passes topic for real-paper fetching; handles no_papers_found
 async function callLiteratureMap(messages, topic) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -219,6 +222,7 @@ async function callLiteratureMap(messages, topic) {
 
 // Auth-aware variant — attaches user JWT so server can verify entitlement
 async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -279,6 +283,7 @@ async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
 }
 
 async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000, extra = {}) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -507,6 +512,7 @@ export async function panelSummary(system, apiMessages) {
 
 // ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────
 export async function prepareSupervisorMeeting(stage, lastFeedback, stuckOn) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   if (!token) {
     const err = new Error('Session expired');
@@ -576,6 +582,10 @@ export function clearRateLimitCountdown() {
 }
 
 export function handleApiError(err, showError) {
+  if (err.code === 'OFFLINE') {
+    showError("You're offline. Connect to generate new content.")
+    return true
+  }
   if (err.code === 'NO_PAPERS') {
     showError(err.message);
     return true;
