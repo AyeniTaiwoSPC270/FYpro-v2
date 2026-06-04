@@ -226,8 +226,11 @@ function sanitizeOutbound(topic) {
 
 function sanitizeString(value, maxLen) {
   if (value == null) return null;
-  const str = String(value)
-    .replace(/<[^>]*>/g, '')
+  // Loop until stable — handles nested/malformed tag patterns in API responses
+  let str = String(value);
+  let prev;
+  do { prev = str; str = str.replace(/<[^>]*>/g, ''); } while (str !== prev);
+  str = str
     .replace(/[\x00-\x1F\x7F]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

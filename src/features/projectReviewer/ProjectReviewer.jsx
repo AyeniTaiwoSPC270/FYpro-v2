@@ -147,7 +147,7 @@ function extractDOCX(file) {
         if (xmlText) {
           const wTMatches = xmlText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
           const extracted = wTMatches
-            .map(m => m.replace(/<[^>]+>/g, ''))
+            .map(m => { const inner = m.match(/<w:t[^>]*>([^<]*)<\/w:t>/); return inner ? inner[1] : '' })
             .filter(s => s.trim().length > 0)
             .join(' ')
 
@@ -177,7 +177,7 @@ function extractDOCX(file) {
 
         const wTMatches2 = rawText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
         const extracted2 = wTMatches2
-          .map(m => m.replace(/<[^>]+>/g, ''))
+          .map(m => { const inner = m.match(/<w:t[^>]*>([^<]*)<\/w:t>/); return inner ? inner[1] : '' })
           .filter(s => s.trim().length > 0)
           .join(' ')
 
