@@ -30,6 +30,13 @@ registerRoute(
   })
 )
 
+// Activate waiting SW immediately when the app requests an update
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
 // Push event: parse the JSON payload and show a system notification
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {}

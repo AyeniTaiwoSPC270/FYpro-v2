@@ -99,7 +99,7 @@ export default function PWAInstallPrompt() {
           <span>New version available</span>
           <button
             className="pwa-update-toast__reload"
-            onClick={() => updateServiceWorker()}
+            onClick={() => updateServiceWorker(true)}
           >
             Reload
           </button>
