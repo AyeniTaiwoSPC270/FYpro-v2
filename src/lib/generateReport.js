@@ -32,44 +32,44 @@ export function esc(str) {
 
 export function badge(text, color) {
   if (!text) return ''
-  return `<span style="display:inline-block;background:${color};color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:1px;flex-shrink:0;">${esc(text)}</span>`
+  return `<span style="display:inline-block;background:${color};color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:1px;flex-shrink:0;">${esc(text)}</span>`
 }
 
 export function bodyText(text) {
   if (!text) return ''
-  return `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;font-weight:400;color:#374151;line-height:1.6;margin:4px 0;">${esc(text)}</p>`
+  return `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:400;color:#374151;line-height:1.6;margin:4px 0;">${esc(text)}</p>`
 }
 
 export function bulletList(items, color = '#374151') {
   if (!items?.length) return ''
   return items.map(item => `
-    <div style="display:flex;gap:8px;margin:3px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:${color};line-height:1.6;">
-      <span style="color:#0066FF;font-size:12px;line-height:1;margin-top:1px;flex-shrink:0;">•</span>
+    <div style="display:flex;gap:8px;margin:3px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:${color};line-height:1.6;">
+      <span style="color:#0066FF;font-size:15px;line-height:1;margin-top:1px;flex-shrink:0;">•</span>
       <span>${esc(String(item))}</span>
     </div>`).join('')
 }
 
 export function subsectionLabel(text, color = '#6B7280') {
-  return `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:7.5px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 5px 0;">${esc(text)}</p>`
+  return `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 5px 0;">${esc(text)}</p>`
 }
 
 export function warningBox(label, text) {
   if (!text) return ''
   return `<div style="background:#FFF7ED;border-left:3px solid #F59E0B;border-radius:0 5px 5px 0;padding:6px 10px;margin:8px 0;">
-    <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:700;color:#92400E;">${esc(label)} </span>
-    <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#92400E;line-height:1.5;">${esc(text)}</span>
+    <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:700;color:#92400E;">${esc(label)} </span>
+    <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#92400E;line-height:1.5;">${esc(text)}</span>
   </div>`
 }
 
 export function infoBox(text) {
   if (!text) return ''
-  return `<div style="background:#EFF6FF;border-left:3px solid #0066FF;border-radius:0 5px 5px 0;padding:8px 12px;margin:8px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#1E40AF;line-height:1.6;">${esc(text)}</div>`
+  return `<div style="background:#EFF6FF;border-left:3px solid #0066FF;border-radius:0 5px 5px 0;padding:8px 12px;margin:8px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#1E40AF;line-height:1.6;">${esc(text)}</div>`
 }
 
 export function kvRow(label, value) {
   if (!value) return ''
-  return `<div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;line-height:1.5;">
-    <span style="font-weight:700;color:#6B7280;text-transform:uppercase;font-size:7.5px;letter-spacing:0.5px;min-width:100px;padding-top:1px;">${esc(label)}</span>
+  return `<div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;">
+    <span style="font-weight:700;color:#6B7280;text-transform:uppercase;font-size:10px;letter-spacing:0.5px;min-width:100px;padding-top:1px;">${esc(label)}</span>
     <span style="color:#0D1B2A;font-weight:400;">${esc(value)}</span>
   </div>`
 }
@@ -97,8 +97,8 @@ export function buildHeader(state, logoDataUrl) {
   const studentLine = [state.name, state.department, state.level, state.university].filter(Boolean).join(' · ')
 
   const logoHTML = logoDataUrl
-    ? `<img src="${logoDataUrl}" style="height:22px;width:auto;display:block;" alt="FYPro">`
-    : `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:13px;font-weight:800;color:#FFFFFF;letter-spacing:1px;">FYPro</span>`
+    ? `<img src="${logoDataUrl}" style="height:28px;width:auto;display:block;" alt="FYPro">`
+    : `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:16px;font-weight:800;color:#FFFFFF;letter-spacing:1px;">FYPro</span>`
 
   return `
     <div style="background:linear-gradient(135deg,#0066FF 0%,#1E40AF 100%);padding:20px 24px 18px;position:relative;overflow:hidden;">
@@ -110,15 +110,15 @@ export function buildHeader(state, logoDataUrl) {
         <div style="flex:1;max-width:65%;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
             ${logoHTML}
-            <span style="color:rgba(255,255,255,0.35);font-size:11px;">·</span>
-            <span style="color:rgba(255,255,255,0.55);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Progress Report</span>
+            <span style="color:rgba(255,255,255,0.35);font-size:14px;">·</span>
+            <span style="color:rgba(255,255,255,0.55);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Progress Report</span>
           </div>
-          ${topic ? `<div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:13px;font-weight:700;line-height:1.45;margin-bottom:9px;">${esc(topic)}</div>` : ''}
-          ${studentLine ? `<div style="color:rgba(255,255,255,0.7);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;font-weight:500;">${esc(studentLine)}</div>` : ''}
+          ${topic ? `<div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:16px;font-weight:700;line-height:1.45;margin-bottom:9px;">${esc(topic)}</div>` : ''}
+          ${studentLine ? `<div style="color:rgba(255,255,255,0.7);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:500;">${esc(studentLine)}</div>` : ''}
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:16px;">
-          <div style="background:#16A34A;color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:1.5px;margin-bottom:6px;display:inline-block;">${completed} / 6 COMPLETE</div>
-          <div style="color:rgba(255,255,255,0.4);font-family:'JetBrains Mono','Courier New',monospace;font-size:7.5px;display:block;">${esc(dateStr)}</div>
+          <div style="background:#16A34A;color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:1.5px;margin-bottom:6px;display:inline-block;">${completed} / 6 COMPLETE</div>
+          <div style="color:rgba(255,255,255,0.4);font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;display:block;">${esc(dateStr)}</div>
         </div>
       </div>
     </div>`
@@ -140,10 +140,10 @@ export function buildFooter(dateStr) {
   return `
     <div style="background:#060E18;padding:10px 24px;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:700;color:rgba(255,255,255,0.6);">FYPro</span>
-        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:rgba(255,255,255,0.35);">fypro.com.ng</span>
+        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);">FYPro</span>
+        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:rgba(255,255,255,0.35);">fypro.com.ng</span>
       </div>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:8px;color:#7ab8ff;">${esc(dateStr)}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#7ab8ff;">${esc(dateStr)}</span>
     </div>`
 }
 
@@ -160,10 +160,10 @@ export function buildStep1(state) {
 
   const inner = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 1 · ${c.name}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 1 · ${c.name}</span>
       ${verdict ? badge(verdict.toUpperCase(), vColor) : ''}
     </div>
-    ${topic ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:700;color:#0D1B2A;line-height:1.5;margin-bottom:4px;">${esc(topic)}</div>` : ''}
+    ${topic ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;line-height:1.5;margin-bottom:4px;">${esc(topic)}</div>` : ''}
     ${tv?.verdict_reason ? bodyText(tv.verdict_reason) : ''}`
 
   return buildStepCard(0, inner)
@@ -180,15 +180,15 @@ export function buildStep2(state) {
 
   const chapRows = cs.chapters?.length ? cs.chapters.map(ch => `
     <div style="display:flex;align-items:center;gap:10px;background:rgba(8,145,178,0.06);border-radius:4px;padding:5px 8px;margin:2px 0;">
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;font-weight:700;color:${c.border};min-width:26px;">Ch.${esc(String(ch.number))}</span>
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#0D1B2A;flex:1;font-weight:500;">${esc(ch.title || '')}</span>
-      ${ch.word_count_target ? `<span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;color:#9CA3AF;white-space:nowrap;">${ch.word_count_target.toLocaleString()} wds</span>` : ''}
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:${c.border};min-width:26px;">Ch.${esc(String(ch.number))}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#0D1B2A;flex:1;font-weight:500;">${esc(ch.title || '')}</span>
+      ${ch.word_count_target ? `<span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;color:#9CA3AF;white-space:nowrap;">${ch.word_count_target.toLocaleString()} wds</span>` : ''}
     </div>`).join('') : ''
 
   const inner = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 2 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:8px;color:#6B7280;">${totalCh} chapters · ${totalWords} words</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 2 · ${c.name}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;">${totalCh} chapters · ${totalWords} words</span>
     </div>
     ${cs.structure_note ? bodyText(cs.structure_note) : ''}
     ${chapRows ? `<div style="margin-top:4px;">${chapRows}</div>` : ''}`
@@ -206,9 +206,9 @@ export function buildStep3(state) {
 
   const inner = `
     <div style="margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 3 · ${c.name}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 3 · ${c.name}</span>
     </div>
-    ${state.chosenMethodology ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:10.5px;font-weight:700;color:#0D1B2A;margin-bottom:5px;">${esc(state.chosenMethodology)}</div>` : ''}
+    ${state.chosenMethodology ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;margin-bottom:5px;">${esc(state.chosenMethodology)}</div>` : ''}
     ${ma?.recommended_reason ? bodyText(ma.recommended_reason) : ''}
     ${chosen?.data_collection?.length ? `${subsectionLabel('Data Collection')}${bulletList(chosen.data_collection)}` : ''}
     ${ma?.watch_out ? warningBox('Examiner watch-out:', ma.watch_out) : ''}`
@@ -233,20 +233,20 @@ export function buildStep4(state) {
     const txtCol    = isSpecial ? '#DC2626'              : '#374151'
     const focus     = (wk.focus || '').replace(/^This week you are (writing|reviewing|preparing|formatting|finalising)\s*/i, '')
     return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:${bg};border-radius:4px;margin:2px 0;">
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;font-weight:700;color:${numCol};min-width:30px;">Wk ${esc(String(wk.week_number))}</span>
-      ${wk.dates ? `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:7px;color:#6B7280;min-width:80px;flex-shrink:0;">${esc(wk.dates)}</span>` : ''}
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:${txtCol};flex:1;">${esc(focus)}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:${numCol};min-width:30px;">Wk ${esc(String(wk.week_number))}</span>
+      ${wk.dates ? `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:10px;color:#6B7280;min-width:80px;flex-shrink:0;">${esc(wk.dates)}</span>` : ''}
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:${txtCol};flex:1;">${esc(focus)}</span>
     </div>`
   }).join('') : ''
 
   const inner = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 4 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:8px;color:#6B7280;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 4 · ${c.name}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
     </div>
     ${wp.weekly_average ? kvRow('Weekly avg', `${wp.weekly_average.toLocaleString()} words / week`) : ''}
     ${weekRows ? `<div style="margin-top:4px;">${weekRows}</div>` : ''}
-    ${wp.weeks && wp.weeks.length > 10 ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#9CA3AF;margin:4px 0 0 8px;">+ ${wp.weeks.length - 10} more weeks</p>` : ''}`
+    ${wp.weeks && wp.weeks.length > 10 ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#9CA3AF;margin:4px 0 0 8px;">+ ${wp.weeks.length - 10} more weeks</p>` : ''}`
 
   return buildStepCard(3, inner)
 }
@@ -264,7 +264,7 @@ export function buildStep5(state) {
 
   const inner = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 5 · ${c.name}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 5 · ${c.name}</span>
       ${rd?.grade ? badge(`${rd.grade.toUpperCase()}${rd.score_estimate ? ' — ' + rd.score_estimate : ''}`, gColor) : ''}
     </div>
     ${up.fileName ? kvRow('Document', up.fileName) : ''}
@@ -303,19 +303,19 @@ export function buildStep6(state) {
     const fBg    = sev === 'Critical' ? '#FFF5F5' : sev === 'Serious' ? '#FFFBEB' : '#F8FAFC'
     return `<div style="background:${fBg};border-left:3px solid ${fColor};border-radius:0 5px 5px 0;padding:7px 10px;margin:4px 0;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-        <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:6.5px;font-weight:700;color:${fColor};letter-spacing:1px;">${esc(sev?.toUpperCase())}</span>
-        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;font-weight:700;color:#0D1B2A;">${esc(flag.title || '')}</span>
+        <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:9px;font-weight:700;color:${fColor};letter-spacing:1px;">${esc(sev?.toUpperCase())}</span>
+        <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:700;color:#0D1B2A;">${esc(flag.title || '')}</span>
       </div>
-      ${flag.advice ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#374151;margin:0;line-height:1.5;">${esc(flag.advice)}</p>` : ''}
+      ${flag.advice ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#374151;margin:0;line-height:1.5;">${esc(flag.advice)}</p>` : ''}
     </div>`
   }).join('') : ''
 
   const inner = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 6 · ${c.name}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 6 · ${c.name}</span>
       ${ds?.panel_score !== undefined ? badge(`${ds.panel_score} / 10${ds.panel_score_label ? ' — ' + ds.panel_score_label : ''}`, sColor) : ''}
     </div>
-    ${ds?.panel_verdict ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#374151;font-style:italic;margin:0 0 8px 0;line-height:1.6;">"${esc(ds.panel_verdict)}"</p>` : ''}
+    ${ds?.panel_verdict ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#374151;font-style:italic;margin:0 0 8px 0;line-height:1.6;">"${esc(ds.panel_verdict)}"</p>` : ''}
     ${flagsHTML ? `${subsectionLabel('Red Flags')}${flagsHTML}` : ''}
     ${ds?.strengths?.length ? `${subsectionLabel('Demonstrated Strengths', '#16A34A')}${bulletList(ds.strengths)}` : ''}
     ${ds?.gaps?.length      ? `${subsectionLabel('Gaps to Address', '#F59E0B')}${bulletList(ds.gaps)}` : ''}
@@ -332,7 +332,7 @@ function companionCard(labelSuffix, body) {
   return `
     <div style="background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <div style="${COMPANION_INNER}">
-        <div style="margin-bottom:8px;"><span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:#0891B2;letter-spacing:2px;text-transform:uppercase;">Companion — ${esc(labelSuffix)}</span></div>
+        <div style="margin-bottom:8px;"><span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:#0891B2;letter-spacing:2px;text-transform:uppercase;">Companion — ${esc(labelSuffix)}</span></div>
         ${body}
       </div>
     </div>`
@@ -346,12 +346,12 @@ export function buildLiteratureMap(state) {
 
   const thematicHTML = lm.thematic_areas?.length ? lm.thematic_areas.map(area => `
     <div style="background:rgba(8,145,178,0.06);border-radius:4px;padding:8px 10px;margin:4px 0;">
-      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;font-weight:700;color:#0D1B2A;margin:0 0 3px 0;">${esc(area.theme || '')}</p>
-      ${area.search_terms?.length ? `<p style="font-family:'JetBrains Mono','Courier New',monospace;font-size:8px;color:#0891B2;margin:0;">${area.search_terms.map(t => esc(t)).join(' · ')}</p>` : ''}
+      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:700;color:#0D1B2A;margin:0 0 3px 0;">${esc(area.theme || '')}</p>
+      ${area.search_terms?.length ? `<p style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#0891B2;margin:0;">${area.search_terms.map(t => esc(t)).join(' · ')}</p>` : ''}
     </div>`).join('') : ''
 
   const sourceHTML = lm.source_types?.length ? lm.source_types.map(src => `
-    <div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;line-height:1.5;">
+    <div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;">
       <span style="font-weight:700;color:#0891B2;min-width:120px;flex-shrink:0;">${esc(src.type || '')}</span>
       <span style="color:#374151;flex:1;">${esc(src.rationale || '')}${src.access ? ' · ' + esc(src.access) : ''}</span>
     </div>`).join('') : ''
@@ -361,8 +361,8 @@ export function buildLiteratureMap(state) {
       ? p.authors.slice(0, 3).join(', ') + (p.authors.length > 3 ? ' et al.' : '')
       : ''
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(13,27,42,0.06);">
-      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;font-weight:600;color:#0D1B2A;margin:0 0 2px 0;line-height:1.4;">${esc(p.title || '')}</p>
-      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#6B7280;margin:0;">${authors ? esc(authors) : ''}${p.year ? ' · ' + esc(String(p.year)) : ''}${p.doi ? ' · doi:' + esc(p.doi) : ''}</p>
+      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:600;color:#0D1B2A;margin:0 0 2px 0;line-height:1.4;">${esc(p.title || '')}</p>
+      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#6B7280;margin:0;">${authors ? esc(authors) : ''}${p.year ? ' · ' + esc(String(p.year)) : ''}${p.doi ? ' · doi:' + esc(p.doi) : ''}</p>
     </div>`
   }).join('') : ''
 
@@ -405,19 +405,19 @@ export function buildInstrumentBuilder(state) {
 
   const sectionsHTML = ib.sections?.length ? ib.sections.map(sec => `
     <div style="margin:12px 0;">
-      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:700;color:#0D1B2A;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px 0;border-bottom:1px solid rgba(13,27,42,0.08);padding-bottom:4px;">${esc(sec.section_title || '')}</p>
+      <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:700;color:#0D1B2A;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px 0;border-bottom:1px solid rgba(13,27,42,0.08);padding-bottom:4px;">${esc(sec.section_title || '')}</p>
       ${sec.questions?.length ? sec.questions.map(q => `
         <div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid rgba(13,27,42,0.04);">
-          <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:7px;font-weight:700;color:#0891B2;min-width:24px;flex-shrink:0;padding-top:2px;">Q${esc(String(q.number || ''))}</span>
+          <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;color:#0891B2;min-width:24px;flex-shrink:0;padding-top:2px;">Q${esc(String(q.number || ''))}</span>
           <div style="flex:1;">
-            <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#0D1B2A;margin:0 0 2px 0;line-height:1.5;">${esc(q.text || '')}</p>
-            <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#6B7280;margin:0;font-style:italic;">${esc(q.type || '')}${q.scale ? ' · ' + esc(q.scale) : ''}</p>
+            <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#0D1B2A;margin:0 0 2px 0;line-height:1.5;">${esc(q.text || '')}</p>
+            <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#6B7280;margin:0;font-style:italic;">${esc(q.type || '')}${q.scale ? ' · ' + esc(q.scale) : ''}</p>
           </div>
         </div>`).join('') : ''}
     </div>`).join('') : ''
 
   const body = `
-    ${ib.instrument_title ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:700;color:#0D1B2A;margin-bottom:6px;">${esc(ib.instrument_title)}</div>` : ''}
+    ${ib.instrument_title ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;margin-bottom:6px;">${esc(ib.instrument_title)}</div>` : ''}
     ${ib.methodology ? badge(ib.methodology.toUpperCase(), '#0891B2') : ''}
     ${sectionsHTML}`
 
@@ -432,10 +432,10 @@ export function buildExaminerQs(examinerQs) {
     const num = q.number || idx + 1
     return `<div style="background:#F5F3FF;border-left:3px solid #7C3AED;border-radius:0 6px 6px 0;padding:10px 12px;margin:6px 0;">
       <div style="display:flex;align-items:flex-start;gap:8px;">
-        <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:8px;font-weight:700;color:#7C3AED;min-width:22px;flex-shrink:0;padding-top:2px;">Q${num}</span>
+        <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;font-weight:700;color:#7C3AED;min-width:22px;flex-shrink:0;padding-top:2px;">Q${num}</span>
         <div style="flex:1;">
-          <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#0D1B2A;margin:0 0 3px 0;line-height:1.5;">${esc(q.question || '')}</p>
-          ${q.target ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;color:#6B7280;margin:0;font-style:italic;">${esc(q.target)}</p>` : ''}
+          <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#0D1B2A;margin:0 0 3px 0;line-height:1.5;">${esc(q.question || '')}</p>
+          ${q.target ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;color:#6B7280;margin:0;font-style:italic;">${esc(q.target)}</p>` : ''}
         </div>
       </div>
     </div>`
@@ -444,8 +444,8 @@ export function buildExaminerQs(examinerQs) {
   return `
     <div style="background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-top:4px;">
       <div style="background:#F5F3FF;border-left:5px solid #7C3AED;padding:12px 16px;">
-        <div style="margin-bottom:8px;"><span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:#7C3AED;letter-spacing:2px;text-transform:uppercase;">Examiner Questions — From Your Project</span></div>
-        <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;color:#6B7280;margin:0 0 10px 0;">Prepare answers to these before your real defence.</p>
+        <div style="margin-bottom:8px;"><span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:#7C3AED;letter-spacing:2px;text-transform:uppercase;">Examiner Questions — From Your Project</span></div>
+        <p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#6B7280;margin:0 0 10px 0;">Prepare answers to these before your real defence.</p>
         ${rows}
       </div>
     </div>`
@@ -464,8 +464,8 @@ export function buildClosingMessage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#0066FF" viewBox="0 0 256 256"><path d="${SHIELD_PATH}"/></svg>
         </div>
         <div>
-          <div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:700;line-height:1.5;margin-bottom:6px;">You've done the thinking. You built the structure.</div>
-          <div style="color:rgba(255,255,255,0.65);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8.5px;line-height:1.7;">Every step in this report is evidence of real work. Your topic is validated. Your chapters are planned. Your methodology is chosen. Your schedule exists. Now there is only one thing left — walk in and defend it.<br><br>FYPro was built so no Nigerian student walks into their defence unprepared.</div>
+          <div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:15px;font-weight:700;line-height:1.5;margin-bottom:6px;">You've done the thinking. You built the structure.</div>
+          <div style="color:rgba(255,255,255,0.65);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.7;">Every step in this report is evidence of real work. Your topic is validated. Your chapters are planned. Your methodology is chosen. Your schedule exists. Now there is only one thing left — walk in and defend it.<br><br>FYPro was built so no Nigerian student walks into their defence unprepared.</div>
         </div>
       </div>
     </div>`
@@ -571,8 +571,8 @@ export async function downloadProgressReport(state) {
       .set({
         margin:      [10, 10, 10, 10],
         filename:    `FYPro-Progress-Report-${slug}.pdf`,
-        image:       { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, width: 794, windowWidth: 794 },
+        image:       { type: 'png' },
+        html2canvas: { scale: 3, useCORS: true, logging: false, width: 794, windowWidth: 794 },
         jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak:   { mode: ['css'] },
       })
