@@ -173,6 +173,7 @@ export function buildStep1(state) {
 
 export function buildStep2(state) {
   const cs         = state.chapterStructure
+  if (!state.chapterStructure) return ''
   const totalCh    = cs.total_chapters || cs.chapters?.length || 0
   const totalWords = (cs.total_word_count || 0).toLocaleString()
   const c          = STEP_COLORS[1]
@@ -201,6 +202,7 @@ export function buildStep3(state) {
   const ma     = state.methodology
   const chosen = ma?.options?.find(o => o.methodology === state.chosenMethodology)
   const c      = STEP_COLORS[2]
+  if (!state.methodology && !state.chosenMethodology) return ''
 
   const inner = `
     <div style="margin-bottom:6px;">
@@ -218,10 +220,11 @@ export function buildStep3(state) {
 
 export function buildStep4(state) {
   const wp       = state.writingPlan
+  const c = STEP_COLORS[3]
+  if (!state.writingPlan) return ''
   const deadline = state.submissionDeadline
     ? new Date(state.submissionDeadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'Not set'
-  const c = STEP_COLORS[3]
 
   const weekRows = wp.weeks?.length ? wp.weeks.slice(0, 10).map(wk => {
     const isSpecial = wk.is_buffer_week || wk.is_holiday_week
@@ -286,6 +289,7 @@ export function buildStep5(state) {
 export function buildStep6(state) {
   const ds = state.defenseSummary
   const c  = STEP_COLORS[5]
+  if (!ds && !state.redFlags) return ''
 
   const sColor = !ds?.panel_score      ? '#6B7280'
                : ds.panel_score >= 8   ? '#16A34A'
@@ -323,13 +327,12 @@ export function buildStep6(state) {
 // ── Companion helpers (shared style) ─────────────────────────────────────────
 
 const COMPANION_INNER = 'background:#F0FDFA;border-left:4px dashed #0891B2;padding:12px 16px;position:relative;overflow:hidden;'
-const COMPANION_LABEL = `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:#0891B2;letter-spacing:2px;text-transform:uppercase;">`
 
 function companionCard(labelSuffix, body) {
   return `
     <div style="background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
       <div style="${COMPANION_INNER}">
-        <div style="margin-bottom:8px;">${COMPANION_LABEL}Companion — ${esc(labelSuffix)}</span></div>
+        <div style="margin-bottom:8px;"><span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:8px;font-weight:800;color:#0891B2;letter-spacing:2px;text-transform:uppercase;">Companion — ${esc(labelSuffix)}</span></div>
         ${body}
       </div>
     </div>`
@@ -424,6 +427,7 @@ export function buildInstrumentBuilder(state) {
 // ── Examiner Questions ────────────────────────────────────────────────────────
 
 export function buildExaminerQs(examinerQs) {
+  if (!examinerQs?.length) return ''
   const rows = examinerQs.map((q, idx) => {
     const num = q.number || idx + 1
     return `<div style="background:#F5F3FF;border-left:3px solid #7C3AED;border-radius:0 6px 6px 0;padding:10px 12px;margin:6px 0;">
