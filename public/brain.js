@@ -1,0 +1,972 @@
+'use strict';
+
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+const PROJECT_REF = 'ayvunikgfwpylfrkpalj';
+const SUPABASE_URL = `https://${PROJECT_REF}.supabase.co`;
+const WS_URL = `wss://${PROJECT_REF}.supabase.co/realtime/v1/websocket`;
+const SESSION_KEY = `sb-${PROJECT_REF}-auth-token`;
+const ANON_KEY_STORE = 'fypro_brain_anon_key';
+
+let anonKey = localStorage.getItem(ANON_KEY_STORE) || '';
+let ws = null, wsRef = 0, heartbeatTimer = null;
+let sessionCounts = { ai: 0, users: 0, pay: 0, def: 0, total: 0 };
+const MAX_FEED = 80;
+
+// ══════════════════════════════════════════════════════
+// ARCHITECTURE NODES + EDGES
+// ══════════════════════════════════════════════════════
+const NODES = [
+  { id:'student',    label:'Student',           sub:'Browser',                   col:'#94A3B8', x:68,  y:355, r:26 },
+  { id:'react',      label:'React App',          sub:'Vite + React Router v6',    col:'#3B82F6', x:205, y:260, r:34 },
+  { id:'supa-cl',    label:'Supabase Client',    sub:'Auth + RLS queries',         col:'#6366F1', x:205, y:430, r:20 },
+  { id:'fn-ai',      label:'/api/ai',            sub:'Claude proxy',              col:'#F97316', x:390, y:170, r:30 },
+  { id:'fn-pay',     label:'/api/payments',      sub:'Paystack + HMAC',           col:'#F59E0B', x:390, y:310, r:26 },
+  { id:'fn-res',     label:'/api/research',      sub:'Papers',                    col:'#FB923C', x:390, y:410, r:21 },
+  { id:'fn-notify',  label:'/api/notify',        sub:'Telegram + notifs',         col:'#F97316', x:390, y:500, r:21 },
+  { id:'fn-cert',    label:'/api/certificate',   sub:'PDF cert gen',              col:'#10B981', x:390, y:90,  r:18 },
+  { id:'upstash',    label:'Upstash Redis',      sub:'Rate limit + cache',        col:'#EF4444', x:560, y:190, r:25 },
+  { id:'anthropic',  label:'Anthropic Claude',   sub:'claude-sonnet-4-6',         col:'#F59E0B', x:750, y:115, r:38 },
+  { id:'elevenlabs', label:'ElevenLabs',         sub:'Examiner TTS voices',       col:'#A78BFA', x:750, y:265, r:18 },
+  { id:'paystack',   label:'Paystack',           sub:'LIVE keys · Nigerian',      col:'#FBBF24', x:750, y:355, r:26 },
+  { id:'semantic',   label:'Semantic Scholar',   sub:'Primary paper search',      col:'#86EFAC', x:750, y:430, r:17 },
+  { id:'openalex',   label:'OpenAlex',           sub:'Paper fallback',            col:'#6EE7B7', x:750, y:488, r:15 },
+  { id:'resend',     label:'Resend',             sub:'hello@fypro.com.ng',        col:'#EC4899', x:750, y:550, r:18 },
+  { id:'supabase',   label:'Supabase',           sub:'PostgreSQL + Auth + RT',    col:'#10B981', x:960, y:270, r:42 },
+  { id:'telegram',   label:'Telegram Bot',       sub:'@fypro_admin_bot',          col:'#2DD4BF', x:890, y:490, r:21 },
+  { id:'posthog',    label:'PostHog',            sub:'9 custom events',           col:'#14B8A6', x:1075,y:430, r:18 },
+  { id:'sentry',     label:'Sentry',             sub:'Error tracking',            col:'#EF4444', x:1145,y:330, r:18 },
+  { id:'cloudflare', label:'Cloudflare',         sub:'CDN + DNS + email routing', col:'#818CF8', x:1075,y:190, r:18 },
+];
+
+const EDGES = [
+  { f:'student',   t:'react',      col:'#94A3B8' },
+  { f:'student',   t:'supa-cl',    col:'#94A3B8' },
+  { f:'react',     t:'fn-ai',      col:'#3B82F6' },
+  { f:'react',     t:'fn-pay',     col:'#3B82F6' },
+  { f:'react',     t:'fn-res',     col:'#3B82F6' },
+  { f:'react',     t:'fn-notify',  col:'#3B82F6' },
+  { f:'supa-cl',   t:'supabase',   col:'#6366F1' },
+  { f:'fn-ai',     t:'upstash',    col:'#F97316' },
+  { f:'fn-ai',     t:'anthropic',  col:'#F97316' },
+  { f:'fn-ai',     t:'elevenlabs', col:'#F97316' },
+  { f:'fn-ai',     t:'fn-cert',    col:'#10B981' },
+  { f:'fn-ai',     t:'supabase',   col:'#F97316' },
+  { f:'fn-pay',    t:'paystack',   col:'#F59E0B' },
+  { f:'fn-pay',    t:'supabase',   col:'#F59E0B' },
+  { f:'fn-res',    t:'semantic',   col:'#FB923C' },
+  { f:'fn-res',    t:'openalex',   col:'#FB923C' },
+  { f:'fn-notify', t:'resend',     col:'#F97316' },
+  { f:'fn-notify', t:'telegram',   col:'#F97316' },
+  { f:'fn-notify', t:'supabase',   col:'#F97316' },
+  { f:'fn-cert',   t:'supabase',   col:'#10B981' },
+  { f:'upstash',   t:'anthropic',  col:'#EF4444' },
+  { f:'react',     t:'posthog',    col:'#14B8A6' },
+  { f:'react',     t:'sentry',     col:'#EF4444' },
+  { f:'supabase',  t:'telegram',   col:'#10B981' },
+  { f:'cloudflare',t:'react',      col:'#818CF8' },
+];
+
+const nodeById = {};
+NODES.forEach(n => { n.pulses = []; nodeById[n.id] = n; });
+
+// Which nodes to light up per event type, and what color
+const EVENT_MAP = {
+  user_signed_up:   { ids:['student','react','supa-cl','supabase','telegram','resend'], col:'#3B82F6',  icon:'👤', label:'New signup' },
+  login:            { ids:['student','react','supa-cl','supabase'],                    col:'#6366F1',  icon:'🔑', label:'Login' },
+  step_completed:   { ids:['react','fn-ai','upstash','anthropic','supabase'],          col:'#F97316',  icon:'✅', label:'Step completed' },
+  defense_started:  { ids:['react','fn-ai','anthropic','elevenlabs','upstash'],        col:'#8B5CF6',  icon:'🎤', label:'Defense started' },
+  defense_completed:{ ids:['react','fn-ai','anthropic','fn-cert','supabase','telegram','posthog'], col:'#10B981', icon:'🎓', label:'Defense completed' },
+  payment_initiated:{ ids:['student','react','fn-pay','paystack'],                     col:'#F59E0B',  icon:'💳', label:'Payment initiated' },
+  payment_verified: { ids:['fn-pay','paystack','supabase','telegram','resend'],        col:'#10B981',  icon:'💰', label:'Payment verified' },
+  payment_failed:   { ids:['fn-pay','paystack','telegram'],                            col:'#EF4444',  icon:'❌', label:'Payment failed' },
+  project_created:  { ids:['student','react','supabase','posthog'],                    col:'#3B82F6',  icon:'📁', label:'Project created' },
+  generation_failed:{ ids:['fn-ai','anthropic','telegram','sentry'],                   col:'#EF4444',  icon:'🔴', label:'Generation failed' },
+  spend_cap_alert:  { ids:['fn-ai','upstash','telegram'],                              col:'#F59E0B',  icon:'⚠️', label:'Spend cap alert' },
+  // Generic fallbacks based on table
+  _payments:        { ids:['fn-pay','paystack','supabase'],                            col:'#F59E0B',  icon:'💳', label:'Payment event' },
+  _projects:        { ids:['student','react','supabase'],                              col:'#3B82F6',  icon:'📁', label:'New project' },
+  _defense_sessions:{ ids:['react','fn-ai','anthropic','supabase'],                    col:'#8B5CF6',  icon:'🎤', label:'Defense session' },
+  _defense_certificates:{ ids:['fn-cert','supabase'],                                 col:'#10B981',  icon:'🎓', label:'Certificate issued' },
+  _system_logs:     { ids:['supabase'],                                                col:'#14B8A6',  icon:'📋', label:'System event' },
+};
+
+// ══════════════════════════════════════════════════════
+// CANVAS RENDERER
+// ══════════════════════════════════════════════════════
+const canvas = document.getElementById('brain-canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('brain-canvas-wrap');
+
+let vx = 0, vy = 0, vs = 1;
+let dragging = false, didDrag = false, mx0 = 0, my0 = 0;
+let hoveredNode = null;
+const PULSE_DURATION = 1800; // ms
+
+function dpr() { return window.devicePixelRatio || 1; }
+
+function resize() {
+  const d = dpr();
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  canvas.width = W * d; canvas.height = H * d;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+
+function fitView() {
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  NODES.forEach(n => {
+    minX = Math.min(minX, n.x - n.r); minY = Math.min(minY, n.y - n.r);
+    maxX = Math.max(maxX, n.x + n.r); maxY = Math.max(maxY, n.y + n.r);
+  });
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  const pad = 60;
+  const gW = maxX - minX + pad * 2, gH = maxY - minY + pad * 2;
+  vs = Math.min(W / gW, H / gH, 1.2) * 0.9;
+  vx = (W - gW * vs) / 2 - (minX - pad) * vs;
+  vy = (H - gH * vs) / 2 - (minY - pad) * vs;
+}
+
+function toS(wx, wy) { return { x: wx * vs + vx, y: wy * vs + vy }; }
+function toW(sx, sy) { return { x: (sx - vx) / vs, y: (sy - vy) / vs }; }
+
+function hexToRgb(h) {
+  const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+  return { r, g, b };
+}
+function rgba(h, a) { const {r,g,b} = hexToRgb(h); return `rgba(${r},${g},${b},${a})`; }
+
+function drawEdge(e) {
+  const s = nodeById[e.f], t = nodeById[e.t];
+  if (!s || !t) return;
+  const sp = toS(s.x, s.y), tp = toS(t.x, t.y);
+  const dx = tp.x - sp.x, dy = tp.y - sp.y;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const nx = dx/len, ny = dy/len;
+  const x1 = sp.x + nx * s.r * vs, y1 = sp.y + ny * s.r * vs;
+  const x2 = tp.x - nx * t.r * vs, y2 = tp.y - ny * t.r * vs;
+  const cx1 = x1 + dx * 0.35, cy1 = y1;
+  const cx2 = x2 - dx * 0.35, cy2 = y2;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x2, y2);
+  ctx.strokeStyle = rgba(e.col, 0.18);
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arrowhead
+  const ang = Math.atan2(y2 - cy2, x2 - cx2);
+  const aw = 5.5;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - aw*Math.cos(ang-0.45), y2 - aw*Math.sin(ang-0.45));
+  ctx.lineTo(x2 - aw*Math.cos(ang+0.45), y2 - aw*Math.sin(ang+0.45));
+  ctx.closePath();
+  ctx.fillStyle = rgba(e.col, 0.28);
+  ctx.fill();
+}
+
+function drawNode(n, now) {
+  const { x: sx, y: sy } = toS(n.x, n.y);
+  const sr = n.r * vs;
+  const { r, g, b } = hexToRgb(n.col);
+  const isHov = hoveredNode === n;
+
+  // Pulse rings (expanding from realtime events)
+  n.pulses = n.pulses.filter(p => now - p.t < PULSE_DURATION);
+  n.pulses.forEach(p => {
+    const progress = (now - p.t) / PULSE_DURATION;
+    const pr = sr + progress * 55 * vs;
+    const pa = (1 - progress) * 0.7;
+    const { r: pr2, g: pg, b: pb } = hexToRgb(p.col);
+    ctx.beginPath();
+    ctx.arc(sx, sy, pr, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${pr2},${pg},${pb},${pa})`;
+    ctx.lineWidth = Math.max(1, (1 - progress) * 2.5);
+    ctx.stroke();
+  });
+
+  // Glow when pulsing or hovered
+  const hasPulse = n.pulses.length > 0;
+  if (hasPulse || isHov) {
+    const glowA = hasPulse ? 0.45 : 0.2;
+    ctx.save();
+    ctx.shadowColor = n.col;
+    ctx.shadowBlur = (hasPulse ? 24 : 14) * vs;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.001)`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Node circle
+  const grad = ctx.createRadialGradient(sx - sr*0.25, sy - sr*0.25, 0, sx, sy, sr * 1.1);
+  const fillA = hasPulse ? 0.32 : isHov ? 0.24 : 0.14;
+  grad.addColorStop(0, `rgba(${r},${g},${b},${fillA * 1.8})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},${fillA})`);
+  ctx.beginPath();
+  ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Border
+  ctx.beginPath();
+  ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(${r},${g},${b},${hasPulse ? 0.95 : isHov ? 0.8 : 0.45})`;
+  ctx.lineWidth = hasPulse ? 2 : 1.4;
+  ctx.stroke();
+
+  // Label
+  const fontSize = Math.max(8, Math.min(12, 10.5 * vs));
+  ctx.font = `700 ${fontSize}px 'Segoe UI',system-ui,sans-serif`;
+  ctx.fillStyle = hasPulse ? '#fff' : `rgba(${r},${g},${b},0.9)`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const labelY = sy + (n.sub && vs > 0.7 ? -fontSize * 0.6 : 0);
+  ctx.fillText(n.label, sx, labelY, sr * 2 - 6);
+
+  if (n.sub && vs > 0.7) {
+    ctx.font = `${Math.max(6, fontSize * 0.75)}px 'Segoe UI',system-ui,sans-serif`;
+    ctx.fillStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.fillText(n.sub, sx, labelY + fontSize * 1.25, sr * 2 - 4);
+  }
+}
+
+function renderFrame() {
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background dot grid
+  ctx.fillStyle = '#030a10';
+  ctx.fillRect(0, 0, W, H);
+  const ds = 28 * vs, dr = Math.max(0.4, 0.9 * vs);
+  const ox = ((vx % ds) + ds) % ds, oy = ((vy % ds) + ds) % ds;
+  ctx.fillStyle = 'rgba(0,102,255,0.045)';
+  for (let gx = ox; gx < W; gx += ds)
+    for (let gy = oy; gy < H; gy += ds) {
+      ctx.beginPath(); ctx.arc(gx, gy, dr, 0, Math.PI*2); ctx.fill();
+    }
+
+  EDGES.forEach(drawEdge);
+  const now = performance.now();
+  NODES.forEach(n => drawNode(n, now));
+
+  requestAnimationFrame(renderFrame);
+}
+
+// Hit test
+function hitTest(sx, sy) {
+  const wp = toW(sx, sy);
+  for (let i = NODES.length - 1; i >= 0; i--) {
+    const n = NODES[i];
+    const dx = wp.x - n.x, dy = wp.y - n.y;
+    if (Math.sqrt(dx*dx + dy*dy) <= n.r) return n;
+  }
+  return null;
+}
+
+// Mouse events
+canvas.addEventListener('mousedown', e => {
+  dragging = true; didDrag = false;
+  mx0 = e.clientX; my0 = e.clientY;
+  canvas.classList.add('grabbing');
+});
+canvas.addEventListener('mousemove', e => {
+  if (dragging) {
+    vx += e.clientX - mx0; vy += e.clientY - my0;
+    mx0 = e.clientX; my0 = e.clientY;
+    didDrag = true;
+    hoveredNode = null; hideTT();
+    return;
+  }
+  const sy = e.clientY - wrap.getBoundingClientRect().top;
+  const hit = hitTest(e.clientX - wrap.getBoundingClientRect().left, sy);
+  hoveredNode = hit;
+  canvas.style.cursor = hit ? 'pointer' : 'grab';
+  if (hit) showTT(e.clientX, e.clientY, hit.label, hit.sub);
+  else hideTT();
+});
+canvas.addEventListener('mouseup', () => { dragging = false; canvas.classList.remove('grabbing'); });
+canvas.addEventListener('mouseleave', () => { dragging = false; canvas.classList.remove('grabbing'); hideTT(); hoveredNode = null; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = wrap.getBoundingClientRect();
+  const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+  const f = e.deltaY > 0 ? 0.88 : 1.13;
+  const ns = Math.max(0.12, Math.min(5, vs * f));
+  vx = cx - ns/vs * (cx - vx); vy = cy - ns/vs * (cy - vy); vs = ns;
+}, { passive: false });
+
+// Tooltip
+const btt = document.getElementById('brain-tooltip');
+function showTT(mx, my, name, desc) {
+  btt.innerHTML = `<div class="btt-n">${name}</div><div class="btt-d">${desc}</div>`;
+  btt.classList.add('show');
+  const x = Math.min(mx + 14, window.innerWidth - 230);
+  const y = Math.min(my + 14, window.innerHeight - 80);
+  btt.style.left = x + 'px'; btt.style.top = y + 'px';
+}
+function hideTT() { btt.classList.remove('show'); }
+
+// Fire a pulse event on specific nodes
+function fireEvent(evtKey, tableKey, record) {
+  const cfg = EVENT_MAP[evtKey] || EVENT_MAP[tableKey] || EVENT_MAP._system_logs;
+  const now = performance.now();
+  cfg.ids.forEach(id => {
+    const n = nodeById[id];
+    if (n) n.pulses.push({ t: now, col: cfg.col });
+  });
+
+  // Update session counters
+  sessionCounts.total++;
+  if (evtKey === 'step_completed' || evtKey === 'defense_started' || evtKey === 'defense_completed') sessionCounts.ai++;
+  if (evtKey === 'user_signed_up') sessionCounts.users++;
+  if (evtKey === 'payment_verified') sessionCounts.pay++;
+  if (evtKey === 'defense_completed') sessionCounts.def++;
+  if (tableKey === '_payments') sessionCounts.pay++;
+  if (tableKey === '_projects') sessionCounts.users++;
+  if (tableKey === '_defense_sessions') sessionCounts.def++;
+
+  updateCounters();
+
+  // Add to feed
+  addFeedItem(cfg.icon, cfg.label, record);
+  document.getElementById('feed-count').textContent = sessionCounts.total;
+
+  // Header ticker
+  const ticker = document.getElementById('ticker');
+  ticker.textContent = `${cfg.icon} ${cfg.label}`;
+  setTimeout(() => { if (ticker.textContent === `${cfg.icon} ${cfg.label}`) ticker.textContent = ''; }, 4000);
+}
+
+function updateCounters() {
+  document.getElementById('stat-ai').textContent = sessionCounts.ai || '—';
+  document.getElementById('stat-users').textContent = sessionCounts.users || '—';
+  document.getElementById('stat-pay').textContent = sessionCounts.pay || '—';
+  document.getElementById('stat-def').textContent = sessionCounts.def || '—';
+}
+
+function addFeedItem(icon, label, record) {
+  const empty = document.getElementById('feed-empty');
+  if (empty) empty.remove();
+  const feed = document.getElementById('brain-feed');
+  const detail = record ? Object.entries(record).slice(0,2).map(([k,v]) => `${k}: ${String(v).slice(0,30)}`).join(' · ') : '';
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const div = document.createElement('div');
+  div.className = 'fi';
+  div.innerHTML = `<div class="fi-row"><span class="fi-ico">${icon}</span><span class="fi-name">${label}</span><span class="fi-ts">${ts}</span></div>${detail ? `<div class="fi-detail">${detail}</div>` : ''}`;
+  feed.insertBefore(div, feed.firstChild);
+  // Trim
+  while (feed.children.length > MAX_FEED) feed.removeChild(feed.lastChild);
+}
+
+// ══════════════════════════════════════════════════════
+// SUPABASE REALTIME (raw Phoenix WebSocket protocol)
+// ══════════════════════════════════════════════════════
+function setConnStatus(state) {
+  const dot = document.getElementById('conn-dot');
+  const lbl = document.getElementById('conn-label');
+  dot.className = state; // 'live', 'connecting', 'error', ''
+  const map = { live:'Live', connecting:'Connecting…', error:'Error', '':'Not connected' };
+  lbl.textContent = map[state] || state;
+}
+
+function getJWT() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed.access_token || parsed.session?.access_token || null;
+  } catch { return null; }
+}
+
+function connectRealtime() {
+  if (!anonKey) { setConnStatus(''); return; }
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+  setConnStatus('connecting');
+  const url = `${WS_URL}?apikey=${encodeURIComponent(anonKey)}&vsn=1.0.0`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setConnStatus('live');
+
+    // Heartbeat every 25s
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN)
+        ws.send(JSON.stringify({ topic:'phoenix', event:'heartbeat', payload:{}, ref:String(++wsRef) }));
+    }, 25000);
+
+    // Subscribe to tables
+    const jwt = getJWT();
+    const payload = {
+      config: {
+        postgres_changes: [
+          { event:'INSERT', schema:'public', table:'system_logs' },
+          { event:'INSERT', schema:'public', table:'payments' },
+          { event:'INSERT', schema:'public', table:'projects' },
+          { event:'INSERT', schema:'public', table:'defense_sessions' },
+          { event:'INSERT', schema:'public', table:'defense_certificates' },
+        ]
+      }
+    };
+    if (jwt) payload.access_token = jwt;
+
+    ws.send(JSON.stringify({
+      topic: 'realtime:fypro-brain',
+      event: 'phx_join',
+      payload,
+      ref: String(++wsRef),
+      join_ref: String(wsRef)
+    }));
+  };
+
+  ws.onmessage = e => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+
+    if (msg.event === 'postgres_changes' || msg.event === 'INSERT') {
+      const data = msg.payload?.data || msg.payload || {};
+      const table = data.table || '';
+      const record = data.record || data.new || {};
+      const evtType = record.event_type || record.type || '';
+      fireEvent(evtType, `_${table}`, record);
+    }
+  };
+
+  ws.onclose = () => {
+    setConnStatus('error');
+    clearInterval(heartbeatTimer);
+    // Auto-reconnect after 4s
+    setTimeout(() => { if (anonKey) connectRealtime(); }, 4000);
+  };
+
+  ws.onerror = () => setConnStatus('error');
+}
+
+// Setup modal
+function showSetup() {
+  document.getElementById('setup-overlay').style.display = 'flex';
+}
+function hideSetup() {
+  document.getElementById('setup-overlay').style.display = 'none';
+}
+document.getElementById('setup-submit').addEventListener('click', () => {
+  const key = document.getElementById('setup-key').value.trim();
+  if (!key) return;
+  anonKey = key;
+  localStorage.setItem(ANON_KEY_STORE, key);
+  hideSetup();
+  connectRealtime();
+});
+document.getElementById('conn-badge').addEventListener('click', () => {
+  if (ws) { ws.close(); ws = null; }
+  showSetup();
+});
+
+// ══════════════════════════════════════════════════════
+// FLOWS DATA
+// ══════════════════════════════════════════════════════
+const LANES=[{id:'browser',label:'Browser',col:'#64748B'},{id:'frontend',label:'React/Vite',col:'#2563EB'},{id:'vercel',label:'Vercel API',col:'#94A3B8'},{id:'redis',label:'Upstash',col:'#DC2626'},{id:'supabase',label:'Supabase',col:'#10B981'},{id:'anthropic',label:'Anthropic',col:'#F59E0B'},{id:'external',label:'External',col:'#A78BFA'}];
+const LANE_IDX={};LANES.forEach((l,i)=>LANE_IDX[l.id]=i);
+const TYPE_COLORS={action:'#3B82F6',call:'#0066FF',check:'#059669',process:'#7C3AED',db:'#0891B2',render:'#D97706',alert:'#EC4899',error:'#DC2626'};
+const TYPE_LABELS={action:'User Action',call:'API Call',check:'Validation',process:'Server Process',db:'Database Op',render:'UI Render',alert:'Ext. Alert',error:'Error Path'};
+const TYPE_ICONS={action:'⊙',call:'→',check:'✓',process:'⚙',db:'⊞',render:'▣',alert:'◉',error:'✗'};
+
+const FLOW_GROUPS=[
+{id:'auth',label:'Authentication',icon:'🔐',col:'#2563EB',flows:[
+  {id:'sign-up',name:'User Sign Up',desc:'New user registers — email confirmation required.',steps:[
+    {lane:'browser',label:'Fill signup form',type:'action',desc:'User enters name, email, university, department, level, password on /signup.'},
+    {lane:'frontend',label:'Client validation',type:'check',desc:'Email format, password ≥ 8 chars, university selected. Prevents needless API calls.'},
+    {lane:'vercel',label:'POST /api/auth\n?action=signup',type:'call',desc:'Hits api/auth.js. setCorsHeaders() applied.'},
+    {lane:'redis',label:'Rate limit\n5/IP/hour',type:'check',desc:'Upstash sliding-window. Returns 429 if exceeded.'},
+    {lane:'supabase',label:'supabase.auth.signUp()',type:'db',desc:'Creates auth.users. email_confirmed_at = null.'},
+    {lane:'supabase',label:'DB trigger fires',type:'db',desc:'on_auth_user_created inserts into public.users with profile metadata.'},
+    {lane:'external',label:'Resend: confirmation\nemail sent',type:'alert',desc:'Supabase sends confirmation link via Resend. One-time magic token.'},
+    {lane:'external',label:'Telegram: 👤 New\nsignup alert',type:'alert',desc:'sendTelegramAlert() fires. Real-time signup count in admin chat.'},
+    {lane:'frontend',label:'Show "Check your\nemail" screen',type:'render',desc:'User cannot proceed until email confirmed.'},
+    {lane:'supabase',label:'User clicks link →\nemail confirmed',type:'db',desc:'Token verified. email_confirmed_at timestamped. User can now login.'},
+  ]},
+  {id:'login',name:'User Login',desc:'Returning user authenticates.',steps:[
+    {lane:'browser',label:'Fill login form',type:'action',desc:'Email + password on /login.'},
+    {lane:'frontend',label:'POST /api/auth\n?action=login',type:'call',desc:'Credentials sent to api/auth.js.'},
+    {lane:'redis',label:'Rate limit\n10/IP/15m',type:'check',desc:'Prevents brute-force. 429 with retry-after on breach.'},
+    {lane:'supabase',label:'signInWithPassword()',type:'db',desc:'Verifies bcrypt hash. Returns JWT + refresh token.'},
+    {lane:'frontend',label:'Store session',type:'process',desc:'JWT in Supabase client memory. Refresh token in httpOnly cookie.'},
+    {lane:'frontend',label:'Redirect',type:'render',desc:'First login → /start. Has projects → /dashboard. Direct link → original URL.'},
+  ]},
+  {id:'reset',name:'Password Reset',desc:'Forgotten password recovery.',steps:[
+    {lane:'browser',label:'Submit email',type:'action',desc:'No indication if email exists (prevents enumeration).'},
+    {lane:'vercel',label:'POST /api/auth\n?action=forgot-password',type:'call',desc:'Validates email format, calls Supabase reset.'},
+    {lane:'supabase',label:'resetPasswordForEmail()',type:'db',desc:'Generates one-time token. Expires in 1 hour.'},
+    {lane:'external',label:'Resend: reset link',type:'alert',desc:'Reset URL includes token in hash fragment.'},
+    {lane:'browser',label:'Click link →\n/reset-password',type:'action',desc:'Token extracted from URL fragment.'},
+    {lane:'vercel',label:'POST /api/auth\n?action=reset-password',type:'call',desc:'Token + new password sent server-side.'},
+    {lane:'supabase',label:'updateUser(password)',type:'db',desc:'Password updated. All existing sessions invalidated.'},
+    {lane:'frontend',label:'Redirect to /login',type:'render',desc:'Success toast shown.'},
+  ]},
+]},
+{id:'workflow',label:'Workflow Steps',icon:'📋',col:'#059669',flows:[
+  {id:'topic-validator',name:'Topic Validation',desc:'Student validates their FYP topic against real papers.',steps:[
+    {lane:'browser',label:'Enter topic + click\nValidate',type:'action',desc:'Student types topic in TopicValidator.jsx.'},
+    {lane:'frontend',label:'POST /api/research',type:'call',desc:'Fetches real papers before calling Claude.'},
+    {lane:'vercel',label:'Semantic Scholar\n(primary)',type:'call',desc:'api.semanticscholar.org — free, no key. 10 papers.'},
+    {lane:'vercel',label:'OpenAlex fallback\nif < 3 results',type:'check',desc:'Geographic modifiers stripped (e.g. "in Nigeria") to broaden results.'},
+    {lane:'vercel',label:'POST /api/ai\n?action=topic_validator',type:'call',desc:'Papers + topic sent to Claude. max_tokens: 2000.'},
+    {lane:'redis',label:'Cache check\n(SHA-256, 24h)',type:'check',desc:'Hit → immediate return, no Anthropic call.'},
+    {lane:'anthropic',label:'Claude generates\nvalidation JSON',type:'process',desc:'Returns verdict (APPROVED/BORDERLINE/REJECTED), score 1-10, strengths, gaps.'},
+    {lane:'redis',label:'Cache response',type:'db',desc:'Store for 24h. Identical future requests served instantly.'},
+    {lane:'supabase',label:'Save to project_steps',type:'db',desc:'step_name="topic_validator", result=JSON.'},
+    {lane:'frontend',label:'Render verdict card',type:'render',desc:'APPROVED=green, BORDERLINE=amber, REJECTED=red.'},
+  ]},
+  {id:'chapter-architect',name:'Chapter Outline',desc:'Generate full 5-chapter research structure.',steps:[
+    {lane:'browser',label:'Click Generate\nOutline',type:'action',desc:'Topic validated and confirmed.'},
+    {lane:'frontend',label:'POST /api/ai\n?action=chapter_architect',type:'call',desc:'max_tokens: 3000 (largest call).'},
+    {lane:'redis',label:'Cache check\n(24h)',type:'check',desc:'Same SHA-256 pattern.'},
+    {lane:'anthropic',label:'Claude generates\n5-chapter outline',type:'process',desc:'Returns titles, subheadings, purpose, expected content, page estimates.'},
+    {lane:'supabase',label:'Save to project_steps',type:'db',desc:'Literature Map and Abstract Generator also stored here.'},
+    {lane:'frontend',label:'Render chapters +\ncompanion tools',type:'render',desc:'Each chapter expandable. Literature Map and Abstract Generator appear.'},
+  ]},
+  {id:'defense-full',name:'Full Defense → Certificate',desc:'Complete paid defense session.',steps:[
+    {lane:'browser',label:'defense_pack paid\n→ Start defense',type:'action',desc:'No paywall. All three examiners active.'},
+    {lane:'vercel',label:'Three examiners\n~15 questions',type:'process',desc:'Methodologist → Subject Expert → External Examiner.'},
+    {lane:'anthropic',label:'Claude tracks\nweak areas per turn',type:'process',desc:'Each turn: answer evaluated, weakness map updated. Context carries forward.'},
+    {lane:'supabase',label:'Save turns to\ndefense_turns',type:'db',desc:'Each Q&A pair saved. final_score updated at session end.'},
+    {lane:'vercel',label:'Score check: ≥ 7/10',type:'check',desc:'If ≥ 7: certificate triggered. If < 7: encouragement shown.'},
+    {lane:'vercel',label:'Generate certificate\nFYP-2026-XXXXXX',type:'process',desc:'/api/certificate.js generates PDF. Saved to defense_certificates.'},
+    {lane:'external',label:'Telegram: 🎓 Defense\ncomplete',type:'alert',desc:'Score, student name, certificate serial sent to admin chat.'},
+    {lane:'frontend',label:'Certificate unlock +\nshare card',type:'render',desc:'Animated certificate reveal. Satori PNG share card generated.'},
+  ]},
+]},
+{id:'payments',label:'Payments',icon:'💳',col:'#D97706',flows:[
+  {id:'purchase-pack',name:'Buy Student Pack (₦2,000)',desc:'Full payment flow from click to unlock.',steps:[
+    {lane:'browser',label:'Click Buy Student Pack',type:'action',desc:'usePaystackCheckout hook triggered.'},
+    {lane:'vercel',label:'Create pending payment\nrow + ref',type:'call',desc:'payments row: user_id, tier=student_pack, amount_kobo=200000, status=pending.'},
+    {lane:'supabase',label:'INSERT payments\n(status: pending)',type:'db',desc:'UNIQUE constraint on paystack_reference prevents double-rows.'},
+    {lane:'external',label:'Paystack popup\n(card entry)',type:'render',desc:'Card details never touch FYPro servers.'},
+    {lane:'browser',label:'Enter card + confirm',type:'action',desc:'Paystack processes payment. 2-5 seconds.'},
+    {lane:'frontend',label:'Poll status every 3s',type:'call',desc:'Backup for when webhook arrives first.'},
+    {lane:'external',label:'Paystack webhook\nPOST /api/payments',type:'call',desc:'charge.success sent. Race-safe with polling.'},
+    {lane:'vercel',label:'HMAC SHA512\nverification',type:'check',desc:'Computed HMAC must match X-Paystack-Signature.'},
+    {lane:'vercel',label:'Amount verify\n(200000 kobo)',type:'check',desc:'Prevents partial payment fraud.'},
+    {lane:'supabase',label:'status=success +\nentitlements updated',type:'db',desc:'Service role: status=success, paid_features += student_pack.'},
+    {lane:'external',label:'Telegram: 💰 Payment\nreceived',type:'alert',desc:'Amount, tier, email to admin chat.'},
+    {lane:'frontend',label:'Features unlocked',type:'render',desc:'usePaidFeatures re-fetches. Premium gates removed.'},
+  ]},
+  {id:'paystack-webhook',name:'Paystack Webhook',desc:'HMAC verification critical path.',steps:[
+    {lane:'external',label:'Paystack fires\ncharge.success',type:'call',desc:'Retried up to 3× if no 200 response.'},
+    {lane:'vercel',label:'bodyParser: false\n→ raw Buffer',type:'process',desc:'Raw body required for HMAC. Cannot parse JSON yet.'},
+    {lane:'vercel',label:'HMAC SHA512\nverify',type:'check',desc:'Computed HMAC must exactly match X-Paystack-Signature.'},
+    {lane:'vercel',label:'Parse JSON +\ncheck event type',type:'process',desc:'Only process charge.success — ignore all other events.'},
+    {lane:'supabase',label:'Find pending payment\nby reference',type:'db',desc:'WHERE reference=X AND status="pending". Safe no-op if not found.'},
+    {lane:'vercel',label:'Verify amount\nvs tier kobo',type:'check',desc:'200000=student, 350000=defense, 150000=reset.'},
+    {lane:'supabase',label:'UPDATE success +\nentitlements',type:'db',desc:'Service role: status=success + push tier into paid_features.'},
+    {lane:'external',label:'Telegram alert',type:'alert',desc:'💰 Payment confirmed. Deduped if webhook retried.'},
+  ]},
+]},
+{id:'admin',label:'Admin & Crons',icon:'⚙️',col:'#DC2626',flows:[
+  {id:'daily-report',name:'Daily Report (Cron)',desc:'Auto stats at 9PM WAT.',steps:[
+    {lane:'external',label:'cron-job.org fires\n20:00 UTC',type:'action',desc:'GET /api/admin?action=daily-report&secret=CRON_SECRET.'},
+    {lane:'vercel',label:'Verify CRON_SECRET',type:'check',desc:'401 if wrong. Prevents public triggering.'},
+    {lane:'supabase',label:'Query signups,\nrevenue, defense',type:'db',desc:'Past 24h stats via service-role client.'},
+    {lane:'vercel',label:'Format report\nmarkdown',type:'process',desc:'📊 Daily FYPro Report with emoji headers.'},
+    {lane:'external',label:'POST Telegram\nadmin chat',type:'alert',desc:'Taiwo receives at 9PM WAT every day.'},
+  ]},
+  {id:'welcome-email',name:'Welcome Email Sequence',desc:'Day 0/3/7 nurture via Resend.',steps:[
+    {lane:'external',label:'cron-job.org fires\n09:00 UTC',type:'action',desc:'GET /api/send-nurture-email?secret=CRON_SECRET.'},
+    {lane:'vercel',label:'Verify CRON_SECRET',type:'check',desc:'Same pattern as daily-report.'},
+    {lane:'supabase',label:'Find users needing\neach email',type:'db',desc:'JOIN users + email_log. Find D0/D3/D7 targets.'},
+    {lane:'supabase',label:'Check email_log\n(no duplicates)',type:'check',desc:'email_log prevents re-sends.'},
+    {lane:'vercel',label:'Render React Email\ntemplate',type:'process',desc:'welcome.tsx / defense-nudge.tsx / urgency-reminder.tsx.'},
+    {lane:'external',label:'Resend send\nhello@fypro.com.ng',type:'alert',desc:'Cloudflare email routing → ayenit381@gmail.com.'},
+    {lane:'supabase',label:'INSERT email_log',type:'db',desc:'Prevents re-fire on next cron tick.'},
+  ]},
+]},
+];
+
+// ══════════════════════════════════════════════════════
+// ERRORS DATA
+// ══════════════════════════════════════════════════════
+const ERRORS=[
+  {id:'anthropic-down',name:'Anthropic API Down',sev:'broken',trigger:'Anthropic returns 5xx or times out on any /api/ai call.',effect:'All AI features fail. Paper fetch (Semantic Scholar) still works. Cached responses still served.',fallback:'api/ai.js catch → 503. Sentry + Telegram alert fire. Cached steps still served.'},
+  {id:'supabase-down',name:'Supabase Completely Down',sev:'catastrophic',trigger:'Supabase project unreachable.',effect:'No login, signup, project data, entitlement checks, or payment recording. Landing page loads via Vercel CDN.',fallback:'No local fallback. Status: status.supabase.com. Recovery automatic. No data lost.'},
+  {id:'vercel-down',name:'Vercel Platform Down',sev:'catastrophic',trigger:'Vercel edge network or serverless runtime unavailable.',effect:'All /api/* unreachable. Frontend may still load from CDN cache.',fallback:'Cloudflare may cache some static assets. Status: vercel-status.com.'},
+  {id:'cloudflare-down',name:'Cloudflare Down',sev:'catastrophic',trigger:'Cloudflare nameservers or CDN unreachable.',effect:'fypro.com.ng DNS fails. Completely unreachable.',fallback:'Change nameservers at Whogohost directly to Vercel. 15m propagation.'},
+  {id:'redis-down',name:'Upstash Redis Down',sev:'degraded',trigger:'Upstash REST API unavailable.',effect:'Rate limiting disabled. Response caching disabled. App still works but costs spike.',fallback:'Fail-open for rate limiting. Spend cap still works via Supabase daily_usage.'},
+  {id:'webhook-missed',name:'Paystack Webhook Missed',sev:'broken',trigger:'Paystack fires webhook but endpoint returns non-200.',effect:'User paid but features not unlocked.',fallback:'Paystack retries 3×. Frontend polling also checks. Admin manually credits via Supabase dashboard if needed.'},
+  {id:'hmac-mismatch',name:'HMAC Verification Fails',sev:'silent',trigger:'Computed HMAC does not match X-Paystack-Signature.',effect:'Payment rejected silently. Correct if spoofed. Bug if legitimate.',fallback:'Return 400. Log to Sentry. Telegram alert: ❌ Payment failed.'},
+  {id:'spend-cap-hit',name:'Daily AI Spend Cap Hit',sev:'broken',trigger:'total_cost_usd reaches DAILY_CAP_USD ($10) for the day.',effect:'All /api/ai return 429 for remainder of UTC day.',fallback:'Cap resets 00:00 UTC. Cached responses still served. Admin can raise DAILY_CAP_USD in Vercel.'},
+  {id:'elevenlabs-down',name:'ElevenLabs TTS Down',sev:'degraded',trigger:'ElevenLabs returns error or times out.',effect:'Defense voice fails. Questions appear as text only. Session continues.',fallback:'Frontend falls back to text display. Session not blocked.'},
+  {id:'semantic-down',name:'Semantic Scholar Down',sev:'degraded',trigger:'api.semanticscholar.org errors or times out.',effect:'Paper fetch fails primary. Falls back to OpenAlex automatically.',fallback:'papers.js: < 3 results or error → OpenAlex fallback. User sees no difference.'},
+  {id:'resend-down',name:'Resend Email Down',sev:'silent',trigger:'Resend API unavailable.',effect:'Auth emails (confirmation, reset) not delivered. Nurture sequence skipped.',fallback:'Errors logged to Sentry. Nurture: retry next cron tick. Reset: user retries.'},
+  {id:'session-expired',name:'JWT Session Expired',sev:'degraded',trigger:'Supabase JWT expires and refresh fails.',effect:'API calls return 401. User effectively logged out. In-progress work lost.',fallback:'Supabase client auto-refreshes on activity. ProtectedRoute redirects to /login.'},
+  {id:'defense-low',name:'Defense Score Below 7',sev:'state',trigger:'Student completes full defense but score < 7/10.',effect:'No certificate. Encouragement message with weak areas identified.',fallback:'Session saved. Student can retry. Weak areas highlighted.'},
+  {id:'free-trial-done',name:'Free Trial Exhausted',sev:'state',trigger:'Student reaches Q3 in Defense free trial.',effect:'PaidFeatureGate modal appears after Q3.',fallback:'Expected behaviour. "Unlock Full Defense — ₦3,500" CTA shown.'},
+  {id:'dup-webhook',name:'Duplicate Webhook Event',sev:'silent',trigger:'Paystack retries same webhook because it timed out.',effect:'Second handler run. Idempotency guard prevents double-credit.',fallback:'WHERE status="pending" guard: second webhook finds "success" → no-op.'},
+  {id:'client-ent-write',name:'Client Tries to Write Entitlements',sev:'silent',trigger:'Malicious client tries to INSERT/UPDATE user_entitlements.',effect:'RLS blocks operation. No entitlement granted.',fallback:'user_entitlements RLS: SELECT own row only. Service role only writes.'},
+];
+
+// ══════════════════════════════════════════════════════
+// STATE MACHINES
+// ══════════════════════════════════════════════════════
+const STATE_MACHINES=[
+{id:'payment',label:'Payment',desc:'Lifecycle of a payments table row.',tableDesc:'payments — client SELECT own rows only. Service role writes.',states:[{id:'pending',label:'pending',x:60,y:120,initial:true,col:'#94A3B8'},{id:'success',label:'success',x:280,y:50,terminal:true,col:'#10B981'},{id:'failed',label:'failed',x:280,y:130,terminal:true,col:'#DC2626'},{id:'refunded',label:'refunded',x:280,y:210,terminal:true,col:'#D97706'}],transitions:[{from:'pending',to:'success',label:'HMAC verified\n+ amount matches',ox:0,oy:-22},{from:'pending',to:'failed',label:'timeout / declined',ox:0,oy:0},{from:'success',to:'refunded',label:'admin initiates\nrefund',ox:20,oy:0}]},
+{id:'user-account',label:'User Account',desc:'Lifecycle from anonymous visitor to paid user.',tableDesc:'auth.users + public.users — email_confirmed_at is the gate.',states:[{id:'anon',label:'anonymous',x:40,y:100,initial:true,col:'#94A3B8'},{id:'unverified',label:'unverified',x:220,y:100,col:'#D97706'},{id:'verified',label:'verified',x:400,y:100,col:'#3B82F6'},{id:'paying',label:'paying',x:400,y:220,col:'#10B981'},{id:'banned',label:'banned',x:580,y:100,terminal:true,col:'#DC2626'}],transitions:[{from:'anon',to:'unverified',label:'signs up',ox:0,oy:-18},{from:'unverified',to:'verified',label:'clicks confirmation\nlink',ox:0,oy:-18},{from:'verified',to:'paying',label:'completes payment',ox:18,oy:0},{from:'paying',to:'paying',label:'additional payment',ox:0,oy:36,loop:true},{from:'verified',to:'banned',label:'abuse detected',ox:0,oy:-18},{from:'paying',to:'banned',label:'fraud detected',ox:0,oy:0}]},
+{id:'project',label:'Project',desc:'Lifecycle of a projects table row.',tableDesc:'projects — multiple per user. CHECK constraint on status.',states:[{id:'draft',label:'draft',x:60,y:120,initial:true,col:'#94A3B8'},{id:'active',label:'active',x:240,y:120,col:'#3B82F6'},{id:'archived',label:'archived',x:420,y:80,col:'#D97706'},{id:'deleted',label:'deleted',x:420,y:180,terminal:true,col:'#475569'}],transitions:[{from:'draft',to:'active',label:'first step\ncompleted',ox:0,oy:-18},{from:'active',to:'archived',label:'project reset\npurchased',ox:0,oy:-20},{from:'active',to:'deleted',label:'user deletes',ox:0,oy:20},{from:'archived',to:'deleted',label:'user deletes\narchived',ox:0,oy:0}]},
+{id:'defense-session',label:'Defense Session',desc:'Lifecycle of a defense_sessions row.',tableDesc:'defense_sessions — turns in defense_turns.',states:[{id:'not_started',label:'not started',x:30,y:120,initial:true,col:'#94A3B8'},{id:'in_progress',label:'in progress',x:210,y:120,col:'#3B82F6'},{id:'pass',label:'completed ✓',x:400,y:60,terminal:true,col:'#10B981'},{id:'fail',label:'completed ✗',x:400,y:190,terminal:true,col:'#DC2626'}],transitions:[{from:'not_started',to:'in_progress',label:'session starts',ox:0,oy:-18},{from:'in_progress',to:'pass',label:'all done\nscore ≥ 7',ox:0,oy:-20},{from:'in_progress',to:'fail',label:'all done\nscore < 7',ox:0,oy:20}]},
+{id:'entitlement',label:'User Entitlement',desc:'paid_features jsonb in user_entitlements.',tableDesc:'user_entitlements — client SELECT only. service_role writes.',states:[{id:'none',label:'none []',x:40,y:130,initial:true,col:'#475569'},{id:'student',label:'[student_pack]',x:240,y:70,col:'#3B82F6'},{id:'defense',label:'[defense_pack]',x:240,y:190,col:'#7C3AED'},{id:'both',label:'[student+defense]',x:440,y:130,col:'#10B981'},{id:'reset_held',label:'[+project_reset]',x:440,y:240,col:'#D97706'},{id:'reset_spent',label:'reset consumed',x:600,y:240,terminal:true,col:'#64748B'}],transitions:[{from:'none',to:'student',label:'pays ₦2,000',ox:0,oy:-18},{from:'none',to:'defense',label:'pays ₦3,500',ox:0,oy:18},{from:'student',to:'both',label:'also pays ₦3,500',ox:0,oy:-18},{from:'defense',to:'both',label:'also pays ₦2,000',ox:0,oy:18},{from:'both',to:'reset_held',label:'pays ₦1,500',ox:0,oy:0},{from:'reset_held',to:'reset_spent',label:'creates project',ox:0,oy:0}]},
+];
+
+// ══════════════════════════════════════════════════════
+// SECURITY GATES
+// ══════════════════════════════════════════════════════
+const SECURITY_GATES=[
+  {n:'JWT Validation',desc:'Every /api/* validates the Supabase JWT before processing. 401 returned immediately for unauthenticated requests.',where:['api/*.js']},
+  {n:'RLS on All Tables',desc:'Row Level Security on every Supabase table. Zero tables with rowsecurity=false. Verified: SELECT tablename FROM pg_tables WHERE schemaname=\'public\' AND rowsecurity = false; → zero rows.',where:['Supabase','all migrations']},
+  {n:'HMAC SHA512 Webhooks',desc:'Paystack webhook bodies verified using HMAC SHA512. Raw body required — bodyParser disabled. Computed hash must match X-Paystack-Signature.',where:['api/payments.js']},
+  {n:'CORS Restriction',desc:'setCorsHeaders() restricts Allow-Origin to production domain only. No wildcard CORS. Verified: grep -rn "Allow-Origin.*\\*" api/ → zero matches.',where:['api/_lib/cors.js']},
+  {n:'Rate Limiting',desc:'Per-IP (30/hr) and per-user (30/day) via Upstash. Defense: 5 sessions/day. Auth: 10 attempts/IP/15m.',where:['api/_lib/rate-limit.js','api/ai.js','api/auth.js']},
+  {n:'Claude Model Allowlist',desc:'api/ai.js only passes requests matching a known action allowlist. Model ID hardcoded server-side. Clients cannot inject a different model.',where:['api/ai.js']},
+  {n:'Prompt Injection Prevention',desc:'Step names resolved server-side to system prompts. Client sends action string only — never raw prompt text.',where:['api/ai.js','services/prompts.js']},
+  {n:'PDF Magic Byte Validation',desc:'Project Reviewer checks first 4 bytes equal %PDF (0x25 0x50 0x44 0x46). MIME type also checked. Rejected before reaching Anthropic.',where:['api/project-reviewer.js']},
+  {n:'PII Scrubbing (Sentry)',desc:'beforeSend hook deletes email, username, ip_address, and any key containing "token" or "key" before leaving the browser.',where:['src/lib/sentry.ts']},
+  {n:'Service Role Key: Server Only',desc:'SUPABASE_SERVICE_ROLE_KEY exists only as a Vercel env var and used only in api/_lib/supabase-admin.js. Never in src/.',where:['api/_lib/supabase-admin.js']},
+  {n:'Admin Route Gate',desc:'/admin/health gated by VITE_ADMIN_EMAIL check in ProtectedRoute.jsx. Regular users redirected.',where:['src/components/ProtectedRoute.jsx']},
+  {n:'bodyParser: false (Payments)',desc:'Must be disabled in payments.js for raw body HMAC. If enabled, HMAC computed against original raw bytes would always fail.',where:['api/payments.js']},
+  {n:'Free-Tier Server-Side Enforcement',desc:'Free trial limits enforced in api/ai.js by checking user_entitlements via service role. Client-side gates are UI only.',where:['api/ai.js','api/_lib/defense-credit-check.js']},
+  {n:'Idempotency Guard (Payments)',desc:'paystack_reference UNIQUE constraint. Webhook handler queries WHERE status="pending". Duplicate events find "success" and do nothing.',where:['api/payments.js','migrations/']},
+];
+
+// ══════════════════════════════════════════════════════
+// BLAST RADIUS DATA
+// ══════════════════════════════════════════════════════
+const BLAST_DATA=[
+  {id:'supabase',name:'Supabase',sev:'catastrophic',desc:'Auth, database, and realtime. The entire data layer.',impacts:[{feat:'Login / Signup',status:'down',desc:'auth.signInWithPassword() fails.'},{feat:'All workflow steps',status:'down',desc:'project_steps read/write fails.'},{feat:'Defense Simulator',status:'down',desc:'Sessions cannot be created or read.'},{feat:'Payment recording',status:'down',desc:'Webhooks cannot update payments or entitlements.'},{feat:'Landing page',status:'ok',desc:'Static pages served from Vercel CDN.'}],mitigations:['Monitor status.supabase.com.','Vercel returns 503 for all API calls — graceful error messages shown.','No data loss — recovery automatic when Supabase recovers.']},
+  {id:'anthropic',name:'Anthropic Claude',sev:'broken',desc:'AI API for all 6 steps, defense, and supervisor prep.',impacts:[{feat:'Topic Validator',status:'down',desc:'Cached responses still served if cached.'},{feat:'Chapter Architect',status:'down',desc:'No outline generation.'},{feat:'Defense Simulator',status:'down',desc:'No examiner questions.'},{feat:'Paper fetch',status:'ok',desc:'Semantic Scholar / OpenAlex independent.'},{feat:'Login / payments',status:'ok',desc:'Supabase/Paystack unaffected.'}],mitigations:['Cached responses (Redis) still served.','Sentry captures error. Telegram: 🔴 Generation failed.','Monitor status.anthropic.com.','Graceful 503: "AI service temporarily unavailable."']},
+  {id:'vercel',name:'Vercel Platform',sev:'catastrophic',desc:'Hosts all 12 functions and the React SPA.',impacts:[{feat:'Entire application',status:'down',desc:'All /api/* unreachable.'},{feat:'Payments',status:'down',desc:'Initiation fails. Webhooks fail (3 retries).'},{feat:'AI features',status:'down',desc:'All Claude proxy calls fail.'},{feat:'Static assets',status:'degraded',desc:'Cloudflare may serve cached files.'}],mitigations:['Monitor vercel-status.com.','Missed webhook retries: contact Paystack support to replay.']},
+  {id:'paystack',name:'Paystack',sev:'broken',desc:'Payment processing for all three tiers.',impacts:[{feat:'New payments',status:'down',desc:'Popup cannot load.'},{feat:'Existing access',status:'ok',desc:'Users who already paid retain entitlements.'},{feat:'All other features',status:'ok',desc:'AI, auth, defense independent.'}],mitigations:['Monitor dashboard.paystack.com/status.','Paystack retries webhooks up to 24h after recovery.','Manual entitlement grant via Supabase dashboard for urgent cases.']},
+  {id:'upstash',name:'Upstash Redis',sev:'degraded',desc:'Rate limiting and response caching.',impacts:[{feat:'Rate limiting',status:'degraded',desc:'Fail-open. Unlimited AI calls. Cost risk.'},{feat:'Response caching',status:'degraded',desc:'Every call hits Anthropic. Costs spike.'},{feat:'All app features',status:'ok',desc:'No user-facing errors.'}],mitigations:['Spend cap still enforced via Supabase daily_usage.','Consider lowering DAILY_CAP_USD if Redis down > 1h.']},
+  {id:'elevenlabs',name:'ElevenLabs TTS',sev:'degraded',desc:'Voice synthesis for Defense Simulator.',impacts:[{feat:'Defense voice',status:'degraded',desc:'Falls back to text-only display.'},{feat:'Defense session',status:'ok',desc:'Questions shown as text. Session completes normally.'},{feat:'Certificate + scoring',status:'ok',desc:'Fully independent of TTS.'}],mitigations:['api/speak.js has try/catch — graceful failure.','Voice is cosmetic, not functional. No data loss.']},
+  {id:'resend',name:'Resend Email',sev:'silent',desc:'Transactional email for auth and nurture.',impacts:[{feat:'Password reset',status:'down',desc:'Reset links not delivered.'},{feat:'Email confirmation',status:'down',desc:'New signups cannot confirm.'},{feat:'Nurture sequence',status:'degraded',desc:'Cron retries next day.'},{feat:'App functionality',status:'ok',desc:'All features for verified users unaffected.'}],mitigations:['Resend errors logged to Sentry.','Nurture: next cron tick retries (email_log dedup).','Monitor resend.com/status.']},
+  {id:'telegram',name:'Telegram Bot',sev:'silent',desc:'Real-time admin alerts and daily reports.',impacts:[{feat:'Admin notifications',status:'down',desc:'No alerts. Admin operates blind.'},{feat:'Daily report',status:'down',desc:'20:00 UTC report not delivered.'},{feat:'App functionality',status:'ok',desc:'Users completely unaffected.'}],mitigations:['Alerts are best-effort — errors caught silently.','Check Supabase dashboard directly for metrics.','Re-register webhook after recovery.']},
+];
+
+// ══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'brain') { resize(); fitView(); }
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// FLOWS RENDERER
+// ══════════════════════════════════════════════════════
+const LANE_H=90, BOX_W=150, BOX_H=52, STEP_PAD=56, LABEL_W=106, TOP_PAD=13, BOT_PAD=13;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function buildSwimlane(flow) {
+  const steps = flow.steps;
+  const svgW = LABEL_W + steps.length * (BOX_W + STEP_PAD) + 36;
+  const svgH = TOP_PAD + LANES.length * LANE_H + BOT_PAD;
+  const boxes = steps.map((s,i) => {
+    const li = LANE_IDX[s.lane] || 0;
+    const x = LABEL_W + i*(BOX_W+STEP_PAD) + STEP_PAD/2;
+    const y = TOP_PAD + li * LANE_H + (LANE_H - BOX_H) / 2;
+    return { x, y, cx: x+BOX_W/2, cy: y+BOX_H/2 };
+  });
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="font-family:Segoe UI,system-ui,sans-serif">
+<defs><marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="rgba(148,163,184,0.5)"/></marker></defs>`;
+
+  for (let i = 0; i < LANES.length; i++) {
+    const ln = LANES[i];
+    const y = TOP_PAD + i * LANE_H;
+    svg += `<rect x="0" y="${y}" width="${svgW}" height="${LANE_H}" fill="${i%2?'rgba(255,255,255,0.016)':'rgba(255,255,255,0.006)'}"/>`;
+    svg += `<rect x="0" y="${y}" width="${LABEL_W}" height="${LANE_H}" fill="${ln.col}16"/>`;
+    svg += `<text x="${LABEL_W/2}" y="${y+LANE_H/2}" text-anchor="middle" dominant-baseline="middle" fill="${ln.col}" font-size="10" font-weight="700">${esc(ln.label)}</text>`;
+    if (i > 0) svg += `<line x1="0" y1="${y}" x2="${svgW}" y2="${y}" stroke="rgba(255,255,255,0.035)" stroke-width="1"/>`;
+  }
+  svg += `<line x1="${LABEL_W}" y1="${TOP_PAD}" x2="${LABEL_W}" y2="${svgH-BOT_PAD}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+
+  for (let i = 0; i < steps.length-1; i++) {
+    const b1 = boxes[i], b2 = boxes[i+1];
+    const mx = (b1.x+BOX_W + b2.x) / 2;
+    const dash = b1.cy !== b2.cy ? 'stroke-dasharray="5 3"' : '';
+    svg += `<path d="M${b1.x+BOX_W},${b1.cy} C${mx},${b1.cy} ${mx},${b2.cy} ${b2.x},${b2.cy}" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="1.4" marker-end="url(#arr)" ${dash}/>`;
+  }
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i]; const b = boxes[i];
+    const ln = LANES[LANE_IDX[s.lane]||0];
+    const col = ln ? ln.col : '#64748B';
+    const icon = TYPE_ICONS[s.type] || '·';
+    const lns = s.label.split('\n');
+    const baseTY = lns.length === 1 ? b.cy+1 : b.cy-5;
+    svg += `<g class="step-g" data-i="${i}" style="cursor:pointer">
+<rect x="${b.x}" y="${b.y}" width="${BOX_W}" height="${BOX_H}" rx="6" fill="#09182a" stroke="${col}" stroke-width="1.5" stroke-opacity="0.5" id="sr${i}"/>
+<rect x="${b.x}" y="${b.y}" width="3" height="${BOX_H}" rx="1.5" fill="${col}" opacity="0.7"/>
+<text x="${b.x+10}" y="${b.y+13}" fill="${col}" font-size="8" font-weight="800" opacity="0.6">${icon} ${i+1}</text>`;
+    lns.forEach((line, li) => {
+      svg += `<text x="${b.x+10}" y="${baseTY+li*13}" fill="#CBD5E1" font-size="10.5" font-weight="600">${esc(line)}</text>`;
+    });
+    svg += `</g>`;
+  }
+  svg += `</svg>`;
+  return { svg, boxes };
+}
+
+let currentFlow = null, selectedStepIdx = -1;
+
+function renderFlowSidebar() {
+  const sb = document.getElementById('flows-sidebar');
+  let h = '';
+  for (const g of FLOW_GROUPS) {
+    h += `<div class="fg-section"><div class="fg-dot" style="background:${g.col}"></div>${g.icon} ${g.label}</div>`;
+    for (const f of g.flows) {
+      h += `<div class="flow-item" data-gid="${g.id}" data-fid="${f.id}">${f.name}</div>`;
+    }
+  }
+  sb.innerHTML = h;
+  sb.querySelectorAll('.flow-item').forEach(el => {
+    el.addEventListener('click', () => {
+      sb.querySelectorAll('.flow-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const g = FLOW_GROUPS.find(x => x.id === el.dataset.gid);
+      const f = g.flows.find(x => x.id === el.dataset.fid);
+      loadFlow(f);
+    });
+  });
+}
+
+function loadFlow(flow) {
+  currentFlow = flow; selectedStepIdx = -1;
+  const center = document.getElementById('flows-center');
+  const empty = document.getElementById('flows-empty');
+  if (empty) empty.style.display = 'none';
+  const { svg, boxes } = buildSwimlane(flow);
+  center.innerHTML = svg;
+  center.querySelector('svg').addEventListener('click', e => {
+    const g = e.target.closest('.step-g');
+    if (!g) return;
+    selectStep(parseInt(g.dataset.i), flow, boxes);
+  });
+  document.getElementById('fd-flow-name').textContent = flow.name;
+  document.getElementById('fd-flow-desc').textContent = flow.desc;
+  document.getElementById('fd-step-header').style.display = 'none';
+  document.getElementById('fd-empty-msg').style.display = 'block';
+  document.getElementById('fd-empty-msg').textContent = `Click any step. ${flow.steps.length} steps in this flow.`;
+  document.getElementById('fd-prev').disabled = true;
+  document.getElementById('fd-next').disabled = true;
+  document.getElementById('fd-step-count').textContent = '—';
+}
+
+function selectStep(idx, flow, boxes) {
+  selectedStepIdx = idx;
+  const s = flow.steps[idx];
+  const ln = LANES[LANE_IDX[s.lane]||0];
+  const col = ln ? ln.col : '#64748B';
+  document.querySelectorAll('[id^="sr"]').forEach((r, i) => {
+    r.setAttribute('fill', i === idx ? '#0f2a45' : '#09182a');
+    r.setAttribute('stroke-opacity', i === idx ? '1' : '0.5');
+    r.setAttribute('stroke-width', i === idx ? '2' : '1.5');
+  });
+  document.getElementById('fd-empty-msg').style.display = 'none';
+  const hdr = document.getElementById('fd-step-header');
+  hdr.style.display = 'block';
+  document.getElementById('fd-step-num').textContent = `Step ${idx+1} of ${flow.steps.length}`;
+  document.getElementById('fd-step-name').textContent = s.label.replace('\n', ' ');
+  const lw = document.getElementById('fd-lane-tag-wrap');
+  lw.innerHTML = `<span style="background:${col}20;color:${col};border:1px solid ${col}40;display:inline-block;padding:2px 8px;border-radius:4px;font-size:9.5px;font-weight:700;margin-bottom:8px">${ln?ln.label:s.lane}</span>`;
+  document.getElementById('fd-desc').textContent = s.desc;
+  const tt = document.getElementById('fd-type-tag');
+  const tcol = TYPE_COLORS[s.type] || '#64748B';
+  tt.textContent = TYPE_LABELS[s.type] || s.type;
+  tt.style.cssText = `background:${tcol}22;color:${tcol};border:1px solid ${tcol}44;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em`;
+  document.getElementById('fd-prev').disabled = idx === 0;
+  document.getElementById('fd-next').disabled = idx === flow.steps.length - 1;
+  document.getElementById('fd-step-count').textContent = `${idx+1}/${flow.steps.length}`;
+  document.getElementById('fd-prev')._cb = () => selectStep(idx-1, flow, boxes);
+  document.getElementById('fd-next')._cb = () => selectStep(idx+1, flow, boxes);
+}
+document.getElementById('fd-prev').addEventListener('click', function() { if (this._cb) this._cb(); });
+document.getElementById('fd-next').addEventListener('click', function() { if (this._cb) this._cb(); });
+
+// ══════════════════════════════════════════════════════
+// ERRORS RENDERER
+// ══════════════════════════════════════════════════════
+function renderErrors(filter) {
+  const list = filter === 'all' ? ERRORS : ERRORS.filter(e => e.sev === filter);
+  document.getElementById('err-grid').innerHTML = list.map(e => `
+<div class="ec b-${e.sev}">
+  <div class="ec-top"><div class="ec-name">${e.name}</div><div class="ec-sev s-${e.sev}">${e.sev}</div></div>
+  <div class="ec-trigger">${e.trigger}</div>
+  <div class="ec-effect"><b>Impact:</b> ${e.effect}</div>
+  <div class="ec-effect" style="margin-top:4px"><b>Fallback:</b> ${e.fallback}</div>
+</div>`).join('');
+}
+document.querySelectorAll('.sev-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderErrors(btn.dataset.sev);
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// STATES RENDERER
+// ══════════════════════════════════════════════════════
+function renderStateSelector() {
+  const sel = document.getElementById('state-sel');
+  sel.innerHTML = STATE_MACHINES.map(sm => `<button class="ssel-btn" data-smid="${sm.id}">${sm.label}</button>`).join('');
+  sel.querySelectorAll('.ssel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sel.querySelectorAll('.ssel-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStateMachine(STATE_MACHINES.find(x => x.id === btn.dataset.smid));
+    });
+  });
+}
+function renderStateMachine(sm) {
+  const SW=120, SH=36;
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  sm.states.forEach(s => { minX=Math.min(minX,s.x); minY=Math.min(minY,s.y); maxX=Math.max(maxX,s.x+SW); maxY=Math.max(maxY,s.y+SH); });
+  const PAD=60, W=maxX-minX+PAD*2, H=maxY-minY+PAD*2;
+  const ox=PAD-minX, oy=PAD-minY;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="font-family:Segoe UI,system-ui,sans-serif">
+<defs><marker id="sma" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="rgba(148,163,184,0.55)"/></marker></defs>`;
+  sm.transitions.forEach(t => {
+    const fs = sm.states.find(s => s.id === t.from), ts = sm.states.find(s => s.id === t.to);
+    if (!fs || !ts) return;
+    if (t.loop) {
+      const cx = fs.x+ox+SW/2;
+      svg += `<path d="M${fs.x+ox+SW*0.3},${fs.y+oy} Q${cx},${fs.y+oy-28} ${fs.x+ox+SW*0.7},${fs.y+oy}" fill="none" stroke="rgba(148,163,184,0.28)" stroke-width="1.4" marker-end="url(#sma)"/>`;
+      t.label.split('\n').forEach((line,li) => { svg += `<text x="${cx}" y="${fs.y+oy-32+li*11}" text-anchor="middle" fill="rgba(148,163,184,0.5)" font-size="8.5">${esc(line)}</text>`; });
+      return;
+    }
+    const x1=fs.x+ox+SW, y1=fs.y+oy+SH/2, x2=ts.x+ox, y2=ts.y+oy+SH/2;
+    const mx=(x1+x2)/2+(t.ox||0);
+    svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="rgba(148,163,184,0.28)" stroke-width="1.4" marker-end="url(#sma)"/>`;
+    const lx=mx, ly=(y1+y2)/2+(t.oy||0);
+    t.label.split('\n').forEach((line,li) => { svg += `<text x="${lx}" y="${ly+li*10-(t.label.split('\n').length-1)*5}" text-anchor="middle" fill="rgba(148,163,184,0.48)" font-size="8.5">${esc(line)}</text>`; });
+  });
+  sm.states.forEach(s => {
+    const col = s.col || '#475569', x=s.x+ox, y=s.y+oy;
+    svg += `<rect x="${x}" y="${y}" width="${SW}" height="${SH}" rx="7" fill="${col}1e" stroke="${col}" stroke-width="${s.terminal?2:1.5}"/>`;
+    if (s.initial) svg += `<circle cx="${x+9}" cy="${y+SH/2}" r="3.5" fill="${col}"/>`;
+    if (s.terminal) svg += `<rect x="${x+3}" y="${y+3}" width="${SW-6}" height="${SH-6}" rx="5" fill="none" stroke="${col}" stroke-width="0.7" stroke-dasharray="3 2"/>`;
+    svg += `<text x="${x+SW/2+(s.initial?4:0)}" y="${y+SH/2+1}" text-anchor="middle" dominant-baseline="middle" fill="${col}" font-size="11" font-weight="700">${esc(s.label)}</text>`;
+  });
+  svg += `</svg>`;
+  document.getElementById('state-svg-wrap').innerHTML = svg;
+  document.getElementById('state-info-panel').innerHTML = `<h3>${sm.label}</h3><p style="margin-bottom:8px">${sm.desc}</p><div style="font-size:10px;color:var(--text3);background:rgba(255,255,255,.04);padding:7px;border-radius:5px;font-family:monospace;margin-bottom:10px">${sm.tableDesc}</div><div style="font-size:10.5px;color:var(--text2);line-height:1.6">● Filled dot = initial state<br>▭ Dashed border = terminal state</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// SECURITY RENDERER
+// ══════════════════════════════════════════════════════
+function renderSecurity() {
+  document.getElementById('sec-inner').innerHTML = SECURITY_GATES.map((g,i) => `
+<div class="sec-card">
+  <div class="sec-head"><div class="sec-num">${i+1}</div><div class="sec-name">${g.n}</div></div>
+  <div class="sec-desc">${g.desc}</div>
+  <div class="sec-tags">${g.where.map(w=>`<span class="sec-tag">${w}</span>`).join('')}</div>
+</div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// BLAST RENDERER
+// ══════════════════════════════════════════════════════
+const SEV_COL={down:'#DC2626',degraded:'#D97706',ok:'#10B981'};
+function renderBlastSidebar() {
+  const sb = document.getElementById('blast-sidebar');
+  sb.innerHTML = '<h4>Services</h4>' + BLAST_DATA.map(b => `
+<button class="blast-btn" data-bid="${b.id}">
+  <div class="blast-dot dot-${b.sev}"></div>${b.name}
+  <span style="margin-left:auto;font-size:8.5px;font-weight:800;text-transform:uppercase;color:${b.sev==='catastrophic'?'#7F1D1D':b.sev==='broken'?'#DC2626':b.sev==='degraded'?'#D97706':'#475569'}">${b.sev.slice(0,4).toUpperCase()}</span>
+</button>`).join('');
+  sb.querySelectorAll('.blast-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sb.querySelectorAll('.blast-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderBlastDetail(BLAST_DATA.find(x => x.id === btn.dataset.bid));
+    });
+  });
+}
+function renderBlastDetail(b) {
+  document.getElementById('blast-welcome').style.display = 'none';
+  const c = document.getElementById('blast-content');
+  c.style.display = 'block';
+  document.getElementById('blast-title').textContent = b.name + ' goes down';
+  document.getElementById('blast-sub').textContent = b.desc;
+  const badge = document.getElementById('blast-sev-badge');
+  badge.textContent = b.sev.toUpperCase();
+  badge.style.cssText = `display:inline-block;padding:3px 11px;border-radius:4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:13px;background:${b.sev==='catastrophic'?'#7F1D1D':b.sev==='broken'?'#DC2626':b.sev==='degraded'?'#D97706':'#334155'};color:#fff`;
+  document.getElementById('blast-impact-grid').innerHTML = b.impacts.map(imp => `
+<div class="bic">
+  <div class="bic-top"><div class="bic-status" style="background:${SEV_COL[imp.status]||'#64748B'}"></div>
+  <div class="bic-feat">${imp.feat} <span style="font-size:8.5px;font-weight:800;padding:1px 4px;border-radius:2px;background:${SEV_COL[imp.status]||'#64748B'}28;color:${SEV_COL[imp.status]||'#64748B'};margin-left:4px">${imp.status.toUpperCase()}</span></div></div>
+  <div class="bic-desc">${imp.desc}</div>
+</div>`).join('');
+  document.getElementById('blast-mit-list').innerHTML = b.mitigations.map(m => `<li>${m}</li>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+window.addEventListener('resize', () => { resize(); });
+resize();
+fitView();
+requestAnimationFrame(renderFrame);
+
+renderFlowSidebar();
+renderErrors('all');
+renderStateSelector();
+renderSecurity();
+renderBlastSidebar();
+
+// Connect on load if key exists, otherwise show setup
+if (anonKey) {
+  connectRealtime();
+} else {
+  showSetup();
+}
+
+// Keyboard shortcut: R = reset view
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.getElementById('tab-brain').classList.contains('active')) {
+    fitView();
+  }
+});
+
+// Demo pulse (fires once on load to show the system is alive)
+setTimeout(() => {
+  if (anonKey) return; // only show demo if not connected
+  // actually always show a demo pulse sequence
+}, 2000);
+
+// ─── Periodic demo pulses when not connected (shows the visualization is alive) ───
+function demoHeartbeat() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  const demoEvents = ['step_completed','payment_verified','user_signed_up','defense_started'];
+  const evt = demoEvents[Math.floor(Math.random() * demoEvents.length)];
+  const cfg = EVENT_MAP[evt];
+  const now = performance.now();
+  cfg.ids.forEach(id => {
+    const n = nodeById[id];
+    if (n) n.pulses.push({ t: now + Math.random() * 400, col: cfg.col });
+  });
+}
+setInterval(demoHeartbeat, 8000);
