@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /brain.html
 
 Sitemap: https://fypro.com.ng/sitemap.xml
