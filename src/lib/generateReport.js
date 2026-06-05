@@ -81,8 +81,8 @@ export function buildStepCard(stepIndex, innerHTML) {
   const num = stepIndex + 1
   return `
     <div style="background:#FFFFFF;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <div style="background:${c.bg};border-left:5px solid ${c.border};padding:12px 16px;position:relative;overflow:hidden;">
-        <div style="position:absolute;right:12px;bottom:-8px;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:72px;font-weight:800;color:${c.border};opacity:0.06;line-height:1;pointer-events:none;user-select:none;">${num}</div>
+      <div style="background:${c.bg};border-left:5px solid ${c.border};padding:14px 16px 16px;position:relative;">
+        <div style="position:absolute;right:10px;bottom:4px;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:80px;font-weight:800;color:${c.border};opacity:0.07;line-height:1;pointer-events:none;user-select:none;">${num}</div>
         ${innerHTML}
       </div>
     </div>`
@@ -101,25 +101,25 @@ export function buildHeader(state, logoDataUrl) {
     : `<span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:16px;font-weight:800;color:#FFFFFF;letter-spacing:1px;">FYPro</span>`
 
   return `
-    <div style="background:linear-gradient(135deg,#0066FF 0%,#1E40AF 100%);padding:20px 24px 18px;position:relative;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0066FF 0%,#1E40AF 100%);padding:22px 24px 20px;position:relative;overflow:hidden;">
       <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);opacity:0.06;pointer-events:none;">
         <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" fill="#FFFFFF" viewBox="0 0 256 256"><path d="${SHIELD_PATH}"/></svg>
       </div>
       <div style="position:absolute;bottom:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
-        <div style="flex:1;max-width:65%;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
-            ${logoHTML}
-            <span style="color:rgba(255,255,255,0.35);font-size:14px;">·</span>
-            <span style="color:rgba(255,255,255,0.55);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Progress Report</span>
-          </div>
-          ${topic ? `<div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:16px;font-weight:700;line-height:1.45;margin-bottom:9px;">${esc(topic)}</div>` : ''}
-          ${studentLine ? `<div style="color:rgba(255,255,255,0.7);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;font-weight:500;">${esc(studentLine)}</div>` : ''}
+
+      <div style="position:absolute;top:22px;right:24px;text-align:right;">
+        <div style="background:#16A34A;color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:1.5px;display:inline-block;white-space:nowrap;">${completed} / 6 COMPLETE</div>
+        <div style="color:rgba(255,255,255,0.4);font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;margin-top:5px;white-space:nowrap;">${esc(dateStr)}</div>
+      </div>
+
+      <div style="position:relative;padding-right:150px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+          ${logoHTML}
+          <span style="color:rgba(255,255,255,0.35);font-size:14px;">·</span>
+          <span style="color:rgba(255,255,255,0.55);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Progress Report</span>
         </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:16px;">
-          <div style="background:#16A34A;color:#FFFFFF;font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:1.5px;margin-bottom:6px;display:inline-block;">${completed} / 6 COMPLETE</div>
-          <div style="color:rgba(255,255,255,0.4);font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;display:block;">${esc(dateStr)}</div>
-        </div>
+        ${topic ? `<div style="color:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:15px;font-weight:700;line-height:1.5;margin-bottom:8px;">${esc(topic)}</div>` : ''}
+        ${studentLine ? `<div style="color:rgba(255,255,255,0.7);font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:500;">${esc(studentLine)}</div>` : ''}
       </div>
     </div>`
 }
@@ -159,8 +159,8 @@ export function buildStep1(state) {
   const c = STEP_COLORS[0]
 
   const inner = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 1 · ${c.name}</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 1 · ${c.name}</span>
       ${verdict ? badge(verdict.toUpperCase(), vColor) : ''}
     </div>
     ${topic ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;line-height:1.5;margin-bottom:4px;">${esc(topic)}</div>` : ''}
@@ -186,9 +186,9 @@ export function buildStep2(state) {
     </div>`).join('') : ''
 
   const inner = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 2 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;">${totalCh} chapters · ${totalWords} words</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 2 · ${c.name}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;flex-shrink:0;white-space:nowrap;">${totalCh} chapters · ${totalWords} words</span>
     </div>
     ${cs.structure_note ? bodyText(cs.structure_note) : ''}
     ${chapRows ? `<div style="margin-top:4px;">${chapRows}</div>` : ''}`
@@ -206,7 +206,7 @@ export function buildStep3(state) {
 
   const inner = `
     <div style="margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 3 · ${c.name}</span>
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 3 · ${c.name}</span>
     </div>
     ${state.chosenMethodology ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;margin-bottom:5px;">${esc(state.chosenMethodology)}</div>` : ''}
     ${ma?.recommended_reason ? bodyText(ma.recommended_reason) : ''}
@@ -240,9 +240,9 @@ export function buildStep4(state) {
   }).join('') : ''
 
   const inner = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 4 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 4 · ${c.name}</span>
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;flex-shrink:0;white-space:nowrap;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
     </div>
     ${wp.weekly_average ? kvRow('Weekly avg', `${wp.weekly_average.toLocaleString()} words / week`) : ''}
     ${weekRows ? `<div style="margin-top:4px;">${weekRows}</div>` : ''}
@@ -263,8 +263,8 @@ export function buildStep5(state) {
   const c         = STEP_COLORS[4]
 
   const inner = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 5 · ${c.name}</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 5 · ${c.name}</span>
       ${rd?.grade ? badge(`${rd.grade.toUpperCase()}${rd.score_estimate ? ' — ' + rd.score_estimate : ''}`, gColor) : ''}
     </div>
     ${up.fileName ? kvRow('Document', up.fileName) : ''}
@@ -311,8 +311,8 @@ export function buildStep6(state) {
   }).join('') : ''
 
   const inner = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 6 · ${c.name}</span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 6 · ${c.name}</span>
       ${ds?.panel_score !== undefined ? badge(`${ds.panel_score} / 10${ds.panel_score_label ? ' — ' + ds.panel_score_label : ''}`, sColor) : ''}
     </div>
     ${ds?.panel_verdict ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#374151;font-style:italic;margin:0 0 8px 0;line-height:1.6;">"${esc(ds.panel_verdict)}"</p>` : ''}
@@ -326,7 +326,7 @@ export function buildStep6(state) {
 
 // ── Companion helpers (shared style) ─────────────────────────────────────────
 
-const COMPANION_INNER = 'background:#F0FDFA;border-left:4px dashed #0891B2;padding:12px 16px;position:relative;overflow:hidden;'
+const COMPANION_INNER = 'background:#F0FDFA;border-left:4px dashed #0891B2;padding:14px 16px 16px;position:relative;'
 
 function companionCard(labelSuffix, body) {
   return `

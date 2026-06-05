@@ -44,7 +44,7 @@ describe('buildStepCard', () => {
   it('applies step 2 purple border', () => { expect(buildStepCard(2, '')).toContain('border-left:5px solid #7C3AED') })
   it('renders step 1 number watermark', () => { expect(buildStepCard(0, '')).toContain('>1<') })
   it('renders step 5 number watermark', () => { expect(buildStepCard(4, '')).toContain('>5<') })
-  it('watermark has low opacity', () => { expect(buildStepCard(0, '')).toContain('opacity:0.06') })
+  it('watermark has low opacity', () => { expect(buildStepCard(0, '')).toContain('opacity:0.07') })
 })
 
 // ── buildProgressBar ──────────────────────────────────────────────────────────
