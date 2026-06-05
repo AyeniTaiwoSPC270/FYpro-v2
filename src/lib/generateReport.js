@@ -68,9 +68,9 @@ export function infoBox(text) {
 
 export function kvRow(label, value) {
   if (!value) return ''
-  return `<div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;">
-    <span style="font-weight:700;color:#6B7280;text-transform:uppercase;font-size:10px;letter-spacing:0.5px;min-width:100px;padding-top:1px;">${esc(label)}</span>
-    <span style="color:#0D1B2A;font-weight:400;">${esc(value)}</span>
+  return `<div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;flex-wrap:wrap;">
+    <span style="font-weight:700;color:#6B7280;text-transform:uppercase;font-size:10px;letter-spacing:0.5px;min-width:110px;flex-shrink:0;padding-top:1px;">${esc(label)}</span>
+    <span style="color:#0D1B2A;font-weight:400;flex:1;min-width:0;">${esc(value)}</span>
   </div>`
 }
 
@@ -351,9 +351,9 @@ export function buildLiteratureMap(state) {
     </div>`).join('') : ''
 
   const sourceHTML = lm.source_types?.length ? lm.source_types.map(src => `
-    <div style="display:flex;gap:10px;margin:4px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;">
-      <span style="font-weight:700;color:#0891B2;min-width:120px;flex-shrink:0;">${esc(src.type || '')}</span>
-      <span style="color:#374151;flex:1;">${esc(src.rationale || '')}${src.access ? ' · ' + esc(src.access) : ''}</span>
+    <div style="margin:6px 0;font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;line-height:1.5;">
+      <div style="font-weight:700;color:#0891B2;margin-bottom:2px;">${esc(src.type || '')}</div>
+      <div style="color:#374151;">${esc(src.rationale || '')}${src.access ? ' · ' + esc(src.access) : ''}</div>
     </div>`).join('') : ''
 
   const papersHTML = lm.papers?.length ? lm.papers.slice(0, 8).map(p => {
