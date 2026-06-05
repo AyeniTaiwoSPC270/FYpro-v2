@@ -159,9 +159,9 @@ export function buildStep1(state) {
   const c = STEP_COLORS[0]
 
   const inner = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 1 · ${c.name}</span>
-      ${verdict ? badge(verdict.toUpperCase(), vColor) : ''}
+    ${verdict ? `<div style="position:absolute;top:14px;right:16px;">${badge(verdict.toUpperCase(), vColor)}</div>` : ''}
+    <div style="margin-bottom:8px;${verdict ? 'padding-right:130px;' : ''}">
+      <div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 1 · ${c.name}</div>
     </div>
     ${topic ? `<div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:14px;font-weight:700;color:#0D1B2A;line-height:1.5;margin-bottom:4px;">${esc(topic)}</div>` : ''}
     ${tv?.verdict_reason ? bodyText(tv.verdict_reason) : ''}`
@@ -186,9 +186,11 @@ export function buildStep2(state) {
     </div>`).join('') : ''
 
   const inner = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 2 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;flex-shrink:0;white-space:nowrap;">${totalCh} chapters · ${totalWords} words</span>
+    <div style="position:absolute;top:14px;right:16px;">
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;color:#6B7280;white-space:nowrap;">${totalCh} chapters · ${totalWords} words</span>
+    </div>
+    <div style="margin-bottom:8px;padding-right:160px;">
+      <div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 2 · ${c.name}</div>
     </div>
     ${cs.structure_note ? bodyText(cs.structure_note) : ''}
     ${chapRows ? `<div style="margin-top:4px;">${chapRows}</div>` : ''}`
@@ -240,9 +242,11 @@ export function buildStep4(state) {
   }).join('') : ''
 
   const inner = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 4 · ${c.name}</span>
-      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:#6B7280;flex-shrink:0;white-space:nowrap;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
+    <div style="position:absolute;top:14px;right:16px;">
+      <span style="font-family:'JetBrains Mono','Courier New',monospace;font-size:10px;color:#6B7280;white-space:nowrap;">${wp.total_weeks || ''} wks · Deadline ${esc(deadline)}</span>
+    </div>
+    <div style="margin-bottom:7px;padding-right:200px;">
+      <div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 4 · ${c.name}</div>
     </div>
     ${wp.weekly_average ? kvRow('Weekly avg', `${wp.weekly_average.toLocaleString()} words / week`) : ''}
     ${weekRows ? `<div style="margin-top:4px;">${weekRows}</div>` : ''}
@@ -263,9 +267,9 @@ export function buildStep5(state) {
   const c         = STEP_COLORS[4]
 
   const inner = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 5 · ${c.name}</span>
-      ${rd?.grade ? badge(`${rd.grade.toUpperCase()}${rd.score_estimate ? ' — ' + rd.score_estimate : ''}`, gColor) : ''}
+    ${rd?.grade ? `<div style="position:absolute;top:14px;right:16px;">${badge(`${rd.grade.toUpperCase()}${rd.score_estimate ? ' — ' + rd.score_estimate : ''}`, gColor)}</div>` : ''}
+    <div style="margin-bottom:6px;${rd?.grade ? 'padding-right:140px;' : ''}">
+      <div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 5 · ${c.name}</div>
     </div>
     ${up.fileName ? kvRow('Document', up.fileName) : ''}
     ${rd?.grade_justification ? bodyText(rd.grade_justification) : ''}
@@ -311,9 +315,9 @@ export function buildStep6(state) {
   }).join('') : ''
 
   const inner = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;flex:1;min-width:0;">Step 6 · ${c.name}</span>
-      ${ds?.panel_score !== undefined ? badge(`${ds.panel_score} / 10${ds.panel_score_label ? ' — ' + ds.panel_score_label : ''}`, sColor) : ''}
+    ${ds?.panel_score !== undefined ? `<div style="position:absolute;top:14px;right:16px;">${badge(`${ds.panel_score} / 10${ds.panel_score_label ? ' — ' + ds.panel_score_label : ''}`, sColor)}</div>` : ''}
+    <div style="margin-bottom:6px;${ds?.panel_score !== undefined ? 'padding-right:160px;' : ''}">
+      <div style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:11px;font-weight:800;color:${c.label};letter-spacing:2px;text-transform:uppercase;">Step 6 · ${c.name}</div>
     </div>
     ${ds?.panel_verdict ? `<p style="font-family:'Poppins','Helvetica Neue',sans-serif;font-size:12px;color:#374151;font-style:italic;margin:0 0 8px 0;line-height:1.6;">"${esc(ds.panel_verdict)}"</p>` : ''}
     ${flagsHTML ? `${subsectionLabel('Red Flags')}${flagsHTML}` : ''}

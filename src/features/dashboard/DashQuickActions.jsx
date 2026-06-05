@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
@@ -70,6 +71,21 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
       : a
   )
 
+  const [dlState, setDlState] = useState('idle') // 'idle' | 'loading' | 'success' | 'error'
+
+  const handleDownload = async () => {
+    if (dlState === 'loading') return
+    setDlState('loading')
+    try {
+      await onDownloadReport()
+      setDlState('success')
+      setTimeout(() => setDlState('idle'), 3000)
+    } catch {
+      setDlState('error')
+      setTimeout(() => setDlState('idle'), 3000)
+    }
+  }
+
   const [sectionRef, sectionVisible] = useReveal()
   const [r0, v0] = useReveal()
   const [r1, v1] = useReveal()
@@ -98,7 +114,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                   isLockedAction
                     ? () => showToastMessage('Complete all 6 steps to unlock this feature')
                     : action.onClickKey === 'download'
-                    ? onDownloadReport
+                    ? handleDownload
                     : action.onClickKey === 'defense'
                     ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(5); navigate('/app') }
                     : action.path
@@ -142,6 +158,34 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                   >
                     {action.ctaLabel} <ArrowRightIcon size={11} />
                   </motion.span>
+                ) : action.onClickKey === 'download' ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold transition-all duration-200"
+                    style={{
+                      background: dlState === 'success' ? 'rgba(22,163,74,0.15)'
+                               : dlState === 'error'   ? 'rgba(220,38,38,0.15)'
+                               : action.ctaBg,
+                      color: dlState === 'success' ? '#4ADE80'
+                           : dlState === 'error'   ? '#F87171'
+                           : dlState === 'loading' ? 'rgba(252,211,77,0.6)'
+                           : action.ctaColor,
+                      border: dlState === 'success' ? '1.5px solid rgba(22,163,74,0.4)'
+                            : dlState === 'error'   ? '1.5px solid rgba(220,38,38,0.4)'
+                            : action.ctaBorder,
+                      opacity: isLockedAction ? 0.5 : 1,
+                      cursor: dlState === 'loading' ? 'wait' : isLockedAction ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {dlState === 'loading' ? (
+                      <><svg className="animate-spin" style={{width:11,height:11}} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="32" strokeDashoffset="12"/></svg> Generating...</>
+                    ) : dlState === 'success' ? (
+                      <><svg style={{width:11,height:11}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Downloaded!</>
+                    ) : dlState === 'error' ? (
+                      <><svg style={{width:11,height:11}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Failed — Retry</>
+                    ) : (
+                      <>{action.ctaLabel} <DownloadIcon /></>
+                    )}
+                  </span>
                 ) : (
                   <span
                     className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
