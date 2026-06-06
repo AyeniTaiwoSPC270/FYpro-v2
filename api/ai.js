@@ -426,14 +426,150 @@ async function handleSyncRunCounts(req, res) {
   });
 }
 
+/**
+ * Checks all 19 achievement conditions for the authenticated user server-side,
+ * writes any newly earned ones to user_achievements via service role,
+ * and returns the list of newly earned keys.
+ * Called after: step completion, defense session end, referral qualification, certificate share.
+ */
+async function handleCheckAchievements(req, res) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  const { data: { user } = {}, error: authErr } = await supabaseAdmin.auth.getUser(token);
+  if (authErr || !user) return res.status(401).json({ error: 'Invalid token.' });
+
+  const userId = user.id;
+  const shared = req.body?.shared === true;
+
+  // Fetch all user data + existing achievements in parallel
+  const [
+    { data: steps },
+    { data: defSessions },
+    { data: certs },
+    { data: referrals },
+    { data: credits },
+    { data: existing },
+  ] = await Promise.all([
+    supabaseAdmin.from('project_steps').select('step_name, completed_at').eq('user_id', userId),
+    supabaseAdmin.from('defense_sessions').select('final_score, completed_at').eq('user_id', userId).order('completed_at', { ascending: true }),
+    supabaseAdmin.from('defense_certificates').select('id').eq('user_id', userId).limit(1),
+    supabaseAdmin.from('referrals').select('status, created_at').eq('referrer_user_id', userId),
+    supabaseAdmin.from('defense_credits').select('id').eq('user_id', userId).limit(1),
+    supabaseAdmin.from('user_achievements').select('achievement_key').eq('user_id', userId),
+  ]);
+
+  const earned = new Set((existing ?? []).map(r => r.achievement_key));
+  const newlyEarned = [];
+  const userCreatedAt = new Date(user.created_at);
+
+  function check(key, condition) {
+    if (!earned.has(key) && condition) {
+      newlyEarned.push({ user_id: userId, achievement_key: key });
+      earned.add(key);
+    }
+  }
+
+  const stepNames = (steps ?? []).map(s => s.step_name);
+  const scores = (defSessions ?? []).map(s => s.final_score).filter(n => typeof n === 'number');
+  const maxScore = scores.length > 0 ? Math.max(...scores) : -1;
+  const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1
+
+  // ── MILESTONE ──────────────────────────────────────────────────────────────
+  check('first_step',    stepNames.includes('topic_validator'));
+  check('halfway',       stepNames.length >= 3);
+  check('defense_ready', stepNames.length >= 6 && (defSessions ?? []).length > 0);
+  check('certified',     (certs ?? []).length > 0);
+
+  // ── SPEED ──────────────────────────────────────────────────────────────────
+  const tvStep = (steps ?? []).find(s => s.step_name === 'topic_validator');
+  if (tvStep) {
+    const tvMs   = new Date(tvStep.completed_at).getTime();
+    const signupMs = userCreatedAt.getTime();
+    check('fast_starter', tvMs - signupMs <= 60 * 60 * 1000);
+  }
+
+  // Sprint: 3 steps on same WAT calendar day
+  const stepsByWatDay = {};
+  for (const s of (steps ?? [])) {
+    const watDate = new Date(new Date(s.completed_at).getTime() + WAT_OFFSET_MS);
+    const key = watDate.toISOString().slice(0, 10);
+    stepsByWatDay[key] = (stepsByWatDay[key] ?? 0) + 1;
+  }
+  check('sprint', Object.values(stepsByWatDay).some(n => n >= 3));
+
+  // Speed run: all 6 steps within 7 days of signup
+  if (stepNames.length >= 6) {
+    const latestStepMs = Math.max(...(steps ?? []).map(s => new Date(s.completed_at).getTime()));
+    check('speed_run', latestStepMs - userCreatedAt.getTime() <= 7 * 24 * 60 * 60 * 1000);
+  }
+
+  // ── EFFORT ─────────────────────────────────────────────────────────────────
+  check('sharp_mind',    maxScore >= 8);
+  check('excellence',    maxScore >= 9);
+  check('perfectionist', maxScore === 10);
+  check('persistent',    (defSessions ?? []).length >= 3);
+
+  // Never Give Up: ran defense again after a score < 7
+  const hasBadScore  = scores.some(s => s < 7);
+  const hasLaterRun  = hasBadScore && scores.length > 1;
+  check('never_give_up', hasLaterRun);
+
+  // ── SOCIAL ─────────────────────────────────────────────────────────────────
+  const qualifiedRefs = (referrals ?? []).filter(r => r.status === 'qualified' || r.status === 'rewarded');
+  check('ambassador',  (referrals ?? []).length > 0);
+  check('connector',   qualifiedRefs.length >= 3);
+  check('earned_it',   (credits ?? []).length > 0);
+  check('shared',      shared);
+
+  // ── HIDDEN ─────────────────────────────────────────────────────────────────
+  // Night Owl: step completed midnight–4 AM WAT
+  const nightOwl = (steps ?? []).some(s => {
+    const localHour = (new Date(s.completed_at).getUTCHours() + 1) % 24;
+    return localHour < 4;
+  });
+  check('night_owl', nightOwl);
+
+  // Early Bird: step completed before 7 AM WAT
+  const earlyBird = (steps ?? []).some(s => {
+    const localHour = (new Date(s.completed_at).getUTCHours() + 1) % 24;
+    return localHour < 7;
+  });
+  check('early_bird', earlyBird);
+
+  // Dedicated: meaningful actions on 5+ distinct WAT calendar days
+  const actionDays = new Set();
+  for (const s of (steps ?? [])) {
+    actionDays.add(new Date(new Date(s.completed_at).getTime() + WAT_OFFSET_MS).toISOString().slice(0, 10));
+  }
+  for (const d of (defSessions ?? [])) {
+    if (d.completed_at) {
+      actionDays.add(new Date(new Date(d.completed_at).getTime() + WAT_OFFSET_MS).toISOString().slice(0, 10));
+    }
+  }
+  check('dedicated', actionDays.size >= 5);
+
+  // Write newly earned — upsert is safe (UNIQUE constraint prevents duplicates)
+  if (newlyEarned.length > 0) {
+    await supabaseAdmin
+      .from('user_achievements')
+      .upsert(newlyEarned, { onConflict: 'user_id,achievement_key', ignoreDuplicates: true })
+      .catch(err => console.error('[check-achievements] upsert error:', err?.message));
+  }
+
+  return res.status(200).json({ newlyEarned: newlyEarned.map(r => r.achievement_key) });
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.query.action === 'defense')          return handleDefense(req, res);
-  if (req.query.action === 'supervisor-prep')  return handleSupervisorPrep(req, res);
-  if (req.query.action === 'sync-run-counts')  return handleSyncRunCounts(req, res);
+  if (req.query.action === 'defense')             return handleDefense(req, res);
+  if (req.query.action === 'supervisor-prep')     return handleSupervisorPrep(req, res);
+  if (req.query.action === 'sync-run-counts')     return handleSyncRunCounts(req, res);
+  if (req.query.action === 'check-achievements')  return handleCheckAchievements(req, res);
   return handleGeneral(req, res);
 }
