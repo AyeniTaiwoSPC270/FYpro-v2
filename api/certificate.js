@@ -11,6 +11,7 @@ import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
@@ -48,6 +49,16 @@ async function ensureFonts() {
   } catch { /* fall back to helvetica */ }
 }
 
+// ── QR code ──────────────────────────────────────────────────────────────────
+
+async function generateQR(url, darkColor = '#0D1B2A') {
+  return QRCode.toDataURL(url, {
+    width:  80,
+    margin: 1,
+    color:  { dark: darkColor, light: '#FFFFFF00' },
+  });
+}
+
 // ── PDF builder ───────────────────────────────────────────────────────────────
 
 function registerFonts(doc) {
@@ -61,153 +72,55 @@ function registerFonts(doc) {
   }
 }
 
-function buildCertificatePDF({ recipientName, faculty, department, topicTitle, score, certNumber, issuedAt }) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W  = 210;
-  const H  = 297;
-  const cx = W / 2;
+async function buildCertificatePDF({
+  recipientName,
+  faculty,
+  department,
+  topicTitle,
+  score,
+  certNumber,
+  issuedAt,
+  style       = 'modern',
+  orientation = 'portrait',
+}) {
+  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+  const W   = orientation === 'landscape' ? 297 : 210;
+  const H   = orientation === 'landscape' ? 210 : 297;
 
   registerFonts(doc);
 
-  const headingFont = dmSerifBase64 ? 'DMSerifDisplay' : 'times';
-  const bodyFont    = poppinsBase64 ? 'Poppins'        : 'helvetica';
+  const headingFont = dmSerifBase64  ? 'DMSerifDisplay' : 'times';
+  const bodyFont    = poppinsBase64  ? 'Poppins'        : 'helvetica';
 
-  // ── Top accent bar (8mm) ────────────────────────────────────────────────────
-  doc.setFillColor(0, 102, 255);
-  doc.rect(0, 0, W, 8, 'F');
-
-  // ── Logo / wordmark ─────────────────────────────────────────────────────────
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, 'PNG', cx - 20, 14, 40, 14);
-    } catch {
-      drawWordmark(doc, cx, headingFont, 26);
-    }
-  } else {
-    drawWordmark(doc, cx, headingFont, 26);
-  }
-
-  // ── Heading strip background ────────────────────────────────────────────────
-  doc.setFillColor(239, 246, 255);
-  doc.rect(0, 34, W, 24, 'F');
-
-  // ── Main heading ────────────────────────────────────────────────────────────
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(17);
-  doc.setTextColor(13, 27, 42);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 50, { align: 'center' });
-
-  // ── Decorative rule with end dots ───────────────────────────────────────────
-  const lineX1 = cx - 52;
-  const lineX2 = cx + 52;
-  const lineY  = 57;
-  doc.setDrawColor(0, 102, 255);
-  doc.setLineWidth(0.8);
-  doc.line(lineX1, lineY, lineX2, lineY);
-  doc.setFillColor(0, 102, 255);
-  doc.circle(lineX1, lineY, 1, 'F');
-  doc.circle(lineX2, lineY, 1, 'F');
-
-  // ── "This certifies that" ───────────────────────────────────────────────────
-  doc.setFont(bodyFont, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(107, 114, 128);
-  doc.text('This certifies that', cx, 72, { align: 'center' });
-
-  // ── Recipient name ──────────────────────────────────────────────────────────
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(22);
-  doc.setTextColor(13, 27, 42);
-  const displayName = recipientName.length > 48
-    ? recipientName.slice(0, 47) + '…'
-    : recipientName;
-  doc.text(displayName, cx, 85, { align: 'center' });
-
-  // ── Faculty & department (muted, below name) ────────────────────────────────
-  if (faculty || department) {
-    doc.setFont(bodyFont, 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(107, 114, 128);
-    const affiliation = [faculty, department].filter(Boolean).join(' · ');
-    doc.text(affiliation, cx, 93, { align: 'center' });
-  }
-
-  // ── "has demonstrated..." ───────────────────────────────────────────────────
-  doc.setFont(bodyFont, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(107, 114, 128);
-  doc.text('has demonstrated defence readiness for', cx, 101, { align: 'center' });
-
-  // ── Topic title (wraps to multiple lines) ───────────────────────────────────
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(14);
-  doc.setTextColor(13, 27, 42);
-  const maxTopicWidth  = 150;
-  const topicLines     = doc.splitTextToSize(topicTitle, maxTopicWidth);
-  const topicStartY    = 114;
-  const topicLineHeight = 7;
-  doc.text(topicLines, cx, topicStartY, { align: 'center' });
-  const topicEndY = topicStartY + (topicLines.length - 1) * topicLineHeight;
-
-  // ── Horizontal divider ──────────────────────────────────────────────────────
-  const ruleY = topicEndY + 14;
-  doc.setDrawColor(229, 231, 235);
-  doc.setLineWidth(0.3);
-  doc.line(40, ruleY, W - 40, ruleY);
-
-  // ── Score line ──────────────────────────────────────────────────────────────
-  const scoreY = ruleY + 14;
-  const scoreNum = Number(score);
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(0, 102, 255);
-  doc.text(
-    `FYPro Defense Simulator Score: ${Number.isInteger(scoreNum) ? scoreNum : scoreNum.toFixed(1)}/10`,
-    cx,
-    scoreY,
-    { align: 'center' },
-  );
-
-  // ── Issue date ──────────────────────────────────────────────────────────────
-  const dateStr = new Date(issuedAt).toLocaleDateString('en-GB', {
+  const scoreNum    = Number(score);
+  const scoreLabel  = `${Number.isInteger(scoreNum) ? scoreNum : scoreNum.toFixed(1)}/10`;
+  const dateStr     = new Date(issuedAt).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
-  doc.setFont(bodyFont, 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(107, 114, 128);
-  doc.text(`Issued on ${dateStr}`, cx, scoreY + 12, { align: 'center' });
 
-  // ── Tagline ─────────────────────────────────────────────────────────────────
-  doc.setFont(bodyFont, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(156, 163, 175);
-  doc.text('"The supervisor you never had."', cx, scoreY + 22, { align: 'center' });
+  const qrDarkColors = { prestige: '#2C1810', modern: '#0D1B2A', dark: '#93C5FD' };
+  const qrBase64 = await generateQR(
+    `https://fypro.com.ng/verify/${certNumber}`,
+    qrDarkColors[style] ?? '#0D1B2A',
+  );
 
-  // ── Footer rule ─────────────────────────────────────────────────────────────
-  const footerRuleY = H - 28;
-  doc.setDrawColor(0, 102, 255);
-  doc.setLineWidth(0.4);
-  doc.line(25, footerRuleY, W - 25, footerRuleY);
+  const data = {
+    recipientName, faculty, department, topicTitle,
+    scoreLabel, dateStr, certNumber, qrBase64,
+    headingFont, bodyFont,
+    logoBase64,
+  };
 
-  // Verify URL — left-aligned
-  const footerTextY = footerRuleY + 8;
-  doc.setFont('courier', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(0, 102, 255);
-  doc.text(`fypro.com.ng/verify/${certNumber}`, 25, footerTextY);
-
-  // Certificate number — right-aligned
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(107, 114, 128);
-  doc.text(certNumber, W - 25, footerTextY, { align: 'right' });
-
-  // ── Bottom accent bar (8mm) ──────────────────────────────────────────────────
-  doc.setFillColor(0, 102, 255);
-  doc.rect(0, H - 8, W, 8, 'F');
+  if      (style === 'prestige') drawPrestige(doc, W, H, data);
+  else if (style === 'dark')     drawDark(doc, W, H, data);
+  else                           drawModern(doc, W, H, data);
 
   return Buffer.from(doc.output('arraybuffer'));
 }
+
+function drawModern(doc, W, H, data)   { /* implemented in next task */ }
+function drawPrestige(doc, W, H, data) { /* implemented in Task 4 */ }
+function drawDark(doc, W, H, data)     { /* implemented in Task 5 */ }
 
 function drawWordmark(doc, cx, font, y) {
   doc.setFont(font, 'normal');
@@ -240,7 +153,17 @@ export default async function handler(req, res) {
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired token' });
 
   // Parse body
-  const { defense_session_id } = req.body || {};
+  const {
+    defense_session_id,
+    style       = 'modern',
+    orientation = 'portrait',
+  } = req.body || {};
+
+  const validStyles       = ['modern', 'prestige', 'dark'];
+  const validOrientations = ['portrait', 'landscape'];
+  const safeStyle       = validStyles.includes(style)       ? style       : 'modern';
+  const safeOrientation = validOrientations.includes(orientation) ? orientation : 'portrait';
+
   if (!defense_session_id) return res.status(400).json({ error: 'defense_session_id required' });
 
   // Fetch the defense session — ownership check enforced here (service_role bypasses RLS,
@@ -352,7 +275,7 @@ export default async function handler(req, res) {
   const currentName = userProfile?.full_name || user.user_metadata?.full_name || cert.recipient_name;
   await ensureFonts();
   try {
-    const pdfBuffer = buildCertificatePDF({
+    const pdfBuffer = await buildCertificatePDF({
       recipientName: currentName,
       faculty:       cert.faculty       || userProfile?.faculty    || '',
       department:    cert.department    || userProfile?.department || '',
@@ -360,6 +283,8 @@ export default async function handler(req, res) {
       score:         cert.score,
       certNumber:    cert.certificate_number,
       issuedAt:      cert.issued_at,
+      style:         safeStyle,
+      orientation:   safeOrientation,
     });
 
     res.setHeader('Content-Type',        'application/pdf');
