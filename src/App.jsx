@@ -43,6 +43,7 @@ const Settings          = lazy(() => import('./pages/Settings'))
 const EmailPreferences  = lazy(() => import('./pages/account/EmailPreferences'))
 const MyCertificates    = lazy(() => import('./pages/account/MyCertificates'))
 const MyReferrals       = lazy(() => import('./pages/account/MyReferrals'))
+const Achievements       = lazy(() => import('./pages/account/Achievements'))
 const AppShell          = lazy(() => import('./features/shell/AppShell'))
 const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
 const AdminHealth       = lazy(() => import('./pages/admin/Health'))
@@ -88,6 +89,7 @@ function AppRoutes() {
       <Route path="/account/email-preferences" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><EmailPreferences /></S></ProtectedRoute>} />
       <Route path="/account/certificates"      element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyCertificates /></S></ProtectedRoute>} />
       <Route path="/account/referrals"         element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyReferrals /></S></ProtectedRoute>} />
+      <Route path="/account/achievements"      element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Achievements /></S></ProtectedRoute>} />
       <Route path="/payment-success"           element={<ProtectedRoute><S fallback={<PublicPageSkeleton />}><PaymentSuccess /></S></ProtectedRoute>} />
       <Route path="/admin/health"              element={<ProtectedRoute adminOnly><S fallback={<DashboardPageSkeleton />}><AdminHealth /></S></ProtectedRoute>} />
 
