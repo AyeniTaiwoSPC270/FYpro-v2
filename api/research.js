@@ -79,10 +79,11 @@ async function handleValidate(req, res) {
 
     let augmentedSystem = TOPIC_VALIDATOR_SYSTEM;
     if (papersResult.papers.length > 0) {
-      const papersList = papersResult.papers
+      const papersList = papersResult.papers.slice(0, 5)
         .map((p, i) => {
           const authors  = p.authors.slice(0, 3).join(', ') || 'Unknown';
-          const abstract = p.abstract ? ` Abstract: ${p.abstract}.` : '';
+          const rawAbstract = p.abstract ? p.abstract.slice(0, 400) + (p.abstract.length > 400 ? '…' : '') : '';
+          const abstract = rawAbstract ? ` Abstract: ${rawAbstract}` : '';
           return `${i + 1}. "${p.title}" (${p.year || 'n.d.'}). Authors: ${authors}.${abstract}`;
         })
         .join('\n');
@@ -224,11 +225,12 @@ async function handleLitMap(req, res) {
       });
     }
 
-    const papersList = papers
+    const papersList = papers.slice(0, 15)
       .map((p, i) => {
-        const firstAuthor = p.authors?.[0] || 'Unknown';
-        const citations   = typeof p.citationCount === 'number' ? ` Citations: ${p.citationCount}.` : '';
-        const abstract    = p.abstract ? ` Abstract: ${p.abstract}` : '';
+        const firstAuthor  = p.authors?.[0] || 'Unknown';
+        const citations    = typeof p.citationCount === 'number' ? ` Citations: ${p.citationCount}.` : '';
+        const rawAbstract  = p.abstract ? p.abstract.slice(0, 300) + (p.abstract.length > 300 ? '…' : '') : '';
+        const abstract     = rawAbstract ? ` Abstract: ${rawAbstract}` : '';
         return `${i + 1}. "${p.title}" (${p.year || 'n.d.'}). Authors: ${firstAuthor}.${citations}${abstract}`;
       })
       .join('\n');
