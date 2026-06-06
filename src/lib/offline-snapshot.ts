@@ -10,6 +10,7 @@ export interface OfflineSnapshot {
   savedAt: string
   profile: {
     full_name: string | null
+    university: string | null
     faculty: string | null
     department: string | null
     level: string | null
@@ -33,6 +34,7 @@ export function persistSnapshot(userId: string, userState: UserState): void {
       profile: userState.profile
         ? {
             full_name:  userState.profile.full_name  ?? null,
+            university: (userState.profile as { university?: string | null }).university ?? null,
             faculty:    userState.profile.faculty    ?? null,
             department: userState.profile.department ?? null,
             level:      userState.profile.level      ?? null,
