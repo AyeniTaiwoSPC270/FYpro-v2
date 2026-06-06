@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchMyReferrals } from '../../lib/referral'
 import { showToast } from '../../components/Toast'
 import { useTheme } from '../../context/ThemeContext'
+import { useUser } from '../../hooks/useUser'
 
 const BASE_URL = 'https://www.fypro.com.ng'
 
@@ -134,13 +135,20 @@ export default function MyReferrals() {
   const [copied, setCopied] = useState(false)
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const { user } = useUser()
 
   useEffect(() => {
+    if (!user) return
+    setLoading(true)
+    setError(false)
     fetchMyReferrals()
-      .then(setData)
+      .then((result) => {
+        if (result) setData(result)
+        else setError(true)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [user?.id])
 
   function handleCopy() {
     if (!data?.referralCode) return
@@ -218,7 +226,7 @@ export default function MyReferrals() {
             }} />
             <style>{`@keyframes mr-spin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : error ? (
+        ) : error || !data ? (
           <div style={{
             background: isDark
               ? 'linear-gradient(145deg, rgba(220,38,38,0.08) 0%, rgba(220,38,38,0.04) 100%)'
