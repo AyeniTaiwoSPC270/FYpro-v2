@@ -15,7 +15,11 @@ export interface Certificate {
  * POST /api/certificate with the defense session ID, trigger a PDF download.
  * Throws 'NAME_REQUIRED' (as error.message) when the user has no full_name set.
  */
-export async function downloadCertificate(defenseSessionId: string): Promise<void> {
+export async function downloadCertificate(
+  defenseSessionId: string,
+  style:       'prestige' | 'modern' | 'dark' = 'modern',
+  orientation: 'portrait' | 'landscape'       = 'portrait',
+): Promise<void> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Not authenticated')
 
@@ -25,7 +29,7 @@ export async function downloadCertificate(defenseSessionId: string): Promise<voi
       'Content-Type':  'application/json',
       'Authorization': `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ defense_session_id: defenseSessionId }),
+    body: JSON.stringify({ defense_session_id: defenseSessionId, style, orientation }),
   })
 
   if (!res.ok) {
