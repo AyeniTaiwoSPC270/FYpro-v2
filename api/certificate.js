@@ -959,7 +959,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabaseAdmin
       .from('defense_certificates')
-      .select('certificate_number, score, issued_at, topic_title, recipient_name, faculty, department')
+      .select('*')
       .eq('certificate_number', certNumber)
       .maybeSingle();
 
@@ -969,7 +969,9 @@ export default async function handler(req, res) {
     }
     if (!data) return res.status(404).json({ valid: false, error: 'Certificate not found' });
 
-    return res.status(200).json({ valid: true, certificate: data });
+    // Strip sensitive fields before returning to public callers
+    const { user_id, defense_session_id, id, ...safe } = data;
+    return res.status(200).json({ valid: true, certificate: safe });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
