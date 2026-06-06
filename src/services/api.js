@@ -626,8 +626,12 @@ export function handleApiError(err, showError) {
     showError(AI_ERRORS.json_parse);
     return true;
   }
-  if (err.code === 'TOKEN_LIMIT' || err.status === 400) {
+  if (err.code === 'TOKEN_LIMIT') {
     showError(AI_ERRORS.token_limit);
+    return true;
+  }
+  if (err.status === 400) {
+    showError(err.message && !err.message.startsWith('HTTP ') ? err.message : AI_ERRORS.token_limit);
     return true;
   }
   if (err.message?.toLowerCase().includes('network') || err.message?.toLowerCase().includes('fetch')) {
