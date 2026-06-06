@@ -25,6 +25,7 @@
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
     "posthog-js": "^1.372.10",
+    "qrcode": "^1.5.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2",
