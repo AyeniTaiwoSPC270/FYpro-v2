@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
+import FyproLogo from '../components/FyproLogo'
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', {
@@ -50,12 +51,7 @@ export default function VerifyCertificate() {
     }}>
       {/* Logo */}
       <Link to="/" style={{ textDecoration: 'none', marginBottom: 40 }}>
-        <span style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
-          fontSize: '1.6rem',
-          color: '#0066FF',
-          letterSpacing: '-0.5px',
-        }}>FYPro</span>
+        <FyproLogo height={36} />
       </Link>
 
       <div style={{
