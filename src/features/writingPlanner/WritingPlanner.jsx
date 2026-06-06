@@ -13,6 +13,9 @@ import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
 import { useUser } from '../../hooks/useUser'
 import { notifyStepCompleted } from '../../lib/notifications'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import CelebrationModal from '../../components/celebration/CelebrationModal'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -37,6 +40,12 @@ export default function WritingPlanner() {
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { user } = useUser()
+  const CELEBRATION_KEY = 'step_4_complete'
+  const STEP_EMOJI = '📝'
+  const STEP_BODY = 'Writing plan set. One step closer to your defense.'
+
+  const [celebration, setCelebration] = useState(null)
+
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('writing_planner')
@@ -171,6 +180,22 @@ export default function WritingPlanner() {
     markStepComplete('writing_planner')
     if (isFirstWritingCompletion) notifyStepCompleted(user?.id, 'writing_planner', 3).catch(() => {})
     showToast('Writing plan created ✓')
+
+    // Check achievements after step completion
+    if (isFirstWritingCompletion) {
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+        if (shouldShowCelebration(CELEBRATION_KEY)) {
+          setCelebration({
+            emoji: STEP_EMOJI,
+            headline: 'Step Complete!',
+            body: STEP_BODY,
+          })
+        }
+      })
+    }
   }
 
   const loadingTimerRef = useRef(null)
@@ -335,6 +360,17 @@ export default function WritingPlanner() {
           </>
         )}
       </div>
+
+      <CelebrationModal
+        open={celebration !== null}
+        onClose={() => setCelebration(null)}
+        emoji={celebration?.emoji ?? '🎉'}
+        headline={celebration?.headline ?? ''}
+        body={celebration?.body ?? ''}
+        rankLabel={null}
+        ctaLabel="Continue"
+        onCta={() => setCelebration(null)}
+      />
 
     </div>
   )

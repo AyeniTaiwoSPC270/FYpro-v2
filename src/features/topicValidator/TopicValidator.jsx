@@ -15,6 +15,9 @@ import { trackEvent } from '../../lib/analytics'
 import { useOnboardingState } from '../../hooks/useOnboardingState'
 import { useUser } from '../../hooks/useUser'
 import { notifyStepCompleted } from '../../lib/notifications'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import CelebrationModal from '../../components/celebration/CelebrationModal'
 
 const LOADING_MESSAGES = [
   'Analyzing your topic...',
@@ -59,6 +62,12 @@ export default function TopicValidator() {
   )
   const [typewriterActive, setTypewriterActive] = useState(false)
   const [pushAsked, setPushAsked] = useState(() => !!localStorage.getItem('fypro_push_asked'))
+
+  const CELEBRATION_KEY = 'step_1_complete'
+  const STEP_EMOJI = '🔍'
+  const STEP_BODY = "Your topic is validated. You're ready to build your chapter structure."
+
+  const [celebration, setCelebration] = useState(null)
 
   const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
 
@@ -230,6 +239,22 @@ export default function TopicValidator() {
     })
     if (isFirstCompletion) notifyStepCompleted(user?.id, 'topic_validator', 0).catch(() => {})
     showToast('Topic validated ✓')
+
+    // Check achievements after step completion
+    if (isFirstCompletion) {
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+        if (shouldShowCelebration(CELEBRATION_KEY)) {
+          setCelebration({
+            emoji: STEP_EMOJI,
+            headline: 'Step Complete!',
+            body: STEP_BODY,
+          })
+        }
+      })
+    }
   }
 
   // ── Select alternative ────────────────────────────────────────────────────
@@ -517,6 +542,17 @@ export default function TopicValidator() {
           </>
         )}
       </div>
+
+      <CelebrationModal
+        open={celebration !== null}
+        onClose={() => setCelebration(null)}
+        emoji={celebration?.emoji ?? '🎉'}
+        headline={celebration?.headline ?? ''}
+        body={celebration?.body ?? ''}
+        rankLabel={null}
+        ctaLabel="Continue"
+        onCta={() => setCelebration(null)}
+      />
 
     </div>
   )

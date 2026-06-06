@@ -14,6 +14,9 @@ import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
 import { useUser } from '../../hooks/useUser'
 import { notifyStepCompleted } from '../../lib/notifications'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import CelebrationModal from '../../components/celebration/CelebrationModal'
 
 const CHAPTER_LOADING_MESSAGES = [
   'Building your chapter structure...',
@@ -160,6 +163,12 @@ export default function ChapterArchitect() {
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { user } = useUser()
+  const CELEBRATION_KEY = 'step_2_complete'
+  const STEP_EMOJI = '📐'
+  const STEP_BODY = 'Your chapters are mapped. Time to define your methodology.'
+
+  const [celebration, setCelebration] = useState(null)
+
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const overLimit   = isOverLimit('chapter_architect')
@@ -455,6 +464,22 @@ export default function ChapterArchitect() {
     markStepComplete('chapter_architect')
     if (isFirstChapterCompletion) notifyStepCompleted(user?.id, 'chapter_architect', 1).catch(() => {})
     showToast('Chapter structure confirmed ✓')
+
+    // Check achievements after step completion
+    if (isFirstChapterCompletion) {
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+        if (shouldShowCelebration(CELEBRATION_KEY)) {
+          setCelebration({
+            emoji: STEP_EMOJI,
+            headline: 'Step Complete!',
+            body: STEP_BODY,
+          })
+        }
+      })
+    }
   }
 
   // ── Abstract Generator ────────────────────────────────────────────────────
@@ -732,6 +757,17 @@ export default function ChapterArchitect() {
       {showCompanions && hasPaid && (
         <LiteratureMap chapters={chapters} />
       )}
+
+      <CelebrationModal
+        open={celebration !== null}
+        onClose={() => setCelebration(null)}
+        emoji={celebration?.emoji ?? '🎉'}
+        headline={celebration?.headline ?? ''}
+        body={celebration?.body ?? ''}
+        rankLabel={null}
+        ctaLabel="Continue"
+        onCta={() => setCelebration(null)}
+      />
     </>
   )
 }

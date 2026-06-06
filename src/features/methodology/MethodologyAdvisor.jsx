@@ -13,6 +13,9 @@ import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
 import { useUser } from '../../hooks/useUser'
 import { notifyStepCompleted } from '../../lib/notifications'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import CelebrationModal from '../../components/celebration/CelebrationModal'
 
 const MA_LOADING_MESSAGES = [
   'Evaluating research approaches...',
@@ -31,6 +34,12 @@ export default function MethodologyAdvisor() {
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { user } = useUser()
+  const CELEBRATION_KEY = 'step_3_complete'
+  const STEP_EMOJI = '⚗️'
+  const STEP_BODY = 'Research methodology locked in. On to planning your writing.'
+
+  const [celebration, setCelebration] = useState(null)
+
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
   const maOverLimit = isOverLimit('methodology_advisor')
@@ -168,6 +177,23 @@ export default function MethodologyAdvisor() {
     markStepComplete('methodology_advisor')
     if (isFirstMethodologyCompletion) notifyStepCompleted(user?.id, 'methodology_advisor', 2).catch(() => {})
     showToast('Methodology confirmed ✓')
+
+    // Check achievements after step completion
+    if (isFirstMethodologyCompletion) {
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+        if (shouldShowCelebration(CELEBRATION_KEY)) {
+          setCelebration({
+            emoji: STEP_EMOJI,
+            headline: 'Step Complete!',
+            body: STEP_BODY,
+          })
+        }
+      })
+    }
+
     setConfirmDone(true)
     setDiVisible(true)
     // Scroll DI card into view once it mounts
@@ -592,6 +618,17 @@ export default function MethodologyAdvisor() {
 
         </div>
       )}
+
+      <CelebrationModal
+        open={celebration !== null}
+        onClose={() => setCelebration(null)}
+        emoji={celebration?.emoji ?? '🎉'}
+        headline={celebration?.headline ?? ''}
+        body={celebration?.body ?? ''}
+        rankLabel={null}
+        ctaLabel="Continue"
+        onCta={() => setCelebration(null)}
+      />
     </>
   )
 }

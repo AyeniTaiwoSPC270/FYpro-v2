@@ -13,6 +13,9 @@ import { markStepComplete } from '../../lib/progress'
 import { trackEvent } from '../../lib/analytics'
 import { useUser } from '../../hooks/useUser'
 import { notifyStepCompleted } from '../../lib/notifications'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import CelebrationModal from '../../components/celebration/CelebrationModal'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -227,6 +230,12 @@ export default function ProjectReviewer() {
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { user } = useUser()
+  const CELEBRATION_KEY = 'step_5_complete'
+  const STEP_EMOJI = '📄'
+  const STEP_BODY = "Project reviewed. You're ready to enter the Defense Simulator."
+
+  const [celebration, setCelebration] = useState(null)
+
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('project_reviewer')
 
@@ -468,6 +477,22 @@ export default function ProjectReviewer() {
     markStepComplete('project_reviewer')
     if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
     showToast('Project reviewed ✓')
+
+    // Check achievements after step completion
+    if (isFirstReviewerCompletion) {
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+        if (shouldShowCelebration(CELEBRATION_KEY)) {
+          setCelebration({
+            emoji: STEP_EMOJI,
+            headline: 'Step Complete!',
+            body: STEP_BODY,
+          })
+        }
+      })
+    }
   }
 
   // ── Skip handler ───────────────────────────────────────────────────────────
@@ -716,6 +741,18 @@ export default function ProjectReviewer() {
           </>
         )}
       </div>
+
+      <CelebrationModal
+        open={celebration !== null}
+        onClose={() => setCelebration(null)}
+        emoji={celebration?.emoji ?? '🎉'}
+        headline={celebration?.headline ?? ''}
+        body={celebration?.body ?? ''}
+        rankLabel={null}
+        ctaLabel="Continue"
+        onCta={() => setCelebration(null)}
+      />
+
     </div>
   )
 }
