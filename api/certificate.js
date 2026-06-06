@@ -419,6 +419,12 @@ function drawPrestige(doc, W, H, data) {
   doc.setTextColor(255, 255, 255);
   doc.text('FY', cx, 36, { align: 'center' });
 
+  // Gold FYPro wordmark below seal
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(139, 105, 20);
+  doc.text('FYPro', cx, 50, { align: 'center' });
+
   // Title band
   doc.setFillColor(253, 248, 232);
   doc.rect(15, 52, W - 30, 16, 'F');
@@ -429,8 +435,10 @@ function drawPrestige(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(139, 105, 20);
+  // Manual centering: jsPDF align:'center' ignores charSpace, so compute offset manually
+  const _ptw = doc.getTextWidth('CERTIFICATE OF DEFENSE READINESS') + 2 * 33;
   doc.setCharSpace(2);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 62, { align: 'center' });
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx - _ptw / 2, 62);
   doc.setCharSpace(0);
 
   // "This certifies that"
@@ -562,6 +570,12 @@ function drawPrestigeLandscape(doc, W, H, data) {
   doc.setTextColor(255, 255, 255);
   doc.text('FY', lcx, 29, { align: 'center' });
 
+  // Gold FYPro wordmark below seal
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(139, 105, 20);
+  doc.text('FYPro', lcx, 38, { align: 'center' });
+
   doc.setFillColor(253, 248, 232);
   doc.rect(15, 41, 162, 12, 'F');
   doc.setDrawColor(201, 168, 76);
@@ -570,8 +584,9 @@ function drawPrestigeLandscape(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(139, 105, 20);
+  const _pltw = doc.getTextWidth('CERTIFICATE OF DEFENSE READINESS') + 1.5 * 33;
   doc.setCharSpace(1.5);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 49, { align: 'center' });
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx - _pltw / 2, 49);
   doc.setCharSpace(0);
 
   doc.setFont(bodyFont, 'normal');
@@ -699,8 +714,9 @@ function drawDark(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(96, 165, 250);
+  const _dtw = doc.getTextWidth('CERTIFICATE OF DEFENSE READINESS') + 2 * 33;
   doc.setCharSpace(2);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 42, { align: 'center' });
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx - _dtw / 2, 42);
   doc.setCharSpace(0);
 
   // Title flanking rules
@@ -855,8 +871,9 @@ function drawDarkLandscape(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(96, 165, 250);
+  const _dltw = doc.getTextWidth('CERTIFICATE OF DEFENSE READINESS') + 1.5 * 33;
   doc.setCharSpace(1.5);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 36, { align: 'center' });
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx - _dltw / 2, 36);
   doc.setCharSpace(0);
 
   doc.setFontSize(9);
