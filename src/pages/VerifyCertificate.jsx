@@ -17,14 +17,12 @@ export default function VerifyCertificate() {
   useEffect(() => {
     if (!certNumber) { setState('invalid'); return }
     fetch(`/api/certificate?action=verify&cert=${encodeURIComponent(certNumber)}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.valid && data.certificate) {
-          setCert(data.certificate)
-          setState('valid')
-        } else {
-          setState('invalid')
-        }
+      .then(async r => {
+        const data = await r.json()
+        if (r.status === 404 || (r.ok && !data.valid)) { setState('invalid'); return }
+        if (!r.ok) { setState('error'); return }
+        setCert(data.certificate)
+        setState('valid')
       })
       .catch(() => setState('error'))
   }, [certNumber])
