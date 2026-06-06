@@ -17,6 +17,7 @@ const DefensePrep        = lazy(() => import('../defensePrep/DefensePrep'))
 const SupervisorEmail    = lazy(() => import('../supervisorEmail/SupervisorEmail'))
 import FyproLogo from '../../components/FyproLogo'
 import { AppShellSkeleton } from '../../components/skeletons/PageSkeletons'
+import RankPill from '../../components/rank/RankPill'
 
 const STEPS = [
   'Topic Validator',
@@ -235,6 +236,11 @@ export default function AppShell() {
           </p>
         </div>
 
+        {/* Research Rank */}
+        <div style={{ padding: '0 12px' }}>
+          <RankPill />
+        </div>
+
         {/* Step list */}
         <nav className="sidebar__steps" aria-label="Project steps">
           <ul className="step-list" id="sidebar-step-list">
@@ -318,6 +324,16 @@ export default function AppShell() {
             </button>
           </div>
         )}
+
+        {/* Achievements */}
+        <div className="sidebar__bonus" style={{ marginTop: 8 }}>
+          <button
+            className="sidebar__bonus-btn"
+            onClick={() => navigate('/account/achievements')}
+          >
+            🏅 Achievements
+          </button>
+        </div>
 
         {/* Back to Dashboard */}
         <button
