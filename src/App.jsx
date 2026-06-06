@@ -35,6 +35,7 @@ const AuthConfirm       = lazy(() => import('./pages/auth/AuthConfirm'))
 const ChangelogPage     = lazy(() => import('./pages/changelog/ChangelogPage'))
 const RoadmapPage       = lazy(() => import('./pages/roadmap/RoadmapPage'))
 const NotFound          = lazy(() => import('./pages/NotFound'))
+const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'))
 const SplashOnboarding  = lazy(() => import('./pages/SplashOnboarding'))
 const Dashboard         = lazy(() => import('./pages/Dashboard'))
 const Profile           = lazy(() => import('./pages/Profile'))
@@ -77,6 +78,7 @@ function AppRoutes() {
       <Route path="/maintenance" element={<S fallback={<PublicPageSkeleton />}><MaintenancePage /></S>} />
       <Route path="/changelog"   element={<S fallback={<PublicPageSkeleton />}><ChangelogPage /></S>} />
       <Route path="/roadmap"     element={<S fallback={<PublicPageSkeleton />}><RoadmapPage /></S>} />
+      <Route path="/verify/:certNumber" element={<S fallback={<PublicPageSkeleton />}><VerifyCertificate /></S>} />
 
       {/* Dashboard + account pages */}
       <Route path="/dashboard" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Dashboard /></S></ProtectedRoute>} />

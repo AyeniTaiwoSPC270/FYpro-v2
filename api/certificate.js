@@ -951,7 +951,28 @@ export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+
+  // Public certificate verification — GET /api/certificate?action=verify&cert=FYP-2026-XXXXXX
+  if (req.method === 'GET' && req.query.action === 'verify') {
+    const certNumber = (req.query.cert || '').trim().toUpperCase();
+    if (!certNumber) return res.status(400).json({ error: 'cert parameter required' });
+
+    const { data, error } = await supabaseAdmin
+      .from('defense_certificates')
+      .select('certificate_number, score, issued_at, topic_title, recipient_name, faculty, department')
+      .eq('certificate_number', certNumber)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[certificate/verify]', error.message);
+      return res.status(500).json({ error: 'Verification lookup failed' });
+    }
+    if (!data) return res.status(404).json({ valid: false, error: 'Certificate not found' });
+
+    return res.status(200).json({ valid: true, certificate: data });
+  }
+
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Auth
   const authHeader = req.headers.authorization || '';
