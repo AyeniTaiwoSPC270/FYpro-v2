@@ -15,6 +15,8 @@ import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
 import PaymentIssueModal from '../components/PaymentIssueModal'
 import Spinner from '../components/Spinner'
 import BadgeRow from '../components/badges/BadgeRow'
+import MomentumRing from '../components/momentum/MomentumRing'
+import AchievementsRow from '../components/badges/AchievementsRow'
 import Footer from '../components/Footer'
 import { DashboardPageSkeleton } from '../components/skeletons/PageSkeletons'
 
@@ -339,6 +341,8 @@ export default function Dashboard() {
                   My Projects
                 </button>
                 <BadgeRow />
+                <AchievementsRow />
+                <MomentumRing />
                 <DashStatCards STUDENT={STUDENT} STEPS={STEPS} />
                 <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} />
                 <DashUsageSection features={features} runCounts={runCounts} loading={featuresLoading} onPaymentIssue={() => setShowPaymentIssueModal(true)} />
