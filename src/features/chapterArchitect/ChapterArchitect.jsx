@@ -17,6 +17,7 @@ import { notifyStepCompleted } from '../../lib/notifications'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import CelebrationModal from '../../components/celebration/CelebrationModal'
+import { useAchievements } from '../../hooks/useAchievements'
 
 const CHAPTER_LOADING_MESSAGES = [
   'Building your chapter structure...',
@@ -168,6 +169,7 @@ export default function ChapterArchitect() {
   const STEP_BODY = 'Your chapters are mapped. Time to define your methodology.'
 
   const [celebration, setCelebration] = useState(null)
+  const { refetch: refetchAchievements } = useAchievements()
 
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -454,13 +456,13 @@ export default function ChapterArchitect() {
 
   // ── Confirm ───────────────────────────────────────────────────────────────
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!data) return
     const wc = parseInt(wordCount, 10) || 0
     const structure = { ...data, chapters }
     const isFirstChapterCompletion = !state.stepsCompleted[1]
     completeStep(1, { chapterStructure: structure, structureType, totalWordCount: wc })
-    saveStep('chapter_architect', structure)
+    await saveStep('chapter_architect', structure)
     markStepComplete('chapter_architect')
     if (isFirstChapterCompletion) notifyStepCompleted(user?.id, 'chapter_architect', 1).catch(() => {})
     showToast('Chapter structure confirmed ✓')
@@ -470,6 +472,7 @@ export default function ChapterArchitect() {
       checkAchievements().then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
+          refetchAchievements()
         }
         if (shouldShowCelebration(CELEBRATION_KEY)) {
           setCelebration({

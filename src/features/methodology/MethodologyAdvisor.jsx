@@ -16,6 +16,7 @@ import { notifyStepCompleted } from '../../lib/notifications'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import CelebrationModal from '../../components/celebration/CelebrationModal'
+import { useAchievements } from '../../hooks/useAchievements'
 
 const MA_LOADING_MESSAGES = [
   'Evaluating research approaches...',
@@ -39,6 +40,7 @@ export default function MethodologyAdvisor() {
   const STEP_BODY = 'Research methodology locked in. On to planning your writing.'
 
   const [celebration, setCelebration] = useState(null)
+  const { refetch: refetchAchievements } = useAchievements()
 
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -163,7 +165,7 @@ export default function MethodologyAdvisor() {
     setDefenseRevealed(true)
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!maData || !selectedMethodology) return
     const isFirstMethodologyCompletion = !state.stepsCompleted[2]
     const updatedStepsCompleted = [...state.stepsCompleted]
@@ -173,7 +175,7 @@ export default function MethodologyAdvisor() {
       chosenMethodology: selectedMethodology,
       stepsCompleted: updatedStepsCompleted,
     })
-    saveStep('methodology_advisor', { ...maData, chosen_methodology: selectedMethodology })
+    await saveStep('methodology_advisor', { ...maData, chosen_methodology: selectedMethodology })
     markStepComplete('methodology_advisor')
     if (isFirstMethodologyCompletion) notifyStepCompleted(user?.id, 'methodology_advisor', 2).catch(() => {})
     showToast('Methodology confirmed ✓')
@@ -183,6 +185,7 @@ export default function MethodologyAdvisor() {
       checkAchievements().then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
+          refetchAchievements()
         }
         if (shouldShowCelebration(CELEBRATION_KEY)) {
           setCelebration({

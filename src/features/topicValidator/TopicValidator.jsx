@@ -18,6 +18,7 @@ import { notifyStepCompleted } from '../../lib/notifications'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import CelebrationModal from '../../components/celebration/CelebrationModal'
+import { useAchievements } from '../../hooks/useAchievements'
 
 const LOADING_MESSAGES = [
   'Analyzing your topic...',
@@ -68,6 +69,7 @@ export default function TopicValidator() {
   const STEP_BODY = "Your topic is validated. You're ready to build your chapter structure."
 
   const [celebration, setCelebration] = useState(null)
+  const { refetch: refetchAchievements } = useAchievements()
 
   const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
 
@@ -219,7 +221,7 @@ export default function TopicValidator() {
   }
 
   // ── Use This Topic ────────────────────────────────────────────────────────
-  function handleUseThisTopic() {
+  async function handleUseThisTopic() {
     const finalTopic = isEditing
       ? editedTopic.trim()
       : (data.refined_topic || '').trim()
@@ -231,8 +233,8 @@ export default function TopicValidator() {
 
     // Update AppContext + localStorage cache
     completeStep(0, { validatedTopic: finalTopic })
-    // Persist to Supabase (fire-and-forget; errors handled inside saveStep)
-    saveStep('topic_validator', { ...data, refined_topic: finalTopic }, topic.trim())
+    // Await saveStep so project_steps row exists before checkAchievements queries it
+    await saveStep('topic_validator', { ...data, refined_topic: finalTopic }, topic.trim())
     // Await markStepComplete so user_progress row exists before credit endpoint checks it
     markStepComplete('topic_validator').then(() => {
       if (isFirstCompletion) callCreditReferral().catch(() => {})
@@ -245,6 +247,7 @@ export default function TopicValidator() {
       checkAchievements().then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
+          refetchAchievements()
         }
         if (shouldShowCelebration(CELEBRATION_KEY)) {
           setCelebration({

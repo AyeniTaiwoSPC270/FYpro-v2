@@ -460,7 +460,7 @@ async function handleCheckAchievements(req, res) {
       { data: credits },
       { data: existing },
     ] = await Promise.all([
-      supabaseAdmin.from('project_steps').select('step_name, completed_at').eq('user_id', userId),
+      supabaseAdmin.from('project_steps').select('step_type, created_at').eq('user_id', userId),
       supabaseAdmin.from('defense_sessions').select('final_score, completed_at').eq('user_id', userId).order('completed_at', { ascending: true }),
       supabaseAdmin.from('defense_certificates').select('id').eq('user_id', userId).limit(1),
       supabaseAdmin.from('referrals').select('status, created_at').eq('referrer_user_id', userId),
@@ -479,7 +479,7 @@ async function handleCheckAchievements(req, res) {
       }
     }
 
-    const stepNames = (steps ?? []).map(s => s.step_name);
+    const stepNames = (steps ?? []).map(s => s.step_type);
     const scores = (defSessions ?? []).map(s => s.final_score).filter(n => typeof n === 'number');
     const maxScore = scores.length > 0 ? Math.max(...scores) : -1;
     const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1
@@ -491,9 +491,9 @@ async function handleCheckAchievements(req, res) {
     check('certified',     (certs ?? []).length > 0);
 
     // ── SPEED ──────────────────────────────────────────────────────────────────
-    const tvStep = (steps ?? []).find(s => s.step_name === 'topic_validator');
-    if (tvStep && tvStep.completed_at) {
-      const tvMs   = new Date(tvStep.completed_at).getTime();
+    const tvStep = (steps ?? []).find(s => s.step_type === 'topic_validator');
+    if (tvStep && tvStep.created_at) {
+      const tvMs   = new Date(tvStep.created_at).getTime();
       const signupMs = userCreatedAt.getTime();
       check('fast_starter', tvMs - signupMs <= 60 * 60 * 1000);
     }
@@ -501,7 +501,7 @@ async function handleCheckAchievements(req, res) {
     // Sprint: 3 steps on same WAT calendar day
     const stepsByWatDay = {};
     for (const s of (steps ?? [])) {
-      const watDate = new Date(new Date(s.completed_at).getTime() + WAT_OFFSET_MS);
+      const watDate = new Date(new Date(s.created_at).getTime() + WAT_OFFSET_MS);
       const key = watDate.toISOString().slice(0, 10);
       stepsByWatDay[key] = (stepsByWatDay[key] ?? 0) + 1;
     }
@@ -509,7 +509,7 @@ async function handleCheckAchievements(req, res) {
 
     // Speed run: all 6 steps within 7 days of signup
     if (stepNames.length >= 6) {
-      const latestStepMs = Math.max(...(steps ?? []).map(s => new Date(s.completed_at).getTime()));
+      const latestStepMs = Math.max(...(steps ?? []).map(s => new Date(s.created_at).getTime()));
       check('speed_run', latestStepMs - userCreatedAt.getTime() <= 7 * 24 * 60 * 60 * 1000);
     }
 
@@ -535,14 +535,14 @@ async function handleCheckAchievements(req, res) {
     // ── HIDDEN ─────────────────────────────────────────────────────────────────
     // Night Owl: step completed midnight–4 AM WAT
     const nightOwl = (steps ?? []).some(s => {
-      const localHour = (new Date(s.completed_at).getUTCHours() + 1) % 24;
+      const localHour = (new Date(s.created_at).getUTCHours() + 1) % 24;
       return localHour < 4;
     });
     check('night_owl', nightOwl);
 
     // Early Bird: step completed before 7 AM WAT
     const earlyBird = (steps ?? []).some(s => {
-      const localHour = (new Date(s.completed_at).getUTCHours() + 1) % 24;
+      const localHour = (new Date(s.created_at).getUTCHours() + 1) % 24;
       return localHour < 7;
     });
     check('early_bird', earlyBird);
@@ -550,7 +550,7 @@ async function handleCheckAchievements(req, res) {
     // Dedicated: meaningful actions on 5+ distinct WAT calendar days
     const actionDays = new Set();
     for (const s of (steps ?? [])) {
-      actionDays.add(new Date(new Date(s.completed_at).getTime() + WAT_OFFSET_MS).toISOString().slice(0, 10));
+      actionDays.add(new Date(new Date(s.created_at).getTime() + WAT_OFFSET_MS).toISOString().slice(0, 10));
     }
     for (const d of (defSessions ?? [])) {
       if (d.completed_at) {

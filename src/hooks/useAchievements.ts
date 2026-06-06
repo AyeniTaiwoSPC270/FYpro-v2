@@ -27,6 +27,18 @@ export function useAchievements() {
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
     refresh(user.id)
+
+    const channel = supabase
+      .channel(`user_achievements_${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'user_achievements',
+        filter: `user_id=eq.${user.id}`,
+      }, () => { refresh(user.id) })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [user?.id, refresh])
 
   const refetch = useCallback(() => {

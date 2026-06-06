@@ -16,6 +16,7 @@ import { notifyStepCompleted } from '../../lib/notifications'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import CelebrationModal from '../../components/celebration/CelebrationModal'
+import { useAchievements } from '../../hooks/useAchievements'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -45,6 +46,7 @@ export default function WritingPlanner() {
   const STEP_BODY = 'Writing plan set. One step closer to your defense.'
 
   const [celebration, setCelebration] = useState(null)
+  const { refetch: refetchAchievements } = useAchievements()
 
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
   const { isOverLimit } = useRunLimit(features)
@@ -172,11 +174,11 @@ export default function WritingPlanner() {
       })
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!data) return
     const isFirstWritingCompletion = !state.stepsCompleted[3]
     completeStep(3, { writingPlan: data, submissionDeadline: dateValue })
-    saveStep('writing_planner', { ...data, submission_deadline: dateValue }, dateValue)
+    await saveStep('writing_planner', { ...data, submission_deadline: dateValue }, dateValue)
     markStepComplete('writing_planner')
     if (isFirstWritingCompletion) notifyStepCompleted(user?.id, 'writing_planner', 3).catch(() => {})
     showToast('Writing plan created ✓')
@@ -186,6 +188,7 @@ export default function WritingPlanner() {
       checkAchievements().then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
+          refetchAchievements()
         }
         if (shouldShowCelebration(CELEBRATION_KEY)) {
           setCelebration({

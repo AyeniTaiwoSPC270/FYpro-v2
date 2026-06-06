@@ -16,6 +16,7 @@ import { notifyStepCompleted } from '../../lib/notifications'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import CelebrationModal from '../../components/celebration/CelebrationModal'
+import { useAchievements } from '../../hooks/useAchievements'
 
 const LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -235,6 +236,7 @@ export default function ProjectReviewer() {
   const STEP_BODY = "Project reviewed. You're ready to enter the Defense Simulator."
 
   const [celebration, setCelebration] = useState(null)
+  const { refetch: refetchAchievements } = useAchievements()
 
   const { isOverLimit } = useRunLimit(features)
   const overLimit = isOverLimit('project_reviewer')
@@ -455,7 +457,7 @@ export default function ProjectReviewer() {
 
   // ── Confirm handler ────────────────────────────────────────────────────────
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (!reviewData) return
     const isFirstReviewerCompletion = !state.stepsCompleted[4]
     const fileName = selectedFile
@@ -465,7 +467,7 @@ export default function ProjectReviewer() {
       ? (selectedFile.name || '').split('.').pop().toLowerCase()
       : (state.uploadedProject?.fileType || 'unknown')
     completeStep(4, { uploadedProject: { fileName, fileType, reviewData } })
-    saveStep('project_reviewer', {
+    await saveStep('project_reviewer', {
       fileName,
       grade:               reviewData.grade,
       score_estimate:      reviewData.score_estimate,
@@ -483,6 +485,7 @@ export default function ProjectReviewer() {
       checkAchievements().then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
+          refetchAchievements()
         }
         if (shouldShowCelebration(CELEBRATION_KEY)) {
           setCelebration({
