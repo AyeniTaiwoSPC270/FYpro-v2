@@ -217,6 +217,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
             ?? (userRef.current?.user_metadata?.full_name as string | undefined)
             ?? null
           if (name) hydration.name = name
+          if (userState.profile.university) hydration.university = userState.profile.university
           if (userState.profile.faculty)    hydration.faculty    = userState.profile.faculty
           if (userState.profile.department) hydration.department = userState.profile.department
           if (userState.profile.level)      hydration.level      = userState.profile.level
@@ -276,6 +277,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
               ?? (userRef.current?.user_metadata?.full_name as string | undefined)
               ?? null
             if (name) hydration.name = name
+            if (snapshot.profile.university) hydration.university = snapshot.profile.university
             if (snapshot.profile.faculty)    hydration.faculty    = snapshot.profile.faculty
             if (snapshot.profile.department) hydration.department = snapshot.profile.department
             if (snapshot.profile.level)      hydration.level      = snapshot.profile.level

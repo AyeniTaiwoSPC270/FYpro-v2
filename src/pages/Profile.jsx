@@ -434,6 +434,18 @@ export default function Profile() {
     setAvatarUrl(user.user_metadata?.avatar_url || null)
   }, [user])
 
+  // Re-sync profile fields from AppContext when useProjectState finishes loading them
+  // from Supabase (async — form may have initialized before the DB data arrived)
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      university: state.university || prev.university,
+      faculty:    state.faculty    || prev.faculty,
+      department: state.department || prev.department,
+      level:      state.level      || prev.level,
+    }))
+  }, [state.university, state.faculty, state.department, state.level])
+
   const initials = form.name
     ? form.name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
     : form.email ? form.email[0].toUpperCase() : '?'
