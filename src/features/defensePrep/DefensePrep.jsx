@@ -37,6 +37,9 @@ import { supabase } from '../../lib/supabase'
 import { trackEvent } from '../../lib/analytics'
 import Sentry from '../../lib/sentry'
 import PastSessions from './PastSessions'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { shouldShowCelebration } from '../../lib/celebrations'
+import DefenseCelebration from '../../components/celebration/DefenseCelebration'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -554,6 +557,7 @@ export default function DefensePrep() {
   const sessionWarnedRef      = useRef(false)
   const turnCountRef          = useRef(0)
 
+  const [defenseCelebration, setDefenseCelebration] = useState(null)
   const [defenseSessionId, setDefenseSessionId] = useState(null)
   const defenseSessionIdRef = useRef(null)
   const currentQuestionRef  = useRef('')
@@ -1243,6 +1247,18 @@ export default function DefensePrep() {
       showToast('Defence session complete ✓')
       setHasHistory(true)
 
+      // Fire achievement check after defense session completes
+      checkAchievements().then(newKeys => {
+        if (newKeys.length > 0) {
+          showToast(`Achievement unlocked 🏅`, 'success')
+        }
+      })
+
+      // Show DefenseCelebration for certificate-unlocking scores (>= 7)
+      if (panelScore >= 7 && shouldShowCelebration('defense_certificate')) {
+        setDefenseCelebration({ score: panelScore })
+      }
+
       setVerdictLoading(false)
       setSummaryData(data)
       setOverlayPhase('summary')
@@ -1870,6 +1886,14 @@ export default function DefensePrep() {
         </div>,
         document.body
       )}
+
+      <DefenseCelebration
+        open={defenseCelebration !== null}
+        score={defenseCelebration?.score ?? 0}
+        onDownload={() => setDefenseCelebration(null)}
+        onShare={() => setDefenseCelebration(null)}
+        onClose={() => setDefenseCelebration(null)}
+      />
     </>
   )
 }
