@@ -369,7 +369,273 @@ function drawModernLandscape(doc, W, H, data) {
   doc.rect(0, H - 10, W, 10, 'F');
 }
 
-function drawPrestige(doc, W, H, data) { /* implemented in Task 4 */ }
+function drawPrestige(doc, W, H, data) {
+  const { recipientName, faculty, department, topicTitle,
+          scoreLabel, dateStr, certNumber, qrBase64,
+          headingFont, bodyFont } = data;
+  const isLandscape = W > H;
+
+  if (isLandscape) {
+    drawPrestigeLandscape(doc, W, H, data);
+    return;
+  }
+
+  const cx = W / 2;
+
+  // Ivory background
+  doc.setFillColor(255, 253, 245);
+  doc.rect(0, 0, W, H, 'F');
+
+  // Outer gold border
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(1.5);
+  doc.rect(4, 4, W - 8, H - 8);
+
+  // Inner gold border (hairline)
+  doc.setLineWidth(0.4);
+  doc.rect(9, 9, W - 18, H - 18);
+
+  // Corner ornaments (L-shapes, 18×18mm, inset 4mm)
+  const co = 4;   // corner inset from page edge
+  const cs = 18;  // corner size
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(1.2);
+  // Top-left
+  doc.line(co + cs, co + 2, co + 2, co + 2); doc.line(co + 2, co + 2, co + 2, co + cs);
+  // Top-right
+  doc.line(W - co - cs, co + 2, W - co - 2, co + 2); doc.line(W - co - 2, co + 2, W - co - 2, co + cs);
+  // Bottom-left
+  doc.line(co + 2, H - co - cs, co + 2, H - co - 2); doc.line(co + 2, H - co - 2, co + cs, H - co - 2);
+  // Bottom-right
+  doc.line(W - co - 2, H - co - cs, W - co - 2, H - co - 2); doc.line(W - co - 2, H - co - 2, W - co - cs, H - co - 2);
+
+  // Seal (gold circle with "FY")
+  doc.setFillColor(201, 168, 76);
+  doc.circle(cx, 33, 13, 'F');
+  doc.setFillColor(230, 200, 106);
+  doc.circle(cx, 33, 9, 'F');
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FY', cx, 36, { align: 'center' });
+
+  // Title band
+  doc.setFillColor(253, 248, 232);
+  doc.rect(15, 52, W - 30, 16, 'F');
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.5);
+  doc.line(15, 52, W - 15, 52);
+  doc.line(15, 68, W - 15, 68);
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(139, 105, 20);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 62, { align: 'center', charSpace: 2 });
+
+  // "This certifies that"
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(160, 120, 64);
+  doc.text('This certifies that', cx, 80, { align: 'center' });
+
+  // Recipient name
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(22);
+  doc.setTextColor(44, 24, 16);
+  const displayName = recipientName.length > 48 ? recipientName.slice(0, 47) + '…' : recipientName;
+  doc.text(displayName, cx, 93, { align: 'center' });
+
+  // Faculty & department
+  if (faculty || department) {
+    doc.setFont(bodyFont, 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(160, 120, 64);
+    doc.text([faculty, department].filter(Boolean).join(' · '), cx, 101, { align: 'center' });
+  }
+
+  // Fleuron divider
+  const divY = 109;
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.4);
+  doc.line(cx - 40, divY, cx - 6, divY);
+  doc.line(cx + 6,  divY, cx + 40, divY);
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(201, 168, 76);
+  doc.text('*', cx, divY + 1.5, { align: 'center' });
+
+  // "has demonstrated..."
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(160, 120, 64);
+  doc.text('has demonstrated defence readiness for', cx, 120, { align: 'center' });
+
+  // Topic (italic, quoted)
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(44, 24, 16);
+  const raw        = topicTitle.length > 120 ? topicTitle.slice(0, 119) + '…' : topicTitle;
+  const topicLines = doc.splitTextToSize(`"${raw}"`, 148);
+  const topicY     = 132;
+  doc.text(topicLines, cx, topicY, { align: 'center' });
+  const topicEndY  = topicY + (topicLines.length - 1) * 7;
+
+  // Score pill (gold)
+  const scoreY  = topicEndY + 18;
+  const pillW   = 80;
+  const pillH   = 11;
+  doc.setFillColor(201, 168, 76);
+  doc.roundedRect(cx - pillW / 2, scoreY - 8, pillW, pillH, 5, 5, 'F');
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Score: ${scoreLabel}`, cx, scoreY, { align: 'center' });
+
+  // Issue date
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(160, 120, 64);
+  doc.text(`Issued on ${dateStr}`, cx, scoreY + 13, { align: 'center' });
+
+  // Footer
+  const footerRuleY = H - 30;
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.5);
+  doc.line(25, footerRuleY, W - 25, footerRuleY);
+
+  // QR code (bottom-left, ivory bg so transparent QR works fine)
+  const qrSize = 20;
+  const qrX    = 20;
+  const qrY    = H - 28;
+  try { doc.addImage(qrBase64, 'PNG', qrX, qrY, qrSize, qrSize); } catch { /* skip */ }
+
+  // Cert number (bottom-right)
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(160, 120, 64);
+  doc.text(certNumber, W - 18, H - 18, { align: 'right' });
+  doc.setFontSize(6.5);
+  doc.setTextColor(201, 168, 76);
+  doc.text(`fypro.com.ng/verify/${certNumber}`, W - 18, H - 12, { align: 'right' });
+}
+
+function drawPrestigeLandscape(doc, W, H, data) {
+  const { recipientName, faculty, department, topicTitle,
+          scoreLabel, dateStr, certNumber, qrBase64,
+          headingFont, bodyFont } = data;
+
+  // Ivory background
+  doc.setFillColor(255, 253, 245);
+  doc.rect(0, 0, W, H, 'F');
+
+  // Outer gold border
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(1.5);
+  doc.rect(4, 4, W - 8, H - 8);
+  doc.setLineWidth(0.4);
+  doc.rect(9, 9, W - 18, H - 18);
+
+  // Corner ornaments
+  const co = 4; const cs = 18;
+  doc.setLineWidth(1.2);
+  doc.line(co + cs, co + 2, co + 2, co + 2); doc.line(co + 2, co + 2, co + 2, co + cs);
+  doc.line(W - co - cs, co + 2, W - co - 2, co + 2); doc.line(W - co - 2, co + 2, W - co - 2, co + cs);
+  doc.line(co + 2, H - co - cs, co + 2, H - co - 2); doc.line(co + 2, H - co - 2, co + cs, H - co - 2);
+  doc.line(W - co - 2, H - co - cs, W - co - 2, H - co - 2); doc.line(W - co - 2, H - co - 2, W - co - cs, H - co - 2);
+
+  // Vertical separator
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.4);
+  doc.line(182, 15, 182, H - 15);
+
+  // ── LEFT COLUMN (cx: 96) ─────────────────────────────────────────────────
+  const lcx = 96;
+
+  // Seal
+  doc.setFillColor(201, 168, 76);
+  doc.circle(lcx, 26, 10, 'F');
+  doc.setFillColor(230, 200, 106);
+  doc.circle(lcx, 26, 7, 'F');
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FY', lcx, 29, { align: 'center' });
+
+  doc.setFillColor(253, 248, 232);
+  doc.rect(15, 41, 162, 12, 'F');
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.5);
+  doc.line(15, 41, 177, 41); doc.line(15, 53, 177, 53);
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(139, 105, 20);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 49, { align: 'center', charSpace: 1.5 });
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(160, 120, 64);
+  doc.text('This certifies that', lcx, 62, { align: 'center' });
+
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(18);
+  doc.setTextColor(44, 24, 16);
+  const displayName = recipientName.length > 40 ? recipientName.slice(0, 39) + '…' : recipientName;
+  doc.text(displayName, lcx, 73, { align: 'center' });
+
+  if (faculty || department) {
+    doc.setFont(bodyFont, 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(160, 120, 64);
+    doc.text([faculty, department].filter(Boolean).join(' · '), lcx, 81, { align: 'center' });
+  }
+
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.4);
+  doc.line(lcx - 30, 87, lcx - 5, 87); doc.line(lcx + 5, 87, lcx + 30, 87);
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(201, 168, 76);
+  doc.text('*', lcx, 88.5, { align: 'center' });
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(160, 120, 64);
+  doc.text('has demonstrated defence readiness for', lcx, 97, { align: 'center' });
+
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(44, 24, 16);
+  const raw        = topicTitle.length > 100 ? topicTitle.slice(0, 99) + '…' : topicTitle;
+  const topicLines = doc.splitTextToSize(`"${raw}"`, 140);
+  doc.text(topicLines, lcx, 107, { align: 'center' });
+
+  // ── RIGHT COLUMN (cx: 234) ───────────────────────────────────────────────
+  const rcx = 234;
+
+  const pillW = 76; const pillH = 11;
+  doc.setFillColor(201, 168, 76);
+  doc.roundedRect(rcx - pillW / 2, 56, pillW, pillH, 5, 5, 'F');
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Score: ${scoreLabel}`, rcx, 63, { align: 'center' });
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(160, 120, 64);
+  doc.text(`Issued on ${dateStr}`, rcx, 80, { align: 'center' });
+
+  const qrX = rcx - 10; const qrY = H - 44;
+  try { doc.addImage(qrBase64, 'PNG', qrX, qrY, 20, 20); } catch { /* skip */ }
+
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(160, 120, 64);
+  doc.text(certNumber, rcx, H - 16, { align: 'center' });
+  doc.setFontSize(6);
+  doc.setTextColor(201, 168, 76);
+  doc.text('fypro.com.ng/verify', rcx, H - 10, { align: 'center' });
+}
+
 function drawDark(doc, W, H, data)     { /* implemented in Task 5 */ }
 
 function drawWordmark(doc, cx, font, y) {
