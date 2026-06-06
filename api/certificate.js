@@ -636,7 +636,287 @@ function drawPrestigeLandscape(doc, W, H, data) {
   doc.text('fypro.com.ng/verify', rcx, H - 10, { align: 'center' });
 }
 
-function drawDark(doc, W, H, data)     { /* implemented in Task 5 */ }
+function drawDark(doc, W, H, data) {
+  const { recipientName, faculty, department, topicTitle,
+          scoreLabel, dateStr, certNumber, qrBase64,
+          headingFont, bodyFont, logoBase64 } = data;
+  const isLandscape = W > H;
+
+  if (isLandscape) {
+    drawDarkLandscape(doc, W, H, data);
+    return;
+  }
+
+  const cx = W / 2;
+
+  // Deep navy background
+  doc.setFillColor(13, 27, 42);
+  doc.rect(0, 0, W, H, 'F');
+
+  // Outer blue border
+  doc.setDrawColor(0, 60, 150);
+  doc.setLineWidth(0.8);
+  doc.rect(3, 3, W - 6, H - 6);
+
+  // Top accent bar (gradient-like: draw 3 thin rects of decreasing opacity)
+  doc.setFillColor(0, 102, 255);
+  doc.rect(0, 0, W, 2.5, 'F');
+  doc.setFillColor(30, 80, 200);
+  doc.rect(0, 2.5, W, 1.5, 'F');
+
+  // Bottom accent bar
+  doc.setFillColor(0, 102, 255);
+  doc.rect(0, H - 2.5, W, 2.5, 'F');
+  doc.setFillColor(30, 80, 200);
+  doc.rect(0, H - 4, W, 1.5, 'F');
+
+  // Logo / wordmark (white)
+  if (logoBase64) {
+    try { doc.addImage(logoBase64, 'PNG', cx - 20, 14, 40, 14); }
+    catch {
+      doc.setFont(headingFont, 'normal');
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text('FYPro', cx, 26, { align: 'center' });
+    }
+  } else {
+    doc.setFont(headingFont, 'normal');
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text('FYPro', cx, 26, { align: 'center' });
+  }
+
+  // Top rule
+  doc.setDrawColor(0, 102, 255);
+  doc.setLineWidth(0.6);
+  doc.line(cx - 30, 32, cx + 30, 32);
+
+  // Title (light blue)
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(96, 165, 250);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 42, { align: 'center', charSpace: 2 });
+
+  // Title flanking rules
+  doc.setDrawColor(0, 60, 150);
+  doc.setLineWidth(0.3);
+  doc.line(15, 45, cx - 50, 45); doc.line(cx + 50, 45, W - 15, 45);
+
+  // "This certifies that"
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(150, 160, 180);
+  doc.text('This certifies that', cx, 57, { align: 'center' });
+
+  // Recipient name (white, subtle glow via bold)
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  const displayName = recipientName.length > 48 ? recipientName.slice(0, 47) + '…' : recipientName;
+  doc.text(displayName, cx, 70, { align: 'center' });
+
+  // Faculty & department
+  if (faculty || department) {
+    doc.setFont(bodyFont, 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 120, 150);
+    doc.text([faculty, department].filter(Boolean).join(' · '), cx, 79, { align: 'center' });
+  }
+
+  // Dot divider
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(0, 80, 180);
+  doc.text('· · ·', cx, 89, { align: 'center' });
+
+  // "has demonstrated..."
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(150, 160, 180);
+  doc.text('has demonstrated defence readiness for', cx, 99, { align: 'center' });
+
+  // Topic (white/dim, italic via DM Serif Display)
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(13);
+  doc.setTextColor(220, 225, 235);
+  const raw        = topicTitle.length > 120 ? topicTitle.slice(0, 119) + '…' : topicTitle;
+  const topicLines = doc.splitTextToSize(`"${raw}"`, 148);
+  const topicY     = 112;
+  doc.text(topicLines, cx, topicY, { align: 'center' });
+  const topicEndY  = topicY + (topicLines.length - 1) * 7;
+
+  // Score badge (outlined pill, blue border)
+  const scoreY = topicEndY + 18;
+  const pillW  = 90;
+  const pillH  = 11;
+  doc.setDrawColor(0, 102, 255);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(cx - pillW / 2, scoreY - 8, pillW, pillH, 5, 5, 'S');
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(147, 197, 253);
+  doc.text(`SCORE: ${scoreLabel}`, cx, scoreY, { align: 'center' });
+
+  // Issue date
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 120, 150);
+  doc.text(`Issued on ${dateStr}`, cx, scoreY + 14, { align: 'center' });
+
+  // Tagline
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(70, 90, 120);
+  doc.text('"The supervisor you never had."', cx, scoreY + 24, { align: 'center' });
+
+  // Bottom rule
+  doc.setDrawColor(0, 102, 255);
+  doc.setLineWidth(0.6);
+  doc.line(cx - 30, scoreY + 30, cx + 30, scoreY + 30);
+
+  // Footer
+  const footerRuleY = H - 28;
+  doc.setDrawColor(0, 60, 150);
+  doc.setLineWidth(0.3);
+  doc.line(20, footerRuleY, W - 20, footerRuleY);
+
+  // QR code (bottom-left — QR modules are light blue on transparent/navy background)
+  const qrSize = 20;
+  const qrX    = 18;
+  const qrY    = H - 26;
+  try { doc.addImage(qrBase64, 'PNG', qrX, qrY, qrSize, qrSize); } catch { /* skip */ }
+
+  // Cert number
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 120, 150);
+  doc.text(certNumber, W - 18, H - 18, { align: 'right' });
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(0, 80, 150);
+  doc.text(`fypro.com.ng/verify/${certNumber}`, W - 18, H - 12, { align: 'right' });
+}
+
+function drawDarkLandscape(doc, W, H, data) {
+  const { recipientName, faculty, department, topicTitle,
+          scoreLabel, dateStr, certNumber, qrBase64,
+          headingFont, bodyFont, logoBase64 } = data;
+
+  // Navy background
+  doc.setFillColor(13, 27, 42);
+  doc.rect(0, 0, W, H, 'F');
+  doc.setDrawColor(0, 60, 150);
+  doc.setLineWidth(0.8);
+  doc.rect(3, 3, W - 6, H - 6);
+
+  // Top/bottom accent bars
+  doc.setFillColor(0, 102, 255);
+  doc.rect(0, 0, W, 2.5, 'F');
+  doc.setFillColor(30, 80, 200);
+  doc.rect(0, 2.5, W, 1.5, 'F');
+  doc.setFillColor(0, 102, 255);
+  doc.rect(0, H - 2.5, W, 2.5, 'F');
+  doc.setFillColor(30, 80, 200);
+  doc.rect(0, H - 4, W, 1.5, 'F');
+
+  // Vertical separator
+  doc.setDrawColor(0, 60, 150);
+  doc.setLineWidth(0.3);
+  doc.line(182, 12, 182, H - 12);
+
+  // ── LEFT COLUMN (cx: 96) ─────────────────────────────────────────────────
+  const lcx = 96;
+
+  if (logoBase64) {
+    try { doc.addImage(logoBase64, 'PNG', lcx - 18, 12, 36, 12); }
+    catch {
+      doc.setFont(headingFont, 'normal');
+      doc.setFontSize(16);
+      doc.setTextColor(255, 255, 255);
+      doc.text('FYPro', lcx, 22, { align: 'center' });
+    }
+  } else {
+    doc.setFont(headingFont, 'normal');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text('FYPro', lcx, 22, { align: 'center' });
+  }
+
+  doc.setDrawColor(0, 102, 255);
+  doc.setLineWidth(0.6);
+  doc.line(lcx - 25, 28, lcx + 25, 28);
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(96, 165, 250);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 36, { align: 'center', charSpace: 1.5 });
+
+  doc.setFontSize(9);
+  doc.setTextColor(150, 160, 180);
+  doc.text('This certifies that', lcx, 47, { align: 'center' });
+
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  const displayName = recipientName.length > 40 ? recipientName.slice(0, 39) + '…' : recipientName;
+  doc.text(displayName, lcx, 58, { align: 'center' });
+
+  if (faculty || department) {
+    doc.setFont(bodyFont, 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 120, 150);
+    doc.text([faculty, department].filter(Boolean).join(' · '), lcx, 66, { align: 'center' });
+  }
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(0, 80, 180);
+  doc.text('· · ·', lcx, 74, { align: 'center' });
+
+  doc.setFontSize(9);
+  doc.setTextColor(150, 160, 180);
+  doc.text('has demonstrated defence readiness for', lcx, 82, { align: 'center' });
+
+  doc.setFont(headingFont, 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(220, 225, 235);
+  const raw        = topicTitle.length > 100 ? topicTitle.slice(0, 99) + '…' : topicTitle;
+  const topicLines = doc.splitTextToSize(`"${raw}"`, 140);
+  doc.text(topicLines, lcx, 92, { align: 'center' });
+
+  // ── RIGHT COLUMN (cx: 234) ───────────────────────────────────────────────
+  const rcx = 234;
+
+  const pillW = 80; const pillH = 11;
+  doc.setDrawColor(0, 102, 255);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(rcx - pillW / 2, 56, pillW, pillH, 5, 5, 'S');
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(147, 197, 253);
+  doc.text(`SCORE: ${scoreLabel}`, rcx, 63, { align: 'center' });
+
+  doc.setFont(bodyFont, 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 120, 150);
+  doc.text(`Issued on ${dateStr}`, rcx, 80, { align: 'center' });
+
+  doc.setFontSize(8);
+  doc.setTextColor(70, 90, 120);
+  doc.text('"The supervisor you never had."', rcx, 91, { align: 'center' });
+
+  const qrX = rcx - 10; const qrY = H - 42;
+  try { doc.addImage(qrBase64, 'PNG', qrX, qrY, 20, 20); } catch { /* skip */ }
+
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 120, 150);
+  doc.text(certNumber, rcx, H - 14, { align: 'center' });
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(0, 80, 150);
+  doc.text('fypro.com.ng/verify', rcx, H - 8, { align: 'center' });
+}
 
 function drawWordmark(doc, cx, font, y) {
   doc.setFont(font, 'normal');
