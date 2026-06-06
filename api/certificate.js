@@ -969,9 +969,20 @@ export default async function handler(req, res) {
     }
     if (!data) return res.status(404).json({ valid: false, error: 'Certificate not found' });
 
+    // Use current profile name if available (user may have updated it since cert was issued)
+    let recipientName = data.recipient_name;
+    if (data.user_id) {
+      const { data: profile } = await supabaseAdmin
+        .from('users')
+        .select('full_name')
+        .eq('id', data.user_id)
+        .maybeSingle();
+      if (profile?.full_name) recipientName = profile.full_name;
+    }
+
     // Strip sensitive fields before returning to public callers
     const { user_id, defense_session_id, id, ...safe } = data;
-    return res.status(200).json({ valid: true, certificate: safe });
+    return res.status(200).json({ valid: true, certificate: { ...safe, recipient_name: recipientName } });
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
