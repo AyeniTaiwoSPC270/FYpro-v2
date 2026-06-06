@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchMyCertificates, downloadCertificate } from '../../lib/certificate'
+import { fetchMyCertificates } from '../../lib/certificate'
 import { useTheme } from '../../context/ThemeContext'
+import CertificateDownloadModal from '../../components/defense/CertificateDownloadModal'
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', {
@@ -29,109 +30,63 @@ function ScorePill({ score }) {
   )
 }
 
-function CertRow({ cert, onDownload, downloading, isDark }) {
-  const [error, setError] = useState(null)
-
-  async function handleDownload() {
-    setError(null)
-    try {
-      await onDownload(cert.defense_session_id)
-    } catch (err) {
-      if (err.message === 'NAME_REQUIRED') {
-        setError('Set your full name in Profile first.')
-      } else {
-        setError(err.message || 'Download failed. Please try again.')
-      }
-    }
-  }
-
+function CertRow({ cert, onDownload, isDark }) {
   return (
     <div style={{
-      display:       'grid',
-      gridTemplateColumns: '1fr auto',
-      gap:           16,
-      padding:       '18px 22px',
-      background:    isDark
+      display: 'grid', gridTemplateColumns: '1fr auto', gap: 16,
+      padding: '18px 22px',
+      background: isDark
         ? 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)'
         : 'linear-gradient(145deg, #ffffff 0%, #f8faff 100%)',
-      borderRadius:  12,
-      border:        isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)',
-      boxShadow:     isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 16px rgba(0,0,0,0.06)',
-      marginBottom:  12,
-      animation:     'card-enter 0.4s ease forwards',
+      borderRadius: 12,
+      border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 16px rgba(0,0,0,0.06)',
+      marginBottom: 12, animation: 'card-enter 0.4s ease forwards',
     }}>
       {/* Left: info */}
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
           <ScorePill score={cert.score} />
           <span style={{
-            fontFamily:    "'JetBrains Mono', 'Courier New', monospace",
-            fontSize:      '0.68rem',
-            fontWeight:    500,
-            color:         isDark ? 'rgba(255,255,255,0.3)' : 'rgba(13,27,42,0.35)',
+            fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+            fontSize: '0.68rem', fontWeight: 500,
+            color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(13,27,42,0.35)',
             letterSpacing: '0.3px',
           }}>
             {cert.certificate_number}
           </span>
         </div>
-
         <p style={{
-          fontFamily:  "'DM Serif Display', Georgia, serif",
-          fontSize:    '0.95rem',
-          color:       isDark ? '#FFFFFF' : '#0D1B2A',
-          lineHeight:  1.4,
-          marginBottom: 4,
-          overflow:    'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace:  'nowrap',
+          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontSize: '0.95rem', color: isDark ? '#FFFFFF' : '#0D1B2A',
+          lineHeight: 1.4, marginBottom: 4,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {cert.topic_title}
         </p>
-
         <p style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize:   '0.75rem',
-          color:      isDark ? 'rgba(255,255,255,0.45)' : 'rgba(13,27,42,0.5)',
-          margin:     0,
+          fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem',
+          color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(13,27,42,0.5)', margin: 0,
         }}>
           Issued {formatDate(cert.issued_at)} · {cert.recipient_name}
         </p>
-
-        {error && (
-          <p style={{
-            fontFamily:  "'Poppins', sans-serif",
-            fontSize:    '0.72rem',
-            color:       '#DC2626',
-            marginTop:   8,
-          }}>
-            {error}
-          </p>
-        )}
       </div>
 
-      {/* Right: download */}
+      {/* Right: open modal */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <button
-          onClick={handleDownload}
-          disabled={downloading}
+          onClick={onDownload}
           aria-label={`Download certificate ${cert.certificate_number}`}
           style={{
-            padding:    '9px 16px',
-            borderRadius: 10,
-            background: downloading ? 'rgba(0,102,255,0.5)' : '#0066FF',
-            color:      '#FFFFFF',
-            border:     'none',
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 600,
-            fontSize:   '0.8rem',
-            cursor:     downloading ? 'not-allowed' : 'pointer',
-            whiteSpace: 'nowrap',
-            transition: 'all 0.2s ease',
+            padding: '9px 16px', borderRadius: 10,
+            background: '#0066FF', color: '#FFFFFF', border: 'none',
+            fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.8rem',
+            cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s ease',
           }}
-          onMouseOver={e => { if (!downloading) e.currentTarget.style.background = '#0052CC' }}
-          onMouseOut={e => { if (!downloading) e.currentTarget.style.background = '#0066FF' }}
+          onMouseOver={e => { e.currentTarget.style.background = '#0052CC' }}
+          onMouseOut={e => { e.currentTarget.style.background = '#0066FF' }}
         >
-          {downloading ? 'Downloading…' : '⬇ Download'}
+          ⬇ Download
         </button>
       </div>
     </div>
@@ -139,10 +94,10 @@ function CertRow({ cert, onDownload, downloading, isDark }) {
 }
 
 export default function MyCertificates() {
-  const [certs,       setCerts]       = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [fetchError,  setFetchError]  = useState(null)
-  const [downloading, setDownloading] = useState(null)
+  const [certs,      setCerts]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [fetchError, setFetchError] = useState(null)
+  const [activeCert, setActiveCert] = useState(null) // { defenseSessionId, topic }
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -152,15 +107,6 @@ export default function MyCertificates() {
       .catch(err => setFetchError(err.message || 'Failed to load certificates'))
       .finally(() => setLoading(false))
   }, [])
-
-  async function handleDownload(defenseSessionId) {
-    setDownloading(defenseSessionId)
-    try {
-      await downloadCertificate(defenseSessionId)
-    } finally {
-      setDownloading(null)
-    }
-  }
 
   const pageBg        = isDark ? '#060E18' : '#F0F4F8'
   const dotColor      = isDark ? 'rgba(0,102,255,0.05)' : 'rgba(0,102,255,0.06)'
@@ -313,13 +259,19 @@ export default function MyCertificates() {
               <CertRow
                 key={cert.id}
                 cert={cert}
-                onDownload={handleDownload}
-                downloading={downloading === cert.defense_session_id}
+                onDownload={() => setActiveCert({ defenseSessionId: cert.defense_session_id, topic: cert.topic_title })}
                 isDark={isDark}
               />
             ))}
           </>
         )}
+
+        <CertificateDownloadModal
+          isOpen={activeCert !== null}
+          onClose={() => setActiveCert(null)}
+          defenseSessionId={activeCert?.defenseSessionId ?? ''}
+          topic={activeCert?.topic ?? ''}
+        />
 
         <style>{`
           @keyframes card-enter {
