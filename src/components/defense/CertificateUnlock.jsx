@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { downloadCertificate } from '../../lib/certificate'
 import { supabase } from '../../lib/supabase'
-import Sentry from '../../lib/sentry'
 import { useTheme } from '../../context/ThemeContext'
+import CertificateDownloadModal from './CertificateDownloadModal'
 
 const SCORE_THRESHOLD = 7
 
@@ -11,51 +10,12 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
   const navigate = useNavigate()
   const { theme } = useTheme()
   const isLight = theme === 'light'
-  const [certLoading,  setCertLoading]  = useState(false)
-  const [certError,    setCertError]    = useState(null)
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false)
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError,   setShareError]   = useState(null)
 
   const normalizedScore = Number.isFinite(Number(score)) ? Math.round(Number(score)) : 0
   const qualifies = normalizedScore >= SCORE_THRESHOLD
-
-  async function handleDownload() {
-    if (!defenseSessionId) {
-      setCertError('Session ID unavailable — please try again in a moment.')
-      return
-    }
-    setCertError(null)
-    setCertLoading(true)
-    try {
-      await downloadCertificate(defenseSessionId)
-    } catch (err) {
-      if (err.message === 'NAME_REQUIRED') {
-        setCertError('NAME_REQUIRED')
-      } else {
-        const sentryErr = err instanceof Error ? err : new Error(String(err))
-        supabase.auth.getUser()
-          .then(({ data }) => {
-            Sentry.withScope(scope => {
-              scope.setTag('feature', 'certificate_generation')
-              scope.setExtra('defense_session_id', defenseSessionId)
-              scope.setExtra('timestamp', new Date().toISOString())
-              if (data?.user?.id) scope.setUser({ id: data.user.id })
-              Sentry.captureException(sentryErr)
-            })
-          })
-          .catch(() => {
-            Sentry.withScope(scope => {
-              scope.setTag('feature', 'certificate_generation')
-              scope.setExtra('timestamp', new Date().toISOString())
-              Sentry.captureException(sentryErr)
-            })
-          })
-        setCertError(err.message || 'certificate_failed')
-      }
-    } finally {
-      setCertLoading(false)
-    }
-  }
 
   async function handleShare() {
     if (!defenseSessionId) { setShareError('Session ID unavailable — please try again.'); return }
@@ -188,142 +148,33 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         Your score of {normalizedScore}/10 qualifies you for an official FYPro Defense Readiness certificate.
       </p>
 
-      {certError === 'NAME_REQUIRED' && (
-        <p style={{
-          fontFamily:   "'Poppins', sans-serif",
-          fontSize:     '0.75rem',
-          color:        '#F87171',
-          marginBottom: 10,
-          lineHeight:   1.5,
-        }}>
-          Please set your full name in your profile before downloading.{' '}
-          <button
-            onClick={() => navigate('/profile')}
-            style={{
-              background:     'none',
-              border:         'none',
-              color:          '#60A5FA',
-              fontFamily:     "'Poppins', sans-serif",
-              fontSize:       '0.75rem',
-              cursor:         'pointer',
-              textDecoration: 'underline',
-              padding:        0,
-            }}
-          >
-            Go to profile →
-          </button>
-        </p>
-      )}
-      {certError && certError !== 'NAME_REQUIRED' && (
-        <div style={{
-          background:   'rgba(220,38,38,0.08)',
-          border:       '1px solid rgba(220,38,38,0.22)',
-          borderRadius: 12,
-          padding:      '16px 20px',
-          marginBottom: 14,
-          width:        '100%',
-          maxWidth:     340,
-          textAlign:    'left',
-        }}>
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.875rem', color: '#F87171', margin: '0 0 6px' }}>
-            Certificate generation failed
-          </p>
-          <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: '0 0 14px' }}>
-            Don't worry — your completion is saved. Try again below, or contact us on WhatsApp and we'll sort it manually.
-          </p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={handleDownload}
-              disabled={certLoading}
-              style={{
-                flex: 1, padding: '9px 14px', borderRadius: 8,
-                fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.78rem',
-                background: 'rgba(220,38,38,0.15)', color: '#F87171',
-                border: '1px solid rgba(220,38,38,0.3)',
-                cursor: certLoading ? 'not-allowed' : 'pointer', transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={e => { if (!certLoading) e.currentTarget.style.background = 'rgba(220,38,38,0.25)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.15)' }}
-            >
-              Retry
-            </button>
-            <a
-              href="https://wa.me/2348029061967"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                flex: 1, padding: '9px 14px', borderRadius: 8,
-                fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.78rem',
-                background: 'rgba(37,211,102,0.1)', color: '#4ADE80',
-                border: '1px solid rgba(37,211,102,0.2)',
-                textDecoration: 'none', textAlign: 'center',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.18)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)' }}
-            >
-              WhatsApp
-            </a>
-          </div>
-        </div>
-      )}
-      {shareError && (
-        <p style={{
-          fontFamily:   "'Poppins', sans-serif",
-          fontSize:     '0.75rem',
-          color:        '#F87171',
-          marginBottom: 10,
-        }}>
-          {shareError}
-        </p>
-      )}
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 340 }}>
         <button
-          onClick={handleDownload}
-          disabled={certLoading}
+          onClick={() => setIsCertModalOpen(true)}
           aria-label="Download PDF certificate"
           style={{
-            width:      '100%',
-            padding:    '14px 28px',
-            borderRadius: 12,
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 600,
-            fontSize:   '0.875rem',
-            cursor:     certLoading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            border:     'none',
-            opacity:    certLoading ? 0.6 : 1,
-            background: '#16A34A',
-            color:      '#FFFFFF',
+            width: '100%', padding: '14px 28px', borderRadius: 12,
+            fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.875rem',
+            cursor: 'pointer', transition: 'all 0.2s ease', border: 'none',
+            background: '#16A34A', color: '#FFFFFF',
           }}
-          onMouseEnter={e => { if (!certLoading) e.currentTarget.style.boxShadow = '0 0 20px rgba(22,163,74,0.35)' }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(22,163,74,0.35)' }}
           onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}
         >
-          {certLoading ? 'Generating your certificate…' : '⬇ Download certificate'}
+          ⬇ Download certificate
         </button>
         <button
           onClick={handleShare}
           disabled={shareLoading}
           aria-label="Share certificate to WhatsApp"
           style={{
-            width:          '100%',
-            padding:        '13px 27px',
-            borderRadius:   12,
-            fontFamily:     "'Poppins', sans-serif",
-            fontWeight:     600,
-            fontSize:       '0.875rem',
-            cursor:         shareLoading ? 'not-allowed' : 'pointer',
-            transition:     'all 0.2s ease',
-            background:     'transparent',
-            border:         isLight ? '1.5px solid rgba(13,27,42,0.15)' : '1.5px solid rgba(255,255,255,0.08)',
-            color:          isLight ? '#0D1B2A' : '#FFFFFF',
-            opacity:        shareLoading ? 0.6 : 1,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            gap:            7,
+            width: '100%', padding: '13px 27px', borderRadius: 12,
+            fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.875rem',
+            cursor: shareLoading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease',
+            background: 'transparent',
+            border: isLight ? '1.5px solid rgba(13,27,42,0.15)' : '1.5px solid rgba(255,255,255,0.08)',
+            color: isLight ? '#0D1B2A' : '#FFFFFF', opacity: shareLoading ? 0.6 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           }}
           onMouseEnter={e => { if (!shareLoading) e.currentTarget.style.borderColor = isLight ? 'rgba(13,27,42,0.4)' : 'rgba(255,255,255,0.6)' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = isLight ? 'rgba(13,27,42,0.15)' : 'rgba(255,255,255,0.08)' }}
@@ -334,6 +185,19 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
           {shareLoading ? 'Generating…' : 'Share on WhatsApp'}
         </button>
       </div>
+
+      {shareError && (
+        <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem', color: '#F87171', marginTop: 8 }}>
+          {shareError}
+        </p>
+      )}
+
+      <CertificateDownloadModal
+        isOpen={isCertModalOpen}
+        onClose={() => setIsCertModalOpen(false)}
+        defenseSessionId={defenseSessionId}
+        topic={topic}
+      />
     </div>
   )
 }
