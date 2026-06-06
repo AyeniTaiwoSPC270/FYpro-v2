@@ -429,7 +429,9 @@ function drawPrestige(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(139, 105, 20);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 62, { align: 'center', charSpace: 2 });
+  doc.setCharSpace(2);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 62, { align: 'center' });
+  doc.setCharSpace(0);
 
   // "This certifies that"
   doc.setFont(bodyFont, 'normal');
@@ -568,7 +570,9 @@ function drawPrestigeLandscape(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(139, 105, 20);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 49, { align: 'center', charSpace: 1.5 });
+  doc.setCharSpace(1.5);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 49, { align: 'center' });
+  doc.setCharSpace(0);
 
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(9);
@@ -695,7 +699,9 @@ function drawDark(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(8);
   doc.setTextColor(96, 165, 250);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 42, { align: 'center', charSpace: 2 });
+  doc.setCharSpace(2);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', cx, 42, { align: 'center' });
+  doc.setCharSpace(0);
 
   // Title flanking rules
   doc.setDrawColor(0, 60, 150);
@@ -849,7 +855,9 @@ function drawDarkLandscape(doc, W, H, data) {
   doc.setFont(bodyFont, 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(96, 165, 250);
-  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 36, { align: 'center', charSpace: 1.5 });
+  doc.setCharSpace(1.5);
+  doc.text('CERTIFICATE OF DEFENSE READINESS', lcx, 36, { align: 'center' });
+  doc.setCharSpace(0);
 
   doc.setFontSize(9);
   doc.setTextColor(150, 160, 180);
