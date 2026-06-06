@@ -18,14 +18,17 @@ import { Buffer } from 'buffer';
 
 const SCORE_THRESHOLD = 7;
 
-// Load logo once at cold start — graceful fallback to text wordmark if absent
+// Load logos once at cold start — graceful fallback to text wordmark if absent
 let logoBase64 = null;
+let goldLogoBase64 = null;
 try {
   const bytes = fs.readFileSync(path.join(process.cwd(), 'public', 'fypro-logo.png'));
   logoBase64 = `data:image/png;base64,${bytes.toString('base64')}`;
-} catch {
-  // Logo not accessible from serverless context — PDF uses "FYPro" text instead
-}
+} catch { /* PDF uses "FYPro" text fallback */ }
+try {
+  const bytes = fs.readFileSync(path.join(process.cwd(), 'public', 'fypro-logo-gold.png'));
+  goldLogoBase64 = `data:image/png;base64,${bytes.toString('base64')}`;
+} catch { /* Prestige style falls back to text wordmark */ }
 
 // Google Fonts — fetch TTF binaries at cold start and cache in module scope.
 // Uses legacy UA header so Google returns TTF (jsPDF requires TTF, not WOFF2).
@@ -108,7 +111,7 @@ async function buildCertificatePDF({
     recipientName, faculty, department, topicTitle,
     scoreLabel, dateStr, certNumber, qrBase64,
     headingFont, bodyFont,
-    logoBase64,
+    logoBase64, goldLogoBase64,
   };
 
   if      (style === 'prestige') drawPrestige(doc, W, H, data);
@@ -372,7 +375,7 @@ function drawModernLandscape(doc, W, H, data) {
 function drawPrestige(doc, W, H, data) {
   const { recipientName, faculty, department, topicTitle,
           scoreLabel, dateStr, certNumber, qrBase64,
-          headingFont, bodyFont } = data;
+          headingFont, bodyFont, goldLogoBase64 } = data;
   const isLandscape = W > H;
 
   if (isLandscape) {
@@ -409,21 +412,17 @@ function drawPrestige(doc, W, H, data) {
   // Bottom-right
   doc.line(W - co - 2, H - co - cs, W - co - 2, H - co - 2); doc.line(W - co - 2, H - co - 2, W - co - cs, H - co - 2);
 
-  // Seal (gold circle with "FY")
-  doc.setFillColor(201, 168, 76);
-  doc.circle(cx, 33, 13, 'F');
-  doc.setFillColor(230, 200, 106);
-  doc.circle(cx, 33, 9, 'F');
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 255, 255);
-  doc.text('FY', cx, 36, { align: 'center' });
-
-  // Gold FYPro wordmark below seal
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(139, 105, 20);
-  doc.text('FYPro', cx, 50, { align: 'center' });
+  // Gold FYPro logo — centered in header above title band
+  // Logo is 876×272px → aspect 3.22:1; render at 62×19.25mm
+  if (goldLogoBase64) {
+    try { doc.addImage(goldLogoBase64, 'PNG', cx - 31, 18, 62, 19.25); }
+    catch { /* skip if image fails */ }
+  } else {
+    doc.setFont(headingFont, 'normal');
+    doc.setFontSize(16);
+    doc.setTextColor(139, 105, 20);
+    doc.text('FYPro', cx, 36, { align: 'center' });
+  }
 
   // Title band
   doc.setFillColor(253, 248, 232);
@@ -531,7 +530,7 @@ function drawPrestige(doc, W, H, data) {
 function drawPrestigeLandscape(doc, W, H, data) {
   const { recipientName, faculty, department, topicTitle,
           scoreLabel, dateStr, certNumber, qrBase64,
-          headingFont, bodyFont } = data;
+          headingFont, bodyFont, goldLogoBase64 } = data;
 
   // Ivory background
   doc.setFillColor(255, 253, 245);
@@ -560,21 +559,17 @@ function drawPrestigeLandscape(doc, W, H, data) {
   // ── LEFT COLUMN (cx: 96) ─────────────────────────────────────────────────
   const lcx = 96;
 
-  // Seal
-  doc.setFillColor(201, 168, 76);
-  doc.circle(lcx, 26, 10, 'F');
-  doc.setFillColor(230, 200, 106);
-  doc.circle(lcx, 26, 7, 'F');
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('FY', lcx, 29, { align: 'center' });
-
-  // Gold FYPro wordmark below seal
-  doc.setFont(headingFont, 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(139, 105, 20);
-  doc.text('FYPro', lcx, 38, { align: 'center' });
+  // Gold FYPro logo — centered in left column header above title band
+  // Logo 876×272px → aspect 3.22:1; render at 50×15.5mm
+  if (goldLogoBase64) {
+    try { doc.addImage(goldLogoBase64, 'PNG', lcx - 25, 14, 50, 15.5); }
+    catch { /* skip if image fails */ }
+  } else {
+    doc.setFont(headingFont, 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(139, 105, 20);
+    doc.text('FYPro', lcx, 28, { align: 'center' });
+  }
 
   doc.setFillColor(253, 248, 232);
   doc.rect(15, 41, 162, 12, 'F');
