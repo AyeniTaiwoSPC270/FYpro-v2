@@ -129,17 +129,21 @@ async function handleValidate(req, res) {
       }
     }
 
-    res.setHeader('X-Cache', 'MISS');
-    if (response.ok) {
-      setCached(claudeKey, data, CLAUDE_TTL);
-      const duration = Date.now() - start;
-      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id });
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[research/validate] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-      });
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
+      console.error('[research/validate] Anthropic error:', response.status, errorMsg);
+      return res.status(502).json({ error: errorMsg });
     }
-    return res.status(response.status).json(data);
+
+    res.setHeader('X-Cache', 'MISS');
+    setCached(claudeKey, data, CLAUDE_TTL);
+    const duration = Date.now() - start;
+    const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id });
+    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+    await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+      console.error('[research/validate] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
+    return res.status(200).json(data);
   } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[research/validate] Anthropic request timed out after 50s');
@@ -269,17 +273,21 @@ async function handleLitMap(req, res) {
       }
     }
 
-    res.setHeader('X-Cache', 'MISS');
-    if (response.ok) {
-      setCached(claudeKey, data, CLAUDE_TTL);
-      const duration = Date.now() - start;
-      const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id });
-      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-      await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[research/lit-map] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-      });
+    if (!response.ok) {
+      const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
+      console.error('[research/lit-map] Anthropic error:', response.status, errorMsg);
+      return res.status(502).json({ error: errorMsg });
     }
-    return res.status(response.status).json(data);
+
+    res.setHeader('X-Cache', 'MISS');
+    setCached(claudeKey, data, CLAUDE_TTL);
+    const duration = Date.now() - start;
+    const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id });
+    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+    await Promise.race([insertPromise, timeoutPromise]).catch(err => {
+      console.error('[research/lit-map] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+    });
+    return res.status(200).json(data);
   } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[research/lit-map] Anthropic request timed out after 50s');
