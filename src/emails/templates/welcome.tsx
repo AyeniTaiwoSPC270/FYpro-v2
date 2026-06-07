@@ -1,6 +1,6 @@
 import {
-  Body, Container, Head, Heading, Hr,
-  Html, Link, Preview, Section, Text, Row, Column,
+  Body, Head, Heading, Hr,
+  Html, Link, Preview, Section, Text,
 } from '@react-email/components'
 
 interface Props { name: string; baseUrl: string }
@@ -38,6 +38,7 @@ const shieldWrap: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   verticalAlign: 'middle',
+  flexShrink: 0,
 }
 const wordmarkMain: React.CSSProperties = {
   fontSize: '17px',
@@ -110,6 +111,11 @@ const footer: React.CSSProperties = {
 const footerLink: React.CSSProperties = {
   color: 'rgba(255,255,255,0.3)',
 }
+const headerText: React.CSSProperties = {
+  display: 'inline-block',
+  verticalAlign: 'middle',
+  marginLeft: '11px',
+}
 
 export default function Welcome({ name, baseUrl }: Props) {
   const firstName = name ? name.split(' ')[0] : 'there'
@@ -130,9 +136,9 @@ export default function Welcome({ name, baseUrl }: Props) {
                 <path d="M6.5 9.5l2 2 3-3" stroke="#3b82f6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <div style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '11px' }}>
-              <p style={wordmarkMain}>FY<span style={{ color: '#3b82f6' }}>Pro</span></p>
-              <p style={tagline}>Your Final Year Companion</p>
+            <div style={headerText}>
+              <Text style={wordmarkMain}>FY<span style={{ color: '#3b82f6' }}>Pro</span></Text>
+              <Text style={tagline}>Your Final Year Companion</Text>
             </div>
           </div>
 
