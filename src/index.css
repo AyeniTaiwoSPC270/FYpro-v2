@@ -453,7 +453,7 @@ html, body {
   min-width: 0;
   height: 100%;
   background-color: #F0F4F8;
-  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.8px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.6px, transparent 1px);
   background-size: 28px 28px;
   display: flex;
   flex-direction: column;
@@ -4706,7 +4706,7 @@ html, body {
 /* ── 1. Main content area ──────────────────────────────────────── */
 .app-content {
   background-color: #060E18 !important;
-  background-image: radial-gradient(circle, rgba(51,122,255,0.14) 1.8px, transparent 1px) !important;
+  background-image: radial-gradient(circle, rgba(51,122,255,0.14) 1.6px, transparent 1px) !important;
   background-size: 28px 28px !important;
   --color-text-primary:   rgba(255,255,255,0.90);
   --color-text-secondary: rgba(255,255,255,0.58);
@@ -6253,7 +6253,7 @@ html, body {
 
 .fy-workspace-bg {
   background-color: var(--color-bg-surface);
-  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.8px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.6px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -8039,7 +8039,7 @@ html, body {
   --accent:              #2563EB;
   --accent-hover:        #3B82F6;
   --card-shadow:         0 0 0 transparent;
-  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.12) 1.8px, transparent 1px);
+  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.12) 1.6px, transparent 1px);
   /* Public page tokens */
   --pub-bg:           #060E18;
   --pub-bg-mid:       #0D1B2A;
@@ -8088,7 +8088,7 @@ html, body {
   --accent:              #2563EB;
   --accent-hover:        #1D4ED8;
   --card-shadow:         0 1px 3px rgba(0,0,0,0.08);
-  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.18) 1.8px, transparent 1px);
+  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.18) 1.6px, transparent 1px);
   /* Public page tokens — warm academia palette */
   --pub-bg:           #FAFAF7;
   --pub-bg-mid:       #F2F0EA;
@@ -8585,7 +8585,7 @@ body {
 [data-theme="light"] .app-content,
 .light .app-content {
   background-color: #F0F4F8 !important;
-  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.8px, transparent 1px) !important;
+  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.6px, transparent 1px) !important;
   --color-text-primary:   #0D1B2A;
   --color-text-secondary: rgba(13,27,42,0.6);
   --color-text-muted:     rgba(13,27,42,0.4);
@@ -8766,7 +8766,7 @@ body {
 .sp-page {
   min-height: 100vh;
   background: var(--bg-base, #060E18);
-  background-image: radial-gradient(circle, rgba(51,122,255,0.14) 1.8px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(51,122,255,0.14) 1.6px, transparent 1px);
   background-size: 28px 28px;
   display: flex;
   flex-direction: column;
@@ -9725,7 +9725,7 @@ body {
 [data-theme="light"] .app-content,
 .light .app-content {
   background-color: #F0F4F8 !important;
-  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.8px, transparent 1px) !important;
+  background-image: radial-gradient(circle, rgba(51,122,255,0.18) 1.6px, transparent 1px) !important;
   --color-text-primary:   #0D1B2A;
   --color-text-secondary: rgba(13, 27, 42, 0.6);
   --color-text-muted:     rgba(13, 27, 42, 0.4);
@@ -10727,7 +10727,7 @@ body {
   --color-text-primary:  rgba(255,255,255,0.90);
   --color-text-secondary:rgba(255,255,255,0.58);
   --color-text-muted:    rgba(255,255,255,0.32);
-  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.12) 1.8px, transparent 1px);
+  --dot-bg-image:        radial-gradient(circle, rgba(51,122,255,0.12) 1.6px, transparent 1px);
   --header-btn-bg:       rgba(255,255,255,0.04);
   --header-btn-border:   rgba(255,255,255,0.1);
   --dropdown-border:     rgba(255,255,255,0.1);

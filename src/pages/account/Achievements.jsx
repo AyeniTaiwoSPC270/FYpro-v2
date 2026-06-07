@@ -101,7 +101,7 @@ export default function Achievements() {
   return (
     <div style={{
       minHeight: '100vh', background: pageBg,
-      backgroundImage: `radial-gradient(circle, ${dotColor} 1.8px, transparent 1px)`,
+      backgroundImage: `radial-gradient(circle, ${dotColor} 1.6px, transparent 1px)`,
       backgroundSize: '28px 28px', padding: '40px 20px',
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>

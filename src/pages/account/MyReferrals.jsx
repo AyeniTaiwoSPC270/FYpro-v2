@@ -185,7 +185,7 @@ export default function MyReferrals() {
   const emptyBorder   = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(13,27,42,0.08)'
 
   return (
-    <div style={{ minHeight: '100vh', background: pageBg, backgroundImage: `radial-gradient(circle, ${dotColor} 1.8px, transparent 1px)`, backgroundSize: '28px 28px', padding: '40px 20px' }}>
+    <div style={{ minHeight: '100vh', background: pageBg, backgroundImage: `radial-gradient(circle, ${dotColor} 1.6px, transparent 1px)`, backgroundSize: '28px 28px', padding: '40px 20px' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
         {/* Back link */}
