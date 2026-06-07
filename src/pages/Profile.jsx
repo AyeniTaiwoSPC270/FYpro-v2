@@ -78,6 +78,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [avatarImgError, setAvatarImgError] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const dropdownRef = useRef(null)
   const { user: navUser } = useUser()
@@ -171,8 +172,8 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
                 border: '2px solid rgba(0,102,255,0.35)',
               }}
             >
-              {avatarUrl
-                ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+              {avatarUrl && !avatarImgError
+                ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" onError={() => setAvatarImgError(true)} />
                 : initials}
             </div>
             <span className="font-sans text-[0.8rem] font-medium text-slate-300 max-w-[120px] truncate hidden sm:block">
@@ -476,7 +477,10 @@ export default function Profile() {
       const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (uploadError) { showToast('Photo upload failed'); return }
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
+      await Promise.all([
+        supabase.auth.updateUser({ data: { avatar_url: publicUrl } }),
+        updateUserProfile({ avatar_url: publicUrl }),
+      ])
       setAvatarUrl(publicUrl)
       showToast('Photo updated')
     } finally {

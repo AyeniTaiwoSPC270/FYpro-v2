@@ -136,7 +136,7 @@ export default function Dashboard() {
   const STUDENT = {
     name:          fullName,
     initials,
-    avatarUrl:     user?.user_metadata?.avatar_url || null,
+    avatarUrl:     user?.user_metadata?.avatar_url || state.avatarUrl || null,
     university:    state.university  || '',
     department:    state.department  || '',
     level:         state.level       || '',

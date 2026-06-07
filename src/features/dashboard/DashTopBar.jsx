@@ -27,6 +27,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
   const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(user?.id)
   const [panelOpen, setPanelOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
+  const [avatarImgError, setAvatarImgError] = useState(false)
   const avatarRef = useRef(null)
 
   async function handleLogout() {
@@ -174,8 +175,8 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
               fontFamily: "'DM Serif Display', serif",
             }}
           >
-            {STUDENT.avatarUrl
-              ? <img src={STUDENT.avatarUrl} alt={STUDENT.name} className="w-full h-full object-cover" />
+            {STUDENT.avatarUrl && !avatarImgError
+              ? <img src={STUDENT.avatarUrl} alt={STUDENT.name} className="w-full h-full object-cover" onError={() => setAvatarImgError(true)} />
               : STUDENT.initials}
           </motion.button>
 

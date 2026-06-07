@@ -7,6 +7,7 @@ const AppContext = createContext(null)
 const DEFAULT_STATE = {
   // Onboarding
   name:              '',
+  avatarUrl:         null,
   university:        '',
   faculty:           '',
   department:        '',

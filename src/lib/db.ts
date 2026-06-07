@@ -251,7 +251,7 @@ export async function deleteAllUserData(userId: string): Promise<void> {
 // ─── Profile update ──────────────────────────────────────────────────────────
 
 export async function updateUserProfile(
-  updates: Partial<Pick<UserProfile, 'full_name' | 'university' | 'faculty' | 'department' | 'level'>>
+  updates: Partial<Pick<UserProfile, 'full_name' | 'avatar_url' | 'university' | 'faculty' | 'department' | 'level'>>
 ): Promise<void> {
   const user = await sessionUser()
   if (!user) return
