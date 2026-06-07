@@ -1161,6 +1161,7 @@ async function handleReportPaymentIssue(req, res) {
 
   const { error: insertError } = await supabaseAdmin.from('payment_issues').insert({
     user_id:         userId,
+    user_email:      userEmail,
     transaction_ref: ref,
     description:     description?.trim() || null,
   });
