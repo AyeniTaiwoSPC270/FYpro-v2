@@ -37,33 +37,33 @@ async function sendReceiptEmail(toEmail, plan, amount, reference) {
     from: 'FYPro <hello@fypro.com.ng>',
     to: toEmail,
     subject: `Your FYPro receipt — ${planDisplay}`,
-    html: `
-<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-  <div style="background-color: #0f172a; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
-    <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" style="height: 40px;" />
-  </div>
-  <div style="padding: 32px 24px;">
-    <h2 style="color: #1a1a2e; font-size: 24px; margin-bottom: 8px;">Payment confirmed</h2>
-    <p style="color: #555; font-size: 15px;">Your project journey just got serious.</p>
-    <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
-      <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;"><strong>Plan:</strong> ${planDisplay}</p>
-      <p style="margin: 0 0 8px 0; color: #333; font-size: 14px;"><strong>Amount paid:</strong> ₦${amount}</p>
-      <p style="margin: 0; color: #333; font-size: 14px;"><strong>Reference:</strong> ${reference}</p>
+    html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#060E18;font-family:Arial,Helvetica,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+  <div style="height:3px;background-color:#D97706;border-radius:8px 8px 0 0;"></div>
+  <div style="background:linear-gradient(160deg,#0D1B2A 0%,#0a1520 100%);padding:18px 22px;">
+    <div style="display:inline-block;width:34px;height:34px;background:rgba(0,102,255,0.12);border:1.5px solid rgba(0,102,255,0.35);border-radius:7px;text-align:center;line-height:34px;vertical-align:middle;">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-top:-2px;"><path d="M9 2L3 5v5c0 3.5 2.5 6.5 6 7.5 3.5-1 6-4 6-7.5V5L9 2z" stroke="#3b82f6" stroke-width="1.4" fill="none"/><path d="M6.5 9.5l2 2 3-3" stroke="#3b82f6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <p style="color: #333; font-size: 15px;">You now have full access. Log in to continue:</p>
-    <a href="https://fypro.com.ng/dashboard"
-       style="display: inline-block; background-color: #2563eb; color: white;
-              padding: 14px 28px; border-radius: 8px; text-decoration: none;
-              font-size: 16px; font-weight: bold; margin: 24px 0;">
-      Go to my dashboard
-    </a>
-    <p style="color: #999; font-size: 13px; margin-top: 32px;">
-      Keep this email as your receipt.<br>
-      Questions? Reply to this email.<br>
-      — The FYPro Team · fypro.com.ng
-    </p>
+    <div style="display:inline-block;vertical-align:middle;margin-left:11px;">
+      <p style="font-size:17px;font-weight:800;color:#ffffff;line-height:1;letter-spacing:-0.3px;margin:0;">FY<span style="color:#3b82f6;">Pro</span></p>
+      <p style="font-size:9px;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:1.8px;margin:3px 0 0;">Your Final Year Companion</p>
+    </div>
   </div>
-</div>`
+  <div style="background-color:#0D1B2A;padding:22px 22px 20px;border-radius:0 0 8px 8px;border:1px solid rgba(255,255,255,0.06);border-top:none;">
+    <div style="display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:4px;padding:3px 8px;margin-bottom:14px;border:1px solid rgba(217,119,6,0.3);background:rgba(217,119,6,0.08);color:#F59E0B;">Payment Confirmed</div>
+    <h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 16px;">Your FYPro access is unlocked.</h1>
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:12px;color:rgba(255,255,255,0.35);">Plan</span><span style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:600;">${planDisplay}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-size:12px;color:rgba(255,255,255,0.35);">Amount paid</span><span style="font-size:12px;color:#F59E0B;font-weight:600;">&#x20A6;${amount}</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:rgba(255,255,255,0.35);">Reference</span><span style="font-size:11px;color:rgba(255,255,255,0.6);font-family:monospace;">${reference}</span></div>
+    </div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 16px;">You now have full access. Log in to continue.</p>
+    <a href="https://fypro.com.ng/dashboard" style="display:inline-block;background-color:#D97706;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Go to my dashboard &#8594;</a>
+    <div style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0 14px;"></div>
+    <p style="font-size:10.5px;color:rgba(255,255,255,0.2);line-height:1.6;margin:0;">Keep this email as your receipt.<br>FYPro &middot; Lagos, Nigeria &middot; <a href="mailto:hello@fypro.com.ng" style="color:rgba(255,255,255,0.3);">hello@fypro.com.ng</a></p>
+  </div>
+</div>
+</body></html>`
   });
 }
 
