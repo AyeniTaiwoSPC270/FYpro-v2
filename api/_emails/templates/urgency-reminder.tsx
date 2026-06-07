@@ -1,6 +1,6 @@
 import {
   Body, Head, Heading, Hr,
-  Html, Link, Preview, Section, Text,
+  Html, Img, Link, Preview, Section, Text,
 } from '@react-email/components'
 
 interface Props { name: string; baseUrl: string }
@@ -23,39 +23,8 @@ const accentBar: React.CSSProperties = {
 }
 const header: React.CSSProperties = {
   background: 'linear-gradient(160deg, #0D1B2A 0%, #0a1520 100%)',
-  padding: '18px 22px',
-}
-const shieldWrap: React.CSSProperties = {
-  width: '34px',
-  height: '34px',
-  backgroundColor: 'rgba(0,102,255,0.12)',
-  border: '1.5px solid rgba(0,102,255,0.35)',
-  borderRadius: '7px',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  verticalAlign: 'middle',
-  flexShrink: 0,
-}
-const headerText: React.CSSProperties = {
-  display: 'inline-block',
-  verticalAlign: 'middle',
-  marginLeft: '11px',
-}
-const wordmarkMain: React.CSSProperties = {
-  fontSize: '17px',
-  fontWeight: '800',
-  color: '#ffffff',
-  lineHeight: '1',
-  letterSpacing: '-0.3px',
-  margin: '0',
-}
-const tagline: React.CSSProperties = {
-  fontSize: '9px',
-  color: 'rgba(255,255,255,0.28)',
-  textTransform: 'uppercase',
-  letterSpacing: '1.8px',
-  margin: '3px 0 0',
+  padding: '20px 22px',
+  textAlign: 'center',
 }
 const cardBody: React.CSSProperties = {
   backgroundColor: '#0D1B2A',
@@ -151,16 +120,7 @@ export default function UrgencyReminder({ name, baseUrl }: Props) {
         <div style={wrapper}>
           <div style={accentBar} />
           <div style={header}>
-            <div style={shieldWrap}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 2L3 5v5c0 3.5 2.5 6.5 6 7.5 3.5-1 6-4 6-7.5V5L9 2z" stroke="#3b82f6" strokeWidth="1.4" fill="none"/>
-                <path d="M6.5 9.5l2 2 3-3" stroke="#3b82f6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div style={headerText}>
-              <Text style={wordmarkMain}>FY<span style={{ color: '#3b82f6' }}>Pro</span></Text>
-              <Text style={tagline}>Your Final Year Companion</Text>
-            </div>
+            <Img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" height={40} style={{ display: 'block', margin: '0 auto' }} />
           </div>
           <div style={cardBody}>
             <div style={pill}>Checklist</div>
