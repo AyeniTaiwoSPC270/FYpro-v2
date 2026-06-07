@@ -41,10 +41,6 @@ export default function MomentumRing() {
     }} />
   )
 
-  // Fill up to 4 slots with actions, rest are empty placeholders
-  const slots = [...actions]
-  while (slots.length < 4) slots.push(null)
-
   return (
     <div style={{
       background: cardBg,
@@ -108,28 +104,33 @@ export default function MomentumRing() {
 
         {/* Activity feed */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {slots.map((action, i) => (
+          {actions.length === 0 ? (
+            <p style={{
+              fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem',
+              color: textSecondary, margin: 0, lineHeight: 1.5,
+            }}>
+              No activity in the last 7 days.<br />
+              Complete a step to build momentum.
+            </p>
+          ) : actions.map((action, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0',
-              borderBottom: i < 3 ? `1px solid ${dividerColor}` : 'none',
-              opacity: action ? 1 : 0.3,
+              borderBottom: i < actions.length - 1 ? `1px solid ${dividerColor}` : 'none',
             }}>
               <div style={{
                 width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                background: action ? TYPE_COLOR[action.type] : textSecondary,
+                background: TYPE_COLOR[action.type],
               }} />
               <span style={{
                 fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem',
-                color: action ? textPrimary : textSecondary, flex: 1,
+                color: textPrimary, flex: 1,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
-                {action ? action.label : 'Complete a step to add momentum'}
+                {action.label}
               </span>
-              {action && (
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.62rem', color: textSecondary, flexShrink: 0 }}>
-                  {formatTimeAgo(action.timestamp)}
-                </span>
-              )}
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.62rem', color: textSecondary, flexShrink: 0 }}>
+                {formatTimeAgo(action.timestamp)}
+              </span>
             </div>
           ))}
         </div>

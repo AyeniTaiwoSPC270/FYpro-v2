@@ -96,6 +96,18 @@ export function useMomentum(): MomentumData {
     }
 
     load().catch(() => setData(d => ({ ...d, loading: false })))
+
+    const channel = supabase
+      .channel(`momentum_steps_${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'project_steps',
+        filter: `user_id=eq.${user.id}`,
+      }, () => { load().catch(() => {}) })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [user?.id])
 
   return data

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRank } from '../../hooks/useRank'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -9,12 +9,12 @@ export default function RankPill() {
   const prevKeyRef = useRef(rank.key)
 
   // Detect rank change in this session for the glow effect
-  const justChangedRef = useRef(false)
+  const [justChanged, setJustChanged] = useState(false)
   useEffect(() => {
     if (!loading && prevKeyRef.current !== rank.key) {
-      justChangedRef.current = true
       prevKeyRef.current = rank.key
-      const t = setTimeout(() => { justChangedRef.current = false }, 3000)
+      setJustChanged(true)
+      const t = setTimeout(() => setJustChanged(false), 3000)
       return () => clearTimeout(t)
     }
   }, [rank.key, loading])
@@ -38,7 +38,7 @@ export default function RankPill() {
       borderRadius: 10,
       padding: '10px 12px',
       marginBottom: 8,
-      boxShadow: justChangedRef.current ? `0 0 16px ${glowColor}` : 'none',
+      boxShadow: justChanged ? `0 0 16px ${glowColor}` : 'none',
       transition: 'box-shadow 0.4s ease',
     }}>
       {/* Label */}

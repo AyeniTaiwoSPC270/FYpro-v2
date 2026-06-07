@@ -533,17 +533,17 @@ async function handleCheckAchievements(req, res) {
     check('shared',      shared);
 
     // ── HIDDEN ─────────────────────────────────────────────────────────────────
-    // Night Owl: step completed midnight–4 AM WAT
+    // Night Owl: step completed midnight–4 AM WAT (exclusive of early bird range)
     const nightOwl = (steps ?? []).some(s => {
       const localHour = (new Date(s.created_at).getUTCHours() + 1) % 24;
       return localHour < 4;
     });
     check('night_owl', nightOwl);
 
-    // Early Bird: step completed before 7 AM WAT
+    // Early Bird: step completed 4 AM–7 AM WAT (no overlap with night owl)
     const earlyBird = (steps ?? []).some(s => {
       const localHour = (new Date(s.created_at).getUTCHours() + 1) % 24;
-      return localHour < 7;
+      return localHour >= 4 && localHour < 7;
     });
     check('early_bird', earlyBird);
 
