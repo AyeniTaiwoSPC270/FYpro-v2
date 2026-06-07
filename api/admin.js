@@ -1155,11 +1155,13 @@ async function handleReportPaymentIssue(req, res) {
   }
 
   const { transactionRef, description } = req.body || {};
-  if (!transactionRef?.trim()) return res.status(400).json({ error: 'Transaction reference is required.' });
+  const ref = transactionRef?.trim() ?? '';
+  if (!ref) return res.status(400).json({ error: 'Transaction reference is required.' });
+  if (!/^[A-Za-z0-9_-]{8,100}$/.test(ref)) return res.status(400).json({ error: 'Transaction reference format is invalid.' });
 
   const { error: insertError } = await supabaseAdmin.from('payment_issues').insert({
     user_id:         userId,
-    transaction_ref: transactionRef.trim(),
+    transaction_ref: ref,
     description:     description?.trim() || null,
   });
   if (insertError) {
@@ -1172,11 +1174,11 @@ async function handleReportPaymentIssue(req, res) {
     from:    'FYPro Alerts <hello@fypro.com.ng>',
     to:      'hello@fypro.com.ng',
     subject: `URGENT: Payment issue — ${userEmail}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;"><h2 style="color:#DC2626;">⚠️ Payment Issue Report</h2><table style="width:100%;border-collapse:collapse;"><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User email:</strong></td><td style="padding:8px 0;font-size:14px;">${userEmail}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User ID:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${userId}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Transaction ref:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${transactionRef.trim()}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Description:</strong></td><td style="padding:8px 0;font-size:14px;">${description?.trim() || '(none)'}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Reported at:</strong></td><td style="padding:8px 0;font-size:14px;">${new Date().toISOString()}</td></tr></table><p style="margin-top:24px;color:#333;font-size:14px;">Resolve in the <a href="https://www.fypro.com.ng/admin/health">admin dashboard</a>.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;"><h2 style="color:#DC2626;">⚠️ Payment Issue Report</h2><table style="width:100%;border-collapse:collapse;"><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User email:</strong></td><td style="padding:8px 0;font-size:14px;">${userEmail}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>User ID:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${userId}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Transaction ref:</strong></td><td style="padding:8px 0;font-size:14px;font-family:monospace;">${ref}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Description:</strong></td><td style="padding:8px 0;font-size:14px;">${description?.trim() || '(none)'}</td></tr><tr><td style="padding:8px 0;color:#555;font-size:14px;"><strong>Reported at:</strong></td><td style="padding:8px 0;font-size:14px;">${new Date().toISOString()}</td></tr></table><p style="margin-top:24px;color:#333;font-size:14px;">Resolve in the <a href="https://www.fypro.com.ng/admin/health">admin dashboard</a>.</p></div>`,
   }).catch(e => console.error('[admin/report-payment-issue] resend error:', e.message));
 
   sendTelegramAlert(
-    `🚨 Payment issue reported: ${userEmail} says they paid but don't have access.\nRef: ${transactionRef.trim()}\nCheck Paystack dashboard.`
+    `🚨 Payment issue reported: ${userEmail} says they paid but don't have access.\nRef: ${ref}\nCheck Paystack dashboard.`
   ).catch(e => console.error('[admin/report-payment-issue] telegram error:', e.message));
 
   return res.status(200).json({ ok: true });
