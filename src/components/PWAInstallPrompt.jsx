@@ -14,6 +14,20 @@ export default function PWAInstallPrompt() {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
+    onRegisteredSW(_swUrl, registration) {
+      if (!registration) return
+      // Poll every 60 s so the toast appears while the user is already in the app.
+      // Without this the browser only checks on page load.
+      const id = setInterval(() => {
+        if (!navigator.onLine) return
+        registration.update().catch(() => {})
+      }, 60_000)
+      // Also check immediately when the user switches back to this tab.
+      const onVisible = () => { if (document.visibilityState === 'visible') registration.update().catch(() => {}) }
+      document.addEventListener('visibilitychange', onVisible)
+      // Clean up if the component ever unmounts (rare but correct).
+      registration._cleanup = () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible) }
+    },
     onRegisterError(error) {
       console.error('SW registration error', error)
     },
