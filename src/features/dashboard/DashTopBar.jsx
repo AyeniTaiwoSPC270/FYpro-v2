@@ -86,7 +86,8 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
           whileTap={{ scale: 0.96 }}
           aria-label="Start a new project"
           onClick={onNewSession}
-          className="hidden sm:flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 text-white border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
+          className="hidden sm:flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
+            style={{ color: '#fff' }}
         >
           <PlusIcon /> New Session
         </motion.button>
@@ -167,10 +168,11 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
             aria-label={`Profile: ${STUDENT.name}`}
             aria-expanded={avatarOpen}
             onClick={() => setAvatarOpen((v) => !v)}
-            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-white cursor-pointer overflow-hidden"
+            className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold cursor-pointer overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
               border: '2px solid rgba(0,102,255,0.35)',
+              color: '#fff',
               fontSize: '0.68rem',
               fontFamily: "'DM Serif Display', serif",
             }}

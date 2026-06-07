@@ -155,10 +155,11 @@ function SettingsNavbar({ initials, name }) {
             {unreadCount > 0 && (
               <span
                 aria-label={`${unreadCount} unread notifications`}
-                className="absolute font-bold text-white rounded-full"
+                className="absolute font-bold rounded-full"
                 style={{
                   width: '16px', height: '16px',
                   background: '#DC2626',
+                  color: '#fff',
                   fontSize: '0.55rem',
                   fontFamily: "'JetBrains Mono', monospace",
                   top: '-4px', right: '-4px',
@@ -197,10 +198,11 @@ function SettingsNavbar({ initials, name }) {
             }}
           >
             <div
-              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold text-white flex-shrink-0"
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold flex-shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
                 border: '2px solid rgba(0,102,255,0.35)',
+                color: '#fff',
               }}
             >
               {initials}
@@ -662,8 +664,8 @@ export default function Settings() {
                 whileTap={!updatingPassword ? { scale: 0.97 } : {}}
                 onClick={!updatingPassword ? handleUpdatePassword : undefined}
                 disabled={updatingPassword}
-                className={`font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0 flex items-center gap-2 ${updatingPassword ? 'opacity-60 cursor-not-allowed' : ''}`}
-                style={{ background: '#2563EB' }}
+                className={`font-sans font-semibold rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-1 border-0 flex items-center gap-2 ${updatingPassword ? 'opacity-60 cursor-not-allowed' : ''}`}
+                style={{ background: '#2563EB', color: '#fff' }}
               >
                 {updatingPassword ? <><SpinnerIcon />Updating…</> : 'Update Password'}
               </motion.button>

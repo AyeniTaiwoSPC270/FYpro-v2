@@ -123,10 +123,11 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
             {unreadCount > 0 && (
               <span
                 aria-label={`${unreadCount} unread notifications`}
-                className="absolute font-bold text-white rounded-full"
+                className="absolute font-bold rounded-full"
                 style={{
                   width: '16px', height: '16px',
                   background: '#DC2626',
+                  color: '#fff',
                   fontSize: '0.55rem',
                   fontFamily: "'JetBrains Mono', monospace",
                   top: '-4px', right: '-4px',
@@ -166,10 +167,11 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
             }}
           >
             <div
-              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold text-white flex-shrink-0 overflow-hidden"
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold flex-shrink-0 overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
                 border: '2px solid rgba(0,102,255,0.35)',
+                color: '#fff',
               }}
             >
               {avatarUrl && !avatarImgError
@@ -798,8 +800,8 @@ export default function Profile() {
                 whileTap={!saving ? { scale: 0.97 } : {}}
                 onClick={!saving ? handleSaveChanges : undefined}
                 disabled={saving}
-                className={`relative overflow-hidden btn-shimmer font-sans font-semibold text-white rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2 flex items-center gap-2 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
-                style={{ background: '#2563EB', border: 'none' }}
+                className={`relative overflow-hidden btn-shimmer font-sans font-semibold rounded-xl px-6 py-3 cursor-pointer transition-all duration-200 self-start mt-2 flex items-center gap-2 ${saving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                style={{ background: '#2563EB', border: 'none', color: '#fff' }}
                 onMouseEnter={!saving ? e => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,99,235,0.5)' } : undefined}
                 onMouseLeave={!saving ? e => { e.currentTarget.style.boxShadow = 'none' } : undefined}
               >
