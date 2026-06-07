@@ -11963,3 +11963,39 @@ html {
   font-size: 1rem;
   line-height: 1;
 }
+
+/* ── PWA light mode overrides ─────────────────────────────────────────────── */
+.light .pwa-update-toast,
+[data-theme="light"] .pwa-update-toast {
+  background: #ffffff;
+  border-color: rgba(0, 102, 255, 0.2);
+  color: var(--color-text-primary, #0D1B2A);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.light .pwa-update-toast__close,
+[data-theme="light"] .pwa-update-toast__close {
+  color: rgba(13, 27, 42, 0.45);
+}
+
+.light .pwa-sheet,
+[data-theme="light"] .pwa-sheet {
+  background: #ffffff;
+  border-top: 1px solid rgba(13, 27, 42, 0.1);
+}
+
+.light .pwa-sheet__title,
+[data-theme="light"] .pwa-sheet__title {
+  color: var(--color-text-primary, #0D1B2A);
+}
+
+.light .pwa-sheet__subtitle,
+[data-theme="light"] .pwa-sheet__subtitle {
+  color: rgba(13, 27, 42, 0.6);
+}
+
+.light .pwa-sheet__btn--ghost,
+[data-theme="light"] .pwa-sheet__btn--ghost {
+  color: rgba(13, 27, 42, 0.6);
+  border-color: rgba(13, 27, 42, 0.2);
+}
