@@ -8,14 +8,21 @@ export function ThemeProvider({ children }) {
   })
 
   useEffect(() => {
+    const d = document.documentElement
+    const bg = theme === 'light' ? '#F8FAFC' : '#0A0F1C'
     localStorage.setItem('fypro_theme', theme)
-    document.documentElement.setAttribute('data-theme', theme)
+    d.setAttribute('data-theme', theme)
+    // Keep the inline styles (set by the anti-flicker script) in sync.
+    // Inline styles have the highest specificity and override CSS rules, so
+    // without this the background stays frozen at the value from page load.
+    d.style.setProperty('--bg-base', bg)
+    d.style.background = bg
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-      document.documentElement.classList.remove('light')
+      d.classList.add('dark')
+      d.classList.remove('light')
     } else {
-      document.documentElement.classList.add('light')
-      document.documentElement.classList.remove('dark')
+      d.classList.add('light')
+      d.classList.remove('dark')
     }
   }, [theme])
 
