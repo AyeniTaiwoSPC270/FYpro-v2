@@ -94,14 +94,14 @@ export default function Achievements() {
   const isDark = theme === 'dark'
 
   const pageBg   = isDark ? '#060E18' : '#F0F4F8'
-  const dotColor = isDark ? 'rgba(0,102,255,0.05)' : 'rgba(0,102,255,0.06)'
+  const dotColor = isDark ? 'rgba(0,102,255,0.09)' : 'rgba(0,102,255,0.10)'
 
   const totalEarned = ACHIEVEMENT_DEFS.filter(a => earnedKeys.has(a.key)).length
 
   return (
     <div style={{
       minHeight: '100vh', background: pageBg,
-      backgroundImage: `radial-gradient(circle, ${dotColor} 1px, transparent 1px)`,
+      backgroundImage: `radial-gradient(circle, ${dotColor} 1.5px, transparent 1px)`,
       backgroundSize: '28px 28px', padding: '40px 20px',
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
