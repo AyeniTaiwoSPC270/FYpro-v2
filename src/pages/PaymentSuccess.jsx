@@ -98,6 +98,8 @@ export default function PaymentSuccess() {
       <div style={{
         minHeight: '100vh',
         backgroundColor: 'var(--bg-base)',
+        backgroundImage: 'var(--dot-bg-image)',
+        backgroundSize: '28px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -119,6 +121,8 @@ export default function PaymentSuccess() {
       style={{
         minHeight: '100vh',
         backgroundColor: 'var(--bg-base)',
+        backgroundImage: 'var(--dot-bg-image)',
+        backgroundSize: '28px 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

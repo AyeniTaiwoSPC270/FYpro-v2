@@ -61,7 +61,7 @@ export default function NotFound() {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--bg-base)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+      style={{ backgroundColor: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
     >
       {/* Minimal navbar */}
       <motion.nav

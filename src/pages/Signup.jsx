@@ -302,7 +302,7 @@ export default function Signup() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12"
-      style={{ backgroundColor: 'var(--bg-base)' }}
+      style={{ backgroundColor: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

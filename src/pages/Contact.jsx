@@ -385,7 +385,7 @@ export default function Contact() {
       transition={{ duration: 0.5 }}
       className="min-h-screen"
       data-pub="true"
-      style={{ background: 'var(--bg-base)' }}
+      style={{ background: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
     >
       <style>{CONTACT_KEYFRAMES}</style>
       <Navbar />
