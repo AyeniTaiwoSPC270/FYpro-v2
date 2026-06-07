@@ -1159,14 +1159,15 @@ async function handleReportPaymentIssue(req, res) {
   if (!ref) return res.status(400).json({ error: 'Transaction reference is required.' });
   if (!/^[A-Za-z0-9_-]{8,100}$/.test(ref)) return res.status(400).json({ error: 'Transaction reference format is invalid.' });
 
-  const { error: insertError } = await supabaseAdmin.from('payment_issues').insert({
-    user_id:         userId,
-    user_email:      userEmail,
-    transaction_ref: ref,
-    description:     description?.trim() || null,
-  });
-  if (insertError) {
-    console.error('[admin/report-payment-issue] insert error:', insertError.message);
+  try {
+    const { error: insertError } = await supabaseAdmin.from('payment_issues').insert({
+      user_id:         userId,
+      transaction_ref: ref,
+      description:     description?.trim() || null,
+    });
+    if (insertError) throw insertError;
+  } catch (err) {
+    console.error('[admin/report-payment-issue] insert error:', err?.message, err?.code, err?.details);
     return res.status(500).json({ error: 'Failed to save report. Please email hello@fypro.com.ng directly.' });
   }
 
