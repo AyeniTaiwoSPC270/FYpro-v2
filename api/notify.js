@@ -63,29 +63,29 @@ function buildBroadcastHtml(body) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
-  return `<!DOCTYPE html><html><head>
-    <style>
-      body { margin:0; padding:0; background:#F0F4F8; font-family:'Poppins',Arial,sans-serif; }
-      .wrapper { max-width:560px; margin:32px auto; }
-      .header { background:#0f172a; border-radius:12px 12px 0 0; padding:24px; text-align:center; }
-      .header img { height:36px; width:auto; }
-      .box { background:#fff; border-radius:0 0 12px 12px; padding:40px; }
-      .msg { font-size:15px; color:#111827; line-height:1.7; }
-      hr { border:none; border-top:1px solid #E5E7EB; margin:24px 0; }
-      .foot { font-size:12px; color:#9CA3AF; }
-    </style>
-  </head><body>
-    <div class="wrapper">
-      <div class="header">
-        <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" />
-      </div>
-      <div class="box">
-        <p class="msg">${safe}</p>
-        <hr>
-        <p class="foot">You're receiving this because you have an account at fypro.com.ng.</p>
-      </div>
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#060E18;font-family:Arial,Helvetica,sans-serif;">
+<div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+  <div style="height:3px;background-color:#0891B2;border-radius:8px 8px 0 0;"></div>
+  <div style="background:linear-gradient(160deg,#0D1B2A 0%,#0a1520 100%);padding:18px 22px;">
+    <div style="display:inline-block;width:34px;height:34px;background:rgba(0,102,255,0.12);border:1.5px solid rgba(0,102,255,0.35);border-radius:7px;text-align:center;line-height:34px;vertical-align:middle;">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-top:-2px;"><path d="M9 2L3 5v5c0 3.5 2.5 6.5 6 7.5 3.5-1 6-4 6-7.5V5L9 2z" stroke="#3b82f6" stroke-width="1.4" fill="none"/><path d="M6.5 9.5l2 2 3-3" stroke="#3b82f6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-  </body></html>`
+    <div style="display:inline-block;vertical-align:middle;margin-left:11px;">
+      <p style="font-size:17px;font-weight:800;color:#ffffff;line-height:1;letter-spacing:-0.3px;margin:0;">FY<span style="color:#3b82f6;">Pro</span></p>
+      <p style="font-size:9px;color:rgba(255,255,255,0.28);text-transform:uppercase;letter-spacing:1.8px;margin:3px 0 0;">Your Final Year Companion</p>
+    </div>
+  </div>
+  <div style="background-color:#0D1B2A;padding:22px 22px 20px;border-radius:0 0 8px 8px;border:1px solid rgba(255,255,255,0.06);border-top:none;">
+    <div style="display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:4px;padding:3px 8px;margin-bottom:14px;border:1px solid rgba(8,145,178,0.3);background:rgba(8,145,178,0.08);color:#22D3EE;">Announcement</div>
+    <h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 14px;">A message from FYPro</h1>
+    <div style="background:rgba(8,145,178,0.08);border-left:3px solid #0891B2;border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:18px;">
+      <p style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.75;margin:0;">${safe}</p>
+    </div>
+    <div style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0 14px;"></div>
+    <p style="font-size:10.5px;color:rgba(255,255,255,0.2);line-height:1.6;margin:0;">You're receiving this because you have an account at fypro.com.ng.<br>FYPro &middot; Lagos, Nigeria</p>
+  </div>
+</div>
+</body></html>`
 }
 
 // ─── Telegram send ────────────────────────────────────────────────────────────
