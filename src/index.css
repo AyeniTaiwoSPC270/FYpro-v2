@@ -8064,6 +8064,8 @@ html, body {
   --dropdown-divider:    rgba(255,255,255,0.07);
   --skeleton-base:       #1E293B;
   --skeleton-shimmer:    #2D3F5A;
+  --toggle-track:        #334155;
+  --toggle-track-off:    #1E293B;
 }
 
 /* ── Light mode ─────────────────────────────────────────────── */
@@ -8115,6 +8117,8 @@ html, body {
   --dropdown-divider:    #E2E8F0;
   --skeleton-base:       #E2E8F0;
   --skeleton-shimmer:    #CBD5E1;
+  --toggle-track:        #94A3B8;
+  --toggle-track-off:    #CBD5E1;
 }
 
 /* ── html/body background inherits from theme ───────────────── */

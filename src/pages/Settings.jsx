@@ -316,9 +316,10 @@ function ToggleSwitch({ checked, onChange, ariaLabel, disabled = false }) {
       disabled={disabled}
       className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
         disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-      } ${
-        checked && !disabled ? 'bg-blue-600' : disabled ? 'bg-slate-600' : 'bg-slate-700'
       }`}
+      style={{
+        background: checked && !disabled ? '#2563EB' : disabled ? 'var(--toggle-track-off)' : 'var(--toggle-track)',
+      }}
     >
       <span
         className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
