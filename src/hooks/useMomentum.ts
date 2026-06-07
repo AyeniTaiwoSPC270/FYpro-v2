@@ -51,10 +51,10 @@ export function useMomentum(): MomentumData {
       const [{ data: steps }, { data: defSessions }, { data: referrals }] = await Promise.all([
         supabase
           .from('project_steps')
-          .select('step_name, completed_at')
+          .select('step_type, created_at')
           .eq('user_id', user!.id)
-          .gte('completed_at', since)
-          .order('completed_at', { ascending: false }),
+          .gte('created_at', since)
+          .order('created_at', { ascending: false }),
         supabase
           .from('defense_sessions')
           .select('completed_at')
@@ -75,8 +75,8 @@ export function useMomentum(): MomentumData {
 
       for (const s of (steps ?? [])) {
         actions.push({
-          label: STEP_LABEL[s.step_name] ?? `Completed ${s.step_name}`,
-          timestamp: s.completed_at,
+          label: STEP_LABEL[s.step_type] ?? `Completed ${s.step_type}`,
+          timestamp: s.created_at,
           type: 'step',
         })
       }
