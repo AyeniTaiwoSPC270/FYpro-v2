@@ -109,7 +109,7 @@ export default function MyCertificates() {
   }, [])
 
   const pageBg        = isDark ? '#060E18' : '#F0F4F8'
-  const dotColor      = isDark ? 'rgba(51,122,255,0.14)' : 'rgba(51,122,255,0.18)'
+  const dotColor      = isDark ? 'rgba(0,102,255,0.08)' : 'rgba(0,102,255,0.10)'
   const textPrimary   = isDark ? '#FFFFFF' : '#0D1B2A'
   const textSecondary = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(13,27,42,0.6)'
   const textMuted     = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(13,27,42,0.45)'
@@ -124,7 +124,7 @@ export default function MyCertificates() {
     <div style={{
       minHeight:      '100vh',
       background:     pageBg,
-      backgroundImage: `radial-gradient(circle, ${dotColor} 1.6px, transparent 1px)`,
+      backgroundImage: `radial-gradient(circle, ${dotColor} 1.2px, transparent 1px)`,
       backgroundSize: '28px 28px',
       padding:        '40px 24px',
     }}>
