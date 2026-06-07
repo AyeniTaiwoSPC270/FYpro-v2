@@ -63,7 +63,7 @@ function UpgradeCard({ requiredPack, isUpgrader }) {
       <div style={{
         background: 'var(--bg-card)',
         borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid var(--border)',
         borderLeft: `4px solid ${isUpgrader ? '#16A34A' : '#0066FF'}`,
         boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
         padding: '40px',
@@ -145,7 +145,7 @@ function UpgradeCard({ requiredPack, isUpgrader }) {
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '0.75rem',
-            color: 'rgba(255,255,255,0.4)',
+            color: 'var(--text-muted)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
@@ -155,7 +155,7 @@ function UpgradeCard({ requiredPack, isUpgrader }) {
             <span style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '0.875rem',
-              color: 'rgba(255,255,255,0.25)',
+              color: 'var(--text-muted)',
               textDecoration: 'line-through',
             }}>
               {meta.originalPrice}
