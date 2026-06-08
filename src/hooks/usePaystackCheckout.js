@@ -104,6 +104,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
         onSuccess: async (transaction) => {
           stopPolling()
           isInitiatingRef.current = false
+          setPaying(null)
           setVerifying(true)
           try {
             const { data: { session: vSession } } = await supabase.auth.getSession()
@@ -135,6 +136,7 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
         onClose: () => {
           stopPolling()
           isInitiatingRef.current = false
+          setPaying(null)
           if (pendingReference) {
             supabase.auth.getSession().then(({ data: { session: cSession } }) => {
               fetch('/api/payments?action=verify', {
@@ -176,9 +178,8 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
 
     } catch (err) {
       isInitiatingRef.current = false
-      setPayError(err.message)
-    } finally {
       setPaying(null)
+      setPayError(err.message)
     }
   }, [navigate, loginReturnUrl, loadScript, stopPolling])
 

@@ -233,10 +233,10 @@ function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, p
           <p style={{
             fontFamily: "'Poppins', sans-serif",
             fontSize: '0.8125rem',
-            color: '#DC2626',
+            color: 'var(--color-red)',
             marginBottom: '16px',
             padding: '10px 14px',
-            background: 'rgba(220, 38, 38, 0.06)',
+            background: 'var(--color-red-light)',
             border: '1px solid rgba(220, 38, 38, 0.2)',
             borderRadius: '8px',
           }}>
@@ -250,7 +250,7 @@ function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, p
           style={{
             width: '100%',
             padding: '14px 24px',
-            background: isLoading ? '#4ade80' : '#16A34A',
+            background: 'var(--color-green)',
             color: '#ffffff',
             border: 'none',
             borderRadius: '12px',
