@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
+import { trackEvent } from '../lib/analytics'
 
 const FEATURE_META = {
   student_pack: {
@@ -44,6 +46,12 @@ const LOCK_PATH =
   'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
 function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, payError, blockInfo, setBlockInfo }) {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    trackEvent('paywall_shown', { pack: requiredPack, location: pathname })
+  }, [])
+
   const upgradeMeta = isUpgrader ? UPGRADE_META[requiredPack] : null
   const meta = upgradeMeta ?? FEATURE_META[requiredPack] ?? {
     label: requiredPack,
