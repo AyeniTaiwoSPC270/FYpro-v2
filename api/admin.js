@@ -1909,6 +1909,11 @@ async function handleErrorCheck(req, res) {
   }
 
   // Deduplicate: only fire once per UTC day
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    console.error('[admin/error-check] Redis not configured — cannot deduplicate, skipping alert');
+    return res.status(500).json({ error: 'Redis not configured' });
+  }
+
   let alertSent = false;
   try {
     const redis     = getAdminRedis();
