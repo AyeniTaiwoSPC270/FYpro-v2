@@ -6,6 +6,8 @@ import { creditUser } from './_lib/credit-user.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { Resend } from 'resend';
+import { generateTraceId, traceLog } from './_lib/trace.js';
+import { validate, PaymentInitiateSchema } from './_lib/validate.js';
 
 // bodyParser disabled so the webhook handler can access the raw body for HMAC.
 // Non-webhook actions parse the body manually below.
@@ -170,9 +172,15 @@ async function handleCheckStatus(req, res) {
 }
 
 async function handleInitiate(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    const v = validate(PaymentInitiateSchema, req.body || {});
+    if (!v.ok) return res.status(400).json({ error: v.error });
 
     let authResult, rl;
     try {
@@ -187,8 +195,7 @@ async function handleInitiate(req, res) {
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
     if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
-    const { tier } = req.body || {};
-    if (!tier) return res.status(400).json({ error: 'Missing required field: tier' });
+    const { tier } = req.body;
 
     // Detect upgrade: Student Plan holders buying Defense Pack pay ₦1,500 (the difference)
     let effectiveTier = tier;
@@ -208,7 +215,7 @@ async function handleInitiate(req, res) {
     try {
       amountKobo = expectedAmountKobo(effectiveTier);
     } catch {
-      console.error('[payments/initiate] unknown tier:', effectiveTier);
+      traceLog(traceId, 'error', '[payments/initiate] unknown tier:', effectiveTier);
       return res.status(400).json({ error: 'Invalid payment tier.' });
     }
 
@@ -225,7 +232,7 @@ async function handleInitiate(req, res) {
       });
 
     if (insertError) {
-      console.error('[payments/initiate] insert failed', insertError.message);
+      traceLog(traceId, 'error', '[payments/initiate] insert failed', insertError.message);
       return res.status(500).json({ error: 'Failed to create payment record' });
     }
 
@@ -236,12 +243,14 @@ async function handleInitiate(req, res) {
       publicKey:   process.env.PAYSTACK_PUBLIC_KEY,
     });
   } catch (err) {
-    console.error('[payments/initiate] error:', err);
+    traceLog(traceId, 'error', '[payments/initiate] error:', err);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
 
 async function handleVerify(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -271,14 +280,14 @@ async function handleVerify(req, res) {
     );
 
     if (!response.ok || response.status === 404) {
-      console.warn('[payments/verify] Paystack verify failed', { reference, httpStatus: response.status });
+      traceLog(traceId, 'warn', '[payments/verify] Paystack verify failed', { reference, httpStatus: response.status });
       return res.status(400).json({ error: 'Payment could not be verified' });
     }
 
     const json = await response.json();
     paystackData = json.data;
   } catch (err) {
-    console.error('[payments/verify] fetch error', { reference, message: err.message });
+    traceLog(traceId, 'error', '[payments/verify] fetch error', { reference, message: err.message });
     return res.status(400).json({ error: 'Payment could not be verified' });
   }
 
@@ -312,7 +321,7 @@ async function handleVerify(req, res) {
           ]);
         }
       } catch (emailErr) {
-        console.error('[payments/verify] receipt email failed', { reference, message: emailErr.message });
+        traceLog(traceId, 'error', '[payments/verify] receipt email failed', { reference, message: emailErr.message });
       }
     }
 
@@ -320,10 +329,10 @@ async function handleVerify(req, res) {
   } catch (err) {
     if (err.code === 'KNOWN_REJECTION') {
       await sendTelegramAlert(`❌ Payment failed: ${user.email} - ${err.message}`)
-      console.warn('[payments/verify] known rejection', { reference, reason: err.message });
+      traceLog(traceId, 'warn', '[payments/verify] known rejection', { reference, reason: err.message });
       return res.status(400).json({ error: 'Payment could not be verified' });
     }
-    console.error('[payments/verify] unexpected error', { reference, message: err.message });
+    traceLog(traceId, 'error', '[payments/verify] unexpected error', { reference, message: err.message });
     return res.status(500).json({ error: 'Internal error' });
   }
 }
