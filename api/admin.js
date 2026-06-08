@@ -1877,6 +1877,59 @@ async function handleSyncRunCounts(req, res) {
   }
 }
 
+const ERROR_SPIKE_THRESHOLD = 5;
+
+// action: "error-check" — cron-triggered (every 4 hours via cron-job.org).
+// Fires a Telegram alert if unresolved errors in the last 24h exceed the threshold.
+// Deduplicated via Redis so at most one alert fires per UTC day.
+async function handleErrorCheck(req, res) {
+  if (!verifyCronSecret(req, res)) return;
+
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const today    = new Date().toISOString().slice(0, 10);
+
+  let errorCount = 0;
+  try {
+    const { count, error } = await supabaseAdmin
+      .from('system_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('severity', 'error')
+      .eq('resolved', false)
+      .gte('created_at', since24h);
+
+    if (error) throw error;
+    errorCount = count || 0;
+  } catch (err) {
+    console.error('[admin/error-check] DB query failed:', err.message);
+    return res.status(500).json({ error: 'DB query failed' });
+  }
+
+  if (errorCount <= ERROR_SPIKE_THRESHOLD) {
+    return res.status(200).json({ ok: true, error_count: errorCount, alert_sent: false });
+  }
+
+  // Deduplicate: only fire once per UTC day
+  let alertSent = false;
+  try {
+    const redis     = getAdminRedis();
+    const dedupeKey = `alert:error-spike:${today}`;
+    const result    = await redis.set(dedupeKey, '1', { nx: true, ex: 90000 });
+    // result is 'OK' when the key was freshly set (first alert of the day)
+    // result is null when the key already existed (alert already sent today)
+    if (result === 'OK') {
+      await sendTelegramAlert(
+        `🚨 Error spike: <b>${errorCount}</b> unresolved errors in the last 24h\nCheck /errors in the admin bot.`
+      );
+      alertSent = true;
+    }
+  } catch (err) {
+    console.error('[admin/error-check] Redis/Telegram failed:', err.message);
+    // Non-fatal — still return success so cron doesn't retry aggressively
+  }
+
+  return res.status(200).json({ ok: true, error_count: errorCount, alert_sent: alertSent });
+}
+
 // action: "ping" — public health check for UptimeRobot and other external monitors.
 // No auth required. Returns 200 as long as the function is reachable.
 async function handlePing(req, res) {
@@ -1935,6 +1988,7 @@ export default async function handler(req, res) {
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'test-sentry-webhook')     return handleTestSentryWebhook(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
+  if (action === 'error-check')             return handleErrorCheck(req, res);
   if (action === 'dispatch-nurture-emails') return handleDispatchNurtureEmails(req, res);
   if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);
   if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
