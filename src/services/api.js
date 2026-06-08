@@ -17,6 +17,7 @@ import {
   buildPreviousStepsContext,
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
+import { setTraceId } from '../lib/sentry';
 
 const ENDPOINT                  = '/api/ai';
 const TOPIC_VALIDATOR_ENDPOINT  = '/api/research?action=validate';
@@ -46,6 +47,9 @@ async function callClaude(step, messages, maxTokens = 2000, extraParams = {}) {
     },
     body: JSON.stringify(body),
   });
+
+  const traceId = res.headers.get('X-Trace-Id');
+  if (traceId) setTraceId(traceId);
 
   if (res.status === 429) {
     const err = new Error('Rate limited');

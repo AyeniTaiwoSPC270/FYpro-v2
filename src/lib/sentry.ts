@@ -16,3 +16,7 @@ Sentry.init({
 });
 
 export default Sentry;
+
+export function setTraceId(id: string): void {
+  Sentry.setTag('trace_id', id);
+}
