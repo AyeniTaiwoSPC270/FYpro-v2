@@ -1877,6 +1877,12 @@ async function handleSyncRunCounts(req, res) {
   }
 }
 
+// action: "ping" — public health check for UptimeRobot and other external monitors.
+// No auth required. Returns 200 as long as the function is reachable.
+async function handlePing(req, res) {
+  return res.status(200).json({ ok: true, service: 'fypro', ts: Date.now() });
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -1896,6 +1902,7 @@ export default async function handler(req, res) {
   }
 
   if (action === 'sentry_webhook') return handleSentryWebhook(req, res, rawBody);
+  if (action === 'ping')           return handlePing(req, res);
 
   try {
     req.body = rawBody.length ? JSON.parse(rawBody.toString('utf8')) : {};
