@@ -1610,7 +1610,9 @@ async function handleDailyReport(req, res) {
         .from('payments')
         .select('paystack_reference, tier, created_at')
         .eq('status', 'pending')
-        .lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+        .lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10),
     ]);
 
     const activeToday = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
@@ -1645,6 +1647,9 @@ async function handleDailyReport(req, res) {
       : 'None yet';
 
     const orphanedRows = orphanedPaymentsRes.data || [];
+    if (orphanedPaymentsRes.error) {
+      console.warn('[admin/daily-report] orphaned payments query failed:', orphanedPaymentsRes.error.message);
+    }
     const orphanedSection = orphanedRows.length > 0
       ? [
           ``,
