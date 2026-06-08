@@ -7,6 +7,8 @@ import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
+import { generateTraceId, traceLog } from './_lib/trace.js';
+import { validate, AuthLoginSchema, AuthSignupSchema, AuthForgotSchema } from './_lib/validate.js';
 
 const redis = new Redis({
   url:   process.env.UPSTASH_REDIS_REST_URL,
@@ -49,13 +51,18 @@ async function logAttempt(email, ip, action, success) {
 // ── action: login ─────────────────────────────────────────────────────────────
 
 async function handleLogin(req, res) {
-  const ip = getIp(req);
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
 
+  const v = validate(AuthLoginSchema, req.body || {});
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const ip = getIp(req);
   let rl;
   try {
     rl = await makeIpLimiter(10, '15 m', 'login').limit(ip);
   } catch (rlErr) {
-    console.error('[auth/login] rate limiter threw (failing open):', rlErr.message);
+    traceLog(traceId, 'error', '[auth/login] rate limiter threw (failing open):', rlErr.message);
     rl = { success: true };
   }
   if (!rl.success) {
@@ -66,10 +73,7 @@ async function handleLogin(req, res) {
     });
   }
 
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
+  const { email, password } = req.body;
 
   let response, data;
   try {
@@ -80,7 +84,7 @@ async function handleLogin(req, res) {
     });
     data = await response.json();
   } catch (fetchErr) {
-    console.error('[auth/login] GoTrue fetch failed:', fetchErr.message);
+    traceLog(traceId, 'error', '[auth/login] GoTrue fetch failed:', fetchErr.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
   const success = response.ok && !!data.access_token;
@@ -102,13 +106,18 @@ async function handleLogin(req, res) {
 // ── action: signup ────────────────────────────────────────────────────────────
 
 async function handleSignup(req, res) {
-  const ip = getIp(req);
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
 
+  const v = validate(AuthSignupSchema, req.body || {});
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const ip = getIp(req);
   let rl;
   try {
     rl = await makeIpLimiter(5, '1 h', 'signup').limit(ip);
   } catch (rlErr) {
-    console.error('[auth/signup] rate limiter threw (failing open):', rlErr.message);
+    traceLog(traceId, 'error', '[auth/signup] rate limiter threw (failing open):', rlErr.message);
     rl = { success: true };
   }
   if (!rl.success) {
@@ -117,10 +126,7 @@ async function handleSignup(req, res) {
     });
   }
 
-  const { email, password, full_name, university } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
+  const { email, password, full_name, university } = req.body;
 
   const { data, error } = await supabaseAnon.auth.signUp({
     email,
@@ -137,8 +143,6 @@ async function handleSignup(req, res) {
   logAttempt(email, ip, 'signup', success);
 
   if (success) {
-    // Run Telegram alert and welcome notification insert in parallel so both
-    // complete before res.json() — Vercel freezes the function on response.
     await Promise.all([
       sendTelegramAlert(`👤 New signup: ${email} (free)`),
       (async () => {
@@ -157,17 +161,16 @@ async function handleSignup(req, res) {
             });
           }
         } catch (e) {
-          console.error('[auth/signup] welcome notification failed:', e.message);
+          traceLog(traceId, 'error', '[auth/signup] welcome notification failed:', e.message);
         }
       })(),
     ]);
-    // Fire welcome email — fire-and-forget, not on the critical path
     if (process.env.CRON_SECRET) {
       fetch(`${APP_URL}/api/send-nurture-email`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
         body:    JSON.stringify({ userId, emailType: 'welcome', email, name: full_name || '' }),
-      }).catch(e => console.error('[auth/signup] welcome email failed:', e.message));
+      }).catch(e => traceLog(traceId, 'error', '[auth/signup] welcome email failed:', e.message));
     }
   }
 
@@ -176,14 +179,13 @@ async function handleSignup(req, res) {
     return res.status(400).json({ error: msg });
   }
 
-  // Update public.users row with full_name and university (created by DB trigger on signup).
   if (userId && full_name) {
     supabaseAdmin
       .from('users')
       .update({ full_name, university_name: university })
       .eq('id', userId)
-      .then(({ error }) => { if (error) console.error('[auth/signup] users update:', error.message) })
-      .catch(e => console.error('[auth/signup] users update:', e.message));
+      .then(({ error }) => { if (error) traceLog(traceId, 'error', '[auth/signup] users update:', error.message) })
+      .catch(e => traceLog(traceId, 'error', '[auth/signup] users update:', e.message));
   }
 
   return res.status(200).json({ ok: true });
@@ -192,13 +194,18 @@ async function handleSignup(req, res) {
 // ── action: forgot-password ───────────────────────────────────────────────────
 
 async function handleForgotPassword(req, res) {
-  const ip = getIp(req);
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
 
+  const v = validate(AuthForgotSchema, req.body || {});
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const ip = getIp(req);
   let rl;
   try {
     rl = await makeIpLimiter(5, '1 h', 'forgot').limit(ip);
   } catch (rlErr) {
-    console.error('[auth/forgot] rate limiter threw (failing open):', rlErr.message);
+    traceLog(traceId, 'error', '[auth/forgot] rate limiter threw (failing open):', rlErr.message);
     rl = { success: true };
   }
   if (!rl.success) {
@@ -207,15 +214,13 @@ async function handleForgotPassword(req, res) {
     });
   }
 
-  const { email } = req.body || {};
-  if (!email) return res.status(400).json({ error: 'Email is required.' });
+  const { email } = req.body;
 
-  // Fire and forget — never reveal whether the email is registered.
   fetch(`${SUPABASE_URL}/auth/v1/recover`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
     body:    JSON.stringify({ email }),
-  }).catch(e => console.error('[auth/forgot] recover error:', e.message));
+  }).catch(e => traceLog(traceId, 'error', '[auth/forgot] recover error:', e.message));
 
   logAttempt(email, ip, 'forgot_password', true);
 
