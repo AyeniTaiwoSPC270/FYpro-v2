@@ -11,6 +11,8 @@ import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { isAllowedGeneralStep, getGeneralSystemPrompt } from './_lib/ai-prompts.js';
 import { callAnthropic } from './_lib/anthropic-proxy.js';
+import { generateTraceId, traceLog } from './_lib/trace.js';
+import { validate, AiMessagesSchema } from './_lib/validate.js';
 
 export const config = { maxDuration: 60 };
 
@@ -42,6 +44,9 @@ const SERVER_FREE_LIMITS = {
  * @returns {Promise<void>}
  */
 async function handleGeneral(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
@@ -53,6 +58,9 @@ async function handleGeneral(req, res) {
     step,
     previousSteps,
   } = req.body || {};
+
+  const v = validate(AiMessagesSchema, { messages });
+  if (!v.ok) return res.status(400).json({ error: v.error });
 
   // Reject unknown steps immediately — closes the prompt injection surface.
   // Client can no longer send an arbitrary system prompt; the server resolves one by step name.
@@ -71,13 +79,13 @@ async function handleGeneral(req, res) {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
       rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' }).catch(rlErr => {
-        console.error('[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
+        traceLog(traceId, 'error', '[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
         return { allowed: true, reason: '' };
       }),
       checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
     ]);
   } catch (authErr) {
-    console.error('[ai/general] auth.getUser threw:', authErr.message);
+    traceLog(traceId, 'error', '[ai/general] auth.getUser threw:', authErr.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -109,7 +117,7 @@ async function handleGeneral(req, res) {
       .maybeSingle();
     entData = data;
   } catch (e) {
-    console.error('[ai/general] entitlements fetch error:', e.message);
+    traceLog(traceId, 'error', '[ai/general] entitlements fetch error:', e.message);
   }
 
   const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
@@ -169,7 +177,7 @@ async function handleGeneral(req, res) {
             { user_id: user.id, run_counts: { ...existingCounts, [dbKey]: newCount }, updated_at: new Date().toISOString() },
             { onConflict: 'user_id' }
           )
-          .catch(err => console.error('[ai/general] run count increment failed:', err?.message));
+          .catch(err => traceLog(traceId, 'error', '[ai/general] run count increment failed:', err?.message));
       }
     }
 
@@ -178,15 +186,15 @@ async function handleGeneral(req, res) {
   } catch (err) {
     const userId = extractUserId(req) || 'anonymous';
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[ai/general] Anthropic request timed out after 50s');
+      traceLog(traceId, 'error', '[ai/general] Anthropic request timed out after 50s');
       await sendTelegramAlert(`⏱️ Generation timed out: ${step} for ${userId}`);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
     if (err.isConfig) {
-      console.error('[ai/general] ANTHROPIC_API_KEY is not set');
+      traceLog(traceId, 'error', '[ai/general] ANTHROPIC_API_KEY is not set');
       return res.status(500).json({ error: 'API key not configured on server.' });
     }
-    console.error('[ai/general] error:', err.message);
+    traceLog(traceId, 'error', '[ai/general] error:', err.message);
     await sendTelegramAlert(`🔴 Generation failed: ${step} for ${userId} - ${err.message}`);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
@@ -200,6 +208,9 @@ async function handleGeneral(req, res) {
  * @returns {Promise<void>}
  */
 async function handleDefense(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
@@ -210,13 +221,13 @@ async function handleDefense(req, res) {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
       rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' }).catch(rlErr => {
-        console.error('[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
+        traceLog(traceId, 'error', '[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
         return { allowed: true, reason: '' };
       }),
       checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
     ]);
   } catch (authErr) {
-    console.error('[ai/defense] auth.getUser threw:', authErr.message);
+    traceLog(traceId, 'error', '[ai/defense] auth.getUser threw:', authErr.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -237,7 +248,7 @@ async function handleDefense(req, res) {
     .maybeSingle();  // maybeSingle: returns null (not an error) when row doesn't exist
 
   if (entError) {
-    console.error('[ai/defense] entitlements fetch error:', entError.message);
+    traceLog(traceId, 'error', '[ai/defense] entitlements fetch error:', entError.message);
     return res.status(503).json({ error: 'Service unavailable. Please try again.' });
   }
 
@@ -263,6 +274,9 @@ async function handleDefense(req, res) {
     answerWordCount,
   } = req.body || {};
 
+  const v = validate(AiMessagesSchema, { messages });
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
   const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
   const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
@@ -282,7 +296,7 @@ async function handleDefense(req, res) {
     console.log('[ai/defense] Anthropic status:', response.status);
     return res.status(response.status).json(data);
   } catch (err) {
-    console.error('[ai/defense] error:', err.message);
+    traceLog(traceId, 'error', '[ai/defense] error:', err.message);
     await Promise.all([
       sendTelegramAlert(`🔴 Generation failed: defense-simulator for user:${user.id.slice(0, 8)} - ${err.message}`),
       writeSystemLog({
