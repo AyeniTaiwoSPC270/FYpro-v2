@@ -1593,6 +1593,7 @@ async function handleDailyReport(req, res) {
       cacheHits,
       newUsersRes,
       totalUsersRes,
+      orphanedPaymentsRes,
     ] = await Promise.all([
       listAllAuthUsers(),
       supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
@@ -1605,6 +1606,11 @@ async function handleDailyReport(req, res) {
       readCacheHits(),
       supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
       supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+      supabaseAdmin
+        .from('payments')
+        .select('paystack_reference, tier, created_at')
+        .eq('status', 'pending')
+        .lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
     ]);
 
     const activeToday = authUsers.filter(u => u.last_sign_in_at >= todayStart).length;
@@ -1638,6 +1644,19 @@ async function handleDailyReport(req, res) {
       ? `${topEntry[0].replace(/_/g, ' ')} (${topEntry[1]} runs)`
       : 'None yet';
 
+    const orphanedRows = orphanedPaymentsRes.data || [];
+    const orphanedSection = orphanedRows.length > 0
+      ? [
+          ``,
+          `⚠️ Orphaned Payments (${orphanedRows.length} stuck >24h)`,
+          ...orphanedRows.slice(0, 3).map(p => {
+            const age = Math.round((Date.now() - new Date(p.created_at).getTime()) / 3600000);
+            return `- ${p.tier} | ${p.paystack_reference} | ${age}h ago`;
+          }),
+          ...(orphanedRows.length > 3 ? [`- ...and ${orphanedRows.length - 3} more`] : []),
+        ]
+      : [];
+
     const MONTHS  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const now     = new Date();
     const dateStr = `${now.getUTCDate()} ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
@@ -1658,6 +1677,7 @@ async function handleDailyReport(req, res) {
       `- Defenses: ${defensesToday} | Projects: ${projectsToday}`,
       ``,
       `📈 Top feature: ${topFeatureLabel}`,
+      ...orphanedSection,
     ].join('\n');
 
     await sendTelegramAlert(message);
