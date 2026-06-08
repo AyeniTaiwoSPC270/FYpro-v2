@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
+import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 
 const FEATURE_META = {
   student_pack: {
@@ -42,14 +43,71 @@ function hasAccess(requiredPack, hasPaidFeature) {
 const LOCK_PATH =
   'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
-function UpgradeCard({ requiredPack, isUpgrader }) {
-  const navigate = useNavigate()
+function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, payError, blockInfo, setBlockInfo }) {
   const upgradeMeta = isUpgrader ? UPGRADE_META[requiredPack] : null
   const meta = upgradeMeta ?? FEATURE_META[requiredPack] ?? {
     label: requiredPack,
     description: 'This feature requires a paid upgrade.',
     price: '₦3,500',
     buttonText: 'Unlock Now',
+  }
+
+  const isLoading = paying === requiredPack || verifying
+
+  if (blockInfo) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        padding: '32px 16px',
+      }}>
+        <div style={{
+          background: 'var(--bg-card)',
+          borderRadius: '16px',
+          border: '1px solid var(--border)',
+          borderLeft: '4px solid #F59E0B',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+          padding: '40px',
+          maxWidth: '480px',
+          width: '100%',
+          textAlign: 'center',
+          animation: 'pfg-enter 0.4s ease forwards',
+        }}>
+          <p style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: '1.25rem',
+            color: 'var(--text-primary)',
+            marginBottom: '12px',
+          }}>Already Unlocked</p>
+          <p style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.875rem',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.6,
+            marginBottom: '24px',
+          }}>{blockInfo.message}</p>
+          <button
+            onClick={() => setBlockInfo(null)}
+            style={{
+              padding: '10px 24px',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              border: '1.5px solid var(--border-strong)',
+              borderRadius: '12px',
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+        <style>{`@keyframes pfg-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      </div>
+    )
   }
 
   return (
@@ -171,32 +229,68 @@ function UpgradeCard({ requiredPack, isUpgrader }) {
           </span>
         </div>
 
+        {payError && (
+          <p style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.8125rem',
+            color: '#DC2626',
+            marginBottom: '16px',
+            padding: '10px 14px',
+            background: 'rgba(220, 38, 38, 0.06)',
+            border: '1px solid rgba(220, 38, 38, 0.2)',
+            borderRadius: '8px',
+          }}>
+            {payError}
+          </p>
+        )}
+
         <button
-          onClick={() => navigate('/pricing')}
+          onClick={() => handlePay(requiredPack)}
+          disabled={isLoading}
           style={{
-            display: 'block',
             width: '100%',
             padding: '14px 24px',
-            background: '#16A34A',
+            background: isLoading ? '#4ade80' : '#16A34A',
             color: '#ffffff',
             border: 'none',
             borderRadius: '12px',
             fontFamily: "'Poppins', sans-serif",
             fontWeight: 600,
             fontSize: '0.9375rem',
-            cursor: 'pointer',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.8 : 1,
             transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
           }}
           onMouseOver={e => {
-            e.currentTarget.style.background = '#15803d'
-            e.currentTarget.style.boxShadow = '0 0 20px rgba(22, 163, 74, 0.35)'
+            if (!isLoading) {
+              e.currentTarget.style.background = '#15803d'
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(22, 163, 74, 0.35)'
+            }
           }}
           onMouseOut={e => {
-            e.currentTarget.style.background = '#16A34A'
-            e.currentTarget.style.boxShadow = 'none'
+            if (!isLoading) {
+              e.currentTarget.style.background = '#16A34A'
+              e.currentTarget.style.boxShadow = 'none'
+            }
           }}
         >
-          {meta.buttonText}
+          {isLoading && (
+            <span style={{
+              width: '16px',
+              height: '16px',
+              border: '2px solid rgba(255,255,255,0.4)',
+              borderTopColor: '#ffffff',
+              borderRadius: '50%',
+              display: 'inline-block',
+              animation: 'pfg-spin 0.7s linear infinite',
+              flexShrink: 0,
+            }} />
+          )}
+          {verifying ? 'Verifying payment...' : paying ? 'Opening payment...' : meta.buttonText}
         </button>
       </div>
 
@@ -205,6 +299,7 @@ function UpgradeCard({ requiredPack, isUpgrader }) {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes pfg-spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   )
@@ -233,12 +328,27 @@ function Spinner() {
 
 export default function PaidFeatureGate({ requiredPack, children, fallback }) {
   const { hasPaidFeature, loading } = usePaidFeatures()
+  const { pathname, search } = useLocation()
+  const { handlePay, paying, verifying, payError, blockInfo, setBlockInfo } = usePaystackCheckout({
+    loginReturnUrl: pathname + search,
+  })
 
   if (loading) return <Spinner />
 
   if (!hasAccess(requiredPack, hasPaidFeature)) {
     const isUpgrader = requiredPack === 'defense_pack' && hasPaidFeature('student_pack')
-    return fallback ?? <UpgradeCard requiredPack={requiredPack} isUpgrader={isUpgrader} />
+    return fallback ?? (
+      <UpgradeCard
+        requiredPack={requiredPack}
+        isUpgrader={isUpgrader}
+        handlePay={handlePay}
+        paying={paying}
+        verifying={verifying}
+        payError={payError}
+        blockInfo={blockInfo}
+        setBlockInfo={setBlockInfo}
+      />
+    )
   }
 
   return children
