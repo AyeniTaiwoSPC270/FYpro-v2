@@ -731,9 +731,20 @@ function Hero() {
       </div>
 
       {/* App Mockup */}
-      <div className="relative z-[1] w-full max-w-[880px] overflow-hidden">
-        <div className="absolute pointer-events-none blur-[20px]" style={{ top: '10%', left: '10%', right: '10%', bottom: -30, background: 'radial-gradient(ellipse, rgba(0,102,255,0.22) 0%, transparent 70%)' }} />
-        <HeroMockup />
+      <div className="relative z-[1] w-full max-w-[880px]">
+        <div className="absolute pointer-events-none blur-[28px]" style={{ top: '8%', left: '5%', right: '5%', bottom: -40, background: 'radial-gradient(ellipse, rgba(0,102,255,0.28) 0%, transparent 70%)' }} />
+        <motion.img
+          src="/FYPro-Product-Showcase-v2.png"
+          alt="FYPro — from topic to defence, powered by AI"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full rounded-2xl"
+          style={{
+            boxShadow: '0 0 0 1px rgba(0,102,255,0.14), 0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)',
+          }}
+          draggable={false}
+        />
       </div>
     </motion.section>
   )
