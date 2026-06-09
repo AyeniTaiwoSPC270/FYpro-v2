@@ -39,21 +39,21 @@ function renderHtml(type: EmailType, name: string, baseUrl: string): string {
   if (type === 'welcome') {
     return wrap(
       '#16A34A', 'rgba(22,163,74,0.08)', 'rgba(22,163,74,0.3)', 'Welcome',
-      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, your research journey starts today.</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">You've joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea and find out if it's defensible before your supervisor ever sees it.</p><a href="${baseUrl}/app/topic-validator" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Validate your topic now →</a>`
+      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, your research journey starts today.</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">You've joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea and find out if it's defensible before your supervisor ever sees it.</p><a href="${baseUrl}/app" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Validate your topic now →</a>`
     )
   }
 
   if (type === 'defense_nudge') {
     return wrap(
       '#0066FF', 'rgba(0,102,255,0.08)', 'rgba(0,102,255,0.3)', 'Defense Prep',
-      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, have you met your examiners yet?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners who push back exactly the way the real panel will. Find out where you're weak before it matters.</p><a href="${baseUrl}/app/defense" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Try a Defense Simulation →</a>`
+      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, have you met your examiners yet?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners who push back exactly the way the real panel will. Find out where you're weak before it matters.</p><a href="${baseUrl}/app" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Try a Defense Simulation →</a>`
     )
   }
 
   // urgency_reminder
   return wrap(
     '#DC2626', 'rgba(220,38,38,0.08)', 'rgba(220,38,38,0.3)', 'Checklist',
-    `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName} — a week in. Are you ready?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">The clock is moving. Run through this before you do anything else:</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Topic locked and validated?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Methodology chosen and defensible?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Project PDF uploaded for review?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">☐ &nbsp; Defense Simulator score 7 or above?</p><a href="${baseUrl}/dashboard" style="display:inline-block;background:#DC2626;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Open my dashboard →</a>`
+    `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName} — a week in. Are you ready?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">The clock is moving. Run through this before you do anything else:</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Topic locked and validated?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Methodology chosen and defensible?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Project PDF uploaded for review?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">☐ &nbsp; Defense Simulator score 7 or above?</p><a href="${baseUrl}/app" style="display:inline-block;background:#DC2626;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Open my dashboard →</a>`
   )
 }
 
@@ -68,7 +68,7 @@ function renderText(type: EmailType, name: string, baseUrl: string): string {
     return `${firstName}, have you met your examiners yet?\n\nMost students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners who push back on your work the way the real panel will.\n\nTry a Defense Simulation: ${baseUrl}/app\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
   }
 
-  return `${firstName} — defense checklist, where do you stand?\n\nA week in and the clock is moving. Run through this:\n\n☐  Topic locked and validated?\n☐  Methodology chosen and defensible?\n☐  Project PDF uploaded for review?\n☐  Defense Simulator score 7 or above?\n\nIf any box is unchecked, open your dashboard and work through it.\n\nOpen my dashboard: ${baseUrl}/dashboard\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
+  return `${firstName} — defense checklist, where do you stand?\n\nA week in and the clock is moving. Run through this:\n\n☐  Topic locked and validated?\n☐  Methodology chosen and defensible?\n☐  Project PDF uploaded for review?\n☐  Defense Simulator score 7 or above?\n\nIf any box is unchecked, open your dashboard and work through it.\n\nOpen my dashboard: ${baseUrl}/app\n\n---\nManage email preferences: ${baseUrl}/account/email-preferences`
 }
 
 export default async function handler(req: any, res: any) {
