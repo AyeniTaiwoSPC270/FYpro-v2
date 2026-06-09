@@ -21,82 +21,40 @@ const PREHEADERS: Record<EmailType, string> = {
   urgency_reminder: 'Run through your checklist before the panel does it for you.',
 }
 
-// All CSS is inlined — Gmail strips <style> blocks
-function header(baseUrl: string) {
-  return `
-    <div style="background:#0f172a;border-radius:12px 12px 0 0;padding:24px;text-align:center;">
-      <img src="${baseUrl}/fypro-logo.png" alt="FYPro" style="height:36px;width:auto;" />
-    </div>
-  `
-}
-
-function footer(baseUrl: string) {
-  return `
-    <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;">
-    <p style="font-size:12px;color:#9CA3AF;line-height:1.6;margin:0;">
-      You're receiving this because you signed up for FYPro.<br>
-      FYPro · Lagos, Nigeria<br>
-      <a href="${baseUrl}/account/email-preferences" style="color:#6B7280;">Manage email preferences</a>
-    </p>
-  `
-}
-
 function preheader(text: string) {
   return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${text}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`
 }
 
 function renderHtml(type: EmailType, name: string, baseUrl: string): string {
   const firstName = name ? name.split(' ')[0] : 'there'
-  const pre       = preheader(PREHEADERS[type])
+  const pre = preheader(PREHEADERS[type])
+
+  const logo = `<div style="background:linear-gradient(160deg,#0D1B2A 0%,#0a1520 100%);padding:20px 22px;text-align:center;"><img src="${baseUrl}/fypro-logo.png" alt="FYPro" style="height:40px;width:auto;display:block;margin:0 auto;" /></div>`
+  const divider = `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0 14px;">`
+  const ftr = `${divider}<p style="font-size:10.5px;color:rgba(255,255,255,0.2);line-height:1.6;margin:0;">You're receiving this because you signed up at fypro.com.ng<br>FYPro · Lagos, Nigeria · <a href="${baseUrl}/account/email-preferences" style="color:rgba(255,255,255,0.3);">Manage preferences</a></p>`
+
+  const wrap = (accent: string, pillBg: string, pillBorder: string, pillLabel: string, body: string) =>
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#060E18;font-family:Arial,sans-serif;">${pre}<div style="max-width:560px;margin:0 auto;padding:32px 16px;"><div style="height:3px;background:${accent};border-radius:8px 8px 0 0;"></div>${logo}<div style="background:#0D1B2A;padding:28px;border-radius:0 0 12px 12px;border:1px solid rgba(255,255,255,0.06);border-top:none;"><span style="display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;border-radius:4px;padding:3px 8px;margin-bottom:14px;border:1px solid ${pillBorder};background:${pillBg};color:${accent};">${pillLabel}</span>${body}${ftr}</div></div></body></html>`
 
   if (type === 'welcome') {
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
-      ${pre}
-      <div style="max-width:560px;margin:32px auto;">
-        ${header(baseUrl)}
-        <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
-          <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName}, welcome to FYPro</h1>
-          <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">You've just joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea into our Topic Validator and find out if it's defensible before your supervisor ever sees it.</p>
-          <a href="${baseUrl}/app" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Validate your topic now</a>
-          ${footer(baseUrl)}
-        </div>
-      </div>
-    </body></html>`
+    return wrap(
+      '#16A34A', 'rgba(22,163,74,0.08)', 'rgba(22,163,74,0.3)', 'Welcome',
+      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, your research journey starts today.</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">You've joined thousands of Nigerian final year students who are taking their project seriously. Your next step is simple — paste your topic idea and find out if it's defensible before your supervisor ever sees it.</p><a href="${baseUrl}/app/topic-validator" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Validate your topic now →</a>`
+    )
   }
 
   if (type === 'defense_nudge') {
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
-      ${pre}
-      <div style="max-width:560px;margin:32px auto;">
-        ${header(baseUrl)}
-        <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
-          <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName}, have you met your examiners yet?</h1>
-          <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners — a methodologist, a subject expert, and an external examiner — who push back on your work exactly the way the real panel will. Find out where you're weak before it matters.</p>
-          <a href="${baseUrl}/app" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Try a Defense Simulation</a>
-          ${footer(baseUrl)}
-        </div>
-      </div>
-    </body></html>`
+    return wrap(
+      '#0066FF', 'rgba(0,102,255,0.08)', 'rgba(0,102,255,0.3)', 'Defense Prep',
+      `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, have you met your examiners yet?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">Most students walk into their defense never having practiced out loud. FYPro's Defense Simulator puts you in front of three AI examiners who push back exactly the way the real panel will. Find out where you're weak before it matters.</p><a href="${baseUrl}/app/defense" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Try a Defense Simulation →</a>`
+    )
   }
 
   // urgency_reminder
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F0F4F8;font-family:Arial,sans-serif;">
-    ${pre}
-    <div style="max-width:560px;margin:32px auto;">
-      ${header(baseUrl)}
-      <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:40px;">
-        <h1 style="font-size:22px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">${firstName} — defense checklist, where do you stand?</h1>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 8px;">A week in and the clock is moving. Run through this before you do anything else:</p>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Topic locked and validated?</p>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Methodology chosen and defensible?</p>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 10px;padding-left:8px;">☐ &nbsp; Project PDF uploaded for review?</p>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;padding-left:8px;">☐ &nbsp; Defense Simulator score 7 or above?</p>
-        <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 24px;">If any box is unchecked, open your dashboard and work through it. Your panel will not go easy on gaps.</p>
-        <a href="${baseUrl}/dashboard" style="display:inline-block;background:#16A34A;color:#ffffff;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:600;text-decoration:none;">Open my dashboard</a>
-        ${footer(baseUrl)}
-      </div>
-    </div>
-  </body></html>`
+  return wrap(
+    '#DC2626', 'rgba(220,38,38,0.08)', 'rgba(220,38,38,0.3)', 'Checklist',
+    `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName} — a week in. Are you ready?</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">The clock is moving. Run through this before you do anything else:</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Topic locked and validated?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Methodology chosen and defensible?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">☐ &nbsp; Project PDF uploaded for review?</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">☐ &nbsp; Defense Simulator score 7 or above?</p><a href="${baseUrl}/dashboard" style="display:inline-block;background:#DC2626;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Open my dashboard →</a>`
+  )
 }
 
 function renderText(type: EmailType, name: string, baseUrl: string): string {
