@@ -110,6 +110,16 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <ProjectStateProvider>
+        {import.meta.env.VITE_APP_ENV === 'staging' && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            background: '#F59E0B', color: '#000', textAlign: 'center',
+            padding: '4px 0', fontSize: '12px', fontWeight: 600,
+            fontFamily: 'monospace', letterSpacing: '0.03em',
+          }}>
+            ⚠ STAGING — Paystack test mode · throwaway database
+          </div>
+        )}
         <RouteProgressBar />
         <ToastProvider />
         <CookieBanner />
