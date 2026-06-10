@@ -3,7 +3,7 @@ import { Resend }              from 'resend';
 import { Redis }               from '@upstash/redis';
 import { supabaseAdmin }       from './_lib/supabase-admin.js';
 import { writeSystemLog }      from './_lib/system-log.js';
-import { rateLimitCheck }      from './_lib/rate-limit.js';
+import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
@@ -677,6 +677,13 @@ async function handleResetRunCounts(req, res) {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
     if (error) throw error;
+    // Also clear the Redis reservation counters ai.js enforces against —
+    // otherwise the reset only touches the DB copy and the user stays blocked.
+    await redis.del(
+      freeRunKey('topic_validator', userId),
+      freeRunKey('chapter_architect', userId),
+      freeRunKey('methodology_advisor', userId),
+    ).catch(err => console.error('[admin/reset-run-counts] redis del failed:', err?.message));
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/reset-run-counts]', err.message);

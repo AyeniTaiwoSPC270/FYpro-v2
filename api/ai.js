@@ -2,7 +2,7 @@
 // ?action=defense → Defense Simulator (JWT + defense_pack required, no cache)
 // default         → General Claude proxy (cached, no auth required)
 
-import { rateLimitCheck, extractUserId } from './_lib/rate-limit.js';
+import { rateLimitCheck, extractUserId, redis, freeRunKey } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage }     from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
@@ -124,18 +124,18 @@ async function handleGeneral(req, res) {
   const isPaid = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
 
   // Server-side run limit gate — only applies to free (unpaid) users.
-  if (!isPaid && SERVER_FREE_LIMITS[step] !== undefined) {
-    const dbRunCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
-      ? entData.run_counts
-      : {};
-    // DB stores keys as snake_case (topic_validator); step param uses kebab-case (topic-validator)
-    const dbKey = step.replace(/-/g, '_');
-    const serverCount = typeof dbRunCounts[dbKey] === 'number' ? dbRunCounts[dbKey] : 0;
-    if (serverCount >= SERVER_FREE_LIMITS[step]) {
-      return res.status(429).json({
-        error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
-      });
-    }
+  // DB stores keys as snake_case (topic_validator); step param uses kebab-case (topic-validator)
+  const isLimitedStep = !isPaid && SERVER_FREE_LIMITS[step] !== undefined;
+  const dbKey = step.replace(/-/g, '_');
+  const dbRunCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
+    ? entData.run_counts
+    : {};
+  const serverCount = typeof dbRunCounts[dbKey] === 'number' ? dbRunCounts[dbKey] : 0;
+
+  if (isLimitedStep && serverCount >= SERVER_FREE_LIMITS[step]) {
+    return res.status(429).json({
+      error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
+    });
   }
 
   // System prompt resolved server-side — client never controls this
@@ -151,6 +151,37 @@ async function handleGeneral(req, res) {
     return res.status(200).json(cached);
   }
 
+  // Atomic run reservation — closes the concurrency race where N parallel
+  // requests all pass the read-check above before any increment lands.
+  // Counter is seeded from the DB count on first use (SET NX), then INCR
+  // reserves a slot atomically. Refunded if the Anthropic call fails.
+  // If Redis is unavailable we fail open to the DB read-check above.
+  // admin.js reset-run-counts deletes these keys so admin resets take effect.
+  let runKey = null;
+  let reservedCount = null;
+  if (isLimitedStep) {
+    try {
+      const key = freeRunKey(dbKey, user.id);
+      await redis.set(key, serverCount, { nx: true });
+      reservedCount = await redis.incr(key);
+      runKey = key;
+      if (reservedCount > SERVER_FREE_LIMITS[step]) {
+        // Over limit — no refund needed, the counter staying above the limit is harmless
+        return res.status(429).json({
+          error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
+        });
+      }
+    } catch (redisErr) {
+      traceLog(traceId, 'error', '[ai/general] run reservation failed (failing open):', redisErr?.message);
+      runKey = null;
+      reservedCount = null;
+    }
+  }
+  // Refund the reserved run when the Anthropic call does not produce a result
+  const refundRun = () => {
+    if (runKey) redis.decr(runKey).catch(() => {});
+  };
+
   try {
     const { response, data } = await callAnthropic({
       feature:    step,
@@ -164,26 +195,27 @@ async function handleGeneral(req, res) {
     if (response.ok) {
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
 
-      // Increment server-side run count for free users — fire-and-forget, eventual consistency.
-      if (!isPaid && SERVER_FREE_LIMITS[step] !== undefined) {
-        const dbKey = step.replace(/-/g, '_');
-        const existingCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
-          ? entData.run_counts
-          : {};
-        const newCount = (typeof existingCounts[dbKey] === 'number' ? existingCounts[dbKey] : 0) + 1;
+      // Sync the DB run count for free users — fire-and-forget, display/fallback only.
+      // The Redis reservation above is the enforcement source; the DB copy mirrors it
+      // (or falls back to read+1 when Redis was unavailable).
+      if (isLimitedStep) {
+        const newCount = reservedCount ?? (serverCount + 1);
         supabaseAdmin
           .from('user_entitlements')
           .upsert(
-            { user_id: user.id, run_counts: { ...existingCounts, [dbKey]: newCount }, updated_at: new Date().toISOString() },
+            { user_id: user.id, run_counts: { ...dbRunCounts, [dbKey]: newCount }, updated_at: new Date().toISOString() },
             { onConflict: 'user_id' }
           )
-          .catch(err => traceLog(traceId, 'error', '[ai/general] run count increment failed:', err?.message));
+          .catch(err => traceLog(traceId, 'error', '[ai/general] run count sync failed:', err?.message));
       }
+    } else {
+      refundRun(); // Anthropic returned an error status — don't charge the run
     }
 
     res.setHeader('X-Cache', 'MISS');
     return res.status(response.status).json(data);
   } catch (err) {
+    refundRun(); // request never produced a result — don't charge the run
     const userId = extractUserId(req) || 'anonymous';
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       traceLog(traceId, 'error', '[ai/general] Anthropic request timed out after 50s');

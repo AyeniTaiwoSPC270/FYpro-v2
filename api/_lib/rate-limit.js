@@ -4,10 +4,20 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-const redis = new Redis({
+export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
+
+/**
+ * Redis key for the atomic free-tier run counter of one step for one user.
+ * Used by ai.js (reserve/refund) and admin.js (cleared on reset-run-counts).
+ * @param {string} dbKey  - snake_case step key, e.g. 'chapter_architect'
+ * @param {string} userId - Supabase user id
+ */
+export function freeRunKey(dbKey, userId) {
+  return `runs:${dbKey}:${userId}`;
+}
 
 /**
  * Extracts the Supabase user ID from a Bearer JWT without verifying the signature.
