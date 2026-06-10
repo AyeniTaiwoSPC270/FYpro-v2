@@ -11,8 +11,11 @@ const ALLOWED_ORIGINS = [
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Allow any Vercel preview deployment for this project
-  if (/^https:\/\/fypro(-[a-z0-9]+)?\.vercel\.app$/.test(origin)) return true;
+  // Allow Vercel preview deployments for this project only.
+  // Scoped to fypro-v2* so an attacker can't register e.g. fypro-evil.vercel.app
+  // and pass the check, while real previews (fypro-v2-git-branch-user.vercel.app)
+  // still match.
+  if (/^https:\/\/fypro-v2[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
   // Allow localhost for local development
   if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return true;
   return false;
