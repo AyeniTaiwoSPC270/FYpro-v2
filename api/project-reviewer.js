@@ -17,7 +17,7 @@ const MAX_TOKENS_LIMIT = 4096;
 /**
  * Project Reviewer — accepts a PDF (base64-encoded in the messages array) and returns
  * a Claude AI review. Requires a valid JWT with defense_pack entitlement. Validates PDF
- * magic bytes (%PDF) and enforces a 10 MB file size limit server-side before forwarding.
+ * magic bytes (%PDF) and enforces a 4 MB total file size limit server-side before forwarding.
  * System prompt is resolved server-side from promptType + previousSteps (never client-supplied).
  * @param {object} req - Vercel request; expects Authorization header and JSON body with promptType, previousSteps, messages, model, max_tokens
  * @param {object} res - Vercel response
@@ -102,19 +102,23 @@ const handler = async (req, res) => {
     const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
     const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
-    // Server-side file validation: find the PDF source block (if any) and check
+    // Server-side file validation: find the PDF source blocks (if any) and check
     // magic bytes + size. The frontend encodes PDFs as base64 and embeds them in
     // the messages array as { type:'document', source:{ type:'base64', data:'...' } }.
+    // Size is summed across ALL document blocks and capped at 4 MB decoded
+    // (~5.6 MB base64) — matches the frontend MAX_BYTES limit and stays under
+    // Vercel's ~4.5 MB request body cap, which would reject larger payloads anyway.
     if (Array.isArray(messages)) {
+      const MAX_TOTAL_B64_CHARS = 5_600_000;
+      let totalB64Chars = 0;
       for (const msg of messages) {
         const content = Array.isArray(msg.content) ? msg.content : [];
         for (const block of content) {
           if (block?.type === 'document' && block?.source?.type === 'base64') {
             const b64 = block.source.data || '';
-            // 10 MB decoded → ~13.3 MB base64 chars
-            const MAX_B64_CHARS = 14_000_000;
-            if (b64.length > MAX_B64_CHARS) {
-              return res.status(400).json({ error: 'File too large. Maximum size is 10 MB.' });
+            totalB64Chars += b64.length;
+            if (totalB64Chars > MAX_TOTAL_B64_CHARS) {
+              return res.status(400).json({ error: 'File too large. Maximum size is 4 MB.' });
             }
             // Magic-byte check: first 4 bytes of a PDF must be %PDF (25 50 44 46)
             const headerBytes = Buffer.from(b64.slice(0, 8), 'base64');
