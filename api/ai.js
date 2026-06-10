@@ -9,7 +9,7 @@ import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
-import { isAllowedGeneralStep, getGeneralSystemPrompt } from './_lib/ai-prompts.js';
+import { isAllowedGeneralStep, getGeneralSystemPrompt, getDefenseSystemPrompt } from './_lib/ai-prompts.js';
 import { callAnthropic } from './_lib/anthropic-proxy.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { validate, AiMessagesSchema } from './_lib/validate.js';
@@ -203,7 +203,8 @@ async function handleGeneral(req, res) {
 /**
  * Defense Simulator proxy. Requires defense_pack entitlement — enforced server-side.
  * Not cached (each turn is unique). Enforces a 300-word answer limit to prevent token abuse.
- * @param {object} req - Vercel request; expects Authorization header and JSON body with system, messages, model, max_tokens, answerWordCount
+ * System prompt is resolved server-side from promptType + defenseContext (never client-supplied).
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with promptType, defenseContext, messages, model, max_tokens, answerWordCount
  * @param {object} res - Vercel response
  * @returns {Promise<void>}
  */
@@ -267,7 +268,8 @@ async function handleDefense(req, res) {
   }
 
   const {
-    system,
+    promptType,
+    defenseContext,
     messages,
     max_tokens: rawMaxTokens = 2000,
     model: rawModel = 'claude-sonnet-4-6',
@@ -276,6 +278,14 @@ async function handleDefense(req, res) {
 
   const v = validate(AiMessagesSchema, { messages });
   if (!v.ok) return res.status(400).json({ error: v.error });
+
+  // System prompt resolved server-side from promptType + structured context.
+  // The client can no longer send a raw system string — closes the loophole
+  // where a paid user could use this endpoint as a general Claude proxy.
+  const system = getDefenseSystemPrompt(promptType, defenseContext || {});
+  if (!system) {
+    return res.status(400).json({ error: 'Invalid or missing promptType.' });
+  }
 
   const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
   const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);

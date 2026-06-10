@@ -5,16 +5,15 @@ import {
   buildInstrumentBuilderPrompt,
   buildWritingPlannerPrompt,
   buildSupervisorEmailPrompt,
-  buildRedFlagPrompt, RED_FLAG_DETECTOR_SYSTEM,
-  buildThreeExaminerPanelSystem, THREE_EXAMINER_FIRST_QUESTION_PROMPT,
+  buildRedFlagPrompt,
+  THREE_EXAMINER_FIRST_QUESTION_PROMPT,
   buildThreeExaminerFollowUpPrompt, THREE_EXAMINER_SUMMARY_PROMPT,
   buildAbstractGeneratorPrompt,
   buildLiteratureMapPrompt,
-  buildProjectReviewerPrompt, PROJECT_REVIEWER_SYSTEM,
+  buildProjectReviewerPrompt,
   buildProjectReviewerPDFPrompt,
-  buildDocumentRelevanceCheckPrompt, DOCUMENT_RELEVANCE_CHECK_SYSTEM,
+  buildDocumentRelevanceCheckPrompt,
   buildDocumentRelevanceCheckPDFPrompt,
-  buildPreviousStepsContext,
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
 import { setTraceId } from '../lib/sentry';
@@ -224,8 +223,10 @@ async function callLiteratureMap(messages, topic) {
   return parsed;
 }
 
-// Auth-aware variant — attaches user JWT so server can verify entitlement
-async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
+// Auth-aware variant — attaches user JWT so server can verify entitlement.
+// No `system` parameter: defense + reviewer system prompts are resolved
+// server-side from `extra.promptType` + structured context.
+async function callClaudeAuth(endpoint, messages, maxTokens = 2000, extra = {}) {
   if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json' };
@@ -234,7 +235,7 @@ async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
   const res = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens }),
+    body: JSON.stringify({ messages, max_tokens: maxTokens, ...extra }),
   });
 
   if (res.status === 401) {
@@ -286,7 +287,7 @@ async function callClaudeAuth(endpoint, system, messages, maxTokens = 2000) {
   return parsed;
 }
 
-async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000, extra = {}) {
+async function callClaudeAuthRaw(endpoint, messages, maxTokens = 2000, extra = {}) {
   if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json' };
@@ -295,7 +296,7 @@ async function callClaudeAuthRaw(endpoint, system, messages, maxTokens = 2000, e
   const res = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ system, messages, max_tokens: maxTokens, ...extra }),
+    body: JSON.stringify({ messages, max_tokens: maxTokens, ...extra }),
   });
 
   if (res.status === 401) {
@@ -428,9 +429,9 @@ export async function buildWritingPlan(studentCtx, submissionDeadline, currentDa
 export async function checkDocumentRelevance(studentCtx, extractedText) {
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    DOCUMENT_RELEVANCE_CHECK_SYSTEM,
     [{ role: 'user', content: buildDocumentRelevanceCheckPrompt(studentCtx, extractedText) }],
-    200
+    200,
+    { promptType: 'relevance-check' }
   );
 }
 
@@ -441,35 +442,34 @@ export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaTyp
   ];
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    DOCUMENT_RELEVANCE_CHECK_SYSTEM,
     [{ role: 'user', content: userContent }],
-    200
+    200,
+    { promptType: 'relevance-check' }
   );
 }
 
 // ── Step 5: Project Reviewer (text) ─────────────────────────────────────────
 export async function reviewProject(studentCtx, validatedTopic, extractedText, previousSteps = {}) {
-  const contextBlock = buildPreviousStepsContext(previousSteps);
-  const system = contextBlock ? contextBlock + '\n\n' + PROJECT_REVIEWER_SYSTEM : PROJECT_REVIEWER_SYSTEM;
+  // System prompt + previous-steps context block are built server-side
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    system,
-    [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }]
+    [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }],
+    2000,
+    { promptType: 'review', previousSteps }
   );
 }
 
 // ── Step 5: Project Reviewer (PDF base64) ────────────────────────────────────
 export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf', previousSteps = {}) {
-  const contextBlock = buildPreviousStepsContext(previousSteps);
-  const system = contextBlock ? contextBlock + '\n\n' + PROJECT_REVIEWER_SYSTEM : PROJECT_REVIEWER_SYSTEM;
   const userContent = [
     { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
     { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
   ];
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
-    system,
-    [{ role: 'user', content: userContent }]
+    [{ role: 'user', content: userContent }],
+    2000,
+    { promptType: 'review', previousSteps }
   );
 }
 
@@ -477,41 +477,49 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
 export async function detectRedFlags(studentCtx, validatedTopic, methodology, chapterStructure) {
   return callClaudeAuth(
     DEFENSE_ENDPOINT,
-    RED_FLAG_DETECTOR_SYSTEM,
-    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology) }]
+    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology) }],
+    2000,
+    { promptType: 'red-flag' }
   );
 }
 
 // ── Step 6: Three-Examiner Panel — first question ────────────────────────────
+// The server rebuilds the panel system prompt from defenseContext on every turn;
+// the client only holds the structured context, never the prompt text.
 export async function panelFirstQuestion(studentCtx, redFlags, uploadedReview) {
-  const system = buildThreeExaminerPanelSystem(studentCtx, redFlags, uploadedReview);
+  const defenseContext = { studentCtx, redFlags, uploadedReview };
   const { parsed, rawText } = await callClaudeAuthRaw(
     DEFENSE_ENDPOINT,
-    system,
     [{ role: 'user', content: THREE_EXAMINER_FIRST_QUESTION_PROMPT }],
-    2000
+    2000,
+    { promptType: 'panel', defenseContext }
   );
-  return { parsed, rawText, system };
+  return { parsed, rawText, defenseContext };
 }
 
 // ── Step 6: Three-Examiner Panel — follow-up ─────────────────────────────────
-export async function panelFollowUp(system, apiMessages, studentAnswer) {
+export async function panelFollowUp(defenseContext, apiMessages, studentAnswer) {
   const messages = [
     ...apiMessages,
     { role: 'user', content: buildThreeExaminerFollowUpPrompt(studentAnswer) },
   ];
   const answerWordCount = studentAnswer.trim() === '' ? 0 : studentAnswer.trim().split(/\s+/).length;
-  const { parsed, rawText } = await callClaudeAuthRaw(DEFENSE_ENDPOINT, system, messages, 2000, { answerWordCount });
+  const { parsed, rawText } = await callClaudeAuthRaw(
+    DEFENSE_ENDPOINT,
+    messages,
+    2000,
+    { answerWordCount, promptType: 'panel', defenseContext }
+  );
   return { parsed, rawText };
 }
 
 // ── Step 6: Three-Examiner Panel — summary ───────────────────────────────────
-export async function panelSummary(system, apiMessages) {
+export async function panelSummary(defenseContext, apiMessages) {
   const messages = [
     ...apiMessages,
     { role: 'user', content: THREE_EXAMINER_SUMMARY_PROMPT },
   ];
-  return callClaudeAuth(DEFENSE_ENDPOINT, system, messages, 2000);
+  return callClaudeAuth(DEFENSE_ENDPOINT, messages, 2000, { promptType: 'panel', defenseContext });
 }
 
 // ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────

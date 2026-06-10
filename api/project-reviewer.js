@@ -7,14 +7,19 @@ import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
+import { getReviewerSystemPrompt } from './_lib/ai-prompts.js';
 
 export const config = { maxDuration: 60 };
+
+const ALLOWED_MODELS   = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']);
+const MAX_TOKENS_LIMIT = 4096;
 
 /**
  * Project Reviewer — accepts a PDF (base64-encoded in the messages array) and returns
  * a Claude AI review. Requires a valid JWT with defense_pack entitlement. Validates PDF
  * magic bytes (%PDF) and enforces a 10 MB file size limit server-side before forwarding.
- * @param {object} req - Vercel request; expects Authorization header and JSON body with system, messages, model, max_tokens
+ * System prompt is resolved server-side from promptType + previousSteps (never client-supplied).
+ * @param {object} req - Vercel request; expects Authorization header and JSON body with promptType, previousSteps, messages, model, max_tokens
  * @param {object} res - Vercel response
  * @returns {Promise<void>}
  * @throws {Error} If Anthropic request times out after 50s (returns 504)
@@ -79,11 +84,23 @@ const handler = async (req, res) => {
 
   try {
     const {
-      system,
+      promptType,
+      previousSteps,
       messages,
-      max_tokens = 2000,
-      model = 'claude-sonnet-4-6',
+      max_tokens: rawMaxTokens = 2000,
+      model: rawModel = 'claude-sonnet-4-6',
     } = req.body || {};
+
+    // System prompt resolved server-side from promptType + structured context.
+    // The client can no longer send a raw system string — closes the loophole
+    // where a Defense Pack user could use this endpoint as a general Claude proxy.
+    const system = getReviewerSystemPrompt(promptType, { previousSteps });
+    if (!system) {
+      return res.status(400).json({ error: 'Invalid or missing promptType.' });
+    }
+
+    const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+    const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
     // Server-side file validation: find the PDF source block (if any) and check
     // magic bytes + size. The frontend encodes PDFs as base64 and embeds them in

@@ -971,7 +971,9 @@ export default function DefensePrep() {
     setTypingVisible(true)
     try {
       const result = await panelFirstQuestion(studentContext, redFlags || [], uploadedReview)
-      panelSystemRef.current = result.system
+      // Structured context (not a prompt string) — the server rebuilds the
+      // panel system prompt from this on every follow-up/summary call
+      panelSystemRef.current = result.defenseContext
       defenseMessagesRef.current = [
         { role: 'user',      content: THREE_EXAMINER_FIRST_QUESTION_PROMPT },
         { role: 'assistant', content: result.rawText },
@@ -1045,14 +1047,14 @@ export default function DefensePrep() {
 
     // Snapshot current history before async gap
     const historySnapshot = [...defenseMessagesRef.current]
-    const system          = panelSystemRef.current
+    const defenseContext  = panelSystemRef.current
     const followUpContent = buildThreeExaminerFollowUpPrompt(answer)
 
     set({ defenseQuestionCount: qCount, defenseApiMessages: historySnapshot })
     setTypingVisible(true)
 
     try {
-      const result = await panelFollowUp(system, historySnapshot, answer)
+      const result = await panelFollowUp(defenseContext, historySnapshot, answer)
       const data   = result.parsed
 
       defenseMessagesRef.current = [

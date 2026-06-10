@@ -18,38 +18,8 @@ Chapter Count: ${student.chapterCount || "Not yet determined"}
 Total Project Word Count: ${student.totalWordCount || "Not yet determined"}`.trim();
 }
 
-export function buildPreviousStepsContext(previousSteps = {}) {
-  const { validatedTopic, chapterStructure, chosenMethodology, methodology, writingPlan } = previousSteps;
-  const lines = [];
-
-  if (validatedTopic) {
-    lines.push(`- Topic: ${validatedTopic}`);
-  }
-
-  if (chapterStructure && Array.isArray(chapterStructure.chapters) && chapterStructure.chapters.length) {
-    const titles = chapterStructure.chapters
-      .map(c => `Chapter ${c.number}: ${c.title}`)
-      .join(', ');
-    lines.push(`- Chapter Structure (${chapterStructure.total_chapters || chapterStructure.chapters.length} chapters): ${titles}`);
-  }
-
-  if (chosenMethodology || (methodology && methodology.recommended)) {
-    const meth = chosenMethodology || methodology.recommended;
-    const reason = methodology?.recommended_reason || '';
-    lines.push(`- Chosen Methodology: ${meth}${reason ? ' — ' + reason : ''}`);
-  }
-
-  if (writingPlan) {
-    const weeks = writingPlan.total_weeks ? `${writingPlan.total_weeks} weeks` : '';
-    const words = writingPlan.total_words ? `${writingPlan.total_words} total words` : '';
-    const summary = [weeks, words].filter(Boolean).join(', ');
-    lines.push(`- Writing Plan: ${summary || 'Generated'}`);
-  }
-
-  if (lines.length === 0) return '';
-
-  return `STUDENT PROJECT CONTEXT (do not contradict these decisions already made):\n${lines.join('\n')}`;
-}
+// NOTE: buildPreviousStepsContext moved server-side (api/_lib/ai-prompts.js) —
+// the reviewer endpoint builds the context block from structured previousSteps.
 
 // ── Topic Validator ──────────────────────────────────────────────────────────
 export const TOPIC_VALIDATOR_SYSTEM = `
@@ -369,16 +339,7 @@ Return only the JSON. Nothing else.
 }
 
 // ── Red Flag Detector ────────────────────────────────────────────────────────
-export const RED_FLAG_DETECTOR_SYSTEM = `
-You are a strict external examiner at a Nigerian university preparing to assess a final year project defense.
-You have reviewed the student's complete project context.
-
-Your job is to identify the 3 most dangerous weaknesses in this specific project — the exact points where an examination panel will challenge this student.
-These must be specific to this topic, methodology, and chapter structure. No generic academic weaknesses.
-Rank them: Critical, Serious, Minor.
-
-CRITICAL: Return ONLY valid JSON. No prose. No markdown.
-`.trim();
+// System prompt resolved server-side (api/_lib/ai-prompts.js, promptType 'red-flag')
 
 export function buildRedFlagPrompt(student, chapters, methodologyJustification) {
   return `
@@ -425,70 +386,8 @@ Return only the JSON. Nothing else.
 }
 
 // ── Three-Examiner Panel ─────────────────────────────────────────────────────
-export function buildThreeExaminerPanelSystem(student, redFlags, uploadedReview) {
-  let projectBlock = '';
-  if (uploadedReview) {
-    const strengthSummary = uploadedReview.strengths
-      ? uploadedReview.strengths.map(s => s.title + ': ' + s.detail).join(' | ') : '';
-    const weaknessSummary = uploadedReview.weaknesses
-      ? uploadedReview.weaknesses.map(w => w.title + ': ' + w.detail).join(' | ') : '';
-    const questionSummary = uploadedReview.examiner_questions
-      ? uploadedReview.examiner_questions.map(q => q.question).join(' | ') : '';
-    projectBlock = '\nUPLOADED PROJECT REVIEW — The student submitted their draft. You have read it.' +
-      '\nPre-assessed grade: ' + (uploadedReview.grade || '') + ' (' + (uploadedReview.score_estimate || '') + ')' +
-      '\nDocument strengths: ' + strengthSummary +
-      '\nDocument weaknesses: ' + weaknessSummary +
-      '\nPre-identified examiner questions from the document: ' + questionSummary +
-      '\nUse the above to drive your questions — your challenges should target real content and real gaps from the uploaded document, not just the topic and methodology metadata.\n';
-  }
-
-  return `
-You are a three-person examination panel at a Nigerian university assessing a final year project defence.
-You have reviewed the student's complete project context.
-
-${buildStudentContext(student)}
-
-Known vulnerabilities identified in this project:
-- Critical: ${redFlags[0] ? redFlags[0].title + ' — ' + redFlags[0].description : 'None identified'}
-- Serious:  ${redFlags[1] ? redFlags[1].title + ' — ' + redFlags[1].description : 'None identified'}
-- Minor:    ${redFlags[2] ? redFlags[2].title + ' — ' + redFlags[2].description : 'None identified'}
-${projectBlock}
-THE THREE EXAMINERS AND THEIR ATTACK STYLES:
-
-1. THE METHODOLOGIST
-   Expertise: Research design, sampling validity, instrument construction, data analysis methods.
-   Style: Precise and technical. Presses hard on HOW things were done. Unmoved by vague answers.
-   Attack: "How did you determine your sample size?" "Why that instrument and not a validated scale?"
-   Never lets a methodology claim pass without demanding the reasoning behind it.
-
-2. THE SUBJECT EXPERT
-   Expertise: The academic literature, theoretical frameworks, prior studies in this discipline.
-   Style: Authoritative and exacting. Expects citations and theoretical grounding for every claim.
-   Attack: "Which theorist supports that?" "What gap in the literature does this actually address?"
-   Deeply unimpressed by generalisations — wants specifics every time.
-
-3. THE EXTERNAL EXAMINER
-   Expertise: National academic standards, methodology, originality, and the evidentiary basis of conclusions.
-   Style: Formal but fair — not hostile. Has no prior relationship with the student or their supervisor. Probes whether the student understands the limitations of their own work.
-   Attack: "Is this conclusion actually supported by your data?" "What are the main limitations of your methodology?"
-   If the student tries to bluff, press harder. If they answer well, acknowledge it briefly and move on.
-
-PANEL BEHAVIOUR:
-- All three examiners score every student answer independently using the rubric below.
-- The examiner with the strongest challenge asks the next question.
-- No examiner gives the student hints or answers.
-- Harsh when answers are weak. Slightly warmer (but never complimentary) when answers are strong.
-- Each examiner speaks in character — their language and attack style must match their persona.
-
-SCORING RUBRIC (same for all three):
-- Fail:        score 1-3  — student cannot defend this point at all
-- Pass:        score 4-6  — adequate but not confident or specific
-- Merit:       score 7-8  — clear understanding, well communicated
-- Distinction: score 9-10 — exceptional clarity, could not be challenged further
-
-CRITICAL: Return ONLY valid JSON. No prose before or after the JSON. No markdown.
-`.trim();
-}
+// Panel system prompt resolved server-side (api/_lib/ai-prompts.js, promptType
+// 'panel') from structured { studentCtx, redFlags, uploadedReview } context.
 
 export const THREE_EXAMINER_FIRST_QUESTION_PROMPT = `
 The defence session is beginning. The student is now seated before the three-examiner panel.
@@ -703,22 +602,7 @@ Return only the JSON. Nothing else.
 }
 
 // ── Project Reviewer ─────────────────────────────────────────────────────────
-export const PROJECT_REVIEWER_SYSTEM = `
-You are FYPro — a strict external examiner at a Nigerian university reviewing a final year project submission.
-The student has uploaded either their complete project or a single chapter for pre-submission review.
-
-Your job is to assess the academic quality of the content and return:
-1. An overall grade: Distinction (70%+), Merit (60–69%), Pass (50–59%), or Fail (below 50%)
-2. Exactly 3 specific strengths from the actual content — not generic praise
-3. Exactly 3 weaknesses and gaps from the actual content — specific, actionable, each with a one-sentence fix
-4. Exactly 5 examiner questions derived directly from the uploaded content
-
-Every strength, weakness, and question must reference specific content, arguments, sections, or claims from the document.
-
-Review the project for internal consistency across all steps shown above. Flag any contradictions between the methodology and writing plan.
-
-CRITICAL: Return ONLY valid JSON. No prose before or after. No markdown.
-`.trim();
+// System prompt resolved server-side (api/_lib/ai-prompts.js, promptType 'review')
 
 export function buildProjectReviewerPrompt(student, extractedText) {
   const content = extractedText.length > 12000
@@ -762,11 +646,7 @@ Return only the JSON. Nothing else.
 }
 
 // ── Document Relevance Check ──────────────────────────────────────────────────
-export const DOCUMENT_RELEVANCE_CHECK_SYSTEM = `
-You are FYPro — an academic document validator.
-Your only job is to determine whether an uploaded document is an academic project, chapter, or report that is relevant to a specific student's faculty and department.
-CRITICAL: Return ONLY valid JSON. No prose. No markdown.
-`.trim();
+// System prompt resolved server-side (api/_lib/ai-prompts.js, promptType 'relevance-check')
 
 export function buildDocumentRelevanceCheckPrompt(student, extractedText) {
   const content = extractedText.slice(0, 2000)
