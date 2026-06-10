@@ -381,14 +381,23 @@ async function handleConsumeReset(req, res) {
 
   const updated = features.filter(f => f !== 'project_reset');
 
-  const { error: updateErr } = await supabaseAdmin
+  // Compare-and-swap: the .contains guard makes this a conditional update so two
+  // concurrent requests can't both consume the same reset — Postgres serialises
+  // the row updates and the second one matches zero rows.
+  const { data: updatedRows, error: updateErr } = await supabaseAdmin
     .from('user_entitlements')
     .update({ paid_features: updated, updated_at: new Date().toISOString() })
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .contains('paid_features', JSON.stringify(['project_reset']))
+    .select('user_id');
 
   if (updateErr) {
     console.error('[payments/consume-reset] update failed', updateErr.message);
     return res.status(500).json({ error: 'Failed to consume entitlement' });
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    return res.status(403).json({ error: 'No project_reset entitlement to consume' });
   }
 
   return res.status(200).json({ success: true });
