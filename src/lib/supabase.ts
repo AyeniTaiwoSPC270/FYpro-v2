@@ -12,9 +12,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
-// Stop Supabase from listening to visibilitychange / focus events.
-// Without this, every tab-return triggers TOKEN_REFRESHED → SIGNED_IN,
-// which caused setIsLoading(true) in useProjectState and the white-screen bug.
-// Tokens still refresh reactively during API calls; we refresh proactively
-// on mount only via getSession().
-supabase.auth.stopAutoRefresh()
+// Background token auto-refresh stays ENABLED (the default).
+// History: stopAutoRefresh() was added here because TOKEN_REFRESHED events
+// retriggered useProjectState's load effect and caused a white-screen on
+// tab-return. That effect is now keyed on user?.id (not the user object),
+// so refresh events no longer cause reloads — and disabling auto-refresh
+// meant a tab left open past token expiry (~1h) silently got 401s on every
+// API call (serverless endpoints verify the JWT and reject expired tokens).
