@@ -9,6 +9,17 @@ import { setCorsHeaders } from './_lib/cors.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 
+// Body parser config — must be a named `config` export to take effect
+// (a `handler.config` property is silently ignored by Vercel).
+// sizeLimit: '1mb' is well above any examiner question text.
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb'
+    }
+  }
+};
+
 // ElevenLabs voice IDs assigned to each examiner role
 const VOICE_IDS = {
   methodologist:    'k8FSF54xc37FsOoEA7IB',
@@ -80,15 +91,32 @@ const handler = async (req, res) => {
   const { data: { user }, error: authError } = authResult;
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
 
-  // Rate limit: 30 TTS calls per user per day, 60 per IP per day
-  let rl;
+  // Entitlement + rate limit in parallel — TTS voices are a Defense Pack feature,
+  // and the Defense Simulator itself is already gated on defense_pack server-side.
+  // Without this check any logged-in user could burn ElevenLabs quota directly.
+  let entResult, rl;
   try {
-    rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' });
-  } catch (rlErr) {
-    console.error('[speak] rate limiter threw (failing open):', rlErr.message);
-    rl = { allowed: true };
+    [entResult, rl] = await Promise.all([
+      supabaseAdmin.from('user_entitlements').select('paid_features').eq('user_id', user.id).maybeSingle(),
+      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'speak' }).catch(rlErr => {
+        console.error('[speak] rate limiter threw (failing open):', rlErr.message);
+        return { allowed: true, reason: '' };
+      }),
+    ]);
+  } catch (err) {
+    console.error('[speak] entitlement check threw:', err.message);
+    return res.status(503).json({ error: 'Service unavailable. Please try again.' });
   }
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  if (entResult.error) {
+    console.error('[speak] entitlements query error:', entResult.error.message);
+    return res.status(500).json({ error: 'Failed to verify entitlements. Please try again.' });
+  }
+  const paidFeatures = Array.isArray(entResult.data?.paid_features) ? entResult.data.paid_features : [];
+  if (!paidFeatures.includes('defense_pack')) {
+    return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
+  }
 
   // Guard: EL_API_KEY must be set in Vercel environment variables.
   // (The env var name is EL_API_KEY — not ELEVENLABS_API_KEY.)
@@ -108,6 +136,12 @@ const handler = async (req, res) => {
     // Guard: text is required — 400 so the frontend .catch() triggers the fallback
     if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ error: 'text is required' });
+    }
+
+    // Cost guard: ElevenLabs bills per character. Examiner questions are 1-3
+    // sentences; anything beyond this is not a legitimate Defense Simulator call.
+    if (text.length > 1500) {
+      return res.status(400).json({ error: 'Text too long for TTS.' });
     }
 
     // Resolve the correct ElevenLabs voice ID for this examiner
@@ -165,16 +199,6 @@ const handler = async (req, res) => {
     console.error('[speak] error:', err.message);
     sendTelegramAlert(`🔴 TTS failed for user:${user?.id?.slice(0, 8) || 'unknown'} — ${err.message}`).catch(() => null);
     return res.status(500).json({ error: err.message });
-  }
-};
-
-// Body parser config — same pattern as api/claude.js.
-// sizeLimit: '1mb' is well above any examiner question text.
-handler.config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb'
-    }
   }
 };
 
