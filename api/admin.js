@@ -930,6 +930,19 @@ async function handleBanUser(req, res) {
 
   try {
     console.log(`[audit] action=ban-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
+
+    // 1. Server-side enforcement: ban at the GoTrue auth level so the user's JWT
+    // can no longer be refreshed and is rejected by supabaseAdmin.auth.getUser()
+    // across every API endpoint. Without this, the ban is cosmetic — a banned
+    // user holding a valid token could still call /api/* directly.
+    // 876000h ≈ 100 years. Use 'none' to lift (see unban-user).
+    const { error: authBanErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      ban_duration: '876000h',
+    });
+    if (authBanErr) throw authBanErr;
+
+    // 2. Mirror into user_entitlements so the admin dashboard shows banned status
+    // and ProtectedRoute can sign the user out immediately on their next page load.
     const { error } = await supabaseAdmin
       .from('user_entitlements')
       .upsert({
@@ -957,6 +970,14 @@ async function handleUnbanUser(req, res) {
 
   try {
     console.log(`[audit] action=unban-user admin=${caller.email} target=${userId} at=${new Date().toISOString()}`);
+
+    // 1. Lift the GoTrue auth-level ban so the user can log in / refresh again.
+    const { error: authUnbanErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      ban_duration: 'none',
+    });
+    if (authUnbanErr) throw authUnbanErr;
+
+    // 2. Clear the mirrored flag in user_entitlements.
     const { error } = await supabaseAdmin
       .from('user_entitlements')
       .upsert({
