@@ -327,7 +327,7 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - project_id (FK → projects)
 - user_id (FK → users)
 - turns (jsonb[])
-- final_score (integer)
+- total_score (integer)
 - completed_at
 
 ### defense_turns

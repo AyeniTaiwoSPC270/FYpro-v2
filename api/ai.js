@@ -475,7 +475,7 @@ async function handleCheckAchievements(req, res) {
       { data: existing },
     ] = await Promise.all([
       supabaseAdmin.from('project_steps').select('step_type, created_at').eq('user_id', userId),
-      supabaseAdmin.from('defense_sessions').select('final_score, completed_at').eq('user_id', userId).order('completed_at', { ascending: true }),
+      supabaseAdmin.from('defense_sessions').select('total_score, completed_at').eq('user_id', userId).order('completed_at', { ascending: true }),
       supabaseAdmin.from('defense_certificates').select('id').eq('user_id', userId).limit(1),
       supabaseAdmin.from('referrals').select('status, created_at').eq('referrer_user_id', userId),
       supabaseAdmin.from('defense_credits').select('id').eq('user_id', userId).limit(1),
@@ -494,7 +494,7 @@ async function handleCheckAchievements(req, res) {
     }
 
     const stepNames = (steps ?? []).map(s => s.step_type);
-    const scores = (defSessions ?? []).map(s => s.final_score).filter(n => typeof n === 'number');
+    const scores = (defSessions ?? []).map(s => s.total_score).filter(n => typeof n === 'number');
     const maxScore = scores.length > 0 ? Math.max(...scores) : -1;
     const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1
 
