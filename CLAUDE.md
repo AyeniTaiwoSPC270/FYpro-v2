@@ -46,20 +46,25 @@ Related products (same founder, different problems):
 
 ## 2. TECH STACK
 
-Frontend:    React (Vite) — NOT vanilla HTML/CSS/JS (that was v1, now archived in v1/)
+Frontend:    React (Vite) — NOT vanilla HTML/CSS/JS (v1 artifacts were removed from the repo May 2026)
 Styling:     Tailwind + custom CSS variables from MASTER.md design system
-Routing:     React Router v6
+Routing:     React Router v7 (upgraded from v6 June 2026 to patch a DoS vulnerability)
 Hosting:     Vercel (Hobby plan — 12 serverless function limit, 1 cron job limit)
-Auth:        Supabase (email/password with email confirmation required)
+Auth:        Supabase (email/password with email confirmation required + Google OAuth)
 Database:    Supabase (PostgreSQL with RLS enabled on all tables)
 Payments:    Paystack LIVE keys active — one-time payments, not subscriptions
 AI:          Anthropic Claude API — proxied through Vercel serverless functions
 Voice:       ElevenLabs TTS (examiner voices in Defense Simulator)
 Cache:       Upstash Redis (rate limiting + response caching)
 Error:       Sentry (PII scrubbed via beforeSend hook — no email/username in logs)
-Analytics:   PostHog (behavioural analytics — 9 custom events tracked)
-Email:       Resend via hello@fypro.com.ng (welcome + Day 3 + Day 7 nurture sequences)
-Monitoring:  Telegram bot (@fypro_admin_bot) — real-time alerts + admin commands
+Analytics:   PostHog (behavioural analytics — custom events incl. paywall_shown funnel)
+Email:       Resend via hello@fypro.com.ng (Day 0/3/7 nurture, payment receipt, broadcast — all "Dark Prestige" design, color-coded per type)
+PWA:         vite-plugin-pwa + Workbox (injectManifest) — installable app, app-shell caching, offline snapshot, SW update toast
+Push:        Web Push via web-push + VAPID keys (subscribe/nudge handled by api/notify.js)
+Validation:  Zod schemas on api/ai, api/auth, api/payments + request trace IDs (X-Trace-Id → Sentry tag)
+Testing:     vitest (npm run test) + tsc typecheck (npm run typecheck) — coverage is partial, mainly lib/generateReport
+Monitoring:  Telegram bot (@fypro_admin_bot) — real-time alerts + admin commands; UptimeRobot pings /api/admin?action=ping; error-spike cron alert
+Staging:     separate Vercel project with VITE_APP_ENV=staging (visible banner + Sentry environment tag)
 DNS/CDN:     Cloudflare (nameservers active, email routing hello@fypro.com.ng → ayenit381@gmail.com)
 
 ---
@@ -74,7 +79,7 @@ fypro-v2/
 │   ├── index.css                  # Global styles + Tailwind base
 │   ├── assets/                    # fypro-logo.png, hero.png
 │   ├── pages/
-│   │   ├── LandingPage.jsx        # Public landing page
+│   │   ├── LandingPage.jsx        # Public landing page (hero uses product showcase image)
 │   │   ├── Pricing.jsx
 │   │   ├── About.jsx
 │   │   ├── Contact.jsx
@@ -88,15 +93,21 @@ fypro-v2/
 │   │   ├── ForgotPassword.jsx
 │   │   ├── ResetPassword.jsx
 │   │   ├── VerifyEmail.jsx
+│   │   ├── VerifyCertificate.jsx  # Public cert verification at /verify/:certNumber
+│   │   ├── MaintenancePage.jsx    # Shown when admin maintenance kill switch is on
 │   │   ├── Profile.jsx
-│   │   ├── Settings.jsx
+│   │   ├── Settings.jsx           # Includes push notifications toggle
 │   │   ├── PaymentSuccess.jsx
 │   │   ├── NotFound.jsx
 │   │   ├── admin/
-│   │   │   └── Health.jsx         # /admin/health — gated to VITE_ADMIN_EMAIL
+│   │   │   ├── Health.jsx         # /admin/health — Mission Control tabbed dashboard
+│   │   │   └── widgets/           # FeatureFeedbackWidget
+│   │   ├── auth/
+│   │   │   └── AuthConfirm.jsx    # /auth/confirm — email confirmation redirect target
 │   │   ├── account/
 │   │   │   ├── MyCertificates.jsx
 │   │   │   ├── MyReferrals.jsx
+│   │   │   ├── Achievements.jsx   # /account/achievements — gamification page
 │   │   │   └── EmailPreferences.jsx
 │   │   ├── changelog/
 │   │   │   └── ChangelogPage.jsx
@@ -106,7 +117,8 @@ fypro-v2/
 │   │       └── RoadmapColumn.jsx
 │   ├── features/
 │   │   ├── shell/
-│   │   │   └── AppShell.jsx       # Sidebar + layout wrapper for /app routes
+│   │   │   └── AppShell.jsx       # Sidebar + layout wrapper for /app routes (RankPill, Achievements nav)
+│   │   ├── dashboard/             # Dashboard sub-components (DashTopBar with notification bell, etc.)
 │   │   ├── topicValidator/
 │   │   │   └── TopicValidator.jsx
 │   │   ├── chapterArchitect/
@@ -120,16 +132,21 @@ fypro-v2/
 │   │   ├── projectReviewer/
 │   │   │   └── ProjectReviewer.jsx
 │   │   ├── defensePrep/
-│   │   │   └── DefensePrep.jsx    # Defense Simulator
+│   │   │   ├── DefensePrep.jsx    # Defense Simulator (academic tribunal UI)
+│   │   │   └── PastSessions.jsx   # Past Sessions tab — session history + transcripts
 │   │   ├── supervisorPrep/
 │   │   │   └── SupervisorPrep.jsx # Supervisor Meeting Prep Agent
 │   │   └── supervisorEmail/
 │   │       └── SupervisorEmail.jsx
 │   ├── components/
-│   │   ├── ProtectedRoute.jsx
+│   │   ├── ProtectedRoute.jsx     # Auth + ban + adminOnly route guard
 │   │   ├── CookieBanner.jsx       # NDPA 2023 consent banner (NOT CookieConsent.jsx)
-│   │   ├── PaidFeatureGate.jsx    # Wrapper for paid-gated UI
+│   │   ├── PaidFeatureGate.jsx    # Paid-gated UI — opens Paystack inline directly (no /pricing redirect)
 │   │   ├── PaymentIssueModal.jsx
+│   │   ├── NotificationPanel.jsx  # Bell dropdown — reads notifications table
+│   │   ├── PWAInstallPrompt.jsx   # Bottom-sheet install prompt
+│   │   ├── FyproLogo.jsx          # Theme-aware logo (light/dark variants)
+│   │   ├── Spinner.jsx            # Consistent async-button spinner
 │   │   ├── Toast.jsx
 │   │   ├── Footer.jsx
 │   │   ├── ApiErrorBox.jsx
@@ -137,27 +154,42 @@ fypro-v2/
 │   │   ├── RouteProgressBar.jsx
 │   │   ├── WhatsAppButton.jsx
 │   │   ├── AnonymousMigrationModal.tsx
-│   │   ├── OfflineBanner.tsx
+│   │   ├── OfflineBanner.tsx      # Offline + amber "cached data" variant
 │   │   ├── badges/                # BadgeRow, DefenseReadyBadge, StepBadge
+│   │   ├── celebration/           # CelebrationModal (Tier 2 confetti), DefenseCelebration (Tier 3 full-screen)
 │   │   ├── changelog/             # AnnouncementBanner, ChangelogEntry
-│   │   ├── defense/               # CertificateUnlock
+│   │   ├── defense/               # CertificateUnlock, CertificateDownloadModal (style/orientation picker)
 │   │   ├── feedback/              # FeedbackThumbs
+│   │   ├── momentum/              # MomentumRing — 7-day activity SVG ring
 │   │   ├── onboarding/            # OnboardingNudge, ReferralCapture
-│   │   └── share/                 # DefenseShareCard
+│   │   ├── rank/                  # RankPill sidebar component
+│   │   ├── share/                 # DefenseShareCard
+│   │   └── skeletons/             # Per-route page skeleton components
 │   ├── hooks/
-│   │   ├── useProjectState.ts     # Loads project, manages workflow state
+│   │   ├── useProjectState.ts     # Loads project, manages workflow state + offline snapshot fallback
 │   │   ├── usePaidFeatures.js     # Reads user_entitlements from Supabase
 │   │   ├── usePaystackCheckout.js # Paystack inline popup hook
+│   │   ├── useAchievements.ts     # Gamification — achievements + realtime updates
+│   │   ├── useMomentum.ts         # 7-day activity ring data
+│   │   ├── useNotifications.js    # Notification bell state
+│   │   ├── useRank.ts             # Derives rank from user progress
 │   │   ├── useUser.ts
 │   │   ├── useUserProgress.ts
 │   │   ├── useOnboardingState.ts
 │   │   └── useRunLimit.js
 │   ├── lib/
-│   │   ├── supabase.ts            # Primary Supabase client (use this one)
-│   │   ├── supabase-client.ts     # Legacy — may overlap with supabase.ts; verify before use
+│   │   ├── supabase.ts            # Primary Supabase client (supabase-client.ts is gone — this is the only one)
 │   │   ├── analytics.js           # PostHog: trackEvent, identifyUser, resetUser
 │   │   ├── sentry.ts
-│   │   ├── certificate.ts
+│   │   ├── certificate.ts         # jsPDF certs — 3 styles × 2 orientations + QR code
+│   │   ├── checkAchievements.ts   # Calls /api/ai?action=check-achievements
+│   │   ├── celebrations.ts        # localStorage celebration dedupe
+│   │   ├── generateReport.js      # PDF progress report (Bold Nigerian Tech design) + generateReport.test.js
+│   │   ├── notifications.js       # Client helpers to insert notifications
+│   │   ├── offline-snapshot.ts    # Persist/patch/read/clear offline project snapshot
+│   │   ├── db.ts
+│   │   ├── storage.ts             # USER_STORAGE_KEYS registry
+│   │   ├── routingCache.ts
 │   │   ├── entitlements-cache.ts
 │   │   ├── feedback.ts
 │   │   ├── onboarding.ts
@@ -166,8 +198,8 @@ fypro-v2/
 │   │   ├── shareCard.ts
 │   │   └── sync-queue.ts
 │   ├── services/
-│   │   ├── api.js                 # Frontend API call helpers
-│   │   └── prompts.js             # AI prompt builders
+│   │   ├── api.js                 # Frontend API call helpers (OFFLINE early exit + timeouts)
+│   │   └── prompts.js             # AI prompt builders (defense + reviewer prompts now resolved SERVER-side)
 │   ├── context/
 │   │   ├── AppContext.jsx         # Global state (project data, step results)
 │   │   └── ThemeContext.jsx       # Light/dark mode state
@@ -175,36 +207,41 @@ fypro-v2/
 │   │   ├── changelog.ts
 │   │   ├── roadmap.ts
 │   │   └── universities.js        # Nigerian universities list
-│   ├── emails/                    # React Email templates (frontend copy — also in api/_emails/)
-│   │   ├── render.tsx
-│   │   └── templates/
-│   │       ├── welcome.tsx
-│   │       ├── defense-nudge.tsx
-│   │       └── urgency-reminder.tsx
-│   └── old files/                 # v1 vanilla JS — reference only, never import
+│   └── emails/                    # React Email templates (frontend copy — also in api/_emails/)
+│       ├── render.tsx
+│       └── templates/
+│           ├── welcome.tsx
+│           ├── defense-nudge.tsx
+│           └── urgency-reminder.tsx
+│   # NOTE: src/old files/ (v1 vanilla JS) was deleted from the repo May 2026
 ├── api/                           # Vercel serverless functions (12 max on Hobby plan)
-│   ├── admin.js                   # Admin dashboard data + Sentry + Telegram commands
-│   ├── ai.js                      # Claude proxy — workflow + defense + supervisor-prep
-│   ├── auth.js                    # Login/signup/forgot-password + rate limiting
-│   ├── certificate.js             # PDF certificate generation (score >= 7/10)
-│   ├── notify.js                  # Telegram outbound alerts + inbound bot webhook
-│   ├── payments.js                # Paystack initiate/verify/webhook/consume-reset
-│   ├── project-reviewer.js        # PDF upload + Claude review (Defense Pack only)
+│   ├── admin.js                   # Admin data + Sentry + Telegram commands + ping + error-check + maintenance toggle
+│   ├── ai.js                      # Claude proxy — workflow + defense + supervisor-prep + check-achievements
+│   ├── auth.js                    # Login/signup/forgot-password + rate limiting + ban enforcement
+│   ├── certificate.js             # Certificate record creation/verification (score >= 7/10)
+│   ├── notify.js                  # Telegram alerts + bot webhook + push subscribe/unsubscribe + send-nudges cron
+│   ├── payments.js                # Paystack initiate/verify/webhook/consume-reset (CAS guard)
+│   ├── project-reviewer.js        # PDF upload + Claude review (Defense Pack only, 4 MB cap)
 │   ├── referral.js                # Referral tracking + defense credit milestones
 │   ├── research.js                # Semantic Scholar + OpenAlex + Claude
 │   ├── send-nurture-email.ts      # Welcome + Day 3 + Day 7 email sequences
 │   ├── share-card.js              # Satori PNG share card generation
-│   ├── speak.js                   # ElevenLabs TTS proxy
+│   ├── speak.js                   # ElevenLabs TTS proxy (gated on defense_pack)
 │   ├── _lib/                      # Shared utilities (not Vercel functions)
 │   │   ├── cors.js                # setCorsHeaders() — used by every endpoint
 │   │   ├── supabase-admin.js      # Service-role Supabase client
-│   │   ├── telegram.js            # sendTelegramAlert(), sendTelegramAlertOnce()
+│   │   ├── telegram.js            # sendTelegramAlert(), sendTelegramAlertOnce(), broadcast helpers
 │   │   ├── pricing.js             # Plan definitions and kobo amounts
 │   │   ├── papers.js              # Semantic Scholar + OpenAlex fetch logic
 │   │   ├── credit-user.js         # Grant entitlements after verified payment
 │   │   ├── cache.js               # Upstash response caching
 │   │   ├── rate-limit.js          # Upstash rate limiter helpers
 │   │   ├── usage-tracker.js       # Daily token/cost tracking
+│   │   ├── ai-prompts.js          # SERVER-side system prompts (defense + reviewer — never trust client prompts)
+│   │   ├── anthropic-proxy.js     # Shared Anthropic call wrapper
+│   │   ├── validate.js            # Shared Zod validation schemas
+│   │   ├── trace.js               # Request trace ID generator + prefixed logger
+│   │   ├── maintenance.js         # Redis-backed maintenance mode kill switch
 │   │   ├── defense-credit-check.js
 │   │   └── system-log.js
 │   └── _emails/                   # Email templates used by send-nurture-email.ts
@@ -214,20 +251,25 @@ fypro-v2/
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
 ├── migrations/                    # SQL files — run in Supabase SQL Editor
-│   └── 0002 through 0014_*.sql
+│   └── 0002 through 0028_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions, 0026 user_achievements)
 ├── scripts/                       # Dev/ops scripts — NOT deployed
 │   ├── verify-rls-after-refactor.js  # RLS regression test
 │   ├── flush-reviewer-rate-limits.js
+│   ├── register-telegram-webhook.js
+│   ├── staging-schema.sql         # Schema dump for the staging Supabase project
 │   ├── load-env.js
+│   ├── generate-pwa-icons.mjs / generate-pwa-screenshots.mjs
 │   └── screenshot-*.mjs           # OG image / flyer screenshot scripts
 ├── supabase/
 │   ├── config.toml                # Local dev config — additional_redirect_urls set to www.fypro.com.ng
 │   ├── functions/                 # Supabase Edge Functions
 │   └── migrations/                # Supabase-managed migrations
 ├── public/
-│   ├── fypro-logo.png
+│   ├── fypro-logo.png / fypro-logo-bg.png / fypro-logo-light.png / fypro-logo-gold.png
 │   ├── fypro-og-image.png
-│   ├── favicon.svg / favicon-16x16.png / favicon-32x32.png
+│   ├── favicon.svg / favicon-16x16.png / favicon-32x32.png / shield-star.svg
+│   ├── manifest.json              # PWA manifest (icons + screenshots)
+│   ├── brain.html / brain.js      # Live architecture viewer (Supabase Realtime)
 │   ├── robots.txt
 │   ├── sitemap.xml
 │   └── flyers/
@@ -245,15 +287,17 @@ fypro-v2/
 
 ---
 
-## 4. ENVIRONMENT VARIABLES (27 total in Vercel)
+## 4. ENVIRONMENT VARIABLES (see .env.example for the authoritative list)
 
 ### Frontend-safe (prefixed VITE_):
 - VITE_SUPABASE_URL
 - VITE_SUPABASE_ANON_KEY
 - VITE_PAYSTACK_PUBLIC_KEY         ← LIVE key active
 - VITE_POSTHOG_KEY
-- VITE_ADMIN_EMAIL                 ← gates /admin/health route
+- VITE_ADMIN_EMAIL                 ← used by ProtectedRoute adminOnly check (see note below)
 - VITE_SENTRY_DSN                  ← Sentry error reporting from frontend
+- VITE_VAPID_PUBLIC_KEY            ← Web Push subscription (same value as VAPID_PUBLIC_KEY)
+- VITE_APP_ENV                     ← "staging" on the staging Vercel project ONLY; unset in production
 
 ### Server-only (NEVER in frontend code or src/ files):
 - SUPABASE_URL
@@ -264,19 +308,28 @@ fypro-v2/
 - PAYSTACK_PUBLIC_KEY              ← server-side reference (VITE_ version used in frontend)
 - SENTRY_WEBHOOK_SECRET
 - EL_API_KEY                       ← ElevenLabs TTS
-- UPSTASH_REDIS_REST_URL
+- UPSTASH_REDIS_REST_URLco
 - UPSTASH_REDIS_REST_TOKEN
 - SENTRY_AUTH_TOKEN                ← for admin dashboard Sentry API queries
 - SENTRY_ORG                       ← org slug: "fypro"
 - SENTRY_PROJECT                   ← project slug
 - RESEND_API_KEY
 - DAILY_CAP_USD                    ← $10/day default
-- ADMIN_EMAIL
-- CRON_SECRET                      ← gates send-nurture-email + daily-report cron
+- ADMIN_EMAIL                      ← server-side admin checks in api/ endpoints
+- CRON_SECRET                      ← gates send-nurture-email + daily-report + error-check crons
 - TELEGRAM_BOT_TOKEN               ← @fypro_admin_bot token
 - TELEGRAM_CHAT_ID                 ← Taiwo's personal Telegram chat ID
+- TELEGRAM_WEBHOOK_SECRET          ← bot rejects ALL inbound updates if unset (fails closed)
+- VAPID_PUBLIC_KEY                 ← Web Push (used by api/notify.js)
+- VAPID_PRIVATE_KEY                ← Web Push (used by api/notify.js)
 - GMAIL_USER                       ← unused, kept for future use
 - GMAIL_APP_PASSWORD               ← unused, kept for future use
+
+### KNOWN INCONSISTENCY (resolve eventually): .env.example says "never create
+### VITE_ADMIN_EMAIL" (it exposes the admin email in the JS bundle), but
+### src/components/ProtectedRoute.jsx:92 still reads it for the adminOnly route
+### gate. The client gate is convenience only — real enforcement is server-side
+### via ADMIN_EMAIL. Do not add any NEW reliance on VITE_ADMIN_EMAIL.
 
 ### Rule: if you are ever putting a server-only key into a component, hook,
 ### or any file inside src/ — STOP. That is a critical security mistake.
@@ -321,6 +374,7 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - step_name (text)
 - result (jsonb)
 - completed_at
+- updated_at (auto-updated via trigger — added migration 0022)
 
 ### defense_sessions
 - id (uuid)
@@ -337,6 +391,7 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - turn_number (integer)
 - examiner_question (text)
 - student_answer (text)
+- scores (added migration 0024 — powers Past Sessions transcripts)
 
 ### defense_certificates
 - id (uuid)
@@ -356,11 +411,40 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - user_id (FK → users)
 - paystack_reference (unique)
 - amount_kobo (integer)
-- tier ('student_pack' | 'defense_pack' | 'project_reset')
+- tier ('student_pack' | 'defense_pack' | 'defense_pack_upgrade' | 'project_reset')
 - status ('pending' | 'success' | 'failed' | 'refunded')
 - webhook_verified_at (timestamptz, nullable)
 - created_at
 - Client can SELECT own rows only. NO client INSERT/UPDATE/DELETE.
+
+### user_achievements (gamification — migration 0026)
+- id (uuid)
+- user_id (FK → users, CASCADE)
+- achievement_key (text)
+- earned_at (timestamptz)
+- Achievement unlocks are checked SERVER-side via /api/ai?action=check-achievements.
+- defense_sessions scoring column is total_score — NOT final_score (a bug here once
+  silently broke every defense achievement).
+
+### notifications (in-app bell — migration 0019)
+- id (uuid)
+- user_id (FK → users, CASCADE)
+- type, title, message (text)
+- read (boolean, default false)
+- metadata (jsonb)
+- created_at
+
+### push_subscriptions (Web Push — migration 0025)
+- id (uuid)
+- user_id (FK → users, CASCADE)
+- subscription (jsonb — the PushSubscription object)
+- last_nudged_at (timestamptz)
+- created_at
+
+### app_config (key/value — migration 0015, used for maintenance mode etc.)
+- key (text, PK)
+- value (text)
+- updated_at
 
 ### daily_usage
 - date (date, unique)
@@ -405,10 +489,11 @@ The three mistakes this project has been designed to prevent:
 
 ## 7. PAYMENT ARCHITECTURE
 
-Plans and prices (LIVE Paystack keys active):
-- student_pack: ₦2,000 (200000 kobo)
-- defense_pack: ₦3,500 (350000 kobo)
-- project_reset: ₦1,500 (150000 kobo)
+Plans and prices (LIVE Paystack keys active — source of truth: api/_lib/pricing.js):
+- student_pack:         ₦2,000 (200000 kobo)
+- defense_pack:         ₦3,500 (350000 kobo)
+- defense_pack_upgrade: ₦1,500 (150000 kobo) — upgrade path from Student Pack to Defense Pack
+- project_reset:        ₦1,500 (150000 kobo)
 
 Payment flow:
 1. Frontend calls POST /api/payments?action=initiate
@@ -424,12 +509,20 @@ Payment flow:
 CRITICAL: bodyParser must be disabled in payments.js for raw body HMAC verification.
 Idempotency: paystack_reference UNIQUE constraint + .eq('status','pending') guard prevents double-crediting.
 Race condition: Both verify and webhook paths are safe due to idempotency guard.
+All payment actions are rate-limited.
+
+Checkout UX: PaidFeatureGate opens the Paystack inline popup DIRECTLY (no navigation
+to /pricing). PostHog paywall_shown event fires when the gate renders.
 
 Project Reset flow:
 - usePaystackCheckout hook handles payment from Dashboard
 - On success → redirect to /dashboard (not /app)
 - consume-reset endpoint removes project_reset from paid_features (one-time use)
+- consume-reset is a COMPARE-AND-SWAP — it re-reads paid_features and only writes if
+  project_reset is still present, preventing double-use from concurrent requests
 - New project created, old project archived
+
+Monitoring: daily Telegram report flags orphaned pending payments (>24h old).
 
 ---
 
@@ -442,11 +535,24 @@ Actions handled by /api/ai:
 - general workflow (topic_validator, chapter_architect, etc.)
 - defense (Defense Simulator turns)
 - supervisor-prep (merged from api/supervisor-prep.js to stay within 12-function limit)
+- check-achievements (gamification unlock checks — server-side, rate-limited)
+
+Hardening (June 2026):
+- Defense + reviewer SYSTEM PROMPTS are resolved server-side from api/_lib/ai-prompts.js.
+  The client sends an action/step identifier, never the prompt text.
+- Request bodies validated with Zod (api/_lib/validate.js). Every request gets a trace ID
+  (api/_lib/trace.js) returned as X-Trace-Id and attached as a Sentry tag on the frontend.
+- Free-tier per-step run limits are enforced SERVER-side, with an atomic Redis
+  reservation to close the concurrent-request race.
+- Maintenance mode kill switch (api/_lib/maintenance.js, Redis-backed, toggled from the
+  admin dashboard) blocks generation and shows MaintenancePage.
+- User bans are enforced at the auth level, not just client-side.
 
 Rate limits (enforced via Upstash Redis):
 - General: 30 req/IP/hour, 30 req/user/day
 - Defense: 5 sessions/user/day
 - Supervisor prep: 5 req/user/day, 15 req/IP/hour
+- Free-tier per-step run limits: Chapter Architect and Methodology Advisor allow 3 free runs
 
 Daily spend cap: DAILY_CAP_USD env var ($10 default).
 Telegram alert fires at 80% and 100% of cap (deduplicated per UTC day via Redis).
@@ -486,6 +592,8 @@ Used in:
 
 Bot: @fypro_admin_bot
 Webhook: POST https://www.fypro.com.ng/api/notify (registered with www subdomain — not bare domain, Telegram doesn't follow 307 redirects)
+Webhook secret: TELEGRAM_WEBHOOK_SECRET must match the secret_token set at registration
+(scripts/register-telegram-webhook.js). If unset, the bot rejects ALL inbound updates — fails closed.
 
 Outbound alerts (fire automatically):
 - 👤 New signup
@@ -501,9 +609,16 @@ Outbound alerts (fire automatically):
 Inbound commands (tap buttons or type):
 - /start or /help → shows inline keyboard with all commands
 - /stats, /revenue, /users, /spend, /errors, /payments, /health
+- /broadcast <message> → email all users; /broadcast_paid <message> → email paid users only
 
 Daily report: cron-job.org fires daily at 20:00 UTC (9PM WAT) hitting
 GET /api/admin?action=daily-report&secret=CRON_SECRET
+The report includes orphaned pending payments (>24h) when any exist.
+
+Error spikes: cron-job.org also hits the error-check action periodically — fires a
+Telegram alert when Sentry errors spike (deduplicated via Redis).
+
+Uptime: UptimeRobot (free plan, HEAD requests) pings GET/HEAD /api/admin?action=ping.
 
 Test all alerts: GET /api/admin?action=test-all-alerts (admin only)
 
@@ -535,7 +650,9 @@ admin, ai, auth, certificate, notify, payments, project-reviewer,
 referral, research, send-nurture-email, share-card, speak
 
 1 cron job limit — used by Vercel for heartbeat (actual cron via cron-job.org).
-cron-job.org handles: daily-report at 20:00 UTC, nurture emails at 09:00 UTC.
+cron-job.org handles: daily-report at 20:00 UTC, nurture emails at 09:00 UTC,
+error-spike check, and push nudges (api/notify.js send-nudges action).
+UptimeRobot handles uptime pings (/api/admin?action=ping, accepts HEAD).
 
 If adding a new endpoint: must merge an existing one first.
 Safe merge candidates: supervisor-prep already merged into ai.js, notify.js handles both outbound alerts and inbound webhook.
@@ -610,38 +727,66 @@ Anti-patterns (NEVER do these):
 
 7. Sentry: beforeSend hook deletes email, username, and any PII before sending to Sentry.
 
-8. Admin route: /admin/health gated by VITE_ADMIN_EMAIL check — not accessible to regular users.
+8. Admin route: /admin/health client-gated via ProtectedRoute adminOnly; real enforcement
+   is server-side (ADMIN_EMAIL checks in api/ endpoints). Bans enforced at auth level.
+
+9. AI system prompts (defense + reviewer) resolved server-side from api/_lib/ai-prompts.js —
+   never accept prompt text from the client.
+
+10. Secrets scanning: gitleaks runs in CI. npm audit kept clean.
 
 Security audit completed May 2026 — 30 checks, all passed or manually verified.
+Full-stack bug hunt June 10 2026 — 9 bugs found and fixed (commits e12aa40..c549bdf):
+bans at auth level, server-side prompts, atomic run-limit reservation, consume-reset CAS,
+scoped CORS preview regex, TTS gated on defense_pack + bodyParser fix, token auto-refresh
+re-enabled, reviewer 4 MB upload cap, achievements total_score column.
 
 ---
 
-## 16. WHAT IS FULLY BUILT AND LIVE (as of May 2026)
+## 16. WHAT IS FULLY BUILT AND LIVE (as of June 2026)
 
 All features shipped and working in production (fypro.com.ng):
-- Landing page + pricing page
-- Full auth (signup with email confirmation, login, forgot password, reset)
+- Landing page (urgency CTAs, product showcase hero image) + pricing page
+- Full auth (signup with email confirmation, login, forgot password, reset, Google OAuth,
+  /auth/confirm redirect route)
 - Complete 6-step workflow (Topic Validator → Defense Prep)
 - Literature Map, Abstract Generator, Instrument Builder (embedded in steps)
 - Supervisor Meeting Prep Agent
-- Project Reviewer (PDF upload, Defense Pack gated)
-- Defense Simulator (3 AI examiners, ElevenLabs voices, scoring, certificates)
+- Project Reviewer (PDF upload, Defense Pack gated, 4 MB cap)
+- Defense Simulator (3 AI examiners, ElevenLabs voices, scoring, certificates,
+  academic tribunal UI)
 - Defense Simulator free trial (3 questions)
+- Past Sessions — defense history tab with transcripts and per-turn scores
 - Multi-project dashboard with project cards
-- Project Reset payment flow (₦1,500, consumable entitlement)
-- All three payment tiers (Student Pack, Defense Pack, Project Reset) — LIVE keys
-- Certificate generation (FYP-2026-XXXXXX, unlocks at score >= 7/10)
+- Project Reset payment flow (₦1,500, consumable entitlement, CAS-guarded)
+- All four payment tiers (Student Pack, Defense Pack, Defense Pack Upgrade,
+  Project Reset) — LIVE keys
+- Certificate generation (FYP-2026-XXXXXX, unlocks at score >= 7/10) —
+  3 PDF styles × 2 orientations, QR code, public verify page at /verify/:certNumber
+- PDF progress report (Bold Nigerian Tech design, includes companion card sections)
+- Gamification — Rank pill, Achievements page, Momentum ring, tiered celebrations
+- In-app notification system (bell + dropdown, Supabase-backed)
+- PWA — installable app, app-shell caching, install bottom sheet, SW update toast
+- Web Push notifications (VAPID, Settings toggle, cron-driven nudges)
+- Offline mode — cached project snapshot with amber offline banner
+- Performance overhaul — lazy routes, per-route skeleton screens, optimistic UI updates
 - Social share card (Satori PNG)
-- Admin dashboard (/admin/health)
-- PostHog analytics (9 events)
-- Telegram notifications (10 alert types + 8 admin commands + daily report)
-- Email nurturing (Day 0/3/7 sequences via Resend)
+- Admin dashboard (/admin/health) — Mission Control tabbed redesign, realtime feed,
+  user actions (reset limits, grant packs, diagnose), maintenance kill switch
+- PostHog analytics (incl. paywall_shown funnel event)
+- Telegram bot — alerts, admin commands, daily report, /broadcast + /broadcast_paid
+- Email — Day 0/3/7 nurture, payment receipt, broadcast (Dark Prestige design,
+  color-coded per email type)
+- Monitoring — UptimeRobot ping, error-spike cron alert, orphaned payment flagging
+- Staging environment (separate Vercel project, VITE_APP_ENV banner + Sentry env tag)
+- API hardening — Zod validation, trace IDs, server-side prompts, server-side run limits
 - Cookie consent banner (NDPA 2023)
-- Light mode + dark mode (both fully working)
+- Light mode + dark mode (both fully working, incl. public pages redesign)
 - Changelog + roadmap pages
 - Referral system with defense credits
 - Sentry error monitoring
-- Security audit passed (30 checks)
+- Security audit passed (30 checks) + June 10 bug hunt (9 fixes)
+- Live brain — public architecture viewer (public/brain.html, Supabase Realtime)
 
 Deferred to v3:
 - Supervisor Dashboard
@@ -662,7 +807,6 @@ Start of every session:
 
 File discipline:
 - Name exact files in every instruction
-- Never modify v1/ — reference only
 - Never commit .env.local or any file containing real keys
 - Never put service_role key in src/ files
 
@@ -671,6 +815,9 @@ Session discipline:
 - One task per session
 - Verify visually in browser after every session
 - Run RLS check after any schema change
+- Run `npm run typecheck` (tsc, strictNullChecks + noImplicitAny on) and
+  `npm run test` (vitest) before committing non-trivial changes
+- Commit one fix per commit during bug-fix sessions (established pattern)
 
 Critical pitfall — hardcoded colors:
 The color #0D1B2A appears in both dark backgrounds AND as text color in some components.
