@@ -117,11 +117,7 @@ html, body {
   color: var(--text-primary) !important;
 }
 .light .text-slate-50,
-.light .text-slate-100,
-.light .text-slate-200,
-[data-theme="light"] .text-slate-50,
-[data-theme="light"] .text-slate-100,
-[data-theme="light"] .text-slate-200 {
+[data-theme="light"] .text-slate-50 {
   color: var(--text-primary) !important;
 }
 .light .text-slate-300,
@@ -148,9 +144,7 @@ html, body {
 }
 
 /* ── Light mode: bg overrides for Tailwind bg classes ───────── */
-.light .bg-slate-900,
 .light .bg-slate-800,
-[data-theme="light"] .bg-slate-900,
 [data-theme="light"] .bg-slate-800 {
   background-color: var(--bg-card) !important;
 }

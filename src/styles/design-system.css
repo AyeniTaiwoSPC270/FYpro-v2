@@ -24,12 +24,9 @@
 }
 
 /* Class added by JS the moment a step first completes — one-shot */
-.nav-pill--just-completed {
-  animation: nav-complete-pulse 0.75s ease forwards;
-}
 
 /* ── Card group rules ─────────────────────────────────────────── */
-.tv-card, .ca-card, .ma-card, .wp-card, .dp-card, .se-card, .di-card, .placeholder-card {
+.tv-card, .ca-card, .ma-card, .wp-card, .dp-card, .se-card, .di-card {
   animation: card-enter 0.4s ease forwards;
   margin-left: auto;
   margin-right: auto;

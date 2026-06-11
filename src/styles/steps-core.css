@@ -116,23 +116,9 @@
   gap: 20px;
   padding: 52px 0;
 }
-.tv-loading-shield {
-  display: block;
-  filter: drop-shadow(0 6px 24px rgba(0,102,255,0.35));
-  transform-origin: center center;
-}
-.tv-shield--spinning {
-  animation: tv-spin 1.3s linear infinite;
-}
 @keyframes tv-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
-}
-.tv-loading-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  color: rgba(13,27,42,0.5);
-  letter-spacing: 0.02em;
 }
 
 /* ── Result section ──────────────────────────────────────── */

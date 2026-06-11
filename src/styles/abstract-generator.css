@@ -557,18 +557,6 @@
 }
 
 /* ── Faded step-number watermark in card background ──────── */
-.pr-watermark {
-  position: absolute;
-  top: -16px;
-  right: 14px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
-  font-size: 7rem;
-  font-weight: 400;
-  color: rgba(217, 119, 6, 0.06);
-  pointer-events: none;
-  user-select: none;
-  line-height: 1;
-}
 
 /* ── Input section ────────────────────────────────────────── */
 .pr-input-section {
@@ -747,13 +735,6 @@
 }
 
 /* Sub-text below the shield in loading state */
-.pr-loading-subtext {
-  font-family: 'Poppins', sans-serif;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  text-align: center;
-  margin: 0;
-}
 
 /* ── Result section ───────────────────────────────────────── */
 .pr-result-section {
@@ -812,11 +793,6 @@
 .pr-grade-badge[data-grade="fail"]        .pr-grade-label { color: #DC2626; }
 
 /* Score estimate — smaller monospace, muted */
-.pr-grade-score {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: var(--text-base);
-  color: var(--color-text-secondary);
-}
 
 /* One-sentence grade justification */
 .pr-grade-justification {
@@ -1061,14 +1037,6 @@
 .nav-pill--completed .nav-pill__label { color: rgba(255,255,255,0.50) !important; }
 
 /* ── 3. Placeholder card ───────────────────────────────────────── */
-.app-content .placeholder-card {
-  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
-  border: 1px solid rgba(255,255,255,0.06) !important;
-  border-left: 4px solid rgba(0,102,255,0.45) !important;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.55) !important;
-}
-.placeholder-card__step-label { color: rgba(255,255,255,0.85) !important; }
-.placeholder-card__subtitle   { color: rgba(255,255,255,0.35) !important; }
 
 /* ── 4. All step card backgrounds ──────────────────────────────── */
 .app-content .tv-card {
@@ -1149,7 +1117,6 @@
 .app-content .ca-description,
 .app-content .ma-description,
 .app-content .wp-description,
-.app-content .dp-scan-subtext,
 .app-content .se-description { color: rgba(255,255,255,0.55) !important; }
 
 /* ── 7. Form / body labels ─────────────────────────────────────── */
@@ -1162,7 +1129,6 @@
 .app-content .dp-flags-header { color: rgba(255,255,255,0.32) !important; }
 
 /* ── 8. Loading text ───────────────────────────────────────────── */
-.app-content .tv-loading-text { color: rgba(255,255,255,0.48) !important; }
 
 /* ── 9. TV verdict elements ────────────────────────────────────── */
 .app-content .tv-verdict-reason        { color: rgba(255,255,255,0.62) !important; }
@@ -1343,12 +1309,10 @@
 .app-content .lm-citation-title { color: rgba(255,255,255,0.80) !important; }
 
 /* ── 20. PR project reviewer sub-elements ──────────────────────── */
-.app-content .pr-watermark           { color: rgba(0,102,255,0.05) !important; }
 .app-content .pr-upload-zone         { border-color: rgba(255,255,255,0.12) !important; background: rgba(255,255,255,0.02) !important; }
 .app-content .pr-upload-zone:hover   { border-color: rgba(0,102,255,0.5) !important; background: rgba(0,102,255,0.05) !important; }
 .app-content .pr-upload-zone--drag   { border-color: #0066FF !important; background: rgba(0,102,255,0.08) !important; }
 .app-content .pr-file-chip           { background: rgba(217,119,6,0.08) !important; border-color: rgba(217,119,6,0.25) !important; }
-.app-content .pr-grade-score         { color: rgba(255,255,255,0.55) !important; }
 .app-content .pr-grade-justification { color: rgba(255,255,255,0.60) !important; }
 .app-content .pr-feedback-item--strength { background: rgba(22,163,74,0.06)  !important; }
 .app-content .pr-feedback-item--weakness { background: rgba(220,38,38,0.05)  !important; }
@@ -1505,8 +1469,7 @@
   }
 
   /* Step cards: full width */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
-  .se-card, .lm-card, .ag-card, .pr-card, .placeholder-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .lm-card, .ag-card, .pr-card {
     max-width: 100% !important;
   }
 
@@ -1552,8 +1515,7 @@
   }
 
   /* Cards: reduce padding */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
-  .se-card, .placeholder-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
     padding: 24px 16px 28px !important;
   }
 
@@ -1591,7 +1553,6 @@
     flex-wrap: wrap;
     gap: 8px;
   }
-  .dp-defense-title { font-size: 0.88rem !important; }
   /* Hide absolutely-positioned label — overlaps end button at mobile widths */
   .dp-defense-panel-label { display: none !important; }
   /* 44px touch target on end button */
@@ -1604,8 +1565,7 @@
 /* ── 375px small phones ──────────────────────────────────────── */
 @media (max-width: 375px) {
   /* Ensure content cards have minimal padding so text isn't clipped */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
-  .se-card, .placeholder-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
     padding: 22px 14px 28px !important;
   }
 
@@ -1616,15 +1576,8 @@
   }
 
   /* Examiner name chip: truncate long persona names gracefully */
-  .dp-examiner-name {
-    max-width: 110px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
   /* Defense header: reduce font and padding at very small widths */
-  .dp-defense-title { font-size: 0.8rem !important; }
   .dp-chat-area     { padding: 8px !important; gap: 10px !important; }
   .dp-input-area    { padding: 8px 10px 14px !important; }
 

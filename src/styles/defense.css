@@ -31,13 +31,6 @@
   margin-bottom: 6px;
 }
 
-.dp-scan-subtext {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  color: rgba(13, 27, 42, 0.5);
-  line-height: 1.6;
-}
-
 /* ── Loading section ─────────────────────────────────────── */
 .dp-loading-section {
   display: flex;
@@ -45,31 +38,6 @@
   align-items: center;
   gap: 20px;
   padding: 52px 0 40px;
-}
-
-.dp-error-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.8rem;
-  color: #DC2626;
-  text-align: center;
-  margin-top: -8px;
-}
-
-.dp-retry-btn {
-  padding: 9px 22px;
-  background: transparent;
-  border: 1.5px solid #DC2626;
-  border-radius: 8px;
-  color: #DC2626;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-.dp-retry-btn:hover {
-  background: #DC2626;
-  color: #ffffff;
 }
 
 /* ── Flags section ───────────────────────────────────────── */
@@ -170,26 +138,6 @@
 }
 
 /* ── Action buttons ──────────────────────────────────────── */
-.dp-btn-start-scan {
-  width: 100%;
-  padding: 13px;
-  background: #0066FF;
-  border: none;
-  border-radius: 10px;
-  color: #ffffff;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-  margin-top: 8px;
-}
-.dp-btn-start-scan:hover {
-  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
-  transform: translateY(-1px);
-}
-.dp-btn-start-scan:active { transform: translateY(0); }
-.dp-btn-start-scan:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .dp-buttons-section {
   display: flex;
@@ -261,14 +209,6 @@
   flex-shrink: 0;
 }
 
-.dp-defense-title {
-  font-family: 'DM Serif Display', 'Georgia', serif;
-  font-size: 1.05rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.01em;
-}
-
 .dp-defense-end-btn {
   padding: 7px 16px;
   background: transparent;
@@ -307,12 +247,6 @@
 }
 
 /* A "turn" groups the student bubble + score badge together */
-.dp-turn {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-end; /* student side */
-}
 
 /* ── Examiner bubble (left) ──────────────────────────────── */
 .dp-examiner-wrap {
@@ -526,12 +460,6 @@
   align-items: center;
   gap: 14px;
   padding: 14px 4px;
-}
-
-.dp-verdict-loading-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.55);
 }
 
 

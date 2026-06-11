@@ -44,9 +44,6 @@
   color: var(--color-text-primary);
 }
 
-.di-section--hidden  { display: none; }
-.di-section--visible { display: block; }
-
 
 /* ── Three-Examiner Defence Panel additions ──────────────────────────────── */
 

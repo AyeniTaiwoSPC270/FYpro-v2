@@ -17,7 +17,6 @@
   .di-btn-copy,
   .wp-btn-generate,
   .wp-btn-confirm,
-  .dp-btn-start-scan,
   .dp-btn-enter-defense,
   .dp-btn-go-back,
   .se-btn-generate,
@@ -37,57 +36,6 @@
 .light .db-sidebar {
   background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%) !important;
   border-right: 1px solid var(--border-color) !important;
-}
-[data-theme="light"] .db-sidebar__brand,
-.light .db-sidebar__brand {
-  border-bottom-color: var(--border-color);
-}
-[data-theme="light"] .db-sidebar__wordmark,
-.light .db-sidebar__wordmark {
-  color: var(--text-primary);
-}
-[data-theme="light"] .db-sidebar__nav-label,
-.light .db-sidebar__nav-label {
-  color: rgba(13,27,42,0.3);
-}
-[data-theme="light"] .db-step-item:hover,
-.light .db-step-item:hover {
-  background: rgba(0,0,0,0.04);
-}
-[data-theme="light"] .db-step-item__num,
-.light .db-step-item__num {
-  color: rgba(13,27,42,0.3);
-}
-[data-theme="light"] .db-step-item--active .db-step-item__num,
-.light .db-step-item--active .db-step-item__num {
-  color: #2563EB;
-}
-[data-theme="light"] .db-step-item__label,
-.light .db-step-item__label {
-  color: rgba(13,27,42,0.55);
-}
-[data-theme="light"] .db-step-item--active .db-step-item__label,
-.light .db-step-item--active .db-step-item__label {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-[data-theme="light"] .db-step-item--completed .db-step-item__label,
-.light .db-step-item--completed .db-step-item__label {
-  color: rgba(13,27,42,0.38);
-}
-[data-theme="light"] .db-sidebar__context,
-.light .db-sidebar__context {
-  border-top-color: var(--border-color);
-}
-[data-theme="light"] .db-context__uni,
-.light .db-context__uni {
-  color: rgba(13,27,42,0.72);
-}
-[data-theme="light"] .db-context__dept,
-[data-theme="light"] .db-context__level,
-.light .db-context__dept,
-.light .db-context__level {
-  color: rgba(13,27,42,0.45);
 }
 
 /* ── FYPro Shared Loading Messages ───────────────────────────────────────── */
@@ -189,7 +137,6 @@
 /* 1. HEADER ──────────────────────────────────────────────────────────────── */
 
 /* Hide the old text title — replaced by shield SVG in JSX */
-.dp-defense-title { display: none !important; }
 
 /* Center panel label — absolutely positioned so logo+button stay at edges */
 .dp-defense-panel-label {
@@ -475,7 +422,6 @@ html {
   .di-btn-continue:active:not(:disabled),
   .wp-btn-generate:active:not(:disabled),
   .wp-btn-confirm:active:not(:disabled),
-  .dp-btn-start-scan:active:not(:disabled),
   .dp-btn-enter-defense:active:not(:disabled),
   .pr-btn-review:active:not(:disabled),
   .pr-btn-confirm:active:not(:disabled),
@@ -838,8 +784,6 @@ html {
 [data-theme="light"] [data-pub] .text-white\/\[0\.62\],
 [data-theme="light"] [data-pub] .text-white\/\[0\.28\] { color: var(--pub-text) !important; }
 
-[data-theme="light"] [data-pub] .text-slate-100,
-[data-theme="light"] [data-pub] .text-slate-200,
 [data-theme="light"] [data-pub] .text-slate-300,
 [data-theme="light"] [data-pub] .text-slate-400 { color: var(--pub-text-muted) !important; }
 
@@ -847,7 +791,6 @@ html {
 
 [data-theme="light"] [data-pub] .border-white\/\[0\.06\],
 [data-theme="light"] [data-pub] .border-white\/\[0\.07\],
-[data-theme="light"] [data-pub] .border-white\/\[0\.08\],
 [data-theme="light"] [data-pub] .border-white\/\[0\.1\],
 [data-theme="light"] [data-pub] .border-white\/5 { border-color: var(--pub-border-dim) !important; }
 
@@ -972,7 +915,6 @@ html {
 [data-theme="light"] nav .text-white\/65,
 [data-theme="light"] nav .text-white\/40 { color: rgba(13,27,42,0.6) !important; }
 [data-theme="light"] nav .text-white { color: #0D1B2A !important; }
-[data-theme="light"] nav .text-white\/85 { color: rgba(13,27,42,0.85) !important; }
 [data-theme="light"] nav .border-white\/\[0\.22\] { border-color: rgba(13,27,42,0.2) !important; }
 [data-theme="light"] nav .border-white\/\[0\.18\] { border-color: rgba(13,27,42,0.15) !important; }
 [data-theme="light"] nav .hover\:text-white:hover { color: #0D1B2A !important; }
@@ -1065,9 +1007,6 @@ html {
 /* ── ProjectCard: more compact on very small screens ─────────── */
 @media (max-width: 400px) {
   /* Project card padding */
-  .db-project-card {
-    padding: 18px 16px 16px !important;
-  }
 
   /* Step navigator: use minimal connector on tiny screens */
   .nav-connector {
@@ -1075,9 +1014,6 @@ html {
   }
 
   /* Stat card grid: reduce gap further */
-  .db-stat-grid {
-    gap: 10px !important;
-  }
 }
 
 /* ── AppShell app-content scroll: safe area for iOS notch ──────── */
@@ -1093,11 +1029,6 @@ html {
 }
 
 /* ── Dashboard main: iOS safe area ─────────────────────────────── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .dashboard-main {
-    padding-bottom: calc(48px + env(safe-area-inset-bottom));
-  }
-}
 
 /* ── Touch targets: all interactive elements min 44px ──────────── */
 @media (max-width: 768px) {
@@ -1144,11 +1075,6 @@ html {
 }
 
 /* ── Dashboard: "My Projects" header ─────────────────────────── */
-@media (max-width: 480px) {
-  .db-projects-header h1 {
-    font-size: 1.3rem !important;
-  }
-}
 
 /* ── Light mode nav on mobile: ensure pills are visible ────────── */
 @media (max-width: 768px) {
@@ -1166,27 +1092,11 @@ html {
 /* ── DashProgressJourney: timeline wrapping on mobile ─────────── */
 @media (max-width: 480px) {
   /* Timeline content: reduce left column width slightly */
-  .db-journey-timeline-col {
-    width: 36px;
-    min-width: 36px;
-  }
 }
 
 /* ── Dashboard warning banner: wrap text on narrow screens ─────── */
-@media (max-width: 480px) {
-  .db-validate-banner {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 8px !important;
-  }
-}
 
 /* ── ProjectsGrid: header on narrow screens ─────────────────────── */
-@media (max-width: 480px) {
-  .db-projects-grid h1 {
-    font-size: 1.3rem;
-  }
-}
 
 /* ── Fix: dashboard content area min-width so flex doesn't shrink ── */
 .flex-1.flex.flex-col.overflow-hidden.min-w-0 {
@@ -1217,11 +1127,6 @@ html {
 }
 
 /* ── Pricing page: extra-small card prices ──────────────────────── */
-@media (max-width: 400px) {
-  .lp-pricing-card-price {
-    font-size: 2rem !important;
-  }
-}
 
 /* ── Skeleton shimmer ───────────────────────────────────────────────────── */
 @keyframes fypro-shimmer {

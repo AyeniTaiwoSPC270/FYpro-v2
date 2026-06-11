@@ -44,10 +44,6 @@
 .light .step-list__item--completed .step-list__name {
   color: var(--text-secondary);
 }
-[data-theme="light"] .sidebar__wordmark,
-.light .sidebar__wordmark {
-  color: var(--text-primary);
-}
 [data-theme="light"] .sidebar__back-dashboard,
 .light .sidebar__back-dashboard {
   color: var(--text-secondary);
@@ -101,10 +97,8 @@
 /* border opacity variants */
 [data-theme="light"] .border-slate-800\/80,
 [data-theme="light"] .border-slate-800\/60,
-[data-theme="light"] .border-slate-800\/40,
 .light .border-slate-800\/80,
-.light .border-slate-800\/60,
-.light .border-slate-800\/40 {
+.light .border-slate-800\/60 {
   border-color: var(--border-color) !important;
 }
 
@@ -149,10 +143,6 @@
 }
 
 /* bg-white/6 and similar */
-[data-theme="light"] .bg-white\/6,
-.light .bg-white\/6 {
-  background-color: rgba(0,0,0,0.04) !important;
-}
 
 /* ── lm- Literature Map: real papers, sparse note, citations ──────────────── */
 
@@ -319,13 +309,11 @@
 [data-theme="light"] .app-content .ca-description,
 [data-theme="light"] .app-content .ma-description,
 [data-theme="light"] .app-content .wp-description,
-[data-theme="light"] .app-content .dp-scan-subtext,
 [data-theme="light"] .app-content .se-description,
 .light .app-content .tv-description,
 .light .app-content .ca-description,
 .light .app-content .ma-description,
 .light .app-content .wp-description,
-.light .app-content .dp-scan-subtext,
 .light .app-content .se-description {
   color: rgba(13,27,42,0.6) !important;
 }
@@ -581,13 +569,6 @@
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
 }
 
-.sp-error-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.8125rem;
-  color: #DC2626;
-  margin-bottom: 14px;
-}
-
 .sp-btn-submit {
   width: 100%;
   padding: 14px 24px;
@@ -623,12 +604,6 @@
   align-items: center;
   padding: 32px 0;
   gap: 16px;
-}
-
-.sp-loading-text {
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.45);
 }
 
 /* Result */
@@ -803,10 +778,6 @@
 @keyframes step-btn-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.7; }
-}
-.step-btn--loading {
-  animation: step-btn-pulse 1s ease-in-out infinite !important;
-  pointer-events: none;
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -1394,15 +1365,6 @@
    ============================================================ */
 
 /* Desktop default: 3 columns (set via inline style in JSX) */
-.roadmap-grid { grid-template-columns: repeat(3, 1fr); }
-
-@media (max-width: 1024px) {
-  .roadmap-grid { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width: 640px) {
-  .roadmap-grid { grid-template-columns: 1fr; }
-}
 
 /* ============================================================
    LIGHT MODE — APPSHELL + ALL STEP COMPONENTS
@@ -1454,17 +1416,6 @@
 .light .nav-pill--completed .nav-pill__label { color: rgba(0,0,0,0.5) !important; }
 
 /* ── 3. Placeholder card ──────────────────────────────────── */
-[data-theme="light"] .app-content .placeholder-card,
-.light .app-content .placeholder-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%) !important;
-  border: 1px solid rgba(0,0,0,0.07) !important;
-  border-left: 4px solid rgba(0,102,255,0.25) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04) !important;
-}
-[data-theme="light"] .placeholder-card__step-label,
-.light .placeholder-card__step-label { color: #0D1B2A !important; }
-[data-theme="light"] .placeholder-card__subtitle,
-.light .placeholder-card__subtitle { color: rgba(13,27,42,0.4) !important; }
 
 /* ── 4. Step card backgrounds ─────────────────────────────── */
 [data-theme="light"] .app-content .tv-card,
@@ -1577,13 +1528,11 @@
 [data-theme="light"] .app-content .ca-description,
 [data-theme="light"] .app-content .ma-description,
 [data-theme="light"] .app-content .wp-description,
-[data-theme="light"] .app-content .dp-scan-subtext,
 [data-theme="light"] .app-content .se-description,
 .light .app-content .tv-description,
 .light .app-content .ca-description,
 .light .app-content .ma-description,
 .light .app-content .wp-description,
-.light .app-content .dp-scan-subtext,
 .light .app-content .se-description { color: rgba(13,27,42,0.5) !important; }
 
 /* ── 7. Form labels ───────────────────────────────────────── */
@@ -1603,8 +1552,6 @@
 .light .app-content .dp-flags-header { color: rgba(13,27,42,0.4) !important; }
 
 /* ── 8. Loading text ──────────────────────────────────────── */
-[data-theme="light"] .app-content .tv-loading-text,
-.light .app-content .tv-loading-text { color: rgba(13,27,42,0.5) !important; }
 
 /* ── 9. TV verdict elements ───────────────────────────────── */
 [data-theme="light"] .app-content .tv-verdict-reason,
@@ -1885,16 +1832,12 @@
 .light .app-content .lm-citation-title { color: rgba(13,27,42,0.8) !important; }
 
 /* ── 20. PR project reviewer ──────────────────────────────── */
-[data-theme="light"] .app-content .pr-watermark,
-.light .app-content .pr-watermark { color: rgba(0,102,255,0.05) !important; }
 [data-theme="light"] .app-content .pr-upload-zone,
 .light .app-content .pr-upload-zone { border-color: rgba(13,27,42,0.18) !important; background: transparent !important; }
 [data-theme="light"] .app-content .pr-upload-zone:hover,
 .light .app-content .pr-upload-zone:hover { border-color: #0066FF !important; background: rgba(0,102,255,0.03) !important; }
 [data-theme="light"] .app-content .pr-file-chip,
 .light .app-content .pr-file-chip { background: rgba(217,119,6,0.06) !important; border-color: rgba(217,119,6,0.2) !important; }
-[data-theme="light"] .app-content .pr-grade-score,
-.light .app-content .pr-grade-score { color: rgba(13,27,42,0.55) !important; }
 [data-theme="light"] .app-content .pr-grade-justification,
 .light .app-content .pr-grade-justification { color: rgba(13,27,42,0.62) !important; }
 [data-theme="light"] .app-content .pr-questions-context,
@@ -1946,8 +1889,6 @@
   background: #ffffff !important;
   color: #0D1B2A !important;
 }
-[data-theme="light"] .sp-loading-text,
-.light .sp-loading-text { color: rgba(13,27,42,0.45) !important; }
 [data-theme="light"] .sp-result-title,
 .light .sp-result-title { color: #0D1B2A !important; }
 [data-theme="light"] .sp-question-item,
