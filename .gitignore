@@ -53,5 +53,9 @@ dist-ssr
 # Temporary/local docs
 PRODUCT.md
 supabase/.temp/
+docs/superpowers/
+
+# Generated marketing assets (produced by scripts/screenshot-flyers.mjs)
+public/flyers/*.png
 
 .env*.local

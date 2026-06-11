@@ -1,28 +1,38 @@
 import puppeteer from 'puppeteer';
-import { pathToFileURL } from 'url';
+import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const publicDir = path.resolve(__dirname, '..', 'public', 'flyers');
+const flyersDir = path.resolve(__dirname, 'flyers');
+const outputDir = path.resolve(__dirname, '..', 'public', 'flyers');
 
 const flyers = [
   {
-    html: path.join(publicDir, 'flyer-instagram.html'),
-    png:  path.join(publicDir, 'flyer-instagram.png'),
+    html: path.join(flyersDir, 'flyer-whatsapp.html'),
+    png:  path.join(outputDir, 'flyer-whatsapp.png'),
+    width: 800, height: 800,
+    deviceScaleFactor: 2,
+    label: 'flyer-whatsapp',
+  },
+  {
+    html: path.join(flyersDir, 'flyer-instagram.html'),
+    png:  path.join(outputDir, 'flyer-instagram.png'),
     width: 1080, height: 1350,
+    deviceScaleFactor: 1,
     label: 'flyer-instagram',
   },
   {
-    html: path.join(publicDir, 'flyer-instagram-21dev.html'),
-    png:  path.join(publicDir, 'flyer-instagram-21dev.png'),
+    html: path.join(flyersDir, 'flyer-instagram-21dev.html'),
+    png:  path.join(outputDir, 'flyer-instagram-21dev.png'),
     width: 1080, height: 1350,
+    deviceScaleFactor: 1,
     label: 'flyer-instagram-21dev',
   },
   {
-    html: path.join(publicDir, 'flyer-twitter.html'),
-    png:  path.join(publicDir, 'flyer-twitter.png'),
+    html: path.join(flyersDir, 'flyer-twitter.html'),
+    png:  path.join(outputDir, 'flyer-twitter.png'),
     width: 1600, height: 900,
+    deviceScaleFactor: 1,
     label: 'flyer-twitter',
   },
 ];
@@ -36,10 +46,10 @@ for (const flyer of flyers) {
   console.log(`Rendering ${flyer.label}...`);
   const page = await browser.newPage();
 
-  await page.setViewport({ width: flyer.width, height: flyer.height, deviceScaleFactor: 1 });
+  await page.setViewport({ width: flyer.width, height: flyer.height, deviceScaleFactor: flyer.deviceScaleFactor });
   await page.goto(pathToFileURL(flyer.html).href, { waitUntil: 'networkidle0', timeout: 30000 });
 
-  // Extra wait for Google Fonts to render
+  // Wait for Google Fonts to finish rendering
   await new Promise(r => setTimeout(r, 2000));
 
   await page.screenshot({
