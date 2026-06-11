@@ -1,0 +1,1641 @@
+/* ============================================================
+   ABSTRACT GENERATOR — Step 2 companion card  (ag-)
+   ============================================================ */
+
+/* ── Card enter animation ────────────────────────────────── */
+@keyframes ag-card-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.ag-card {
+  background: linear-gradient(145deg, #ffffff 0%, #ecfeff 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-left: 4px solid #0891B2;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+  margin: 24px auto 0;
+  animation: ag-card-enter 0.45s ease forwards;
+}
+
+/* Faded watermark — large 'AG' behind the card content */
+.ag-card::before {
+  content: 'AG';
+  position: absolute;
+  top: -8px;
+  right: 14px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7rem;
+  font-weight: 400;
+  color: rgba(8, 145, 178, 0.06);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Hover depth lift — matches the other step cards */
+.ag-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.ag-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Step label / card title ─────────────────────────────── */
+.ag-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+  margin: 0;
+}
+
+/* ── Companion badge pill ────────────────────────────────── */
+.ag-companion-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(8, 145, 178, 0.1);
+  color: #0E7490;
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  align-self: flex-start;
+}
+
+/* ── Description text ────────────────────────────────────── */
+.ag-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13, 27, 42, 0.5);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Generate Abstract button (blue — Generate/Analyse pattern) */
+.ag-btn-generate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.ag-btn-generate:hover {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  transform: translateY(-1px);
+}
+.ag-btn-generate:active   { transform: translateY(0); }
+.ag-btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.ag-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.ag-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Scaffold warning banner ─────────────────────────────── */
+.ag-scaffold-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #92400E;
+}
+
+/* ── Components list container ───────────────────────────── */
+.ag-components-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Individual scaffold component block ─────────────────── */
+/* Starts invisible; ag-component--visible transitions it in */
+.ag-component {
+  background: rgba(8, 145, 178, 0.04);
+  border: 1px solid rgba(8, 145, 178, 0.13);
+  border-radius: 10px;
+  padding: 16px 20px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.ag-component--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Component label (monospace, teal, uppercase) ────────── */
+.ag-component-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0E7490;
+  margin: 0 0 8px 0;
+}
+
+/* ── Component body text ─────────────────────────────────── */
+.ag-component-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* ── Copy Scaffold button (ghost style) ──────────────────── */
+.ag-btn-copy {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid rgba(13, 27, 42, 0.2);
+  border-radius: 10px;
+  color: rgba(13, 27, 42, 0.65);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.ag-btn-copy:hover {
+  border-color: #0891B2;
+  color: #0E7490;
+  background: rgba(8, 145, 178, 0.05);
+}
+
+/* Copied confirmation state — briefly goes green */
+.ag-btn-copy--copied {
+  border-color: #16A34A;
+  color: #16A34A;
+  background: rgba(22, 163, 74, 0.05);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LITERATURE MAP COMPANION CARD  (lm- prefix)
+   Companion to Step 2 — Chapter Architect.
+   Accent colour: emerald green #16A34A / #15803D.
+   Card positioned below the Abstract Generator card in the scroll area.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Outer card shell ─────────────────────────────────────── */
+.lm-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  border-left: 4px solid #16A34A;
+  box-shadow: var(--shadow-card);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 660px;
+  position: relative;
+  overflow: hidden;
+  animation: card-enter 0.4s ease forwards;
+  margin: 24px auto 0;
+}
+
+.lm-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transition: box-shadow var(--transition-base);
+}
+
+/* ── Input section ────────────────────────────────────────── */
+.lm-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Step label ───────────────────────────────────────────── */
+.lm-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: var(--text-xl);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Companion badge ──────────────────────────────────────── */
+.lm-companion-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #15803D;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  width: fit-content;
+}
+
+/* ── Description text ─────────────────────────────────────── */
+.lm-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Generate Literature Map button (green CTA) ───────────── */
+.lm-btn-generate {
+  align-self: flex-start;
+  padding: 12px 28px;
+  background: #16A34A;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+.lm-btn-generate:hover {
+  background: #15803D;
+  box-shadow: 0 0 18px rgba(22, 163, 74, 0.35);
+}
+.lm-btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Loading section ──────────────────────────────────────── */
+.lm-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 32px 0;
+}
+
+/* ── Result section ───────────────────────────────────────── */
+.lm-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Section sub-headings inside result ───────────────────── */
+.lm-section-heading {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+  margin: 0 0 14px 0;
+}
+.lm-section-heading--spaced {
+  margin-top: 32px;
+}
+
+/* ── Thematic areas grid ──────────────────────────────────── */
+.lm-themes-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Individual theme card ────────────────────────────────── */
+.lm-theme-card {
+  position: relative;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: var(--radius-md);
+  padding: 18px 16px 14px;
+  overflow: hidden;
+}
+
+/* Faded watermark number in the card background */
+.lm-theme-num-bg {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3rem;
+  font-weight: 700;
+  color: rgba(22, 163, 74, 0.08);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Theme name */
+.lm-theme-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Search term chips container */
+.lm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Individual search term chip — clicking copies the term */
+.lm-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: #ffffff;
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  border-radius: var(--radius-pill);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: #15803D;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  line-height: 1.4;
+}
+.lm-search-chip:hover {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: #16A34A;
+}
+
+/* Copy glyph inside chip */
+.lm-chip-icon {
+  font-size: 0.65rem;
+  opacity: 0.5;
+}
+
+/* Confirmation state — briefly goes solid green when copied */
+.lm-search-chip--copied {
+  background: #16A34A;
+  border-color: #15803D;
+  color: #ffffff;
+}
+.lm-search-chip--copied .lm-chip-icon {
+  opacity: 1;
+}
+
+/* ── Source type list ─────────────────────────────────────── */
+.lm-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Individual source type row */
+.lm-source-row {
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid rgba(22, 163, 74, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+/* Source type name */
+.lm-source-type {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 4px 0;
+}
+
+/* Source rationale sentence */
+.lm-source-rationale {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+  margin: 0 0 5px 0;
+}
+
+/* Access pathway */
+.lm-source-access {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* "Access:" label inside the access line */
+.lm-access-label {
+  font-weight: 600;
+  color: #15803D;
+}
+
+/* ── Synthesis guide block ────────────────────────────────── */
+.lm-synthesis-block {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-left: 4px solid #16A34A;
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+}
+
+/* Synthesis paragraph text */
+.lm-synthesis-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ── Copy Literature Map button (ghost style) ─────────────── */
+.lm-btn-copy {
+  width: 100%;
+  padding: 12px;
+  margin-top: 24px;
+  background: transparent;
+  border: 1.5px solid rgba(22, 163, 74, 0.3);
+  border-radius: var(--radius-md);
+  color: #15803D;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.lm-btn-copy:hover {
+  border-color: #16A34A;
+  background: rgba(22, 163, 74, 0.05);
+}
+
+/* Copied confirmation state — briefly goes solid green */
+.lm-btn-copy--copied {
+  border-color: #16A34A;
+  color: #15803D;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+/* ── Responsive: single-column theme grid below 520px ─────── */
+@media (max-width: 520px) {
+  .lm-themes-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PROJECT REVIEWER  (pr- prefix)  ·  Step 5
+   Accent colour: amber #D97706 / #92400E
+   Sits between Writing Planner (Step 4) and Defence Prep (Step 6).
+   The student uploads their project (PDF / DOCX / TXT).
+   FYPro grades it and generates 5 examiner questions from the
+   actual uploaded content.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Outer card shell ─────────────────────────────────────── */
+.pr-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbf0 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(217, 119, 6, 0.18);
+  border-left: 4px solid #D97706;
+  box-shadow: var(--shadow-card);
+  padding: 40px;
+  width: 100%;
+  max-width: 660px;
+  position: relative;
+  overflow: hidden;
+  animation: card-enter 0.4s ease forwards;
+  margin: 0 auto;
+}
+
+.pr-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transition: box-shadow var(--transition-base);
+}
+
+/* ── Faded step-number watermark in card background ──────── */
+.pr-watermark {
+  position: absolute;
+  top: -16px;
+  right: 14px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7rem;
+  font-weight: 400;
+  color: rgba(217, 119, 6, 0.06);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+/* ── Input section ────────────────────────────────────────── */
+.pr-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Step label ───────────────────────────────────────────── */
+.pr-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: var(--text-xl);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Description ──────────────────────────────────────────── */
+.pr-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Upload zone ──────────────────────────────────────────── */
+.pr-upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 24px;
+  border: 2px dashed var(--color-border-strong, rgba(13,27,42,0.2));
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  text-align: center;
+}
+
+.pr-upload-zone:hover,
+.pr-upload-zone:focus {
+  border-color: var(--color-blue-primary, #0066FF);
+  background: rgba(0, 102, 255, 0.04);
+  outline: none;
+}
+
+/* Active drag-over state */
+.pr-upload-zone--drag {
+  border-color: var(--color-blue-primary, #0066FF);
+  background: rgba(0, 102, 255, 0.07);
+}
+
+/* Upload icon */
+.pr-upload-icon {
+  color: #7ab8ff;
+  opacity: 0.8;
+}
+
+/* Primary upload instruction text */
+.pr-upload-primary {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* "click to browse" link-style span */
+.pr-upload-link {
+  color: var(--color-blue-primary, #0066FF);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Accepted formats note */
+.pr-upload-formats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+/* Hidden native file input — triggered programmatically */
+.pr-file-hidden {
+  display: none;
+}
+
+/* ── Selected file chip ───────────────────────────────────── */
+.pr-file-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(217, 119, 6, 0.07);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-radius: var(--radius-sm);
+}
+
+/* Document icon inside the chip */
+.pr-chip-icon {
+  color: #D97706;
+  flex-shrink: 0;
+}
+
+/* File name text — truncates with ellipsis on overflow */
+.pr-file-name-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Remove (×) button */
+.pr-btn-remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+.pr-btn-remove:hover {
+  color: var(--color-red);
+}
+
+/* ── Error text ───────────────────────────────────────────── */
+.pr-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-red);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Review button (blue — Generate/Analyse pattern) ─────── */
+.pr-btn-review {
+  width: 100%;
+  padding: 14px;
+  background: var(--color-blue-primary);
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
+}
+.pr-btn-review:hover {
+  box-shadow: var(--shadow-blue-glow);
+  transform: translateY(-1px);
+}
+.pr-btn-review:active  { transform: translateY(0); }
+.pr-btn-review:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ──────────────────────────────────────── */
+.pr-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 52px 0;
+}
+
+/* Sub-text below the shield in loading state */
+.pr-loading-subtext {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Result section ───────────────────────────────────────── */
+.pr-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Grade block ──────────────────────────────────────────── */
+.pr-grade-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Grade badge — data-grade drives the colour via attribute selectors */
+.pr-grade-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+}
+
+.pr-grade-badge[data-grade="distinction"] {
+  background: rgba(22, 163, 74, 0.1);
+  border-color: rgba(22, 163, 74, 0.3);
+}
+.pr-grade-badge[data-grade="merit"] {
+  background: rgba(0, 102, 255, 0.08);
+  border-color: rgba(0, 102, 255, 0.25);
+}
+.pr-grade-badge[data-grade="pass"] {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+.pr-grade-badge[data-grade="fail"] {
+  background: rgba(220, 38, 38, 0.07);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+/* Grade label — large, monospace, bold */
+.pr-grade-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.pr-grade-badge[data-grade="distinction"] .pr-grade-label { color: #16A34A; }
+.pr-grade-badge[data-grade="merit"]       .pr-grade-label { color: #7ab8ff; }
+.pr-grade-badge[data-grade="pass"]        .pr-grade-label { color: #D97706; }
+.pr-grade-badge[data-grade="fail"]        .pr-grade-label { color: #DC2626; }
+
+/* Score estimate — smaller monospace, muted */
+.pr-grade-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+/* One-sentence grade justification */
+.pr-grade-justification {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Feedback block wrapper ───────────────────────────────── */
+.pr-feedback-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Feedback section heading — coloured by modifier */
+.pr-feedback-heading {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: var(--text-lg);
+  margin: 0;
+}
+
+.pr-feedback-heading--strength  { color: #16A34A; }
+.pr-feedback-heading--weakness  { color: #DC2626; }
+.pr-feedback-heading--questions { color: #D97706; }
+
+/* ── Individual feedback item (strength or weakness) ─────── */
+/* Starts invisible; pr-feedback-item--visible transitions it in */
+.pr-feedback-item {
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.pr-feedback-item--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pr-feedback-item--strength {
+  background: rgba(22, 163, 74, 0.05);
+  border-left-color: #16A34A;
+}
+
+.pr-feedback-item--weakness {
+  background: rgba(220, 38, 38, 0.04);
+  border-left-color: #DC2626;
+}
+
+/* Feedback item title — bold Poppins */
+.pr-feedback-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 6px 0;
+}
+
+/* Feedback detail paragraph */
+.pr-feedback-detail {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Weakness fix sentence */
+.pr-feedback-fix {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  line-height: 1.65;
+  margin: 8px 0 0 0;
+  padding: 8px 12px;
+  background: rgba(220, 38, 38, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+/* "Fix:" label inside fix sentence */
+.pr-fix-label {
+  font-weight: 700;
+  color: #DC2626;
+}
+
+/* ── Examiner questions context note ─────────────────────── */
+.pr-questions-context {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: -4px 0 4px 0;
+}
+
+/* ── Questions list container ─────────────────────────────── */
+.pr-questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Individual question item ─────────────────────────────── */
+/* Starts invisible; pr-question-item--visible transitions it in */
+.pr-question-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.pr-question-item--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Question number badge — amber circle */
+.pr-question-number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #92400E;
+  margin-top: 1px;
+}
+
+/* Body area of a question item */
+.pr-question-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Question text */
+.pr-question-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  font-weight: 500;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Target line — explains what specific gap the question attacks */
+.pr-question-target {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* "Target:" label inside the target line */
+.pr-target-label {
+  font-weight: 700;
+  color: #D97706;
+}
+
+/* ── Confirm / Continue button (blue — CTA pattern) ─────── */
+.pr-btn-confirm {
+  width: 100%;
+  padding: 14px;
+  background: var(--color-blue-primary);
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+.pr-btn-confirm:hover {
+  background: #0052CC;
+  box-shadow: var(--shadow-blue-glow);
+  transform: translateY(-1px);
+}
+.pr-btn-confirm:active { transform: translateY(0); }
+
+
+
+
+/* ════════════════════════════════════════════════════════════════
+   DARK SHELL OVERHAUL  — 2026-04-17
+   Flips the app content area to deep #060E18 navy.
+   All step cards get dark gradient treatment with per-step accent
+   glow borders, mirroring the reference dark-academia aesthetic.
+   CSS variable overrides cascade into all newer (var-based) cards.
+   Specific selector overrides handle older hardcoded-colour cards.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Main content area ──────────────────────────────────────── */
+.app-content {
+  background-color: #060E18 !important;
+  background-image: radial-gradient(circle, rgba(0,102,255,0.08) 1.2px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+  --color-text-primary:   rgba(255,255,255,0.90);
+  --color-text-secondary: rgba(255,255,255,0.58);
+  --color-text-muted:     rgba(255,255,255,0.32);
+  --text-primary:         rgba(255,255,255,0.90);
+  --text-secondary:       rgba(255,255,255,0.58);
+  --text-muted:           rgba(255,255,255,0.32);
+  --color-border:         rgba(255,255,255,0.07);
+  --color-border-strong:  rgba(255,255,255,0.12);
+  --color-bg-card:        #0F2235;
+  --shadow-card:          0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.40);
+  --shadow-card-hover:    0 14px 56px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.50);
+}
+
+/* ── 2. Step Navigator — dark frosted glass ────────────────────── */
+.step-navigator {
+  background: rgba(6,14,24,0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.5) !important;
+}
+.nav-pill {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.28) !important;
+}
+.nav-connector { background: rgba(255,255,255,0.08) !important; }
+.nav-connector--completed { background: linear-gradient(90deg,#0066FF 0%,rgba(0,102,255,0.3) 100%) !important; }
+.nav-pill__label             { color: rgba(255,255,255,0.28) !important; }
+.nav-pill--current  .nav-pill__label  { color: #3B82F6 !important; font-weight: 600 !important; }
+.nav-pill--completed .nav-pill__label { color: rgba(255,255,255,0.50) !important; }
+
+/* ── 3. Placeholder card ───────────────────────────────────────── */
+.app-content .placeholder-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid rgba(0,102,255,0.45) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55) !important;
+}
+.placeholder-card__step-label { color: rgba(255,255,255,0.85) !important; }
+.placeholder-card__subtitle   { color: rgba(255,255,255,0.35) !important; }
+
+/* ── 4. All step card backgrounds ──────────────────────────────── */
+.app-content .tv-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .tv-card--green  { background: linear-gradient(145deg,#061a10 0%,#071a14 100%) !important; }
+.app-content .tv-card--yellow { background: linear-gradient(145deg,#1a1406 0%,#141208 100%) !important; }
+.app-content .tv-card--red    { background: linear-gradient(145deg,#1a0608 0%,#14060a 100%) !important; }
+.app-content .ca-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .ma-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .di-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .wp-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .dp-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .ag-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .lm-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .pr-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+.app-content .se-card {
+  background: linear-gradient(145deg,#0F2235 0%,#0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+
+/* ── 5. Step headings (DM Serif) ───────────────────────────────── */
+.app-content .tv-step-label,
+.app-content .ca-step-label,
+.app-content .ma-step-label,
+.app-content .di-step-label,
+.app-content .wp-step-label,
+.app-content .dp-step-label,
+.app-content .se-step-label { color: rgba(255,255,255,0.92) !important; }
+
+/* ── 6. Descriptions ───────────────────────────────────────────── */
+.app-content .tv-description,
+.app-content .ca-description,
+.app-content .ma-description,
+.app-content .wp-description,
+.app-content .dp-scan-subtext,
+.app-content .se-description { color: rgba(255,255,255,0.55) !important; }
+
+/* ── 7. Form / body labels ─────────────────────────────────────── */
+.app-content .ca-form-label,
+.app-content .ca-toggle-hint,
+.app-content .tv-refined-label,
+.app-content .tv-alternatives-heading,
+.app-content .ma-section-label,
+.app-content .wp-date-label,
+.app-content .dp-flags-header { color: rgba(255,255,255,0.32) !important; }
+
+/* ── 8. Loading text ───────────────────────────────────────────── */
+.app-content .tv-loading-text { color: rgba(255,255,255,0.48) !important; }
+
+/* ── 9. TV verdict elements ────────────────────────────────────── */
+.app-content .tv-verdict-reason        { color: rgba(255,255,255,0.62) !important; }
+.app-content .tv-verdict-label--green  { color: #4ADE80 !important; }
+.app-content .tv-verdict-label--yellow { color: #FCD34D !important; }
+.app-content .tv-verdict-label--red    { color: #F87171 !important; }
+.app-content .tv-divider               { border-top-color: rgba(255,255,255,0.07) !important; }
+.app-content .tv-refined-text          { color: rgba(255,255,255,0.90) !important; }
+.app-content .tv-refined-explanation   { color: rgba(255,255,255,0.50) !important; }
+
+/* ── 10. Inputs & textareas inside cards ───────────────────────── */
+.app-content .tv-textarea,
+.app-content .tv-refined-edit-area,
+.app-content .ca-word-count-input,
+.app-content .ca-edit-input,
+.app-content .ca-edit-textarea {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: rgba(255,255,255,0.88) !important;
+}
+.app-content .tv-textarea:focus,
+.app-content .tv-refined-edit-area:focus,
+.app-content .ca-word-count-input:focus,
+.app-content .ca-edit-input:focus,
+.app-content .ca-edit-textarea:focus {
+  border-color: #0066FF !important;
+  background: rgba(0,102,255,0.06) !important;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.15) !important;
+}
+.app-content .tv-textarea::placeholder { color: rgba(255,255,255,0.20) !important; }
+
+/* ── 11. TV alternative topic cards ────────────────────────────── */
+.app-content .tv-alt-card {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+.app-content .tv-alt-topic       { color: rgba(255,255,255,0.90) !important; }
+.app-content .tv-alt-explanation { color: rgba(255,255,255,0.55) !important; }
+.app-content .tv-btn-use-alt     { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .tv-btn-use-alt:hover { border-color: #0066FF !important; color: #3B82F6 !important; }
+.app-content .tv-btn-edit          { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .tv-btn-edit:hover    { border-color: #0066FF !important; color: #3B82F6 !important; }
+.app-content .tv-difficulty--easy        { background: rgba(22,163,74,0.14)  !important; color: #4ADE80 !important; }
+.app-content .tv-difficulty--moderate    { background: rgba(245,158,11,0.12) !important; color: #FCD34D !important; }
+.app-content .tv-difficulty--challenging { background: rgba(220,38,38,0.12)  !important; color: #F87171 !important; }
+
+/* ── 12. CA chapter rows ───────────────────────────────────────── */
+.app-content .ca-chapter-row {
+  background: rgba(255,255,255,0.03) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+.app-content .ca-chapter-row:hover  { border-color: rgba(124,58,237,0.35) !important; box-shadow: 0 2px 14px rgba(0,0,0,0.30) !important; }
+.app-content .ca-chapter-row--open  { border-color: rgba(124,58,237,0.45) !important; }
+.app-content .ca-chapter-num-bg     { color: rgba(255,255,255,0.04) !important; }
+.app-content .ca-chapter-title-text { color: rgba(255,255,255,0.90) !important; }
+.app-content .ca-chevron            { color: rgba(255,255,255,0.30) !important; }
+.app-content .ca-chapter-body-inner { border-top-color: rgba(255,255,255,0.06) !important; }
+.app-content .ca-body-label         { color: rgba(255,255,255,0.32) !important; }
+.app-content .ca-body-text          { color: rgba(255,255,255,0.85) !important; }
+.app-content .ca-content-item       { color: rgba(255,255,255,0.65) !important; }
+.app-content .ca-word-target        { color: rgba(255,255,255,0.30) !important; }
+.app-content .ca-structure-note     { color: rgba(255,255,255,0.45) !important; }
+.app-content .ca-structure-toggle   { border-color: rgba(255,255,255,0.10) !important; }
+.app-content .ca-toggle-btn         { color: rgba(255,255,255,0.40) !important; border-right-color: rgba(255,255,255,0.08) !important; }
+.app-content .ca-toggle-btn:hover:not(.ca-toggle-btn--active) { background: rgba(124,58,237,0.10) !important; color: #C4B5FD !important; }
+.app-content .ca-btn-edit-chapter,
+.app-content .ca-btn-regenerate     { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .ca-btn-edit-chapter:hover,
+.app-content .ca-btn-regenerate:hover { border-color: #7C3AED !important; color: #C4B5FD !important; }
+
+/* ── 13. MA methodology option cards ───────────────────────────── */
+.app-content .ma-option-card {
+  background: rgba(255,255,255,0.03) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.app-content .ma-option-card--selected { border-color: #16A34A !important; box-shadow: 0 0 0 3px rgba(22,163,74,0.18) !important; }
+.app-content .ma-option-name           { color: rgba(255,255,255,0.90) !important; }
+.app-content .ma-rec-banner            { background: rgba(37,99,235,0.09) !important; border-color: rgba(37,99,235,0.28) !important; box-shadow: 0 0 16px rgba(37,99,235,0.12) !important; }
+.app-content .ma-rec-reason            { color: rgba(255,255,255,0.55) !important; }
+.app-content .ma-explanation           { color: rgba(255,255,255,0.72) !important; }
+.app-content .ma-data-list             { color: rgba(255,255,255,0.62) !important; }
+.app-content .ma-instrument-name       { color: rgba(255,255,255,0.90) !important; }
+.app-content .ma-instrument-access     { color: rgba(255,255,255,0.50) !important; }
+.app-content .ma-trade-offs            { color: rgba(255,255,255,0.50) !important; }
+.app-content .ma-defense-hint         { color: rgba(255,255,255,0.38) !important; }
+.app-content .ma-defense-text         { color: rgba(255,255,255,0.85) !important; background: rgba(255,255,255,0.04) !important; }
+.app-content .ma-watch-out-box        { background: rgba(220,38,38,0.07) !important; }
+.app-content .ma-watch-out-text       { color: rgba(255,255,255,0.68) !important; }
+.app-content .ma-btn-select           { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .ma-btn-select:hover     { border-color: #0066FF !important; color: #3B82F6 !important; }
+.app-content .ma-fit-badge--strong    { background: rgba(22,163,74,0.14)  !important; color: #4ADE80 !important; }
+.app-content .ma-fit-badge--moderate  { background: rgba(245,158,11,0.12) !important; color: #FCD34D !important; }
+.app-content .ma-fit-badge--weak      { background: rgba(220,38,38,0.12)  !important; color: #F87171 !important; }
+
+/* ── 14. WP writing planner sub-elements ───────────────────────── */
+.app-content .wp-date-input {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: rgba(255,255,255,0.88) !important;
+}
+.app-content .wp-date-input:focus        { border-color: #DC2626 !important; background: rgba(220,38,38,0.06) !important; }
+.app-content .wp-summary-bar             { background: rgba(220,38,38,0.07) !important; border-color: rgba(220,38,38,0.20) !important; }
+.app-content .wp-summary-stat__label    { color: rgba(255,255,255,0.38) !important; }
+.app-content .wp-summary-divider        { background: rgba(220,38,38,0.22) !important; }
+.app-content .wp-timeline::before       { background: rgba(255,255,255,0.10) !important; }
+.app-content .wp-week-content           { background: rgba(255,255,255,0.03) !important; border-color: rgba(255,255,255,0.07) !important; }
+.app-content .wp-week-node--current .wp-week-content { background: rgba(220,38,38,0.07) !important; border-color: rgba(220,38,38,0.30) !important; }
+.app-content .wp-week-node--buffer  .wp-week-content { background: rgba(245,158,11,0.07) !important; border-color: rgba(245,158,11,0.25) !important; }
+.app-content .wp-week-node--holiday .wp-week-content { background: rgba(255,255,255,0.02) !important; border-color: rgba(255,255,255,0.06) !important; }
+.app-content .wp-week-dot            { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.20) !important; }
+.app-content .wp-week-number         { color: rgba(255,255,255,0.38) !important; }
+.app-content .wp-week-dates          { color: rgba(255,255,255,0.88) !important; }
+.app-content .wp-week-focus          { color: rgba(255,255,255,0.68) !important; }
+.app-content .wp-week-target         { color: rgba(255,255,255,0.42) !important; }
+.app-content .wp-week-holiday-note   { color: rgba(255,255,255,0.40) !important; }
+.app-content .wp-week-tag--buffer    { background: rgba(245,158,11,0.12) !important; color: #FCD34D !important; }
+.app-content .wp-week-tag--holiday   { background: rgba(255,255,255,0.07) !important; color: rgba(255,255,255,0.42) !important; }
+.app-content .wp-urgency--green      { background: rgba(22,163,74,0.14)  !important; color: #4ADE80 !important; }
+.app-content .wp-urgency--amber      { background: rgba(245,158,11,0.12) !important; color: #FCD34D !important; }
+.app-content .wp-urgency--red        { background: rgba(220,38,38,0.12)  !important; color: #F87171 !important; }
+
+/* ── 15. DP defence prep sub-elements ──────────────────────────── */
+.app-content .dp-flag-item       { background: rgba(217,119,6,0.05) !important; border-color: rgba(217,119,6,0.15) !important; }
+.app-content .dp-flag-title      { color: rgba(255,255,255,0.88) !important; }
+.app-content .dp-flag-description { color: rgba(255,255,255,0.60) !important; }
+.app-content .dp-flag-meta-label  { color: rgba(255,255,255,0.30) !important; }
+.app-content .dp-flag-meta-text   { color: rgba(255,255,255,0.65) !important; }
+.app-content .dp-btn-go-back      { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .dp-btn-go-back:hover { border-color: #D97706 !important; color: #FBBF24 !important; background: rgba(217,119,6,0.06) !important; }
+
+/* ── 16. SE supervisor email sub-elements ──────────────────────── */
+.app-content .se-email-preview { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.08) !important; }
+.app-content .se-subject-text  { color: rgba(255,255,255,0.90) !important; }
+.app-content .se-email-divider { background: rgba(255,255,255,0.08) !important; }
+.app-content .se-body-text     { color: rgba(255,255,255,0.75) !important; }
+.app-content .se-note          { color: rgba(255,255,255,0.35) !important; }
+
+/* ── 17. DI data collection sub-elements ───────────────────────── */
+.app-content .di-section         { background: rgba(234,88,12,0.06)   !important; border-color: rgba(234,88,12,0.16) !important; }
+.app-content .di-section-title   { color: #FB923C !important; }
+.app-content .di-instrument-title { color: rgba(255,255,255,0.90) !important; }
+.app-content .di-question-text    { color: rgba(255,255,255,0.85) !important; }
+.app-content .di-question         { border-bottom-color: rgba(255,255,255,0.06) !important; }
+.app-content .di-question-number  { color: rgba(251,146,60,0.55) !important; }
+.app-content .di-description      { color: rgba(255,255,255,0.55) !important; }
+.app-content .di-likert-option    { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.10) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .di-open-line        { border-bottom-color: rgba(255,255,255,0.10) !important; }
+.app-content .di-btn-copy         { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .di-btn-copy:hover   { border-color: #F59E0B !important; color: #FCD34D !important; background: rgba(245,158,11,0.07) !important; }
+
+/* ── 18. AG abstract generator sub-elements ────────────────────── */
+.app-content .ag-card::before    { color: rgba(0,102,255,0.05) !important; }
+.app-content .ag-component       { background: rgba(124,58,237,0.07) !important; border-color: rgba(124,58,237,0.18) !important; }
+.app-content .ag-component-label { color: #A78BFA !important; }
+.app-content .ag-component-text  { color: rgba(255,255,255,0.85) !important; }
+.app-content .ag-scaffold-notice { background: rgba(245,158,11,0.08) !important; border-color: rgba(245,158,11,0.20) !important; color: #FCD34D !important; }
+.app-content .ag-btn-copy        { border-color: rgba(255,255,255,0.14) !important; color: rgba(255,255,255,0.50) !important; }
+.app-content .ag-companion-badge { background: rgba(124,58,237,0.14) !important; color: #C4B5FD !important; border-color: rgba(124,58,237,0.30) !important; }
+.app-content .ag-description     { color: rgba(255,255,255,0.55) !important; }
+
+/* ── 19. LM literature map sub-elements ────────────────────────── */
+.app-content .lm-theme-card     { background: linear-gradient(135deg,rgba(22,163,74,0.08) 0%,rgba(10,25,41,0.9) 100%) !important; border-color: rgba(22,163,74,0.18) !important; }
+.app-content .lm-theme-name     { color: rgba(255,255,255,0.90) !important; }
+.app-content .lm-theme-num-bg   { color: rgba(22,163,74,0.06) !important; }
+.app-content .lm-search-chip    { background: rgba(255,255,255,0.05) !important; border-color: rgba(22,163,74,0.30) !important; color: #4ADE80 !important; }
+.app-content .lm-search-chip:hover { background: rgba(22,163,74,0.10) !important; }
+.app-content .lm-source-row     { background: rgba(255,255,255,0.03) !important; border-color: rgba(255,255,255,0.07) !important; }
+.app-content .lm-synthesis-block { background: linear-gradient(135deg,rgba(22,163,74,0.07) 0%,rgba(10,25,41,0.9) 100%) !important; border-color: rgba(22,163,74,0.18) !important; }
+.app-content .lm-synthesis-text { color: rgba(255,255,255,0.82) !important; }
+.app-content .lm-btn-copy       { border-color: rgba(22,163,74,0.25) !important; color: #4ADE80 !important; }
+.app-content .lm-companion-badge { background: rgba(22,163,74,0.12) !important; color: #4ADE80 !important; border-color: rgba(22,163,74,0.25) !important; }
+.app-content .lm-source-access  { color: rgba(255,255,255,0.65) !important; }
+.app-content .lm-paper-title    { color: rgba(255,255,255,0.92) !important; }
+.app-content .lm-paper-meta     { color: rgba(255,255,255,0.65) !important; }
+.app-content .lm-citation-item  { color: rgba(255,255,255,0.82) !important; background: rgba(255,255,255,0.04) !important; }
+.app-content .lm-citation-author { color: rgba(255,255,255,0.90) !important; }
+.app-content .lm-citation-year  { color: rgba(255,255,255,0.60) !important; }
+.app-content .lm-citation-title { color: rgba(255,255,255,0.80) !important; }
+
+/* ── 20. PR project reviewer sub-elements ──────────────────────── */
+.app-content .pr-watermark           { color: rgba(0,102,255,0.05) !important; }
+.app-content .pr-upload-zone         { border-color: rgba(255,255,255,0.12) !important; background: rgba(255,255,255,0.02) !important; }
+.app-content .pr-upload-zone:hover   { border-color: rgba(0,102,255,0.5) !important; background: rgba(0,102,255,0.05) !important; }
+.app-content .pr-upload-zone--drag   { border-color: #0066FF !important; background: rgba(0,102,255,0.08) !important; }
+.app-content .pr-file-chip           { background: rgba(217,119,6,0.08) !important; border-color: rgba(217,119,6,0.25) !important; }
+.app-content .pr-grade-score         { color: rgba(255,255,255,0.55) !important; }
+.app-content .pr-grade-justification { color: rgba(255,255,255,0.60) !important; }
+.app-content .pr-feedback-item--strength { background: rgba(22,163,74,0.06)  !important; }
+.app-content .pr-feedback-item--weakness { background: rgba(220,38,38,0.05)  !important; }
+.app-content .pr-feedback-fix            { background: rgba(220,38,38,0.07)  !important; color: rgba(255,255,255,0.75) !important; }
+.app-content .pr-question-number    { background: rgba(217,119,6,0.12) !important; border-color: rgba(217,119,6,0.30) !important; color: #FBBF24 !important; }
+.app-content .pr-questions-context  { color: rgba(255,255,255,0.35) !important; }
+.app-content .pr-truncation-warning { background: rgba(245,158,11,0.10) !important; border-color: rgba(245,158,11,0.30) !important; color: rgba(255,255,255,0.75) !important; }
+
+/* ── pr-truncation-warning — non-blocking info banner shown when document was trimmed ── */
+.pr-truncation-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--color-amber-light, #FFFBEB);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: var(--radius-md, 12px);
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm, 0.75rem);
+  color: #92400E;
+  line-height: 1.5;
+}
+.pr-truncation-icon {
+  flex-shrink: 0;
+  font-style: normal;
+  margin-top: 1px;
+}
+
+/* ── 21. Dark scrollbar ────────────────────────────────────────── */
+.app-content__scroll::-webkit-scrollbar       { width: 4px; }
+.app-content__scroll::-webkit-scrollbar-track { background: transparent; }
+.app-content__scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 4px; }
+.app-content__scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+/* ── 22. Sidebar polish ────────────────────────────────────────── */
+[data-theme="dark"] .sidebar,
+.dark .sidebar {
+  background: linear-gradient(180deg,#0D1B2A 0%,#071016 100%) !important;
+  border-right: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+   Breakpoints: 768px (tablet), 480px (mobile)
+════════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar overlay (mobile) ──────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 89;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.sidebar-overlay.is-visible { display: block; }
+
+/* ── Sidebar toggle button ──────────────────────────────────────── */
+.sidebar-toggle-btn {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  background: #0D1B2A;
+  border: 1px solid rgba(13, 27, 42, 0.18);
+  border-radius: 8px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+.sidebar-toggle-btn:hover {
+  border-color: rgba(0, 102, 255, 0.45);
+  box-shadow: 0 0 12px rgba(0, 102, 255, 0.25);
+}
+.sidebar-toggle-btn span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+.sidebar-toggle-btn.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.sidebar-toggle-btn.is-open span:nth-child(2) { opacity: 0; }
+.sidebar-toggle-btn.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── 768px tablet ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Show sidebar toggle button */
+  .sidebar-toggle-btn { display: flex; }
+
+  /* Sidebar: off-screen by default, slides in on toggle */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    left: -260px;
+    z-index: 90;
+    width: 240px !important;
+    transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+    box-shadow: none !important;
+  }
+  .sidebar.is-open {
+    left: 0 !important;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Content area: full width */
+  .app-content {
+    width: 100% !important;
+  }
+
+  /* Navigator: smaller pills, hide step labels, leave room for hamburger */
+  .step-navigator {
+    padding: 12px 16px 16px 60px; /* left padding = hamburger (40px) + gap (12px) + edge (8px) */
+    min-height: 64px;
+  }
+  .nav-pill {
+    width: 28px;
+    height: 28px;
+    font-size: 0.62rem;
+  }
+  /* Extend tap area to 44×44px without changing visual size */
+  .nav-pill::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+  }
+  .nav-connector {
+    width: 20px;
+  }
+  .nav-pill__label {
+    display: none;
+  }
+
+  /* Content scroll: tighter padding */
+  .app-content__scroll {
+    padding: 32px 20px 60px !important;
+  }
+
+  /* Step cards: full width */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
+  .se-card, .lm-card, .ag-card, .pr-card, .placeholder-card {
+    max-width: 100% !important;
+  }
+
+  /* Onboarding card: full width with padding */
+  .onboarding__card {
+    padding: 40px 24px 48px;
+  }
+
+  /* Defense Mode: chat layout adapts */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 90%;
+  }
+
+  /* Defense Mode overlay: reduce padding */
+  .dp-chat-area { padding: 16px !important; }
+  .dp-input-area { padding: 12px 16px 20px !important; }
+}
+
+/* ── 480px mobile ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Navigator: even smaller, keep left padding for hamburger */
+  .step-navigator {
+    padding: 10px 8px 12px 56px;
+    min-height: 56px;
+  }
+  .nav-pill {
+    width: 22px;
+    height: 22px;
+    font-size: 0.55rem;
+    border-width: 1.5px;
+  }
+  .nav-connector {
+    width: 10px;
+  }
+  .nav-track {
+    gap: 0;
+  }
+
+  /* Content scroll */
+  .app-content__scroll {
+    padding: 20px 12px 56px !important;
+  }
+
+  /* Cards: reduce padding */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
+  .se-card, .placeholder-card {
+    padding: 24px 16px 28px !important;
+  }
+
+  /* Onboarding: tight padding */
+  .onboarding__card {
+    padding: 32px 16px 40px;
+  }
+
+  /* Sidebar toggle: slightly smaller */
+  .sidebar-toggle-btn {
+    left: 8px;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Defense Mode: chat bubbles nearly full width */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 95%;
+  }
+
+  /* Defense Mode: input area stacks vertically */
+  .dp-input-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .dp-input-row textarea,
+  .dp-input-row .dp-send-btn {
+    width: 100%;
+  }
+
+  /* Defense Mode: tighter overlay padding */
+  .dp-defense-header {
+    padding: 12px 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dp-defense-title { font-size: 0.88rem !important; }
+  /* Hide absolutely-positioned label — overlaps end button at mobile widths */
+  .dp-defense-panel-label { display: none !important; }
+  /* 44px touch target on end button */
+  .dp-defense-end-btn { min-height: 44px !important; }
+  .dp-chat-area     { padding: 12px !important; gap: 14px !important; }
+  .dp-input-area    { padding: 10px 12px 16px !important; }
+}
+
+
+/* ── 375px small phones ──────────────────────────────────────── */
+@media (max-width: 375px) {
+  /* Ensure content cards have minimal padding so text isn't clipped */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card,
+  .se-card, .placeholder-card {
+    padding: 22px 14px 28px !important;
+  }
+
+  /* Defense chat bubbles: nearly full width, room for avatar/padding */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 98%;
+  }
+
+  /* Examiner name chip: truncate long persona names gracefully */
+  .dp-examiner-name {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Defense header: reduce font and padding at very small widths */
+  .dp-defense-title { font-size: 0.8rem !important; }
+  .dp-chat-area     { padding: 8px !important; gap: 10px !important; }
+  .dp-input-area    { padding: 8px 10px 14px !important; }
+
+  /* Navigator: minimum tap target on tiny screens */
+  .nav-pill {
+    width: 20px;
+    height: 20px;
+    font-size: 0.5rem;
+  }
+  .nav-connector { width: 6px; }
+  .dp-defense-panel-label { display: none !important; }
+  .dp-defense-end-btn { min-height: 44px !important; }
+}
+

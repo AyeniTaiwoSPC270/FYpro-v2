@@ -1,0 +1,208 @@
+/* ============================================================
+   DESIGN SYSTEM — Keyframes & Shared Animation Rules
+   All per-selector overrides have been merged into their
+   canonical blocks above. Only rules without a single-selector
+   home remain here.
+   ============================================================ */
+
+/* ── Keyframes ────────────────────────────────────────────────── */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nav-complete-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0,102,255,0.65); }
+  70%  { box-shadow: 0 0 0 10px rgba(0,102,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,102,255,0); }
+}
+
+@keyframes check-pop {
+  0%   { opacity: 0; transform: scale(0.35); }
+  65%  { transform: scale(1.22); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Class added by JS the moment a step first completes — one-shot */
+.nav-pill--just-completed {
+  animation: nav-complete-pulse 0.75s ease forwards;
+}
+
+/* ── Card group rules ─────────────────────────────────────────── */
+.tv-card, .ca-card, .ma-card, .wp-card, .dp-card, .se-card, .di-card, .placeholder-card {
+  animation: card-enter 0.4s ease forwards;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tv-card:hover, .ca-card:hover, .ma-card:hover,
+.wp-card:hover, .dp-card:hover, .se-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* ── Step watermark pseudo-elements ──────────────────────────── */
+.tv-card::before {
+  content: '1';
+  position: absolute; right: 28px; top: 12px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7.5rem; line-height: 1;
+  color: rgba(37,99,235,0.04);
+  pointer-events: none; user-select: none;
+}
+.ca-card::before {
+  content: '2';
+  position: absolute; right: 28px; top: 12px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7.5rem; line-height: 1;
+  color: rgba(37,99,235,0.04);
+  pointer-events: none; user-select: none;
+}
+.ma-card::before {
+  content: '3';
+  position: absolute; right: 28px; top: 12px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7.5rem; line-height: 1;
+  color: rgba(37,99,235,0.04);
+  pointer-events: none; user-select: none;
+}
+.wp-card::before {
+  content: '4';
+  position: absolute; right: 28px; top: 12px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 7.5rem; line-height: 1;
+  color: rgba(37,99,235,0.04);
+  pointer-events: none; user-select: none;
+}
+.dp-card::before {
+  content: none;
+}
+
+
+/* ============================================================
+   DESIGN SYSTEM — CSS Custom Properties
+   Appended 2026-04-14
+   Single source of truth for all colours, spacing, type scale.
+   CLAUDE.md mandates CSS variables for all new code.
+   ============================================================ */
+
+:root {
+  /* ── Surface & background ─────────────────────────────── */
+  --color-bg-deep:        #060E18;
+  --color-bg-dark:        #0D1B2A;
+  --color-bg-mid:         #0F2235;
+  --color-bg-surface:     #F0F4F8;
+  --color-bg-card:        #FFFFFF;
+
+  /* ── Brand blue ───────────────────────────────────────── */
+  --color-blue-primary:   #0066FF;
+  --color-blue-light:     #3B82F6;
+  --color-blue-glow:      rgba(0, 102, 255, 0.15);
+  --color-blue-subtle:    #EFF6FF;
+
+  /* ── Semantic accents ─────────────────────────────────── */
+  --color-green:          #16A34A;
+  --color-green-dark:     #15803D;
+  --color-green-light:    #F0FFF4;
+  --color-red:            #DC2626;
+  --color-red-light:      #FFF5F5;
+  --color-amber:          #F59E0B;
+  --color-amber-light:    #FFFBEB;
+  --color-teal:           #0891B2;
+  --color-orange:         #EA580C;
+
+  /* ── Per-step accent colors (left-border identity) ────── */
+  --color-step-topic:      #0066FF;
+  --color-step-chapter:    #F59E0B;
+  --color-step-method:     #16A34A;
+  --color-step-instrument: #8B5CF6;
+  --color-step-writing:    #0891B2;
+  --color-step-defense:    #DC2626;
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --color-text-primary:   #0D1B2A;
+  --color-text-secondary: rgba(13, 27, 42, 0.6);
+  --color-text-muted:     rgba(13, 27, 42, 0.4);
+  --color-text-faint:     rgba(13, 27, 42, 0.25);
+  --color-text-white:     #FFFFFF;
+  --color-text-white-dim: rgba(255, 255, 255, 0.7);
+  --color-text-white-faint: rgba(255, 255, 255, 0.45);
+
+  /* ── Borders ──────────────────────────────────────────── */
+  --color-border:         rgba(13, 27, 42, 0.1);
+  --color-border-strong:  rgba(13, 27, 42, 0.2);
+  --color-border-blue:    rgba(0, 102, 255, 0.3);
+  --color-border-white:   rgba(255, 255, 255, 0.08);
+  --color-border-white-strong: rgba(255, 255, 255, 0.15);
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-card:          0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover:    0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-blue-glow:     0 0 24px rgba(0, 102, 255, 0.4);
+  --shadow-blue-glow-soft:0 0 16px rgba(0, 102, 255, 0.25);
+  --shadow-green-glow:    0 0 20px rgba(22, 163, 74, 0.35);
+  --shadow-red-glow:      0 0 18px rgba(220, 38, 38, 0.35);
+  --shadow-shield:        0 8px 32px rgba(0, 102, 255, 0.45);
+
+  /* ── Gradients — for card surfaces ────────────────────── */
+  --gradient-card-blue:   linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%);
+  --gradient-card-amber:  linear-gradient(145deg, #ffffff 0%, #fffdf5 100%);
+  --gradient-card-green:  linear-gradient(145deg, #ffffff 0%, #f4fff8 100%);
+  --gradient-card-violet: linear-gradient(145deg, #ffffff 0%, #faf7ff 100%);
+  --gradient-card-cyan:   linear-gradient(145deg, #ffffff 0%, #f3fbfd 100%);
+  --gradient-card-red:    linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
+  --gradient-sidebar:     linear-gradient(180deg, #0D1B2A 0%, #091420 100%);
+
+  /* ── Spacing ──────────────────────────────────────────── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+  --space-3xl:  64px;
+
+  /* ── Border radius ────────────────────────────────────── */
+  --radius-sm:  8px;
+  --radius-md:  10px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-2xl: 24px;
+  --radius-pill:999px;
+
+  /* ── Typography — families ────────────────────────────── */
+  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-body:    'Poppins', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Menlo', monospace;
+
+  /* ── Type scale ───────────────────────────────────────── */
+  --text-xs:     0.65rem;    /* 10.4px — tiny labels, mono badges */
+  --text-sm:     0.75rem;    /* 12px — metadata, uppercase labels */
+  --text-base:   0.875rem;   /* 14px — body text, descriptions */
+  --text-md:     1rem;       /* 16px — emphasized body */
+  --text-lg:     1.125rem;   /* 18px — onboarding tagline */
+  --text-xl:     1.4rem;     /* 22.4px — step labels (serif) */
+  --text-2xl:    1.875rem;   /* 30px — onboarding wordmark */
+  --text-3xl:    2.75rem;    /* 44px — splash wordmark */
+
+  /* ── Letter spacing ───────────────────────────────────── */
+  --tracking-tight: 0.01em;
+  --tracking-base:  0.02em;
+  --tracking-wide:  0.04em;
+  --tracking-caps:  0.1em;
+
+  /* ── Line height ──────────────────────────────────────── */
+  --leading-tight:   1.3;
+  --leading-snug:    1.5;
+  --leading-base:    1.6;
+  --leading-relaxed: 1.65;
+  --leading-loose:   1.75;
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --transition-fast:   0.15s ease;
+  --transition-base:   0.2s ease;
+  --transition-slow:   0.35s ease;
+  --ease-out-expo:     cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+

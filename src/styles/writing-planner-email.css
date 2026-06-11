@@ -1,0 +1,590 @@
+/* ============================================================
+   Writing Planner — Step 4  (wp- prefix)
+   ============================================================ */
+
+/* ── Card base ───────────────────────────────────────────── */
+.wp-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f3fbfd 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid #0891B2;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.wp-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.wp-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+}
+.wp-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+  margin-top: -8px;
+}
+
+/* ── Date field ──────────────────────────────────────────── */
+.wp-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wp-date-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.5);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wp-date-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid rgba(13,27,42,0.12);
+  border-radius: 10px;
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.wp-date-input:focus {
+  border-color: #0066FF;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+}
+
+/* ── Urgency indicator ───────────────────────────────────── */
+.wp-urgency {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  font-weight: 500;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.wp-urgency--green { background: #D1FAE5; color: #065F46; }
+.wp-urgency--amber { background: #FEF3C7; color: #92400E; }
+.wp-urgency--red   { background: #FEE2E2; color: #991B1B; }
+.wp-urgency__icon  { font-size: 0.65rem; flex-shrink: 0; }
+.wp-urgency__text  { font-size: 0.845rem; }
+
+/* ── Error text ──────────────────────────────────────────── */
+.wp-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+}
+
+/* ── Generate button ─────────────────────────────────────── */
+.wp-btn-generate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.wp-btn-generate:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.wp-btn-generate:active:not(:disabled) { transform: translateY(0); }
+.wp-btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.wp-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.wp-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Summary bar ─────────────────────────────────────────── */
+.wp-summary-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(0,102,255,0.05);
+  border: 1px solid rgba(0,102,255,0.15);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.wp-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+.wp-summary-stat__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #7ab8ff;
+}
+.wp-summary-stat__label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.45);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.wp-summary-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(0,102,255,0.2);
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+/* ── Timeline container ──────────────────────────────────── */
+.wp-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-left: 28px;
+}
+
+/* The vertical connecting line running behind all week dots */
+.wp-timeline::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 1px;
+}
+
+/* ── Week node ───────────────────────────────────────────── */
+.wp-week-node {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding-bottom: 20px;
+}
+.wp-week-node:last-child {
+  padding-bottom: 0;
+}
+
+/* ── Week dot (sits on the connecting line) ──────────────── */
+.wp-week-dot {
+  position: absolute;
+  left: -24px;
+  top: 12px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+  z-index: 1;
+}
+.wp-week-node--current .wp-week-dot {
+  background: #0066FF;
+  border-color: #0066FF;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.2);
+}
+.wp-week-node--buffer .wp-week-dot {
+  background: #F59E0B;
+  border-color: #F59E0B;
+}
+.wp-week-node--holiday .wp-week-dot {
+  background: rgba(13,27,42,0.3);
+  border-color: rgba(13,27,42,0.3);
+}
+
+/* ── Week content card ───────────────────────────────────── */
+.wp-week-content {
+  flex: 1;
+  background: #ffffff;
+  border: 1.5px solid rgba(13,27,42,0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+}
+.wp-week-node--current .wp-week-content {
+  border-color: rgba(0,102,255,0.35);
+  background: rgba(0,102,255,0.03);
+}
+.wp-week-node--buffer .wp-week-content {
+  background: #FFFBEB;
+  border-color: rgba(245,158,11,0.3);
+}
+.wp-week-node--holiday .wp-week-content {
+  background: rgba(13,27,42,0.03);
+  border-color: rgba(13,27,42,0.12);
+}
+
+/* ── Week header row ─────────────────────────────────────── */
+.wp-week-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wp-week-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.45);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wp-week-dates {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0D1B2A;
+}
+
+/* ── "You Are Here" badge ────────────────────────────────── */
+.wp-you-are-here {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #0066FF;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ── Week content elements ───────────────────────────────── */
+.wp-week-focus {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.7);
+  line-height: 1.6;
+}
+.wp-week-target {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.5);
+}
+
+/* ── Week type tags ──────────────────────────────────────── */
+.wp-week-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+.wp-week-tag--buffer  { background: #FEF3C7; color: #92400E; }
+.wp-week-tag--holiday { background: rgba(13,27,42,0.08); color: rgba(13,27,42,0.5); }
+
+/* ── Holiday note ────────────────────────────────────────── */
+.wp-week-holiday-note {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: rgba(13,27,42,0.45);
+}
+
+/* ── Confirm button ──────────────────────────────────────── */
+.wp-btn-confirm {
+  width: 100%;
+  padding: 14px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+.wp-btn-confirm:hover:not(:disabled) {
+  background: #0052CC;
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.wp-btn-confirm:active:not(:disabled) { transform: translateY(0); }
+.wp-btn-confirm:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   BONUS — SIDEBAR EMAIL BUTTON
+   ============================================================ */
+
+/* Container injected below the step list in the sidebar */
+.sidebar__bonus {
+  padding: 0 16px 20px;
+}
+
+/* Thin rule separating the bonus section from the main step list */
+.sidebar__bonus-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.10);
+  margin-bottom: 14px;
+}
+
+/* The "Draft Supervisor Email" button */
+.sidebar__bonus-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(0, 102, 255, 0.14);
+  border: none;
+  border-radius: 8px;
+  color: #60a5fa;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  text-align: left;
+}
+.sidebar__bonus-btn:hover {
+  background: rgba(0, 102, 255, 0.26);
+  color: #93c5fd;
+}
+.sidebar__bonus-btn:active {
+  background: rgba(0, 102, 255, 0.34);
+}
+
+
+/* ============================================================
+   SUPERVISOR EMAIL CARD  (se-)
+   ============================================================ */
+
+/* Card container — same dimensions and shadow treatment as other step cards */
+.se-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f0f6ff 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-left: 4px solid #3B82F6;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.se-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.se-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+  margin-bottom: 2px;
+}
+
+.se-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13, 27, 42, 0.5);
+  line-height: 1.6;
+  margin-top: -6px;
+}
+
+.se-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+  margin-top: -4px;
+}
+
+/* Generate Email button — same weight as Validate Topic */
+.se-btn-generate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.se-btn-generate:hover {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  transform: translateY(-1px);
+}
+.se-btn-generate:active  { transform: translateY(0); }
+.se-btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.se-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.se-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Email preview box — light parchment-style background */
+.se-email-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Small uppercase label above the subject line */
+.se-part-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #7ab8ff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+/* Subject text */
+.se-subject-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  line-height: 1.5;
+}
+
+/* Thin rule between subject and body */
+.se-email-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+/* Body text paragraphs (greeting / body / sign-off) */
+.se-body-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+/* ── Staggered reveal for email parts ────────────────────── */
+.se-email-part {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.se-email-part--hidden {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+.se-email-part--revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Actions row ─────────────────────────────────────────── */
+.se-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Copy Email button */
+.se-btn-copy {
+  padding: 11px 24px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  min-width: 130px;
+  text-align: center;
+}
+.se-btn-copy:hover {
+  box-shadow: 0 0 18px rgba(0, 102, 255, 0.38);
+  transform: translateY(-1px);
+}
+.se-btn-copy:active { transform: translateY(0); }
+
+/* ── Reminder note ───────────────────────────────────────── */
+.se-note {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(13, 27, 42, 0.4);
+  text-align: center;
+  line-height: 1.5;
+}
+
+

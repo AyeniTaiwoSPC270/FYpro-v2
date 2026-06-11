@@ -1,0 +1,295 @@
+/* ============================================================
+   THEME SYSTEM — Light / Dark Mode
+   ============================================================ */
+
+/* ── Dark mode (default) ────────────────────────────────────── */
+:root,
+:root[data-theme="dark"],
+.dark {
+  --bg-base:    #0A0F1C;
+  --bg-card:    #0D1425;
+  --bg-input:   #111827;
+  --bg-sidebar: #070C18;
+  --border-color:        #1E293B;
+  --border-subtle:       rgba(255,255,255,0.07);
+  --text-primary:        #F8FAFC;
+  --text-secondary:      #94A3B8;
+  --text-muted:          #475569;
+  /* Bridge old --color-text-* vars to dark theme */
+  --color-text-primary:   rgba(255, 255, 255, 0.90);
+  --color-text-secondary: rgba(255, 255, 255, 0.58);
+  --color-text-muted:     rgba(255, 255, 255, 0.32);
+  --color-text-faint:     rgba(255, 255, 255, 0.18);
+  --accent:              #2563EB;
+  --accent-hover:        #3B82F6;
+  --card-shadow:         0 0 0 transparent;
+  --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.07) 1.2px, transparent 1px);
+  /* Public page tokens */
+  --pub-bg:           #060E18;
+  --pub-bg-mid:       #0D1B2A;
+  --pub-bg-alt:       #091420;
+  --pub-nav-bg:       rgba(6,14,24,0.82);
+  --pub-nav-scrolled: rgba(6,14,24,0.94);
+  --pub-nav-solid:    rgba(6,14,24,0.98);
+  --pub-text:         #FFFFFF;
+  --pub-text-muted:   rgba(255,255,255,0.50);
+  --pub-text-em:      rgba(255,255,255,0.75);
+  --pub-text-dim:     rgba(255,255,255,0.30);
+  --pub-border-dim:   rgba(255,255,255,0.06);
+  /* Component-specific tokens */
+  --header-btn-bg:       rgba(255,255,255,0.04);
+  --header-btn-border:   rgba(255,255,255,0.1);
+  --badge-inactive-bg:   rgba(255,255,255,0.07);
+  --badge-inactive-border: rgba(255,255,255,0.12);
+  --badge-locked-text:   rgba(255,255,255,0.25);
+  --bg-green-mid:        #0B1E10;
+  --sidebar-gradient-end: #050A13;
+  --dropdown-border:     rgba(255,255,255,0.1);
+  --dropdown-divider:    rgba(255,255,255,0.07);
+  --skeleton-base:       #1E293B;
+  --skeleton-shimmer:    #2D3F5A;
+  --toggle-track:        #334155;
+  --toggle-track-off:    #1E293B;
+}
+
+/* ── Light mode ─────────────────────────────────────────────── */
+:root[data-theme="light"],
+.light {
+  --bg-base:    #F8FAFC;
+  --bg-card:    #FFFFFF;
+  --bg-input:   #F1F5F9;
+  --bg-sidebar: #EEF2F8;
+  --border-color:        #E2E8F0;
+  --border-subtle:       rgba(0,0,0,0.08);
+  --text-primary:        #0F172A;
+  --text-secondary:      #475569;
+  --text-muted:          #94A3B8;
+  /* Bridge old --color-text-* vars to light theme */
+  --color-text-primary:   #0D1B2A;
+  --color-text-secondary: rgba(13, 27, 42, 0.6);
+  --color-text-muted:     rgba(13, 27, 42, 0.4);
+  --color-text-faint:     rgba(13, 27, 42, 0.25);
+  --accent:              #2563EB;
+  --accent-hover:        #1D4ED8;
+  --card-shadow:         0 1px 3px rgba(0,0,0,0.08);
+  --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.10) 1.2px, transparent 1px);
+  /* Public page tokens — warm academia palette */
+  --pub-bg:           #FAFAF7;
+  --pub-bg-mid:       #F2F0EA;
+  --pub-bg-alt:       #F7F5F0;
+  --pub-nav-bg:       rgba(250,250,247,0.88);
+  --pub-nav-scrolled: rgba(250,250,247,0.97);
+  --pub-nav-solid:    rgba(250,250,247,0.99);
+  --pub-text:         #0D1B2A;
+  --pub-text-muted:   rgba(13,27,42,0.60);
+  --pub-text-em:      rgba(13,27,42,0.80);
+  --pub-text-dim:     rgba(13,27,42,0.40);
+  --pub-border-dim:   rgba(13,27,42,0.08);
+  --pub-bg-sand:      #F2EFE8;
+  --pub-bg-section:   #FFFFFF;
+  --pub-bg-pricing:   #F7F8FA;
+  --pub-bg-footer:    #F2F4F7;
+  /* Component-specific tokens */
+  --header-btn-bg:       rgba(0,0,0,0.05);
+  --header-btn-border:   #E2E8F0;
+  --badge-inactive-bg:   rgba(0,0,0,0.06);
+  --badge-inactive-border: #E2E8F0;
+  --badge-locked-text:   #94A3B8;
+  --bg-green-mid:        rgba(22,163,74,0.06);
+  --sidebar-gradient-end: #E4EBF5;
+  --dropdown-border:     #E2E8F0;
+  --dropdown-divider:    #E2E8F0;
+  --skeleton-base:       #E2E8F0;
+  --skeleton-shimmer:    #CBD5E1;
+  --toggle-track:        #94A3B8;
+  --toggle-track-off:    #CBD5E1;
+}
+
+/* ── html/body background inherits from theme ───────────────── */
+html, body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ── Light mode: text class overrides ───────────────────────── */
+.light .text-white,
+[data-theme="light"] .text-white {
+  color: var(--text-primary) !important;
+}
+.light .text-slate-50,
+.light .text-slate-100,
+.light .text-slate-200,
+[data-theme="light"] .text-slate-50,
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 {
+  color: var(--text-primary) !important;
+}
+.light .text-slate-300,
+[data-theme="light"] .text-slate-300 {
+  color: var(--text-secondary) !important;
+}
+.light .text-slate-400,
+[data-theme="light"] .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+.light .text-slate-500,
+.light .text-slate-600,
+[data-theme="light"] .text-slate-500,
+[data-theme="light"] .text-slate-600 {
+  color: var(--text-muted) !important;
+}
+
+/* ── Light mode: border class overrides ─────────────────────── */
+.light .border-slate-800,
+.light .border-slate-700,
+[data-theme="light"] .border-slate-800,
+[data-theme="light"] .border-slate-700 {
+  border-color: var(--border-color) !important;
+}
+
+/* ── Light mode: bg overrides for Tailwind bg classes ───────── */
+.light .bg-slate-900,
+.light .bg-slate-800,
+[data-theme="light"] .bg-slate-900,
+[data-theme="light"] .bg-slate-800 {
+  background-color: var(--bg-card) !important;
+}
+
+/* ============================================================
+   FULL RESPONSIVE PASS — 2026-04-28
+   Supplements the existing responsive blocks above.
+   ============================================================ */
+
+/* ── Step navigator: symmetric padding to clear hamburger and prevent right clip ── */
+@media (max-width: 768px) {
+  .step-navigator {
+    padding-left: 60px !important;
+    padding-right: 60px !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .step-navigator::-webkit-scrollbar { display: none; }
+  .nav-track { flex-shrink: 0; }
+}
+@media (max-width: 480px) {
+  .step-navigator {
+    padding-left: 52px !important;
+    padding-right: 52px !important;
+  }
+}
+
+/* ── Touch targets: minimum 44px height for primary step buttons ── */
+@media (max-width: 768px) {
+  .tv-btn-validate,
+  .tv-btn-use,
+  .tv-btn-save,
+  .ca-btn-generate,
+  .ma-btn-analyse {
+    min-height: 44px;
+  }
+}
+
+/* ── Auth cards: reduce inner padding on very small phones ───── */
+@media (max-width: 480px) {
+  .rounded-2xl.border.border-slate-800.p-10 {
+    padding: 32px 20px 40px !important;
+  }
+}
+
+/* ── Pricing comparison table: smooth touch scroll ───────────── */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Dashboard header icon buttons: keep visible on all screens ── */
+@media (max-width: 480px) {
+  .db-header__icon-btn {
+    display: flex !important;
+  }
+}
+
+/* ── Prevent horizontal overflow globally ────────────────────── */
+body {
+  overflow-x: hidden;
+}
+
+/* ── Onboarding: give card breathing room on narrow phones ───── */
+@media (max-width: 480px) {
+  #onboarding-screen {
+    padding-left: 12px;
+    padding-right: 12px;
+    align-items: flex-start;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+/* ── pr-btn-skip — ghost "Skip" button below upload zone ──────── */
+.pr-btn-skip {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--color-text-secondary, rgba(13,27,42,0.6));
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm, 0.75rem);
+  font-weight: 500;
+  border: 1.5px solid var(--color-border, rgba(13,27,42,0.1));
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast),
+              background var(--transition-fast);
+}
+.pr-btn-skip:hover {
+  color: var(--color-blue-primary, #0066FF);
+  border-color: var(--color-blue-primary, #0066FF);
+  background: var(--color-blue-glow, rgba(0,102,255,0.05));
+}
+
+/* ── sidebar__back-dashboard — bottom ghost nav button ────────── */
+.sidebar__back-dashboard {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  padding: 10px 16px;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.sidebar__back-dashboard:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+}
+
+/* ── sidebar__bonus-btn — bonus feature button (Supervisor Email) */
+.sidebar__bonus-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 8px;
+  padding: 10px 16px;
+  background: rgba(0,102,255,0.08);
+  color: rgba(255,255,255,0.75);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(0,102,255,0.25);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.sidebar__bonus-btn:hover {
+  background: rgba(0,102,255,0.15);
+  border-color: rgba(0,102,255,0.45);
+  color: #fff;
+}
+
+

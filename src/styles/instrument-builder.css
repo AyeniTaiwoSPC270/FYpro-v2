@@ -1,0 +1,377 @@
+/* ============================================================
+   STEP 4 — DATA COLLECTION INSTRUMENT BUILDER  (di-)
+   Appended 2026-04-14 — ready for when Step 4 is built.
+   Orange accent distinguishes from adjacent amber (Step 2)
+   and teal (Step 5).
+   ============================================================ */
+
+.di-card {
+  background: var(--gradient-card-violet);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid var(--color-step-instrument);
+  box-shadow: var(--shadow-card);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+  animation: card-enter 0.4s ease forwards;
+}
+
+.di-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transition: box-shadow var(--transition-base);
+}
+
+.di-card::before {
+  content: 'DCI';
+  position: absolute;
+  right: 28px;
+  top: 12px;
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 5rem;
+  line-height: 1;
+  color: rgba(139, 92, 246, 0.055);
+  pointer-events: none;
+  user-select: none;
+}
+
+.di-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+
+.di-section--hidden  { display: none; }
+.di-section--visible { display: block; }
+
+
+/* ── Three-Examiner Defence Panel additions ──────────────────────────────── */
+
+/* Examiner label colour per persona */
+.dp-examiner-label--methodologist    { color: #3B82F6; }
+.dp-examiner-label--subject-expert   { color: #16A34A; }
+.dp-examiner-label--external-examiner { color: #F59E0B; }
+
+/* Per-examiner score badge border accent */
+.dp-score-badge--examiner-methodologist    { border-color: #3B82F6; }
+.dp-score-badge--examiner-subject-expert   { border-color: #16A34A; }
+.dp-score-badge--examiner-external-examiner { border-color: #F59E0B; }
+
+/* Panel intro line — shown once at session start above the first question */
+.dp-panel-intro {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin: 0 0 var(--space-md);
+  padding: 0 var(--space-md);
+  line-height: 1.5;
+}
+
+/* Summary card — three-verdict block */
+.dp-summary-verdicts {
+  margin-bottom: var(--space-lg);
+}
+
+.dp-summary-verdict-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dp-summary-verdict-row:last-child {
+  border-bottom: none;
+}
+
+/* Examiner name inside verdict row — reuses colour classes from label above */
+.dp-summary-examiner-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Verdict sentence per examiner */
+.dp-summary-verdict-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   Data Collection Instrument Builder — Step 4  (di- prefix)
+   ============================================================ */
+
+/* ── Card enter animation ────────────────────────────────── */
+@keyframes di-card-enter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.di-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fffdf5 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid #F59E0B;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+  margin-top: 28px;
+  animation: di-card-enter 0.45s ease forwards;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.di-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.di-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+}
+
+/* ── Methodology badge ───────────────────────────────────── */
+.di-methodology-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(245,158,11,0.12);
+  color: #B45309;
+  border: 1px solid rgba(245,158,11,0.3);
+  align-self: flex-start;
+}
+
+.di-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+  margin-top: -8px;
+}
+
+.di-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+}
+
+/* ── Generate button ─────────────────────────────────────── */
+.di-btn-generate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.di-btn-generate:hover {
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.di-btn-generate:active  { transform: translateY(0); }
+.di-btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.di-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.di-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Instrument title ────────────────────────────────────── */
+.di-instrument-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0D1B2A;
+  margin-bottom: 4px;
+}
+
+/* ── Instrument body ─────────────────────────────────────── */
+.di-instrument-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Section block ───────────────────────────────────────── */
+.di-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(245,158,11,0.04);
+  border: 1px solid rgba(245,158,11,0.14);
+}
+
+.di-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #92400E;
+  margin-bottom: 14px;
+}
+
+/* ── Question row ────────────────────────────────────────── */
+.di-question {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(13,27,42,0.08);
+}
+.di-question:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.di-question-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(180,83,9,0.55);
+  width: 22px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.di-question-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.di-question-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: #0D1B2A;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Likert scale pills ──────────────────────────────────── */
+.di-likert-scale {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.di-likert-option {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(13,27,42,0.05);
+  border: 1px solid rgba(13,27,42,0.12);
+  color: rgba(13,27,42,0.55);
+  white-space: nowrap;
+}
+
+/* ── Open-ended answer line ──────────────────────────────── */
+.di-open-line {
+  width: 100%;
+  height: 1px;
+  border-bottom: 1.5px dashed rgba(13,27,42,0.15);
+  margin-top: 4px;
+}
+
+/* ── Action buttons row ──────────────────────────────────── */
+.di-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Copy button — ghost style */
+.di-btn-copy {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 10px;
+  color: rgba(13,27,42,0.65);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.di-btn-copy:hover {
+  border-color: #F59E0B;
+  color: #B45309;
+  background: rgba(245,158,11,0.05);
+}
+
+/* Continue button — blue CTA */
+.di-btn-continue {
+  flex: 2;
+  padding: 12px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.di-btn-continue:hover {
+  background: #0052CC;
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.di-btn-continue:active { transform: translateY(0); }
+
+

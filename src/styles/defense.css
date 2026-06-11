@@ -1,0 +1,657 @@
+/* ============================================================
+   STEP 5 — DEFENCE PREP  (dp-)
+   Part 1: Red Flag Detector card
+   Part 2: Defence Mode full-screen overlay
+   ============================================================ */
+
+/* ── Card shell ──────────────────────────────────────────── */
+.dp-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-left: 4px solid #DC2626;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Section visibility — reuses tv-section pattern ─────── */
+.dp-section--hidden  { display: none; }
+.dp-section--visible { display: block; }
+
+/* ── Step label + scan subtext ───────────────────────────── */
+.dp-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+  margin-bottom: 6px;
+}
+
+.dp-scan-subtext {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13, 27, 42, 0.5);
+  line-height: 1.6;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.dp-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0 40px;
+}
+
+.dp-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+  text-align: center;
+  margin-top: -8px;
+}
+
+.dp-retry-btn {
+  padding: 9px 22px;
+  background: transparent;
+  border: 1.5px solid #DC2626;
+  border-radius: 8px;
+  color: #DC2626;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.dp-retry-btn:hover {
+  background: #DC2626;
+  color: #ffffff;
+}
+
+/* ── Flags section ───────────────────────────────────────── */
+.dp-flags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dp-flags-header {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(13, 27, 42, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+/* ── Individual flag card ────────────────────────────────── */
+.dp-flag-item {
+  background: #ffffff;
+  border: 1.5px solid rgba(13, 27, 42, 0.09);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* transition applied to reveal animation */
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.dp-flag-item--hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+
+.dp-flag-item--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Header row: coloured dot + title */
+.dp-flag-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.dp-flag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.dp-flag-dot--critical   { background: #DC2626; }
+.dp-flag-dot--serious    { background: #F59E0B; }
+.dp-flag-dot--minor      { background: #6B7280; }
+
+.dp-flag-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  line-height: 1.4;
+}
+
+.dp-flag-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(13, 27, 42, 0.62);
+  line-height: 1.6;
+}
+
+/* "Likely question" and "Prepare" rows */
+.dp-flag-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dp-flag-meta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(13, 27, 42, 0.35);
+}
+
+.dp-flag-meta-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(13, 27, 42, 0.7);
+  line-height: 1.55;
+}
+
+/* ── Action buttons ──────────────────────────────────────── */
+.dp-btn-start-scan {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  margin-top: 8px;
+}
+.dp-btn-start-scan:hover {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  transform: translateY(-1px);
+}
+.dp-btn-start-scan:active { transform: translateY(0); }
+.dp-btn-start-scan:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.dp-buttons-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.dp-btn-enter-defense {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dp-btn-enter-defense:hover {
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  transform: translateY(-1px);
+}
+.dp-btn-enter-defense:active { transform: translateY(0); }
+
+.dp-btn-go-back {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid rgba(13, 27, 42, 0.2);
+  border-radius: 10px;
+  color: rgba(13, 27, 42, 0.6);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.dp-btn-go-back:hover {
+  border-color: rgba(13, 27, 42, 0.4);
+  color: #0D1B2A;
+  background: rgba(13, 27, 42, 0.03);
+}
+
+
+/* ============================================================
+   DEFENCE MODE OVERLAY
+   ============================================================ */
+
+.dp-defense-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #060E18;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.dp-defense-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.dp-defense-title {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.01em;
+}
+
+.dp-defense-end-btn {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(220, 38, 38, 0.55);
+  border-radius: 8px;
+  color: #F87171;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.dp-defense-end-btn:hover {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: #DC2626;
+  color: #FCA5A5;
+}
+
+/* ── Chat area ───────────────────────────────────────────── */
+.dp-chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Custom scrollbar for dark bg */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.dp-chat-area::-webkit-scrollbar       { width: 5px; }
+.dp-chat-area::-webkit-scrollbar-track { background: transparent; }
+.dp-chat-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+/* A "turn" groups the student bubble + score badge together */
+.dp-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end; /* student side */
+}
+
+/* ── Examiner bubble (left) ──────────────────────────────── */
+.dp-examiner-wrap {
+  max-width: 78%;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-examiner-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  min-height: 1em; /* reserves space while typing */
+}
+
+.dp-examiner-bubble {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 12px 12px 12px;
+  padding: 14px 18px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.dp-examiner-bubble--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dp-examiner-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.7;
+}
+
+/* ── Student bubble (right) ──────────────────────────────── */
+.dp-student-wrap {
+  max-width: 78%;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.dp-student-bubble {
+  background: #0066FF;
+  border-radius: 12px 0 12px 12px;
+  padding: 14px 18px;
+}
+
+.dp-student-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: #ffffff;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Score badge ─────────────────────────────────────────── */
+.dp-score-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1.5px solid;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.dp-score--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dp-score-badge--fail        { color: #F87171; border-color: #DC2626; background: rgba(220, 38, 38, 0.12); }
+.dp-score-badge--pass        { color: #FCD34D; border-color: #F59E0B; background: rgba(245, 158, 11, 0.12); }
+.dp-score-badge--merit       { color: #60A5FA; border-color: #3B82F6; background: rgba(59, 130, 246, 0.12); }
+.dp-score-badge--distinction { color: #4ADE80; border-color: #22C55E; background: rgba(34, 197, 94, 0.12); }
+
+.dp-score-reasoning {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.55;
+  text-align: right;
+  opacity: 0;
+  transition: opacity 0.35s ease 0.25s;
+}
+.dp-score-reasoning--visible { opacity: 1; }
+
+/* ── Typing indicator (examiner is thinking) ─────────────── */
+.dp-typing-wrap {
+  max-width: 78%;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-typing-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dp-typing-indicator {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 12px 12px 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dp-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  animation: dp-pulse 1.3s ease-in-out infinite;
+}
+.dp-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.dp-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dp-pulse {
+  0%, 60%, 100% { opacity: 0.35; transform: scale(1); }
+  30%            { opacity: 1;    transform: scale(1.25); }
+}
+
+/* ── Input area ──────────────────────────────────────────── */
+.dp-input-area {
+  padding: 16px 28px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.dp-student-input {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dp-student-input::placeholder { color: rgba(255, 255, 255, 0.25); }
+.dp-student-input:focus {
+  border-color: rgba(0, 102, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.18);
+}
+.dp-student-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  resize: none;
+}
+
+.dp-input-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dp-send-btn {
+  padding: 10px 26px;
+  background: #0066FF;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dp-send-btn:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(0, 102, 255, 0.45);
+  transform: translateY(-1px);
+}
+.dp-send-btn:active:not(:disabled) { transform: translateY(0); }
+.dp-send-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Loading state shown inside input area while fetching summary */
+.dp-verdict-loading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 4px;
+}
+
+.dp-verdict-loading-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+
+/* ============================================================
+   DEFENCE SUMMARY CARD  (shown inside the overlay)
+   ============================================================ */
+
+/* Wrapper fills the overlay body, centres the card */
+.dp-summary-wrap {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.dp-summary-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dp-summary-verdict {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  color: #0D1B2A;
+  line-height: 1.7;
+}
+
+/* Overall score badge */
+.dp-summary-score-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 8px 20px;
+  border-radius: 10px;
+  align-self: flex-start;
+}
+.dp-summary-score--fail        { background: #FEF2F2; color: #DC2626; }
+.dp-summary-score--pass        { background: #FFFBEB; color: #B45309; }
+.dp-summary-score--merit       { background: #EFF6FF; color: #1D4ED8; }
+.dp-summary-score--distinction { background: #F0FFF4; color: #15803D; }
+
+/* Strengths / Gaps sections */
+.dp-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dp-summary-section-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(13, 27, 42, 0.38);
+}
+
+.dp-summary-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dp-summary-list--strengths li::before {
+  content: '\25CF\00A0'; /* ● */
+  color: #16A34A;
+  font-size: 0.65rem;
+}
+.dp-summary-list--gaps li::before {
+  content: '\25CF\00A0'; /* ● */
+  color: #DC2626;
+  font-size: 0.65rem;
+}
+
+.dp-summary-list li {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.865rem;
+  color: rgba(13, 27, 42, 0.75);
+  line-height: 1.6;
+}
+
+.dp-summary-advice {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: rgba(13, 27, 42, 0.55);
+  line-height: 1.65;
+  border-top: 1px solid rgba(13, 27, 42, 0.08);
+  padding-top: 16px;
+}
+
+.dp-summary-done-btn {
+  width: 100%;
+  padding: 14px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.dp-summary-done-btn:hover {
+  background: #0052CC;
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+  transform: translateY(-1px);
+}
+.dp-summary-done-btn:active { transform: translateY(0); }
+
+

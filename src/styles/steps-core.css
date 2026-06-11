@@ -1,0 +1,1275 @@
+/* ============================================================
+   Topic Validator — Step 1
+   ============================================================ */
+
+/* ── Card base ───────────────────────────────────────────── */
+.tv-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f4f8ff 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid #0066FF;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.45s ease;
+}
+
+/* ── Verdict tints ───────────────────────────────────────── */
+.tv-card--green  { background: linear-gradient(145deg, #f3fff6 0%, #ecfdf5 100%); }
+.tv-card--yellow { background: linear-gradient(145deg, #fefff0 0%, #fefce8 100%); }
+.tv-card--red    { background: linear-gradient(145deg, #fff7f7 0%, #fef2f2 100%); }
+
+/* ── Section visibility ──────────────────────────────────── */
+.tv-section--hidden  { display: none; }
+.tv-section--visible { display: block; }
+
+/* ── Input section ───────────────────────────────────────── */
+.tv-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tv-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+  margin-bottom: 2px;
+}
+.tv-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+  margin-top: -6px;
+}
+.tv-textarea {
+  width: 100%;
+  min-height: 108px;
+  padding: 13px 15px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid rgba(13,27,42,0.12);
+  border-radius: 10px;
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tv-textarea:focus {
+  border-color: #0066FF;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+}
+.tv-textarea--shake {
+  animation: tv-shake 0.35s ease;
+}
+@keyframes tv-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-7px); }
+  60%       { transform: translateX(7px); }
+  80%       { transform: translateX(-3px); }
+}
+.tv-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+  margin-top: -8px;
+}
+.tv-btn-validate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.tv-btn-validate:hover {
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.tv-btn-validate:active {
+  transform: translateY(0);
+}
+.tv-btn-validate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.tv-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+.tv-loading-shield {
+  display: block;
+  filter: drop-shadow(0 6px 24px rgba(0,102,255,0.35));
+  transform-origin: center center;
+}
+.tv-shield--spinning {
+  animation: tv-spin 1.3s linear infinite;
+}
+@keyframes tv-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.tv-loading-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(13,27,42,0.5);
+  letter-spacing: 0.02em;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.tv-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.tv-verdict-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-verdict-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tv-verdict-label--green  { color: #15803D; }
+.tv-verdict-label--yellow { color: #92400E; }
+.tv-verdict-label--red    { color: #B91C1C; }
+.tv-verdict-reason {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(13,27,42,0.65);
+  line-height: 1.65;
+}
+.tv-divider {
+  border: none;
+  border-top: 1px solid rgba(13,27,42,0.1);
+}
+
+/* ── Refined topic ───────────────────────────────────────── */
+.tv-refined-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tv-refined-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tv-refined-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  line-height: 1.5;
+  min-height: 1.5em;
+}
+/* Blinking cursor while typewriter is active */
+.tv-typewriter--active::after {
+  content: '|';
+  font-weight: 400;
+  margin-left: 1px;
+  animation: tv-blink 0.65s step-end infinite;
+}
+@keyframes tv-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.tv-refined-explanation {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+}
+.tv-refined-edit-area {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid #0066FF;
+  border-radius: 10px;
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+}
+.tv-refined-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.tv-btn-edit {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 8px;
+  color: rgba(13,27,42,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.tv-btn-edit:hover {
+  border-color: #0066FF;
+  color: #7ab8ff;
+}
+.tv-btn-save {
+  padding: 7px 16px;
+  background: #0066FF;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.tv-btn-save:hover { opacity: 0.85; }
+
+/* ── Use This Topic button ───────────────────────────────── */
+.tv-btn-use {
+  width: 100%;
+  padding: 14px;
+  background: #16A34A;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.tv-btn-use:hover {
+  background: #15803D;
+  box-shadow: 0 0 20px rgba(22,163,74,0.35);
+  transform: translateY(-1px);
+}
+.tv-btn-use:active {
+  transform: translateY(0);
+}
+
+/* ── Alternatives section ────────────────────────────────── */
+.tv-alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tv-alternatives-heading {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(13,27,42,0.55);
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+.tv-alt-card {
+  background: rgba(13,27,42,0.04);
+  border: 1px solid rgba(13,27,42,0.08);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-alt-topic {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  line-height: 1.4;
+}
+.tv-alt-explanation {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: rgba(13,27,42,0.55);
+  line-height: 1.6;
+}
+.tv-alt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+.tv-difficulty-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.tv-difficulty--easy       { background: #D1FAE5; color: #065F46; }
+.tv-difficulty--moderate   { background: #FEF3C7; color: #92400E; }
+.tv-difficulty--challenging { background: #FEE2E2; color: #991B1B; }
+.tv-btn-use-alt {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 8px;
+  color: rgba(13,27,42,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+.tv-btn-use-alt:hover {
+  border-color: #0066FF;
+  color: #7ab8ff;
+}
+
+
+/* ── Real papers section ─────────────────────────────────── */
+.tv-papers-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tv-papers-heading {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tv-papers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tv-paper-item {
+  background: rgba(13,27,42,0.03);
+  border: 1px solid rgba(13,27,42,0.07);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tv-paper-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #0D1B2A;
+  line-height: 1.45;
+}
+.tv-paper-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(13,27,42,0.45);
+  line-height: 1.4;
+}
+.tv-paper-author  { color: rgba(13,27,42,0.7); }
+.tv-paper-year    { color: rgba(13,27,42,0.6); }
+.tv-paper-citations { color: #7ab8ff; }
+.tv-papers-sparse-note {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.75rem;
+  color: #92400E;
+  background: #FFFBEB;
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+/* push permission card */
+.tv-push-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: var(--color-blue-subtle);
+  border: 1px solid var(--color-border-blue);
+  border-left: 3px solid var(--color-blue-primary);
+  border-radius: var(--radius-md);
+  animation: card-enter 0.3s ease forwards;
+}
+
+.tv-push-card__icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.tv-push-card__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.tv-push-card__text strong {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.tv-push-card__text p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tv-push-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tv-push-card__btn--yes {
+  padding: 7px 14px;
+  background: var(--color-blue-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tv-push-card__btn--yes:hover { opacity: 0.85; }
+
+.tv-push-card__btn--no {
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tv-push-card__btn--no:hover { background: rgba(13,27,42,0.06); }
+
+
+/* ============================================================
+   Chapter Architect — Step 2
+   ============================================================ */
+
+/* ── Card base ───────────────────────────────────────────── */
+.ca-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fffdf5 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid #F59E0B;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.ca-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ca-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+}
+.ca-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+  margin-top: -8px;
+}
+.ca-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ca-form-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Structure type segmented toggle ─────────────────────── */
+.ca-structure-toggle {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid rgba(13,27,42,0.12);
+}
+.ca-toggle-btn {
+  flex: 1;
+  padding: 11px 14px;
+  background: transparent;
+  border: none;
+  border-right: 1.5px solid rgba(13,27,42,0.12);
+  color: rgba(13,27,42,0.45);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.ca-toggle-btn:last-child {
+  border-right: none;
+}
+.ca-toggle-btn:hover:not(.ca-toggle-btn--active) {
+  background: rgba(0,102,255,0.05);
+  color: #7ab8ff;
+}
+.ca-toggle-btn--active {
+  background: #0066FF;
+  color: #ffffff;
+}
+.ca-toggle-hint {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.76rem;
+  color: rgba(13,27,42,0.35);
+  line-height: 1.5;
+}
+
+/* ── Word count input ────────────────────────────────────── */
+.ca-word-count-input {
+  width: 100%;
+  padding: 13px 15px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid rgba(13,27,42,0.12);
+  border-radius: 10px;
+  
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.ca-word-count-input::-webkit-outer-spin-button,
+.ca-word-count-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.ca-word-count-input:focus {
+  border-color: #0066FF;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+}
+.ca-input--shake {
+  animation: tv-shake 0.35s ease;
+}
+.ca-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+  margin-top: -8px;
+}
+
+/* ── Generate button ─────────────────────────────────────── */
+.ca-btn-generate {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.ca-btn-generate:hover {
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.ca-btn-generate:active  { transform: translateY(0); }
+.ca-btn-generate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.ca-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.ca-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ca-structure-note {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: rgba(13,27,42,0.45);
+  line-height: 1.6;
+}
+
+/* ── Chapters accordion list ─────────────────────────────── */
+.ca-chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Single chapter row ──────────────────────────────────── */
+.ca-chapter-row {
+  background: #ffffff;
+  border: 1px solid rgba(13,27,42,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ca-chapter-row:hover {
+  border-color: rgba(0,102,255,0.25);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.ca-chapter-row--open {
+  border-color: rgba(0,102,255,0.3);
+}
+
+/* ── Chapter header (clickable) ──────────────────────────── */
+.ca-chapter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  position: relative;
+  min-height: 64px;
+  user-select: none;
+}
+
+/* Large faded chapter number as decorative background text */
+.ca-chapter-num-bg {
+  position: absolute;
+  right: 56px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 4.5rem;
+  line-height: 1;
+  color: rgba(13,27,42,0.04);
+  pointer-events: none;
+  user-select: none;
+}
+.ca-chapter-title-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  flex: 1;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Progress ring ───────────────────────────────────────── */
+.ca-chapter-ring {
+  flex-shrink: 0;
+  display: block;
+}
+
+/* ── Chevron icon ────────────────────────────────────────── */
+.ca-chevron {
+  flex-shrink: 0;
+  color: rgba(13,27,42,0.3);
+  transition: transform 0.25s ease;
+}
+.ca-chapter-row--open .ca-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Collapsible body ────────────────────────────────────── */
+.ca-chapter-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.ca-chapter-body-inner {
+  padding: 4px 20px 20px;
+  border-top: 1px solid rgba(13,27,42,0.07);
+}
+
+/* ── Body content elements ───────────────────────────────── */
+.ca-body-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  margin-top: 12px;
+}
+.ca-body-label:first-child { margin-top: 14px; }
+.ca-body-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: #0D1B2A;
+  line-height: 1.6;
+}
+.ca-key-content-list {
+  list-style: disc;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ca-content-item {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  color: rgba(13,27,42,0.7);
+  line-height: 1.55;
+}
+.ca-word-target {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(13,27,42,0.4);
+  margin-top: 14px;
+}
+
+/* ── Chapter edit / save buttons ─────────────────────────── */
+.ca-btn-edit-chapter {
+  margin-top: 14px;
+  padding: 7px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 8px;
+  color: rgba(13,27,42,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ca-btn-edit-chapter:hover {
+  border-color: #0066FF;
+  color: #7ab8ff;
+}
+.ca-btn-save-chapter {
+  margin-top: 14px;
+  padding: 7px 16px;
+  background: #0066FF;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.ca-btn-save-chapter:hover { opacity: 0.85; }
+
+/* ── Inline edit input / textarea ────────────────────────── */
+.ca-edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid #0066FF;
+  border-radius: 8px;
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.1);
+}
+.ca-edit-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.ca-edit-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(13,27,42,0.03);
+  border: 1.5px solid #0066FF;
+  border-radius: 8px;
+  color: #0D1B2A;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.1);
+}
+
+/* ── Regenerate & Confirm buttons ────────────────────────── */
+.ca-btn-regenerate {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 10px;
+  color: rgba(13,27,42,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.ca-btn-regenerate:hover {
+  border-color: #0066FF;
+  color: #7ab8ff;
+}
+.ca-btn-confirm {
+  width: 100%;
+  padding: 14px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.ca-btn-confirm:hover {
+  background: #0052CC;
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.ca-btn-confirm:active { transform: translateY(0); }
+
+
+/* ============================================================
+   Methodology Advisor — Step 3
+   ============================================================ */
+
+/* ── Card base ───────────────────────────────────────────── */
+.ma-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f4fff8 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-left: 4px solid #16A34A;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 36px 40px 40px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Input section ───────────────────────────────────────── */
+.ma-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ma-step-label {
+  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: #0D1B2A;
+}
+.ma-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.6;
+  margin-top: -8px;
+}
+.ma-error-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  color: #DC2626;
+}
+
+/* ── Analyse button ──────────────────────────────────────── */
+.ma-btn-analyse {
+  width: 100%;
+  padding: 13px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.ma-btn-analyse:hover {
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.ma-btn-analyse:active  { transform: translateY(0); }
+.ma-btn-analyse:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Loading section ─────────────────────────────────────── */
+.ma-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 52px 0;
+}
+
+/* ── Result section ──────────────────────────────────────── */
+.ma-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Recommendation banner ───────────────────────────────── */
+.ma-rec-banner {
+  background: rgba(22,163,74,0.07);
+  border: 1px solid rgba(22,163,74,0.22);
+  border-left: 4px solid #16A34A;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ma-rec-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(22,163,74,0.75);
+}
+.ma-rec-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #16A34A;
+}
+.ma-rec-reason {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  color: rgba(13,27,42,0.6);
+  line-height: 1.55;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* ── Options list ────────────────────────────────────────── */
+.ma-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Option card ─────────────────────────────────────────── */
+.ma-option-card {
+  background: #ffffff;
+  border: 1.5px solid rgba(13,27,42,0.1);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.ma-option-card--selected {
+  border-color: #0066FF;
+  box-shadow: 0 0 0 3px rgba(0,102,255,0.12);
+}
+.ma-option-card--dimmed {
+  opacity: 0.4;
+}
+
+/* ── Option card header ──────────────────────────────────── */
+.ma-option-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ma-option-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0D1B2A;
+  flex: 1;
+}
+
+/* ── Fit score badge ─────────────────────────────────────── */
+.ma-fit-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.ma-fit-badge--strong   { background: #D1FAE5; color: #065F46; }
+.ma-fit-badge--moderate { background: #FEF3C7; color: #92400E; }
+.ma-fit-badge--weak     { background: #FEE2E2; color: #991B1B; }
+
+/* ── Recommended tag ─────────────────────────────────────── */
+.ma-recommended-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0,102,255,0.1);
+  color: #7ab8ff;
+  flex-shrink: 0;
+}
+
+/* ── Body content elements ───────────────────────────────── */
+.ma-section-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(13,27,42,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.ma-explanation {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.75);
+  line-height: 1.65;
+}
+.ma-data-list {
+  list-style: disc;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  color: rgba(13,27,42,0.65);
+  line-height: 1.55;
+}
+.ma-instruments-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ma-instrument-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ma-instrument-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  font-weight: 600;
+  color: #0D1B2A;
+}
+.ma-instrument-access {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(13,27,42,0.5);
+  line-height: 1.5;
+}
+.ma-trade-offs {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.845rem;
+  font-style: italic;
+  color: rgba(13,27,42,0.55);
+  line-height: 1.6;
+}
+
+/* ── Select button ───────────────────────────────────────── */
+.ma-btn-select {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1.5px solid rgba(13,27,42,0.2);
+  border-radius: 8px;
+  color: rgba(13,27,42,0.55);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.ma-btn-select:hover {
+  border-color: #0066FF;
+  color: #7ab8ff;
+}
+.ma-btn-select--active {
+  background: #0066FF;
+  border-color: #0066FF;
+  color: #ffffff;
+}
+.ma-btn-select--active:hover {
+  background: #0052CC;
+  border-color: #0052CC;
+  color: #ffffff;
+}
+
+/* ── Defense answer section ──────────────────────────────── */
+.ma-defense-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ma-defense-hint {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(13,27,42,0.4);
+  line-height: 1.55;
+  margin-top: -4px;
+}
+.ma-defense-body {
+  position: relative;
+}
+.ma-defense-body--blurred {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+.ma-defense-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #0D1B2A;
+  background: rgba(13,27,42,0.03);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.ma-btn-reveal {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 22px;
+  background: #0066FF;
+  border: none;
+  border-radius: 999px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+.ma-btn-reveal:hover {
+  opacity: 0.88;
+  box-shadow: 0 0 16px rgba(0,102,255,0.4);
+}
+
+/* ── Watch Out box ───────────────────────────────────────── */
+.ma-watch-out-box {
+  background: #FFF5F5;
+  border-left: 4px solid #DC2626;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ma-watch-out-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #DC2626;
+}
+.ma-watch-out-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: rgba(13,27,42,0.7);
+  line-height: 1.65;
+}
+
+/* ── Confirm button ──────────────────────────────────────── */
+.ma-btn-confirm {
+  width: 100%;
+  padding: 14px;
+  background: #0066FF;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+.ma-btn-confirm:hover:not(:disabled) {
+  background: #0052CC;
+  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  transform: translateY(-1px);
+}
+.ma-btn-confirm:active:not(:disabled) { transform: translateY(0); }
+.ma-btn-confirm:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+

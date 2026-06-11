@@ -1,0 +1,1719 @@
+/* ============================================================
+   GLOBAL TOUCH-TARGET ENFORCEMENT — min 44px on interactive elements
+   Applied only to custom CSS components (Tailwind handles its own).
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .tv-btn-validate,
+  .tv-btn-use,
+  .tv-btn-use-alt,
+  .ca-btn-generate,
+  .ca-btn-confirm,
+  .ma-btn-analyse,
+  .ma-btn-confirm,
+  .ma-btn-select,
+  .di-btn-generate,
+  .di-btn-continue,
+  .di-btn-copy,
+  .wp-btn-generate,
+  .wp-btn-confirm,
+  .dp-btn-start-scan,
+  .dp-btn-enter-defense,
+  .dp-btn-go-back,
+  .se-btn-generate,
+  .se-btn-copy,
+  .ag-btn-generate,
+  .ag-btn-copy,
+  .lm-btn-generate,
+  .lm-btn-copy,
+  .pr-btn-review,
+  .pr-btn-confirm {
+    min-height: 44px;
+  }
+}
+
+/* ── Dashboard: db-sidebar light mode ────────────────────────── */
+[data-theme="light"] .db-sidebar,
+.light .db-sidebar {
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+[data-theme="light"] .db-sidebar__brand,
+.light .db-sidebar__brand {
+  border-bottom-color: var(--border-color);
+}
+[data-theme="light"] .db-sidebar__wordmark,
+.light .db-sidebar__wordmark {
+  color: var(--text-primary);
+}
+[data-theme="light"] .db-sidebar__nav-label,
+.light .db-sidebar__nav-label {
+  color: rgba(13,27,42,0.3);
+}
+[data-theme="light"] .db-step-item:hover,
+.light .db-step-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+[data-theme="light"] .db-step-item__num,
+.light .db-step-item__num {
+  color: rgba(13,27,42,0.3);
+}
+[data-theme="light"] .db-step-item--active .db-step-item__num,
+.light .db-step-item--active .db-step-item__num {
+  color: #2563EB;
+}
+[data-theme="light"] .db-step-item__label,
+.light .db-step-item__label {
+  color: rgba(13,27,42,0.55);
+}
+[data-theme="light"] .db-step-item--active .db-step-item__label,
+.light .db-step-item--active .db-step-item__label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+[data-theme="light"] .db-step-item--completed .db-step-item__label,
+.light .db-step-item--completed .db-step-item__label {
+  color: rgba(13,27,42,0.38);
+}
+[data-theme="light"] .db-sidebar__context,
+.light .db-sidebar__context {
+  border-top-color: var(--border-color);
+}
+[data-theme="light"] .db-context__uni,
+.light .db-context__uni {
+  color: rgba(13,27,42,0.72);
+}
+[data-theme="light"] .db-context__dept,
+[data-theme="light"] .db-context__level,
+.light .db-context__dept,
+.light .db-context__level {
+  color: rgba(13,27,42,0.45);
+}
+
+/* ── FYPro Shared Loading Messages ───────────────────────────────────────── */
+.fy-loading-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 2px;
+  text-align: center;
+}
+
+.fy-loading-status {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(13, 27, 42, 0.55);
+  letter-spacing: 0.02em;
+  min-height: 1.4em;
+  animation: fx-loading-pulse 1.5s ease-in-out infinite;
+}
+
+.fy-loading-long-wait {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.775rem;
+  color: var(--color-amber, #F59E0B);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 8px;
+  padding: 8px 14px;
+  line-height: 1.55;
+  max-width: 380px;
+  animation: card-enter 0.4s ease forwards;
+}
+
+/* Dark shell (app content area) overrides */
+.app-content .fy-loading-status {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Defense overlay (very dark) override */
+.dp-defense-overlay .fy-loading-status {
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+/* Light mode: loading status text in app content area */
+[data-theme="light"] .app-content .fy-loading-status,
+.light .app-content .fy-loading-status {
+  color: rgba(13, 27, 42, 0.55) !important;
+}
+
+/* ── Light mode: hover:text-white fix ────────────────────────────────────────
+   Tailwind's hover:text-white makes icon buttons invisible on a light bg.
+   Override to use dark text on hover in light mode.
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-theme="light"] .hover\:text-white:hover,
+.light .hover\:text-white:hover {
+  color: var(--color-text-primary, #0D1B2A) !important;
+}
+
+/* ── Light mode: dp-share-section labels ─────────────────────────────────── */
+[data-theme="light"] .dp-share-section .dp-summary-section-label,
+.light .dp-share-section .dp-summary-section-label {
+  color: rgba(13,27,42,0.4) !important;
+}
+
+/* ── Dark mode: dp-share-section "Download Result Card" label ─────────────── */
+[data-theme="dark"] .dp-share-section .dp-summary-section-label,
+.dark .dp-share-section .dp-summary-section-label {
+  color: #ffffff !important;
+}
+
+/* ── Light mode: dp-results-bar ──────────────────────────────────────────── */
+[data-theme="light"] .dp-results-bar,
+.light .dp-results-bar {
+  background: rgba(240,244,248,0.97) !important;
+  border-bottom-color: rgba(13,27,42,0.1) !important;
+}
+[data-theme="light"] .dp-results-bar__text,
+.light .dp-results-bar__text { color: rgba(13,27,42,0.45) !important; }
+[data-theme="light"] .dp-results-bar__divider,
+.light .dp-results-bar__divider { color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] .dp-results-bar__score,
+.light .dp-results-bar__score { color: #0D1B2A !important; }
+[data-theme="light"] .dp-results-bar--fail .dp-results-bar__label,
+.light .dp-results-bar--fail .dp-results-bar__label { color: #DC2626 !important; }
+[data-theme="light"] .dp-results-bar--pass .dp-results-bar__label,
+.light .dp-results-bar--pass .dp-results-bar__label { color: #16A34A !important; }
+[data-theme="light"] .dp-results-bar--merit .dp-results-bar__label,
+.light .dp-results-bar--merit .dp-results-bar__label { color: #2563EB !important; }
+[data-theme="light"] .dp-results-bar--distinction .dp-results-bar__label,
+.light .dp-results-bar--distinction .dp-results-bar__label { color: #059669 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DEFENCE SIMULATOR — Academic Tribunal Redesign (May 2026)
+   All rules below override earlier dp- overlay rules only.
+   Logic, state, and handlers are unchanged.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. HEADER ──────────────────────────────────────────────────────────────── */
+
+/* Hide the old text title — replaced by shield SVG in JSX */
+.dp-defense-title { display: none !important; }
+
+/* Center panel label — absolutely positioned so logo+button stay at edges */
+.dp-defense-panel-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* End button — flat outlined red, no fill */
+.dp-defense-end-btn {
+  background: transparent !important;
+  border: 1px solid rgba(220, 38, 38, 0.4) !important;
+  color: rgba(220, 38, 38, 0.7) !important;
+  box-shadow: none !important;
+}
+.dp-defense-end-btn:hover {
+  background: transparent !important;
+  border-color: rgba(220, 38, 38, 0.8) !important;
+  color: #F87171 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* 2. QUESTION COUNTER ────────────────────────────────────────────────────── */
+
+.dp-counter-text {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dp-counter-dot {
+  width: 6px !important;
+  height: 6px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+.dp-counter-dot--active {
+  background: #0066FF !important;
+  box-shadow: 0 0 8px rgba(0, 102, 255, 0.6) !important;
+  transform: scale(1) !important;
+}
+.dp-counter-dot--done {
+  background: rgba(0, 102, 255, 0.4) !important;
+}
+
+/* 3. EXAMINER BUBBLE ─────────────────────────────────────────────────────── */
+
+.dp-examiner-label {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.6rem !important;
+  letter-spacing: 0.15em !important;
+}
+.dp-examiner-label--methodologist     { color: #0066FF !important; }
+.dp-examiner-label--subject-expert    { color: #7C3AED !important; }
+.dp-examiner-label--external-examiner { color: #DC2626 !important; }
+
+.dp-examiner-bubble {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 3px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 16px 20px !important;
+}
+.dp-examiner-bubble--methodologist     { border-left-color: #0066FF !important; }
+.dp-examiner-bubble--subject-expert    { border-left-color: #7C3AED !important; }
+.dp-examiner-bubble--external-examiner { border-left-color: #DC2626 !important; }
+
+.dp-examiner-text {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.05rem !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 1.6 !important;
+}
+
+/* 4. STUDENT INPUT AREA ──────────────────────────────────────────────────── */
+
+.dp-student-response-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+
+.dp-student-input {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.dp-student-input:focus {
+  border-color: rgba(0, 102, 255, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.08) !important;
+}
+
+.dp-send-btn {
+  background: #0066FF !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: none !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+.dp-send-btn::after { display: none !important; }
+.dp-send-btn:hover:not(:disabled) {
+  background: #0052CC !important;
+  transform: translateY(-1px) !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+.dp-send-btn:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+.dp-send-btn:disabled {
+  background: #0066FF !important;
+  opacity: 0.45 !important;
+}
+
+/* 5. SESSION COMPLETE STATE ──────────────────────────────────────────────── */
+
+.dp-circuit-complete {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+.dp-circuit-complete__heading {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.3rem !important;
+}
+
+/* 6. SESSION TERMINATED STATE ───────────────────────────────────────────── */
+
+.dp-circuit-terminated {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 2px solid rgba(220, 38, 38, 0.5) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+.dp-circuit-terminated__heading {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 1.3rem !important;
+}
+
+/* 7. PANEL WARNING — amber, left-accent, no red fill ────────────────────── */
+
+.dp-circuit-warning {
+  background: rgba(245, 158, 11, 0.06) !important;
+  border: none !important;
+  border-left: 3px solid #F59E0B !important;
+  border-radius: 0 8px 8px 0 !important;
+  padding: 12px 16px !important;
+}
+.dp-circuit-warning__icon {
+  font-size: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+}
+.dp-circuit-warning__heading { color: #F59E0B !important; }
+
+/* 8. OVERALL CHAT + INPUT MAX-WIDTH: 720px ──────────────────────────────── */
+
+.dp-chat-area  { max-width: 720px !important; }
+.dp-input-area { max-width: 720px !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOBILE & UI FIXES — v2 patch
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Badge row — horizontal scroll on mobile ──────────────────────── */
+@media (max-width: 640px) {
+  .badge-row {
+    overflow-x: auto !important;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px; /* breathing room for drag area */
+  }
+  .badge-row::-webkit-scrollbar { display: none; }
+  .badge-row > * { scroll-snap-align: start; }
+}
+
+/* ── 5. Topic Validator — related research dark mode text colours ─────── */
+.app-content .tv-papers-heading {
+  color: rgba(255,255,255,0.35) !important;
+}
+.app-content .tv-paper-item {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.app-content .tv-paper-title {
+  color: rgba(255,255,255,0.92) !important;
+}
+.app-content .tv-paper-meta {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-author {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-year {
+  color: rgba(160,173,184,0.85) !important;
+}
+.app-content .tv-paper-citations {
+  color: #7ab8ff !important;
+}
+
+/* ── 5. Light mode overrides — keep existing tv-paper light colours ───── */
+[data-theme="light"] .app-content .tv-papers-heading,
+.light .app-content .tv-papers-heading { color: rgba(13,27,42,0.4) !important; }
+[data-theme="light"] .app-content .tv-paper-item,
+.light .app-content .tv-paper-item { background: rgba(13,27,42,0.03) !important; border-color: rgba(13,27,42,0.07) !important; }
+[data-theme="light"] .app-content .tv-paper-title,
+.light .app-content .tv-paper-title { color: #0D1B2A !important; }
+[data-theme="light"] .app-content .tv-paper-meta,
+.light .app-content .tv-paper-meta { color: rgba(13,27,42,0.45) !important; }
+[data-theme="light"] .app-content .tv-paper-author,
+.light .app-content .tv-paper-author { color: rgba(13,27,42,0.7) !important; }
+[data-theme="light"] .app-content .tv-paper-year,
+.light .app-content .tv-paper-year { color: rgba(13,27,42,0.6) !important; }
+
+/* ── 6. Landing page — force dark mode variables regardless of theme ──── */
+[data-landing-page="true"] {
+  background: #060E18;
+  --bg-base:    #0A0F1C;
+  --bg-card:    #0D1425;
+  --bg-input:   #111827;
+  --bg-sidebar: #070C18;
+  --border-color:        #1E293B;
+  --border-subtle:       rgba(255,255,255,0.07);
+  --text-primary:        #F8FAFC;
+  --text-secondary:      #94A3B8;
+  --text-muted:          #475569;
+  --color-text-primary:  rgba(255,255,255,0.90);
+  --color-text-secondary:rgba(255,255,255,0.58);
+  --color-text-muted:    rgba(255,255,255,0.32);
+  --dot-bg-image:        radial-gradient(circle, rgba(0,102,255,0.07) 1.2px, transparent 1px);
+  --header-btn-bg:       rgba(255,255,255,0.04);
+  --header-btn-border:   rgba(255,255,255,0.1);
+  --dropdown-border:     rgba(255,255,255,0.1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SMOOTH INTERACTIONS — GLOBAL POLISH
+   ═══════════════════════════════════════════════════════ */
+
+/* Smooth scroll inside the workflow content container */
+.app-content__scroll {
+  scroll-behavior: smooth;
+}
+
+/* Smooth scroll at document level (marketing pages, public routes) */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Button press scale: upgrade from 0.98 → 0.97 for a crisper feel.
+   Higher specificity than the block at ~line 6786, so this wins. */
+@media (prefers-reduced-motion: no-preference) {
+  .tv-btn-validate:active:not(:disabled),
+  .tv-btn-use:active:not(:disabled),
+  .ca-btn-generate:active:not(:disabled),
+  .ca-btn-confirm:active:not(:disabled),
+  .ca-btn-regenerate:active:not(:disabled),
+  .ma-btn-analyse:active:not(:disabled),
+  .ma-btn-confirm:active:not(:disabled),
+  .di-btn-generate:active:not(:disabled),
+  .di-btn-continue:active:not(:disabled),
+  .wp-btn-generate:active:not(:disabled),
+  .wp-btn-confirm:active:not(:disabled),
+  .dp-btn-start-scan:active:not(:disabled),
+  .dp-btn-enter-defense:active:not(:disabled),
+  .pr-btn-review:active:not(:disabled),
+  .pr-btn-confirm:active:not(:disabled),
+  .ag-btn-generate:active:not(:disabled),
+  .lm-btn-generate:active:not(:disabled),
+  .se-btn-generate:active:not(:disabled) {
+    transform: scale(0.97) translateY(0) !important;
+    transition: transform 0.08s ease !important;
+  }
+}
+
+/* GPU promotion for elements that animate transform on interaction */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-pill,
+  .begin-btn.is-ready,
+  .tv-btn-validate,
+  .tv-btn-use,
+  .ca-btn-generate,
+  .ca-btn-confirm,
+  .ma-btn-analyse,
+  .ma-btn-confirm,
+  .wp-btn-generate,
+  .wp-btn-confirm,
+  .dp-btn-enter-defense,
+  .pr-btn-review {
+    will-change: transform;
+  }
+}
+
+/* Smooth hover on clickable sidebar step items */
+.step-list__item {
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Smooth hover on clickable nav pills — override earlier transition for consistency */
+.nav-pill {
+  transition: background 0.15s ease, border-color 0.15s ease,
+              box-shadow 0.15s ease, color 0.15s ease !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DESIGN EXECUTION — 2026-05-24
+   Midnight blue workspace, per-step accent card colors, watermarks,
+   nav pill per-step colors, CTA button fixes, defense score font.
+   Append-only — never modify existing blocks above this line.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── A1. Workspace background → midnight blue (dark mode only) ───── */
+[data-theme="dark"] .app-content,
+.dark .app-content {
+  background-color: #0B1929 !important;
+}
+
+/* ── A2. Per-step card accent colors ─────────────────────────────── */
+/* All cards share the same #112240→#0D1E35 gradient base.
+   Each step gets a distinct border-left, border tint, and glow.    */
+
+/* Step 1 — Topic Validator: Blue #0066FF */
+[data-theme="dark"] .app-content .tv-card,
+.dark .app-content .tv-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(0,102,255,0.09) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(0,102,255,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+/* Preserve verdict-tinted backgrounds — must come AFTER .tv-card rule */
+[data-theme="dark"] .app-content .tv-card.tv-card--green,
+.dark .app-content .tv-card.tv-card--green  { background: linear-gradient(145deg,#061a10 0%,#071a14 100%) !important; }
+[data-theme="dark"] .app-content .tv-card.tv-card--yellow,
+.dark .app-content .tv-card.tv-card--yellow { background: linear-gradient(145deg,#1a1406 0%,#141208 100%) !important; }
+[data-theme="dark"] .app-content .tv-card.tv-card--red,
+.dark .app-content .tv-card.tv-card--red    { background: linear-gradient(145deg,#1a0608 0%,#14060a 100%) !important; }
+
+/* Step 2 — Chapter Architect / Literature Map / Abstract Gen: Cyan #06B6D4 */
+[data-theme="dark"] .app-content .ca-card,
+[data-theme="dark"] .app-content .ag-card,
+[data-theme="dark"] .app-content .lm-card,
+.dark .app-content .ca-card,
+.dark .app-content .ag-card,
+.dark .app-content .lm-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(6,182,212,0.09) !important;
+  border-left: 4px solid #06B6D4 !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(6,182,212,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Step 3 — Methodology Advisor / Instrument Builder: Amber #F59E0B */
+[data-theme="dark"] .app-content .ma-card,
+[data-theme="dark"] .app-content .di-card,
+.dark .app-content .ma-card,
+.dark .app-content .di-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(245,158,11,0.09) !important;
+  border-left: 4px solid #F59E0B !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(245,158,11,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Step 4 — Writing Planner: Green #16A34A */
+[data-theme="dark"] .app-content .wp-card,
+.dark .app-content .wp-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(22,163,74,0.09) !important;
+  border-left: 4px solid #16A34A !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(22,163,74,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Step 5 — Project Reviewer: Violet #8B5CF6 */
+[data-theme="dark"] .app-content .pr-card,
+.dark .app-content .pr-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(139,92,246,0.09) !important;
+  border-left: 4px solid #8B5CF6 !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(139,92,246,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Step 6 — Defense Prep: Red #DC2626 */
+[data-theme="dark"] .app-content .dp-card,
+.dark .app-content .dp-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(220,38,38,0.09) !important;
+  border-left: 4px solid #DC2626 !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(220,38,38,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Supervisor Email — bonus (unnumbered), keep blue */
+[data-theme="dark"] .app-content .se-card,
+.dark .app-content .se-card {
+  background: linear-gradient(145deg, #112240 0%, #0D1E35 100%) !important;
+  border: 1px solid rgba(0,102,255,0.09) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(0,102,255,0.09) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* ── A3. Step-number watermarks via ::before ─────────────────────── */
+/* Large faded number, accent color at 5% opacity, top-right of card  */
+
+.app-content .tv-card::before {
+  content: '1';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(0,102,255,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .ca-card::before,
+.app-content .ag-card::before,
+.app-content .lm-card::before {
+  content: '2';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(6,182,212,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .ma-card::before,
+.app-content .di-card::before {
+  content: '3';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(245,158,11,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .wp-card::before {
+  content: '4';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(22,163,74,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .pr-card::before {
+  content: '5';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(139,92,246,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.app-content .dp-card::before {
+  content: '6';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 140px;
+  font-weight: 700;
+  color: rgba(220,38,38,0.05);
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* ── A4. Nav pill per-step accent colors ─────────────────────────── */
+/* Requires data-step attribute on each .nav-pill (added in Task 3)   */
+
+/* Step 1 — Blue */
+.nav-pill[data-step="1"].nav-pill--current,
+.nav-pill[data-step="1"].nav-pill--completed {
+  background: #0066FF !important;
+  border-color: #0066FF !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0,102,255,0.45) !important;
+}
+
+/* Step 2 — Cyan */
+.nav-pill[data-step="2"].nav-pill--current,
+.nav-pill[data-step="2"].nav-pill--completed {
+  background: #06B6D4 !important;
+  border-color: #06B6D4 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(6,182,212,0.45) !important;
+}
+
+/* Step 3 — Amber (dark text for contrast on light amber) */
+.nav-pill[data-step="3"].nav-pill--current,
+.nav-pill[data-step="3"].nav-pill--completed {
+  background: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #000000 !important;
+  box-shadow: 0 0 12px rgba(245,158,11,0.45) !important;
+}
+
+/* Step 4 — Green */
+.nav-pill[data-step="4"].nav-pill--current,
+.nav-pill[data-step="4"].nav-pill--completed {
+  background: #16A34A !important;
+  border-color: #16A34A !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(22,163,74,0.45) !important;
+}
+
+/* Step 5 — Violet */
+.nav-pill[data-step="5"].nav-pill--current,
+.nav-pill[data-step="5"].nav-pill--completed {
+  background: #8B5CF6 !important;
+  border-color: #8B5CF6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(139,92,246,0.45) !important;
+}
+
+/* Step 6 — Red */
+.nav-pill[data-step="6"].nav-pill--current,
+.nav-pill[data-step="6"].nav-pill--completed {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(220,38,38,0.45) !important;
+}
+
+/* ── A4b. Nav connector per-step gradients ───────────────────────── */
+/* Adjacent sibling selector: pill (completed) → its connector        */
+.nav-pill[data-step="1"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #0066FF, #06B6D4) !important;
+}
+.nav-pill[data-step="2"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #06B6D4, #F59E0B) !important;
+}
+.nav-pill[data-step="3"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #F59E0B, #16A34A) !important;
+}
+.nav-pill[data-step="4"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #16A34A, #8B5CF6) !important;
+}
+.nav-pill[data-step="5"].nav-pill--completed + .nav-connector--completed {
+  background: linear-gradient(90deg, #8B5CF6, #DC2626) !important;
+}
+
+/* ── A5. Confirm button CTAs → green ─────────────────────────────── */
+/* ma-btn-confirm and wp-btn-confirm are "Confirm" CTAs (user commits  */
+/* to a methodology / plan) — green matches CTA semantic convention.  */
+
+.app-content .ma-btn-confirm {
+  background: linear-gradient(135deg, #16A34A, #15803D) !important;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.35) !important;
+}
+.app-content .ma-btn-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22C55E, #16A34A) !important;
+  box-shadow: 0 0 24px rgba(22,163,74,0.5) !important;
+}
+
+.app-content .wp-btn-confirm {
+  background: linear-gradient(135deg, #16A34A, #15803D) !important;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.35) !important;
+}
+.app-content .wp-btn-confirm:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22C55E, #16A34A) !important;
+  box-shadow: 0 0 24px rgba(22,163,74,0.5) !important;
+}
+
+/* ── A5b. Defense score display → JetBrains Mono ─────────────────── */
+/* The final panel score (e.g. "7/10") should feel like a readout.   */
+
+.dp-results-bar__score {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PUBLIC PAGES — LIGHT MODE TEXT & BORDER FLIP
+   Targets all elements inside [data-pub] when light theme is on.
+   Overrides hardcoded Tailwind text-white/slate classes.
+══════════════════════════════════════════════════════════════ */
+[data-theme="light"] [data-pub] .text-white,
+[data-theme="light"] [data-pub] .text-white\/65,
+[data-theme="light"] [data-pub] .text-white\/55,
+[data-theme="light"] [data-pub] .text-white\/40,
+[data-theme="light"] [data-pub] .text-white\/35,
+[data-theme="light"] [data-pub] .text-white\/\[0\.72\],
+[data-theme="light"] [data-pub] .text-white\/\[0\.78\],
+[data-theme="light"] [data-pub] .text-white\/\[0\.62\],
+[data-theme="light"] [data-pub] .text-white\/\[0\.28\] { color: var(--pub-text) !important; }
+
+[data-theme="light"] [data-pub] .text-slate-100,
+[data-theme="light"] [data-pub] .text-slate-200,
+[data-theme="light"] [data-pub] .text-slate-300,
+[data-theme="light"] [data-pub] .text-slate-400 { color: var(--pub-text-muted) !important; }
+
+[data-theme="light"] [data-pub] .hover\:text-white:hover { color: var(--pub-text) !important; }
+
+[data-theme="light"] [data-pub] .border-white\/\[0\.06\],
+[data-theme="light"] [data-pub] .border-white\/\[0\.07\],
+[data-theme="light"] [data-pub] .border-white\/\[0\.08\],
+[data-theme="light"] [data-pub] .border-white\/\[0\.1\],
+[data-theme="light"] [data-pub] .border-white\/5 { border-color: var(--pub-border-dim) !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   PUBLIC PAGES — WARM ACADEMIA LIGHT MODE
+   All overrides scoped to [data-theme="light"] [data-pub]
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Stats bar: bg-bg-dark is transparent (no Tailwind rule), but
+      explicit colour needed for differentiation ─────────────────── */
+[data-theme="light"] [data-pub] .bg-bg-dark {
+  background-color: var(--pub-bg-pricing) !important;
+}
+
+/* ── How It Works: warm sand break ───────────────────────────────── */
+[data-theme="light"] [data-pub] [data-hiw] {
+  background-color: var(--pub-bg-sand) !important;
+  background-image: radial-gradient(circle, rgba(13,27,42,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Pricing section container ───────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-pricing] {
+  background-color: var(--pub-bg-pricing) !important;
+  background-image: none !important;
+}
+
+/* ── FAQ section container ───────────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-faq] {
+  background-color: var(--pub-bg-pricing) !important;
+  background-image: none !important;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+[data-theme="light"] [data-pub] [data-footer] {
+  background: var(--pub-bg-footer) !important;
+  border-top-color: rgba(13,27,42,0.09) !important;
+}
+
+/* ── Feature cards: white gradient + real shadow ─────────────────── */
+[data-theme="light"] [data-pub] .lp-feat-lift > div {
+  background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+  border-color: rgba(13,27,42,0.07) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+
+/* ── Feature card watermark: blue tint visible on white ─────────── */
+[data-theme="light"] [data-pub] .lp-feat-wm {
+  color: rgba(0,102,255,0.05) !important;
+}
+
+/* ── Testimonial cards: white with light border ──────────────────── */
+[data-theme="light"] [data-pub] .lp-testi-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Testimonial quote mark: softer blue on white ────────────────── */
+[data-theme="light"] [data-pub] .lp-testi-card span.font-serif {
+  color: rgba(0,102,255,0.15) !important;
+}
+
+/* ── Stat numbers: darker blue for legibility on light bg ────────── */
+[data-theme="light"] [data-pub] .lp-stat-num-wrap:not(.lp-stat-urgent) {
+  color: #0066FF !important;
+}
+
+/* ── Pricing plan cards ───────────────────────────────────────────── */
+[data-theme="light"] [data-pub] .lp-plan-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+
+[data-theme="light"] [data-pub] .lp-plan-card--featured {
+  background: linear-gradient(145deg, rgba(0,102,255,0.05) 0%, #FFFFFF 100%) !important;
+  border-color: #0066FF !important;
+  box-shadow: 0 0 0 2px rgba(0,102,255,0.12), 0 4px 16px rgba(0,102,255,0.08) !important;
+}
+
+/* Plan card divider line */
+[data-theme="light"] [data-pub] .lp-plan-card hr {
+  border-top-color: rgba(13,27,42,0.08) !important;
+}
+
+/* Ghost CTA buttons inside plan cards */
+[data-theme="light"] [data-pub] .lp-plan-card button.bg-transparent {
+  border-color: rgba(13,27,42,0.2) !important;
+  color: #0D1B2A !important;
+}
+
+/* ── FAQ container card ───────────────────────────────────────────── */
+[data-theme="light"] [data-pub] .lp-faq-card {
+  background: #FFFFFF !important;
+  border-color: rgba(13,27,42,0.08) !important;
+}
+
+/* FAQ chevron icon */
+[data-theme="light"] [data-pub] .lp-faq-card .text-slate-500 {
+  color: rgba(13,27,42,0.4) !important;
+}
+
+/* ── Hero eyebrow pill: softer on warm light bg ───────────────────── */
+[data-theme="light"] [data-pub] .lp-hero-eyebrow {
+  background: rgba(0,102,255,0.07) !important;
+  border-color: rgba(0,102,255,0.2) !important;
+  color: #0066FF !important;
+}
+
+/* ── Final CTA glow: much softer on light bg ─────────────────────── */
+[data-theme="light"] [data-pub] .lp-cta-glow {
+  background: radial-gradient(ellipse 60% 50% at 50% 70%, rgba(0,102,255,0.07) 0%, transparent 70%) !important;
+}
+
+/* ── How It Works step circle: sand bg so it floats on sand ─────── */
+[data-theme="light"] [data-pub] [data-hiw] .lp-step-row > div:first-child {
+  background: var(--pub-bg-sand) !important;
+}
+
+/* ── Nav: global light-mode text/border fixes (all pages, not just data-pub) ── */
+[data-theme="light"] nav .text-white\/65,
+[data-theme="light"] nav .text-white\/40 { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] nav .text-white { color: #0D1B2A !important; }
+[data-theme="light"] nav .text-white\/85 { color: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] nav .border-white\/\[0\.22\] { border-color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] nav .border-white\/\[0\.18\] { border-color: rgba(13,27,42,0.15) !important; }
+[data-theme="light"] nav .hover\:text-white:hover { color: #0D1B2A !important; }
+[data-theme="light"] nav .bg-white\/\[0\.04\] { background: rgba(0,0,0,0.02) !important; }
+[data-theme="light"] nav .bg-white\/85 { background: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] nav .bg-white\/\[0\.08\] { background: rgba(0,0,0,0.06) !important; }
+
+/* ── Hero overlay: keep dot grid, remove blue ellipse radial ─────── */
+[data-theme="light"] [data-pub] .lp-hero-overlay {
+  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Pricing page hero: remove blue ellipse radial ───────────────── */
+[data-theme="light"] .lp-pricing-hero-overlay {
+  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+/* ── Defense Simulator mockup: light mode app appearance ─────────── */
+[data-theme="light"] [data-pub] .lp-hero-mockup-outer {
+  background: #F0F4F8 !important;
+  box-shadow: 0 0 0 1px rgba(13,27,42,0.1), 0 16px 48px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04) !important;
+  border-color: rgba(13,27,42,0.12) !important;
+}
+/* Chrome bar on light mockup */
+[data-theme="light"] [data-pub] .lp-hero-mockup-outer > div:first-child {
+  background: rgba(0,0,0,0.02) !important;
+  border-bottom-color: rgba(0,0,0,0.06) !important;
+}
+/* Sidebar: light in light mode — matches real app */
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar {
+  background: #EEF2F8 !important;
+  border-right-color: rgba(13,27,42,0.1) !important;
+}
+/* Sidebar text: dark on light background */
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white { color: rgba(13,27,42,0.85) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-sidebar .text-white\/40 { color: rgba(13,27,42,0.4) !important; }
+/* Content panel: white workspace */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area {
+  background: #FFFFFF !important;
+}
+/* Content text: dark on white */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white { color: #0D1B2A !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/65 { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/35 { color: rgba(13,27,42,0.35) !important; }
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .text-white\/\[0\.62\] { color: rgba(13,27,42,0.55) !important; }
+/* Content dividers */
+[data-theme="light"] [data-pub] .lp-hero-mockup-content-area .border-white\/5 { border-color: rgba(0,0,0,0.07) !important; }
+/* Examiner cards on white panel */
+[data-theme="light"] [data-pub] .lp-mockup-examiner {
+  background: rgba(0,0,0,0.03) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  box-shadow: none !important;
+}
+[data-theme="light"] [data-pub] .lp-mockup-examiner--asking {
+  background: rgba(0,102,255,0.06) !important;
+  border: 1px solid rgba(0,102,255,0.25) !important;
+  box-shadow: 0 0 12px rgba(0,102,255,0.08) !important;
+  opacity: 1 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE RESPONSIVENESS — Added May 2026
+   Targets: 320px (iPhone 6s), 375px (iPhone SE), 390px (iPhone 14)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard section headings: scale down on mobile ─────────── */
+@media (max-width: 480px) {
+  /* Section headings in dashboard */
+  .font-serif.text-\[1\.45rem\] {
+    font-size: 1.2rem !important;
+  }
+
+  /* Progress ring wrapper: normalize for flex-col layout on mobile */
+  .db-progress-ring-wrapper {
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  /* Dashboard topbar: tighter greeting text */
+  .db-header-enter .font-serif {
+    font-size: 0.95rem !important;
+  }
+
+  /* DashProgressJourney: timeline step circle stays readable */
+  .w-11.h-11 { min-width: 36px; }
+}
+
+/* ── ProjectCard: more compact on very small screens ─────────── */
+@media (max-width: 400px) {
+  /* Project card padding */
+  .db-project-card {
+    padding: 18px 16px 16px !important;
+  }
+
+  /* Step navigator: use minimal connector on tiny screens */
+  .nav-connector {
+    width: 6px !important;
+  }
+
+  /* Stat card grid: reduce gap further */
+  .db-stat-grid {
+    gap: 10px !important;
+  }
+}
+
+/* ── AppShell app-content scroll: safe area for iOS notch ──────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .app-content__scroll {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+  @media (max-width: 480px) {
+    .app-content__scroll {
+      padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* ── Dashboard main: iOS safe area ─────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .dashboard-main {
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Touch targets: all interactive elements min 44px ──────────── */
+@media (max-width: 768px) {
+  /* Step list items in sidebar */
+  .step-list__item {
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  /* Nav pills already have pseudo-element tap area but set min-height too */
+  .nav-pill {
+    min-width: 28px;
+  }
+
+  /* Dashboard sidebar items */
+  .db-sidebar-item {
+    min-height: 44px;
+  }
+
+  /* Quick actions grid: 1 column on mobile */
+  .grid.grid-cols-1.sm\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Suppress horizontal overflow globally on mobile */
+  .app-content,
+  .app-content__scroll {
+    overflow-x: hidden;
+  }
+}
+
+/* ── Onboarding card: full-width safe on very small screens ──────── */
+@media (max-width: 360px) {
+  .onboarding__card {
+    padding: 28px 14px 36px;
+  }
+
+  /* Level buttons: compact */
+  .level-btn {
+    font-size: 0.82rem;
+    padding: 9px 0;
+  }
+}
+
+/* ── Dashboard: "My Projects" header ─────────────────────────── */
+@media (max-width: 480px) {
+  .db-projects-header h1 {
+    font-size: 1.3rem !important;
+  }
+}
+
+/* ── Light mode nav on mobile: ensure pills are visible ────────── */
+@media (max-width: 768px) {
+  [data-theme="light"] .step-navigator,
+  .light .step-navigator {
+    background: rgba(240, 244, 248, 0.98);
+  }
+}
+
+/* ── Prevent overflow from large watermark numbers in cards ─────── */
+.tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .pr-card {
+  overflow: hidden;
+}
+
+/* ── DashProgressJourney: timeline wrapping on mobile ─────────── */
+@media (max-width: 480px) {
+  /* Timeline content: reduce left column width slightly */
+  .db-journey-timeline-col {
+    width: 36px;
+    min-width: 36px;
+  }
+}
+
+/* ── Dashboard warning banner: wrap text on narrow screens ─────── */
+@media (max-width: 480px) {
+  .db-validate-banner {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── ProjectsGrid: header on narrow screens ─────────────────────── */
+@media (max-width: 480px) {
+  .db-projects-grid h1 {
+    font-size: 1.3rem;
+  }
+}
+
+/* ── Fix: dashboard content area min-width so flex doesn't shrink ── */
+.flex-1.flex.flex-col.overflow-hidden.min-w-0 {
+  min-width: 0;
+}
+
+/* ── PUBLIC PAGES: mobile overflow guard ─────────────────────────── */
+/* Prevent any scaled/wide elements from causing horizontal scroll    */
+@media (max-width: 768px) {
+  /* Landing page, Pricing, About, Contact */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Testimonials ticker: reduce fade edge width on narrow screens */
+  .absolute.left-0.top-0.bottom-0.w-\[120px\] {
+    width: 40px !important;
+  }
+  .absolute.right-0.top-0.bottom-0.w-\[120px\] {
+    width: 40px !important;
+  }
+
+  /* LandingPage hero CTA buttons: stack on very small screens */
+  .lp-hero-cta .flex.gap-3 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ── Pricing page: extra-small card prices ──────────────────────── */
+@media (max-width: 400px) {
+  .lp-pricing-card-price {
+    font-size: 2rem !important;
+  }
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────────────────── */
+@keyframes fypro-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+@keyframes fypro-logo-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 400px 100%;
+  animation: fypro-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+[data-theme="light"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.06) 25%,
+    rgba(0,0,0,0.12) 50%,
+    rgba(0,0,0,0.06) 75%
+  );
+  background-size: 400px 100%;
+}
+
+/* ── Past Sessions History (2026-06-03) ─────────────────────────────────────── */
+
+/* Tab bar */
+.dp-tab-bar {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.dp-tab {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background var(--transition-fast);
+  position: relative;
+}
+
+.dp-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -17px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  border-radius: 2px 2px 0 0;
+  transition: background var(--transition-fast);
+}
+
+.dp-tab--active {
+  color: var(--color-blue-primary);
+}
+
+.dp-tab--active::after {
+  background: var(--color-blue-primary);
+}
+
+.dp-tab:hover:not(.dp-tab--active) {
+  color: var(--color-text-primary);
+  background: var(--color-blue-glow);
+}
+
+/* Dark mode tab bar */
+[data-theme="dark"] .dp-tab,
+.dark .dp-tab {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .dp-tab:hover:not(.dp-tab--active),
+.dark .dp-tab:hover:not(.dp-tab--active) {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 102, 255, 0.08);
+}
+
+/* History list container */
+.dp-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Session item */
+.dp-history-item {
+  background: var(--color-bg-deep);
+  border: 1px solid rgba(0, 102, 255, 0.12);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.dp-history-item--expanded {
+  border-color: rgba(0, 102, 255, 0.3);
+}
+
+.dp-history-item__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.dp-history-item__header:hover {
+  background: rgba(0, 102, 255, 0.06);
+}
+
+.dp-history-item__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dp-history-item__date {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-white);
+}
+
+.dp-history-item__count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.dp-history-item__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.dp-history-item__score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-white);
+}
+
+.dp-history-cert-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 102, 255, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(0, 102, 255, 0.25);
+  white-space: nowrap;
+}
+
+.dp-history-chevron {
+  color: rgba(255, 255, 255, 0.35);
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.dp-history-chevron--open {
+  transform: rotate(180deg);
+  color: var(--color-blue-primary);
+}
+
+/* Transcript */
+.dp-history-item__transcript {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Single Q&A turn */
+.dp-history-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dp-history-turn__question,
+.dp-history-turn__answer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dp-history-turn__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.dp-history-turn__question .dp-history-turn__text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  color: #93c5fd;
+  line-height: 1.6;
+  padding: 10px 14px;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 2px solid rgba(59, 130, 246, 0.35);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 0;
+}
+
+.dp-history-turn__answer .dp-history-turn__text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.6;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 0;
+}
+
+.dp-history-turn__scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+/* Empty state */
+.dp-history-empty {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 48px 20px;
+  background: var(--color-bg-deep);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Past Sessions — light mode overrides ───────────────────────────────────── */
+
+[data-theme="light"] .dp-history-item,
+.light .dp-history-item {
+  background: #F8FAFC;
+  border-color: var(--color-border-strong);
+}
+
+[data-theme="light"] .dp-history-item--expanded,
+.light .dp-history-item--expanded {
+  border-color: rgba(0, 102, 255, 0.25);
+}
+
+[data-theme="light"] .dp-history-item__date,
+.light .dp-history-item__date {
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .dp-history-item__count,
+.light .dp-history-item__count {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="light"] .dp-history-item__score,
+.light .dp-history-item__score {
+  color: var(--color-text-primary);
+}
+
+[data-theme="light"] .dp-history-chevron,
+.light .dp-history-chevron {
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .dp-history-item__transcript,
+.light .dp-history-item__transcript {
+  border-top-color: var(--color-border);
+}
+
+[data-theme="light"] .dp-history-turn__label,
+.light .dp-history-turn__label {
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .dp-history-turn__answer .dp-history-turn__text,
+.light .dp-history-turn__answer .dp-history-turn__text {
+  color: var(--color-text-secondary);
+  background: rgba(13, 27, 42, 0.04);
+  border-left-color: rgba(13, 27, 42, 0.15);
+}
+
+[data-theme="light"] .dp-history-empty,
+.light .dp-history-empty {
+  background: rgba(13, 27, 42, 0.03);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .dp-history-turn__question .dp-history-turn__text,
+.light .dp-history-turn__question .dp-history-turn__text {
+  color: #1D4ED8;
+  background: rgba(59, 130, 246, 0.06);
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
+
+/* ── PWA Install Prompt ─────────────────────── */
+@keyframes pwa-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.pwa-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.pwa-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-dark, #0D1B2A);
+  border-top: 1px solid var(--color-border, rgba(13, 27, 42, 0.1));
+  border-radius: 16px 16px 0 0;
+  padding: 24px;
+  z-index: 1000;
+  animation: pwa-slide-up 0.35s ease;
+}
+
+.pwa-sheet__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.pwa-sheet__icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.pwa-sheet__title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.125rem;
+  color: var(--color-text-white, #fff);
+  margin-bottom: 4px;
+}
+
+.pwa-sheet__subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+  color: var(--color-text-white-dim, rgba(255, 255, 255, 0.7));
+}
+
+.pwa-sheet__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pwa-sheet__btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-md, 12px);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.pwa-sheet__btn:hover { opacity: 0.85; }
+
+.pwa-sheet__btn--primary {
+  background: var(--color-blue-primary, #0066FF);
+  color: #fff;
+  border: none;
+}
+
+.pwa-sheet__btn--ghost {
+  background: transparent;
+  color: var(--color-text-white-dim, rgba(255, 255, 255, 0.7));
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.pwa-update-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  background: var(--color-bg-mid, #0F2235);
+  border: 1px solid var(--color-border-blue, rgba(0, 102, 255, 0.3));
+  border-radius: var(--radius-md, 12px);
+  padding: 12px 16px;
+  color: var(--color-text-white, #fff);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.875rem;
+}
+
+.pwa-update-toast__reload {
+  background: var(--color-blue-primary, #0066FF);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 14px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.pwa-update-toast__close {
+  background: transparent;
+  color: var(--color-text-white-dim, rgba(255, 255, 255, 0.7));
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ── PWA light mode overrides ─────────────────────────────────────────────── */
+.light .pwa-update-toast,
+[data-theme="light"] .pwa-update-toast {
+  background: #ffffff;
+  border-color: rgba(0, 102, 255, 0.2);
+  color: var(--color-text-primary, #0D1B2A);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.light .pwa-update-toast__close,
+[data-theme="light"] .pwa-update-toast__close {
+  color: rgba(13, 27, 42, 0.45);
+}
+
+.light .pwa-sheet,
+[data-theme="light"] .pwa-sheet {
+  background: #ffffff;
+  border-top: 1px solid rgba(13, 27, 42, 0.1);
+}
+
+.light .pwa-sheet__title,
+[data-theme="light"] .pwa-sheet__title {
+  color: var(--color-text-primary, #0D1B2A);
+}
+
+.light .pwa-sheet__subtitle,
+[data-theme="light"] .pwa-sheet__subtitle {
+  color: rgba(13, 27, 42, 0.6);
+}
+
+.light .pwa-sheet__btn--ghost,
+[data-theme="light"] .pwa-sheet__btn--ghost {
+  color: rgba(13, 27, 42, 0.6);
+  border-color: rgba(13, 27, 42, 0.2);
+}
