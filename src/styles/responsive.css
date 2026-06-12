@@ -235,3 +235,19 @@
   }
 }
 
+/* ── 3. Nav pill tap areas — cap width to pill pitch ───────────────────
+   The 44px-wide ::after tap extension (set at 768px above) overlaps
+   neighboring pills once they shrink below ~32px pitch, causing
+   mis-taps. Cap width to the actual pitch; keep 44px height. */
+@media (max-width: 480px) {
+  .nav-pill::after {
+    width: 30px;
+    height: 44px;
+  }
+}
+@media (max-width: 375px) {
+  .nav-pill::after {
+    width: 24px;
+  }
+}
+
