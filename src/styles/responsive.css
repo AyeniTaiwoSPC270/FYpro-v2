@@ -216,3 +216,22 @@
   }
 }
 
+/* ── 2. Dashboard topbar icon buttons — extended tap area ──────────────
+   Buttons are 30px visual below the sm breakpoint with a 6px gap
+   (36px pitch), so the invisible target is capped at 36px wide to stay
+   non-overlapping, with the full 44px height where space is free. */
+@media (max-width: 640px) {
+  .db-header__icon-btn {
+    position: relative;
+  }
+  .db-header__icon-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 44px;
+  }
+}
+
