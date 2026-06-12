@@ -260,7 +260,18 @@ export default function AppShell() {
                     isLocked    ? 'step-list__item--locked'     : '',
                   ].filter(Boolean).join(' ')}
                   style={isAccessible ? { cursor: 'pointer' } : undefined}
+                  role={isAccessible ? 'button' : undefined}
+                  tabIndex={isAccessible ? 0 : undefined}
+                  aria-disabled={isLocked || undefined}
+                  aria-current={isCurrent ? 'step' : undefined}
                   onClick={isAccessible ? () => { setShowSupervisorEmail(false); navigateStep(i) } : undefined}
+                  onKeyDown={isAccessible ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setShowSupervisorEmail(false)
+                      navigateStep(i)
+                    }
+                  } : undefined}
                   title={isAccessible ? `Go to ${name}` : undefined}
                 >
                   <div
