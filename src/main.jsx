@@ -15,6 +15,18 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// A failed lazy-route chunk (stale index.html after a redeploy, or a network
+// blip mid-session) is recoverable by reloading — do it once automatically
+// instead of stranding the user on the error boundary.
+window.addEventListener('vite:preloadError', (event) => {
+  if (!sessionStorage.getItem('chunk-reload')) {
+    sessionStorage.setItem('chunk-reload', '1')
+    event.preventDefault()
+    window.location.reload()
+  }
+})
+window.addEventListener('load', () => sessionStorage.removeItem('chunk-reload'))
+
 const SentryErrorFallback = () => (
   <div style={{
     display: 'flex', flexDirection: 'column',
