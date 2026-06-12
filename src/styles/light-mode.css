@@ -442,6 +442,7 @@
 
 .sp-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-base, #060E18);
   background-image: radial-gradient(circle, rgba(0,102,255,0.08) 1.2px, transparent 1px);
   background-size: 28px 28px;

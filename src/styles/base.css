@@ -19,6 +19,22 @@ html, body {
 #root {
   background: var(--bg-base, #060E18);
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── Dynamic-viewport height utilities ───────────────────────────────
+   100vh on mobile includes the area behind the collapsing URL bar;
+   100dvh tracks the visible viewport. vh line is the fallback for
+   browsers without dvh support. */
+#app-shell,
+.h-dvh-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-dvh-offset {
+  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - 120px);
 }
 
 /* ── Splash Screen ──────────────────────────── */

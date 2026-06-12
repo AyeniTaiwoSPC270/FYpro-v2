@@ -194,7 +194,7 @@ export default function AppShell() {
   if (isLoading) return <AppShellSkeleton />
 
   return (
-    <div id="app-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', flexDirection: 'column' }}>
+    <div id="app-shell" style={{ display: 'flex', overflow: 'hidden', flexDirection: 'column' }}>
 
       {/* ── Offline / sync indicator ────────────────────────────────────────── */}
       <OfflineBanner isOfflineMode={isOfflineMode} />

@@ -227,7 +227,7 @@ export default function Dashboard() {
   if (projectStateLoading || projectsLoading) return <DashboardPageSkeleton />
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
+    <div className="flex h-dvh-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Mobile sidebar backdrop */}
       <div
         className={`db-sidebar-backdrop${sidebarOpen ? ' db-sidebar-backdrop--visible' : ''}`}
@@ -268,7 +268,7 @@ export default function Dashboard() {
           {projectsLoading ? (
             <DashboardSkeleton />
           ) : projectsError ? (
-            <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
+            <div className="flex flex-col items-center justify-center min-h-dvh-offset" style={{ padding: '48px 24px' }}>
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -294,7 +294,7 @@ export default function Dashboard() {
               </motion.div>
             </div>
           ) : projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)', padding: '48px 24px' }}>
+            <div className="flex flex-col items-center justify-center min-h-dvh-offset" style={{ padding: '48px 24px' }}>
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -323,7 +323,7 @@ export default function Dashboard() {
             </div>
           ) : projectParam ? (
             selectingProject ? (
-              <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 120px)' }}>
+              <div className="flex items-center justify-center min-h-dvh-offset">
                 <div style={{ width: 32, height: 32, border: '3px solid var(--border-color)', borderTopColor: '#0066FF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
