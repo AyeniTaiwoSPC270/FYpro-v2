@@ -251,3 +251,19 @@
   }
 }
 
+/* ── 4. Battery guard — pause decorative infinite loops on phones ──────
+   box-shadow pulses repaint every frame and the aurora blobs composite
+   continuously. The per-step static glow (data-step rules) remains. */
+@media (max-width: 767px) {
+  .nav-pill--current {
+    animation: none !important;
+  }
+  .nav-connector--completed::after {
+    animation: none !important;
+    opacity: 0;
+  }
+  .app-content::before,
+  .app-content::after {
+    animation: none !important;
+  }
+}
