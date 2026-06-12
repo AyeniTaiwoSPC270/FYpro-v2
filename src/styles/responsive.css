@@ -187,3 +187,32 @@
   .dp-defense-end-btn { min-height: 44px !important; }
 }
 
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE AUDIT FIXES — June 2026
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. iOS input zoom guard ───────────────────────────────────────────
+   Safari force-zooms the page when a focused input has font-size < 16px.
+   Covers Tailwind-styled auth inputs (element selectors) and the custom
+   step classes (listed explicitly to out-rank any class-level setting). */
+@media (max-width: 768px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='search'],
+  input[type='number'],
+  input[type='tel'],
+  input[type='url'],
+  textarea,
+  select,
+  .tv-textarea,
+  .dp-student-input,
+  .sp-textarea,
+  .sp-select,
+  .field-input,
+  .field-select {
+    font-size: 16px !important;
+  }
+}
+
