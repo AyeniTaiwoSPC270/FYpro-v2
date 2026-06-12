@@ -398,7 +398,6 @@ export default function AppShell() {
 
         {/* Current step or bonus feature */}
         <div className="app-content__scroll" ref={scrollRef}>
-          <Suspense fallback={<StepLoadingSkeleton />}>
           <AnimatePresence mode="wait" custom={directionRef.current}>
             <motion.div
               key={showSupervisorEmail ? 'supervisor' : String(state.currentStep)}
@@ -409,27 +408,33 @@ export default function AppShell() {
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              {showSupervisorEmail ? (
-                <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
-              ) : state.currentStep === 4 ? (
-                <PaidFeatureGate requiredPack="student_pack">
-                  <CurrentStep />
-                </PaidFeatureGate>
-              ) : state.currentStep === 5 ? (
-                <PaidFeatureGate requiredPack="defense_pack">
-                  <CurrentStep />
-                </PaidFeatureGate>
-              ) : (
-                <>
-                  {currentStepKey && isOverLimit(currentStepKey) && (
-                    <RunLimitBanner stepKey={currentStepKey} onUpgrade={() => navigate('/pricing')} />
-                  )}
-                  <CurrentStep />
-                </>
-              )}
+              {/* Suspense MUST live inside the motion.div. If a lazy step chunk
+                  suspends across the AnimatePresence boundary (e.g. after
+                  PaidFeatureGate swaps from spinner to children), framer-motion
+                  re-applies the `enter` variant on restore and never animates to
+                  `center` — the step renders at opacity 0 (blank screen). */}
+              <Suspense fallback={<StepLoadingSkeleton />}>
+                {showSupervisorEmail ? (
+                  <SupervisorEmail onClose={() => setShowSupervisorEmail(false)} />
+                ) : state.currentStep === 4 ? (
+                  <PaidFeatureGate requiredPack="student_pack">
+                    <CurrentStep />
+                  </PaidFeatureGate>
+                ) : state.currentStep === 5 ? (
+                  <PaidFeatureGate requiredPack="defense_pack">
+                    <CurrentStep />
+                  </PaidFeatureGate>
+                ) : (
+                  <>
+                    {currentStepKey && isOverLimit(currentStepKey) && (
+                      <RunLimitBanner stepKey={currentStepKey} onUpgrade={() => navigate('/pricing')} />
+                    )}
+                    <CurrentStep />
+                  </>
+                )}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
-          </Suspense>
         </div>
 
       </main>
