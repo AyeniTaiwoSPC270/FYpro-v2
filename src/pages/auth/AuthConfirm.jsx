@@ -67,6 +67,22 @@ export default function AuthConfirm() {
         return
       }
 
+      // Provider returned an error (e.g. user cancelled the Google account
+      // picker → access_denied). PKCE puts it in the query string, implicit
+      // flow in the hash — check both before anything else.
+      const oauthErrCode = params.get('error') || hash.get('error')
+      if (oauthErrCode) {
+        const description = params.get('error_description') || hash.get('error_description')
+        window.history.replaceState(null, '', window.location.pathname)
+        setErrorMsg(
+          oauthErrCode === 'access_denied'
+            ? 'Sign-in was cancelled. You can head back and try again.'
+            : description || 'Sign-in failed. Please try again.'
+        )
+        setPhase('error')
+        return
+      }
+
       let error = null
 
       if (access_token && refresh_token) {

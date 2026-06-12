@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { showToast } from '../components/Toast'
@@ -142,6 +142,20 @@ export default function Login() {
   const googleClickedRef = useRef(false)
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+
+  // If the user hits Back/Cancel on Google's account picker, the browser
+  // restores this page from the bfcache with googleLoading still true —
+  // pageshow (persisted) is the only signal that fires on that restore.
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) {
+        setGoogleLoading(false)
+        googleClickedRef.current = false
+      }
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
 
   async function handleGoogleSignIn() {
     if (googleClickedRef.current) return
