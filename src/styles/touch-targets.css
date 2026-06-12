@@ -1422,6 +1422,57 @@ html {
   color: var(--color-text-secondary);
 }
 
+/* ── Page skeletons — theme-aware sidebar + mobile collapse (2026-06-12) ──
+   Mirrors the real .sidebar / .db-sidebar styling: dark gradient base,
+   light-mode override via theme vars, hidden on mobile (real sidebars
+   are off-canvas drawers below 768px). */
+.page-skel__sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #0D1B2A 0%, #091420 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-theme="light"] .page-skel__sidebar,
+.light .page-skel__sidebar {
+  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%);
+  border-right: 1px solid var(--border-color);
+}
+
+.page-skel__content {
+  flex: 1;
+  min-width: 0;
+  background-image: var(--dot-bg-image);
+  background-size: 28px 28px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-skel__grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.page-skel__grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .page-skel__sidebar { display: none; }
+  .page-skel__content { padding: 20px 16px; }
+  .page-skel__grid-3,
+  .page-skel__grid-2 { grid-template-columns: 1fr; }
+}
+
 [data-theme="light"] .dp-history-item__score,
 .light .dp-history-item__score {
   color: var(--color-text-primary);
