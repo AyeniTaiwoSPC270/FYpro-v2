@@ -1,0 +1,189 @@
+/* ============================================================================
+   RESPONSIVE.CSS — consolidated mobile/responsive rules
+   Moved here from abstract-generator.css (June 2026 mobile audit) so the
+   app shell + defense simulator mobile behavior lives in one named file.
+   Imported LAST in index.css — rules here win the cascade by position.
+   ============================================================================ */
+
+/* ── 768px tablet ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Show sidebar toggle button */
+  .sidebar-toggle-btn { display: flex; }
+
+  /* Sidebar: off-screen by default, slides in on toggle */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    bottom: 0;
+    left: -260px;
+    z-index: 90;
+    width: 240px !important;
+    transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+    box-shadow: none !important;
+  }
+  .sidebar.is-open {
+    left: 0 !important;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Content area: full width */
+  .app-content {
+    width: 100% !important;
+  }
+
+  /* Navigator: smaller pills, hide step labels, leave room for hamburger */
+  .step-navigator {
+    padding: 12px 16px 16px 60px; /* left padding = hamburger (40px) + gap (12px) + edge (8px) */
+    min-height: 64px;
+  }
+  .nav-pill {
+    width: 28px;
+    height: 28px;
+    font-size: 0.62rem;
+  }
+  /* Extend tap area to 44×44px without changing visual size */
+  .nav-pill::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+  }
+  .nav-connector {
+    width: 20px;
+  }
+  .nav-pill__label {
+    display: none;
+  }
+
+  /* Content scroll: tighter padding */
+  .app-content__scroll {
+    padding: 32px 20px 60px !important;
+  }
+
+  /* Step cards: full width */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .lm-card, .ag-card, .pr-card {
+    max-width: 100% !important;
+  }
+
+  /* Onboarding card: full width with padding */
+  .onboarding__card {
+    padding: 40px 24px 48px;
+  }
+
+  /* Defense Mode: chat layout adapts */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 90%;
+  }
+
+  /* Defense Mode overlay: reduce padding */
+  .dp-chat-area { padding: 16px !important; }
+  .dp-input-area { padding: 12px 16px 20px !important; }
+}
+
+/* ── 480px mobile ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Navigator: even smaller, keep left padding for hamburger */
+  .step-navigator {
+    padding: 10px 8px 12px 56px;
+    min-height: 56px;
+  }
+  .nav-pill {
+    width: 22px;
+    height: 22px;
+    font-size: 0.55rem;
+    border-width: 1.5px;
+  }
+  .nav-connector {
+    width: 10px;
+  }
+  .nav-track {
+    gap: 0;
+  }
+
+  /* Content scroll */
+  .app-content__scroll {
+    padding: 20px 12px 56px !important;
+  }
+
+  /* Cards: reduce padding */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
+    padding: 24px 16px 28px !important;
+  }
+
+  /* Onboarding: tight padding */
+  .onboarding__card {
+    padding: 32px 16px 40px;
+  }
+
+  /* Sidebar toggle: slightly smaller */
+  .sidebar-toggle-btn {
+    left: 8px;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Defense Mode: chat bubbles nearly full width */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 95%;
+  }
+
+  /* Defense Mode: input area stacks vertically */
+  .dp-input-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .dp-input-row textarea,
+  .dp-input-row .dp-send-btn {
+    width: 100%;
+  }
+
+  /* Defense Mode: tighter overlay padding */
+  .dp-defense-header {
+    padding: 12px 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Hide absolutely-positioned label — overlaps end button at mobile widths */
+  .dp-defense-panel-label { display: none !important; }
+  /* 44px touch target on end button */
+  .dp-defense-end-btn { min-height: 44px !important; }
+  .dp-chat-area     { padding: 12px !important; gap: 14px !important; }
+  .dp-input-area    { padding: 10px 12px 16px !important; }
+}
+
+
+/* ── 375px small phones ──────────────────────────────────────── */
+@media (max-width: 375px) {
+  /* Ensure content cards have minimal padding so text isn't clipped */
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
+    padding: 22px 14px 28px !important;
+  }
+
+  /* Defense chat bubbles: nearly full width, room for avatar/padding */
+  .dp-examiner-wrap,
+  .dp-student-wrap {
+    max-width: 98%;
+  }
+
+  /* Examiner name chip: truncate long persona names gracefully */
+
+  /* Defense header: reduce font and padding at very small widths */
+  .dp-chat-area     { padding: 8px !important; gap: 10px !important; }
+  .dp-input-area    { padding: 8px 10px 14px !important; }
+
+  /* Navigator: minimum tap target on tiny screens */
+  .nav-pill {
+    width: 20px;
+    height: 20px;
+    font-size: 0.5rem;
+  }
+  .nav-connector { width: 6px; }
+  .dp-defense-panel-label { display: none !important; }
+  .dp-defense-end-btn { min-height: 44px !important; }
+}
+
