@@ -161,78 +161,107 @@ function Footer() {
 const SECTIONS = [
   {
     heading: '1. Acceptance of Terms',
-    paras: [
-      'By accessing or using FYPro, you confirm that you are at least 16 years old and agree to these Terms of Service. If you do not agree, do not use FYPro.',
+    blocks: [
+      { type: 'p', text: 'By accessing or using FYPro, you confirm that you are at least 16 years old and agree to these Terms of Service. If you do not agree, do not use FYPro.' },
     ],
   },
   {
     heading: '2. What FYPro Does',
-    paras: [
-      'FYPro is an AI-powered academic guidance tool. It helps you think through your final year project — it does not write your project for you. All outputs are suggestions and starting points. You are responsible for the academic integrity of your own work.',
+    blocks: [
+      { type: 'p', text: 'FYPro is an AI-powered academic guidance tool. It helps you think through your final year project — it does not write your project for you. All outputs are suggestions and starting points. You are responsible for the academic integrity of your own work.' },
     ],
   },
   {
     heading: '3. Your Account',
-    paras: [
-      'You are responsible for maintaining the security of your account and password. You must not share your account with others. You must provide accurate information when creating your account.',
+    blocks: [
+      { type: 'p', text: 'You are responsible for maintaining the security of your account and password. You must not share your account with others. You must provide accurate information when creating your account.' },
     ],
   },
   {
     heading: '4. Acceptable Use',
-    paras: ['You agree not to:'],
-    list: [
-      'Use FYPro to produce work you submit as entirely your own without meaningful contribution',
-      'Attempt to reverse engineer, hack, or abuse the FYPro platform',
-      'Use FYPro for any unlawful purpose',
-      'Share your account credentials with other users',
+    blocks: [
+      { type: 'p', text: 'You agree not to:' },
+      { type: 'list', items: [
+        'Use FYPro to produce work you submit as entirely your own without meaningful contribution',
+        'Attempt to reverse engineer, hack, or abuse the FYPro platform',
+        'Use FYPro for any unlawful purpose',
+        'Share your account credentials with other users',
+        'Attempt to bypass or circumvent any usage limits or paywalls',
+      ] },
     ],
   },
   {
-    heading: '5. Payments and Refunds',
-    paras: [
-      'All payments are processed securely by Paystack. Prices are displayed in Nigerian Naira (₦). All purchases are per-project and non-recurring. We offer a 7-day refund policy — if FYPro does not help you make meaningful progress within 7 days of payment, contact us at hello@fypro.com.ng for a full refund.',
+    heading: '5. Payments',
+    blocks: [
+      { type: 'p', text: 'All payments are processed securely by Paystack. Prices are displayed in Nigerian Naira (₦). All purchases are one-time and non-recurring unless stated otherwise.' },
     ],
   },
   {
-    heading: '6. AI-Generated Content',
-    paras: [
-      'FYPro uses Claude, an AI developed by Anthropic, to generate academic guidance. AI responses may occasionally be inaccurate or incomplete. Always verify important information with your supervisor or institution. FYPro is a thinking partner, not a replacement for academic judgment.',
+    heading: '6. Refunds',
+    blocks: [
+      { type: 'p', text: 'FYPro offers refunds only in the following circumstances:' },
+      { type: 'list', items: [
+        'A verified technical failure on our end prevented you from accessing a feature you paid for',
+        'You contact us within 48 hours of purchase at hello@fypro.com.ng',
+      ] },
+      { type: 'p', text: 'Refunds are not issued for:' },
+      { type: 'list', items: [
+        'Change of mind after purchase',
+        'Defense Simulator sessions that have already been used — these are consumable and the AI compute is spent at the point of use',
+        'Dissatisfaction with AI-generated responses or guidance quality',
+        'Academic outcomes — FYPro does not guarantee your project will be approved, your defense will be passed, or your supervisor will accept any suggestion made by the tool',
+      ] },
+      { type: 'p', text: 'To request a refund, email hello@fypro.com.ng with your payment reference.' },
     ],
   },
   {
-    heading: '7. Intellectual Property',
-    paras: [
-      'FYPro and its content, features, and functionality are owned by Taiwo Ayeni and are protected by Nigerian and international copyright laws. You may not copy, reproduce, or distribute any part of FYPro without written permission.',
+    heading: '7. AI-Generated Content',
+    blocks: [
+      { type: 'p', text: 'FYPro uses Claude, an AI developed by Anthropic, to generate academic guidance. AI responses may occasionally be inaccurate or incomplete. Always verify important information with your supervisor or institution. FYPro is a thinking partner, not a replacement for academic judgment.' },
+      { type: 'p', text: "FYPro's Defense Simulator is designed to help you identify knowledge gaps before your defense. It does not replicate the exact conditions, pressure, or questions of your actual defense. Using the Defense Simulator does not guarantee any particular outcome in your real defense." },
     ],
   },
   {
     heading: '8. Limitation of Liability',
-    paras: [
-      'FYPro is provided as-is without warranties of any kind. We are not liable for any academic outcomes, supervisor decisions, or examination results. FYPro is a thinking partner — final academic responsibility remains with you.',
+    blocks: [
+      { type: 'p', text: 'To the maximum extent permitted by Nigerian law, FYPro and its operator (Taiwo Ayeni) shall not be liable for:' },
+      { type: 'list', items: [
+        'Any academic outcome, including project rejection, failed defenses, or supervisor disputes',
+        'Any indirect, incidental, or consequential loss arising from your use of FYPro',
+        'Any loss resulting from reliance on AI-generated content',
+        'Service interruptions, downtime, or temporary unavailability',
+      ] },
+      { type: 'p', text: "FYPro's total liability to you for any claim shall not exceed the amount you paid for the specific purchase related to that claim." },
     ],
   },
   {
-    heading: '9. Changes to Terms',
-    paras: [
-      'We may update these terms from time to time. We will notify you by email if changes are significant. Continued use of FYPro after changes constitutes acceptance of the updated terms.',
+    heading: '9. Service Availability',
+    blocks: [
+      { type: 'p', text: 'FYPro is provided on an "as available" basis. We do not guarantee uninterrupted access. We may perform maintenance, updates, or changes to features at any time. We will make reasonable efforts to notify users of significant changes.' },
     ],
   },
   {
-    heading: '10. Termination',
-    paras: [
-      'We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time from your profile settings.',
+    heading: '10. Intellectual Property',
+    blocks: [
+      { type: 'p', text: "FYPro's platform, design, and underlying systems are the property of Taiwo Ayeni. You retain ownership of the project content you input into FYPro. By using FYPro, you grant us permission to process your content solely to provide the service to you. We do not use your research content to train AI models." },
     ],
   },
   {
-    heading: '11. Governing Law',
-    paras: [
-      'These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes shall be subject to the jurisdiction of Nigerian courts.',
+    heading: '11. Changes to These Terms',
+    blocks: [
+      { type: 'p', text: 'We may update these terms from time to time. We will notify you by email if changes are significant. Continued use of FYPro after changes constitutes acceptance of the updated terms.' },
     ],
   },
   {
-    heading: '12. Contact',
-    paras: [
-      'For questions about these terms: legal@fypro.app',
+    heading: '12. Termination',
+    blocks: [
+      { type: 'p', text: 'We reserve the right to suspend or terminate accounts that violate these terms. You may delete your account at any time from your profile settings.' },
+    ],
+  },
+  {
+    heading: '13. Governing Law',
+    blocks: [
+      { type: 'p', text: 'These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes shall be subject to the jurisdiction of Nigerian courts.' },
     ],
   },
 ]
@@ -260,29 +289,30 @@ export default function Terms() {
           <div className="flex flex-col items-center text-center">
             <span className="font-mono text-xs uppercase tracking-widest text-blue-400">Legal</span>
             <h1 className="font-serif text-4xl text-white mt-3">Terms of Service</h1>
-            <p className="font-mono text-xs text-slate-500 mt-2">Last updated: April 25, 2026</p>
+            <p className="font-mono text-xs text-slate-500 mt-2">Last updated: June 12, 2026</p>
             <p className="text-slate-400 text-base leading-relaxed mt-6">
               Please read these terms carefully before using FYPro. By creating an account, you agree to be bound by these terms.
             </p>
           </div>
 
           {/* Sections */}
-          {SECTIONS.map(({ heading, paras, list }, idx) => (
+          {SECTIONS.map(({ heading, blocks }, idx) => (
             <Reveal key={heading} delay={idx * 0.03}>
               <div>
                 <h2 className="text-white font-semibold text-lg mt-10 mb-3">{heading}</h2>
-                {paras?.map((p, i) => (
-                  <p key={i} className="text-slate-400 text-base leading-loose">{p}</p>
-                ))}
-                {list && (
-                  <ul className="list-none mt-2 space-y-1.5">
-                    {list.map((item, i) => (
-                      <li key={i} className="text-slate-400 text-base leading-loose flex gap-2.5">
-                        <span className="text-slate-500 flex-shrink-0 select-none">—</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                {blocks.map((block, i) =>
+                  block.type === 'list' ? (
+                    <ul key={i} className="list-none mt-2 space-y-1.5">
+                      {block.items.map((item, j) => (
+                        <li key={j} className="text-slate-400 text-base leading-loose flex gap-2.5">
+                          <span className="text-slate-500 flex-shrink-0 select-none">—</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p key={i} className="text-slate-400 text-base leading-loose">{block.text}</p>
+                  )
                 )}
               </div>
             </Reveal>
