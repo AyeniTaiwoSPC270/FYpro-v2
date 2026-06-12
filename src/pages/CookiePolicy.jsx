@@ -73,13 +73,13 @@ const SECTIONS = [
   {
     heading: '5. Your Rights Under the NDPA 2023',
     paras: [
-      'Under the Nigeria Data Protection Act 2023, you have the right to withdraw consent for non-essential cookies at any time. To exercise this right, follow the steps in Section 4 above, or contact us at privacy@fypro.app.',
+      'Under the Nigeria Data Protection Act 2023, you have the right to withdraw consent for non-essential cookies at any time. To exercise this right, follow the steps in Section 4 above, or contact us at hello@fypro.com.ng.',
     ],
   },
   {
     heading: '6. Contact',
     paras: [
-      'Questions about how we use cookies? Email us at privacy@fypro.app. We respond within 5 business days.',
+      'Questions about how we use cookies? Email us at hello@fypro.com.ng. We respond within 5 business days.',
     ],
   },
 ]

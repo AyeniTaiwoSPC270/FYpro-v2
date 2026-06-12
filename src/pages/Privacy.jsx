@@ -162,7 +162,7 @@ const SECTIONS = [
   {
     heading: '1. Who We Are',
     paras: [
-      'FYPro is an AI-powered final year project companion built for Nigerian university students. FYPro is operated by Taiwo Ayeni, based in Lagos, Nigeria. For data protection enquiries, contact us at: privacy@fypro.app',
+      'FYPro is an AI-powered final year project companion built for Nigerian university students. FYPro is operated by Taiwo Ayeni, based in Lagos, Nigeria. For data protection enquiries, contact us at: hello@fypro.com.ng',
     ],
   },
   {
@@ -197,6 +197,7 @@ const SECTIONS = [
     ],
     list: [
       'Anthropic (Claude API): powers all AI features. Your research content is sent to Anthropic\'s API to generate responses. Anthropic\'s privacy policy applies.',
+      'ElevenLabs: powers the AI examiner voices in the Defense Simulator. Voice synthesis requests are processed by ElevenLabs. ElevenLabs\' privacy policy applies.',
       'Supabase: stores your account and project data securely.',
       'Paystack: processes all payments. Paystack\'s privacy policy applies.',
       'Vercel: hosts the FYPro application.',
@@ -213,7 +214,7 @@ const SECTIONS = [
       'Withdraw consent at any time',
       'Lodge a complaint with the Nigeria Data Protection Commission (NDPC)',
     ],
-    footer: 'To exercise any of these rights, email us at: privacy@fypro.app',
+    footer: 'To exercise any of these rights, email us at: hello@fypro.com.ng',
   },
   {
     heading: '6. Data Retention',
@@ -251,7 +252,7 @@ const SECTIONS = [
       'For any privacy concerns or data requests:',
     ],
     list: [
-      'Email: privacy@fypro.app',
+      'Email: hello@fypro.com.ng',
       'Response time: within 5 business days',
     ],
   },
