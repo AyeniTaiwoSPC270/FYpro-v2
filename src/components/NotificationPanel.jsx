@@ -68,14 +68,22 @@ export default function NotificationPanel({
     }
   }, [onClose])
 
-  return (
-    <motion.div
-      ref={panelRef}
-      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.97 }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
-      style={{
+  const panelStyle = isMobile
+    ? {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        borderRadius: '20px 20px 0 0',
+        maxHeight: '80vh',
+        zIndex: 100,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--dropdown-border)',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+      }
+    : {
         position: 'absolute',
         top: 'calc(100% + 8px)',
         right: 0,
@@ -86,8 +94,41 @@ export default function NotificationPanel({
         boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
         overflow: 'hidden',
         zIndex: 50,
-      }}
-    >
+      }
+
+  const animationProps = isMobile
+    ? {
+        initial: { y: '100%' },
+        animate: { y: 0 },
+        exit: { y: '100%' },
+        transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] },
+      }
+    : {
+        initial: { opacity: 0, y: -6, scale: 0.97 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -6, scale: 0.97 },
+        transition: { duration: 0.15, ease: 'easeOut' },
+      }
+
+  return (
+    <>
+      {isMobile && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 99,
+          }}
+        />
+      )}
+      <motion.div
+        ref={panelRef}
+        {...animationProps}
+        style={panelStyle}
+      >
       {/* Header */}
       <div style={{
         padding: '14px 16px 12px',
@@ -295,5 +336,6 @@ export default function NotificationPanel({
         </div>
       )}
     </motion.div>
+    </>
   )
 }
