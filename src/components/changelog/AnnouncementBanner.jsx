@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { changelog } from '../../data/changelog'
@@ -20,26 +21,72 @@ export default function AnnouncementBanner() {
   const isLight = theme === 'light'
   const entry = changelog[0]
   const [visible, setVisible] = useState(false)
+  const supabaseDismissedRef = useRef(null) // null = fetch not yet complete
 
   useEffect(() => {
     if (!entry) return
-    const dismissed = getDismissed()
-    if (!dismissed.includes(entry.id)) {
+
+    // Phase 1 — immediate: localStorage (no flash)
+    const localDismissed = getDismissed()
+    if (!localDismissed.includes(entry.id)) {
       setVisible(true)
     }
+
+    // Phase 2 — async: Supabase cross-device sync
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user?.id) return
+
+      supabase
+        .from('users')
+        .select('dismissed_banners')
+        .eq('id', session.user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data) return
+
+          const supabaseDismissed = data.dismissed_banners ?? []
+          supabaseDismissedRef.current = supabaseDismissed
+
+          // Merge Supabase list into localStorage
+          const merged = [...new Set([...localDismissed, ...supabaseDismissed])]
+          try {
+            localStorage.setItem(LS_KEY, JSON.stringify(merged))
+          } catch {}
+
+          // Hide if another device already dismissed this entry
+          if (supabaseDismissed.includes(entry.id)) {
+            setVisible(false)
+          }
+        })
+    })
   }, [entry?.id])
 
   function handleDismiss() {
-    const dismissed = getDismissed()
-    if (!dismissed.includes(entry.id)) {
-      dismissed.push(entry.id)
+    // Phase 1 — immediate: localStorage
+    const localDismissed = getDismissed()
+    if (!localDismissed.includes(entry.id)) {
+      localDismissed.push(entry.id)
     }
     try {
-      localStorage.setItem(LS_KEY, JSON.stringify(dismissed))
+      localStorage.setItem(LS_KEY, JSON.stringify(localDismissed))
     } catch {
       // Storage full — dismiss silently for this session
     }
     setVisible(false)
+
+    // Phase 2 — background: Supabase (fire-and-forget)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user?.id) return
+
+      // Use Supabase-fetched base if available, else fall back to localStorage set
+      const base = supabaseDismissedRef.current ?? localDismissed
+      const newDismissed = [...new Set([...base, entry.id])]
+
+      supabase
+        .from('users')
+        .update({ dismissed_banners: newDismissed })
+        .eq('id', session.user.id)
+    })
   }
 
   if (!entry) return null
