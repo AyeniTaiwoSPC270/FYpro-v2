@@ -129,6 +129,16 @@ export default function NotificationPanel({
         {...animationProps}
         style={panelStyle}
       >
+      {isMobile && (
+        <div style={{ padding: '10px 0 4px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            width: '32px',
+            height: '4px',
+            background: 'rgba(255, 255, 255, 0.18)',
+            borderRadius: '4px',
+          }} />
+        </div>
+      )}
       {/* Header */}
       <div style={{
         padding: '14px 16px 12px',
@@ -182,7 +192,12 @@ export default function NotificationPanel({
       </div>
 
       {/* Body */}
-      <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+      <div style={{
+        maxHeight: isMobile ? 'calc(80vh - 120px)' : '360px',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+      }}>
         {loading && (
           <div style={{ padding: '24px 16px' }}>
             {[1, 2, 3].map(i => (
@@ -306,7 +321,7 @@ export default function NotificationPanel({
                   }} />
                 )}
                 <span style={{
-                  fontSize: '0.62rem',
+                  fontSize: isMobile ? '0.75rem' : '0.62rem',
                   color: 'var(--text-muted)',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}>
