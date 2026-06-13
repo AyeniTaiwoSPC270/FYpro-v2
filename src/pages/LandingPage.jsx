@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   motion,
   AnimatePresence,
@@ -1297,6 +1298,7 @@ function Footer() {
 
 export default function LandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0)
+  const { hash } = useLocation()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -1310,14 +1312,14 @@ export default function LandingPage() {
   }, [])
 
   useEffect(() => {
-    const { hash } = window.location
     if (!hash) return
     const id = hash.slice(1)
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [])
+    const timer = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [hash])
 
   return (
     <motion.div
