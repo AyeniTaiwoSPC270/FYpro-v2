@@ -114,6 +114,8 @@ export default function NotificationPanel({
     <>
       {isMobile && (
         <div
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           onClick={onClose}
           style={{
             position: 'fixed',
@@ -128,6 +130,9 @@ export default function NotificationPanel({
         ref={panelRef}
         {...animationProps}
         style={panelStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Notifications"
       >
       {isMobile && (
         <div style={{ padding: '10px 0 4px', display: 'flex', justifyContent: 'center' }}>
