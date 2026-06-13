@@ -98,6 +98,7 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
 
   const prevCompletedRef = useRef(completed)
   const touchTimerRef = useRef(null)
+  const wasTouchRef = useRef(false)
   const [justCompleted, setJustCompleted] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
 
@@ -119,6 +120,7 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
 
   function handleTouchStart() {
     if (!completed) return
+    wasTouchRef.current = true
     if (tooltipVisible) {
       setTooltipVisible(false)
       clearTimeout(touchTimerRef.current)
@@ -132,8 +134,8 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
   return (
     <div
       className="relative flex flex-col items-center"
-      onMouseEnter={() => completed && setTooltipVisible(true)}
-      onMouseLeave={() => setTooltipVisible(false)}
+      onMouseEnter={() => { if (wasTouchRef.current) return; completed && setTooltipVisible(true) }}
+      onMouseLeave={() => { if (wasTouchRef.current) { wasTouchRef.current = false; return } setTooltipVisible(false) }}
       onFocus={() => completed && setTooltipVisible(true)}
       onBlur={() => setTooltipVisible(false)}
       onTouchStart={handleTouchStart}

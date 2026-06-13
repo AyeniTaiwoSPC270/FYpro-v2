@@ -23,6 +23,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
 
   const prevUnlockedRef = useRef(unlocked)
   const touchTimerRef = useRef(null)
+  const wasTouchRef = useRef(false)
   const [justUnlocked, setJustUnlocked] = useState(false)
   const [pulsing, setPulsing] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
@@ -40,6 +41,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
   useEffect(() => () => clearTimeout(touchTimerRef.current), [])
 
   function handleTouchStart() {
+    wasTouchRef.current = true
     if (tooltipVisible) {
       setTooltipVisible(false)
       clearTimeout(touchTimerRef.current)
@@ -53,8 +55,8 @@ export default function DefenseReadyBadge({ awardedAt }) {
   return (
     <div
       className="relative flex flex-col items-center"
-      onMouseEnter={() => setTooltipVisible(true)}
-      onMouseLeave={() => setTooltipVisible(false)}
+      onMouseEnter={() => { if (wasTouchRef.current) return; setTooltipVisible(true) }}
+      onMouseLeave={() => { if (wasTouchRef.current) { wasTouchRef.current = false; return } setTooltipVisible(false) }}
       onFocus={() => setTooltipVisible(true)}
       onBlur={() => setTooltipVisible(false)}
       onTouchStart={handleTouchStart}
