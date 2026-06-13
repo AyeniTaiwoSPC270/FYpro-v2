@@ -22,6 +22,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
   const isLight = theme === 'light'
 
   const prevUnlockedRef = useRef(unlocked)
+  const touchTimerRef = useRef(null)
   const [justUnlocked, setJustUnlocked] = useState(false)
   const [pulsing, setPulsing] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
@@ -36,6 +37,19 @@ export default function DefenseReadyBadge({ awardedAt }) {
     prevUnlockedRef.current = unlocked
   }, [unlocked])
 
+  useEffect(() => () => clearTimeout(touchTimerRef.current), [])
+
+  function handleTouchStart() {
+    if (tooltipVisible) {
+      setTooltipVisible(false)
+      clearTimeout(touchTimerRef.current)
+    } else {
+      setTooltipVisible(true)
+      clearTimeout(touchTimerRef.current)
+      touchTimerRef.current = setTimeout(() => setTooltipVisible(false), 2500)
+    }
+  }
+
   return (
     <div
       className="relative flex flex-col items-center"
@@ -43,6 +57,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
       onMouseLeave={() => setTooltipVisible(false)}
       onFocus={() => setTooltipVisible(true)}
       onBlur={() => setTooltipVisible(false)}
+      onTouchStart={handleTouchStart}
       role="img"
       aria-label={
         unlocked
@@ -188,8 +203,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
             style={{
               position: 'absolute',
               bottom: '110%',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              right: 0,
               background: isLight ? '#FFFFFF' : '#0D1B2A',
               border: isLight
                 ? `1px solid ${unlocked ? 'rgba(0,102,255,0.2)' : '#E2E8F0'}`

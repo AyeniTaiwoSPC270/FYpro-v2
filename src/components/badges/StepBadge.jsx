@@ -90,14 +90,14 @@ function formatDate(iso) {
   }
 }
 
-export default function StepBadge({ index, completedAt }) {
+export default function StepBadge({ index, completedAt, tooltipAlign = 'center' }) {
   const meta = STEP_META[index] ?? STEP_META[0]
   const completed = Boolean(completedAt)
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
-  // Detect the moment this badge flips from incomplete → complete in this session
   const prevCompletedRef = useRef(completed)
+  const touchTimerRef = useRef(null)
   const [justCompleted, setJustCompleted] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
 
@@ -110,6 +110,25 @@ export default function StepBadge({ index, completedAt }) {
     prevCompletedRef.current = completed
   }, [completed])
 
+  useEffect(() => () => clearTimeout(touchTimerRef.current), [])
+
+  const tooltipPositionStyle =
+    tooltipAlign === 'start' ? { left: 0 }
+    : tooltipAlign === 'end' ? { right: 0, left: 'auto' }
+    : { left: '50%', transform: 'translateX(-50%)' }
+
+  function handleTouchStart() {
+    if (!completed) return
+    if (tooltipVisible) {
+      setTooltipVisible(false)
+      clearTimeout(touchTimerRef.current)
+    } else {
+      setTooltipVisible(true)
+      clearTimeout(touchTimerRef.current)
+      touchTimerRef.current = setTimeout(() => setTooltipVisible(false), 2000)
+    }
+  }
+
   return (
     <div
       className="relative flex flex-col items-center"
@@ -117,6 +136,7 @@ export default function StepBadge({ index, completedAt }) {
       onMouseLeave={() => setTooltipVisible(false)}
       onFocus={() => completed && setTooltipVisible(true)}
       onBlur={() => setTooltipVisible(false)}
+      onTouchStart={handleTouchStart}
       role="img"
       aria-label={`${meta.label}: ${completed ? `completed ${formatDate(completedAt)}` : 'not yet completed'}`}
     >
@@ -204,8 +224,7 @@ export default function StepBadge({ index, completedAt }) {
             style={{
               position: 'absolute',
               bottom: '110%',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              ...tooltipPositionStyle,
               background: isLight ? '#FFFFFF' : '#0D1B2A',
               border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.1)',
               borderRadius: 8,

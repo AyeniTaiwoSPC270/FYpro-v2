@@ -79,6 +79,7 @@ export default function BadgeRow() {
           key={key}
           index={i}
           completedAt={progress[key]}
+          tooltipAlign={i === 0 ? 'start' : i === STEP_KEYS.length - 1 ? 'end' : 'center'}
         />
       ))}
 
