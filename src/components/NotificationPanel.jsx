@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 const TYPE_ICONS = {
@@ -32,6 +32,16 @@ function relativeTime(dateStr) {
   } catch { return '' }
 }
 
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    function handler() { setIsMobile(window.innerWidth < breakpoint) }
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 export default function NotificationPanel({
   notifications,
   loading,
@@ -42,6 +52,7 @@ export default function NotificationPanel({
   onClose,
 }) {
   const panelRef = useRef(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     function handleOutside(e) {
@@ -50,7 +61,11 @@ export default function NotificationPanel({
       }
     }
     document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+    }
   }, [onClose])
 
   return (
