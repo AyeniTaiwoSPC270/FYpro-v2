@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
 import { useReveal, revealStyle, slideLeftStyle, CheckIcon, LockIcon, ArrowRightIcon } from './_shared'
 
-export default memo(function DashProgressJourney({ STEPS, STUDENT }) {
+export default memo(function DashProgressJourney({ STEPS, STUDENT, navTarget = '/app' }) {
   const navigate = useNavigate()
   const { navigateStep, state } = useApp()
 
@@ -131,7 +131,7 @@ export default memo(function DashProgressJourney({ STEPS, STUDENT }) {
                     <motion.button
                       whileHover={{ y: -1, boxShadow: isActive ? '0 0 18px rgba(22,163,74,0.32)' : '0 4px 14px rgba(0,0,0,0.35)' }}
                       whileTap={{ scale: 0.96 }}
-                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(step.id - 1); navigate('/app') }}
+                      onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(step.id - 1); navigate(navTarget) }}
                       className={`inline-flex items-center gap-[7px] px-[18px] py-2 rounded-lg font-sans text-[0.76rem] font-semibold cursor-pointer transition-all duration-200 ${
                         isActive
                           ? 'bg-green-600 hover:bg-green-500 text-white border-0'
