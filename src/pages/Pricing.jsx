@@ -448,7 +448,7 @@ function PricingCards() {
               <div className="font-mono text-sm font-semibold text-slate-400 uppercase tracking-wider">
                 Free
               </div>
-              <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦0</div>
+              <div className="font-serif text-4xl sm:text-5xl mt-2" style={{ color: 'var(--text-primary)' }}>₦0</div>
               <div className="text-slate-500 text-sm mt-1">forever</div>
               <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
@@ -482,7 +482,7 @@ function PricingCards() {
                 <div className="font-mono text-sm font-semibold text-blue-400 uppercase tracking-wider">
                   Student Plan
                 </div>
-                <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦2,000</div>
+                <div className="font-serif text-4xl sm:text-5xl mt-2" style={{ color: 'var(--text-primary)' }}>₦2,000</div>
                 <div className="text-slate-400 text-sm mt-1">per project, one-time</div>
                 <div className="border-t border-[var(--border-color)] my-6" />
                 <ul className="flex flex-col gap-3">
@@ -510,12 +510,12 @@ function PricingCards() {
           <Reveal delay={0.12}>
             <motion.div
               className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 sm:p-8"
-              whileHover={{ y: -4, borderColor: 'rgba(22,163,74,0.4)', transition: { duration: 0.2 } }}
+              whileHover={{ y: -4, borderColor: 'rgba(37,99,235,0.4)', transition: { duration: 0.2 } }}
             >
-              <div className="font-mono text-sm font-semibold uppercase tracking-wider" style={{ color: '#16A34A' }}>
+              <div className="font-mono text-sm font-semibold uppercase tracking-wider text-blue-brand">
                 Express Defence
               </div>
-              <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦2,000</div>
+              <div className="font-serif text-4xl sm:text-5xl mt-2" style={{ color: 'var(--pub-text, var(--text-primary))' }}>₦2,000</div>
               <div className="text-slate-500 text-sm mt-1">already done? skip straight to defence</div>
               <div className="border-t border-[var(--border-color)] my-6" />
               <ul className="flex flex-col gap-3">
@@ -525,10 +525,9 @@ function PricingCards() {
               </ul>
               <a
                 href="/express-onboarding"
-                className="mt-8 flex items-center justify-center w-full py-3 rounded-xl font-sans font-semibold text-sm text-white no-underline transition-all duration-200 hover:-translate-y-0.5"
-                style={{ background: '#16A34A', boxShadow: '0 0 0 0 rgba(22,163,74,0)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(22,163,74,0.35)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0 0 rgba(22,163,74,0)' }}
+                className="mt-8 flex items-center justify-center w-full py-3 rounded-xl font-sans font-semibold text-sm text-white no-underline transition-all duration-200 hover:-translate-y-0.5 bg-blue-600 hover:bg-blue-500"
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(37,99,235,0.4)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
               >
                 Get Express Defence — ₦2,000
               </a>
@@ -545,7 +544,7 @@ function PricingCards() {
                 Defense Plan
               </div>
               <div className="flex items-baseline gap-2 mt-2">
-                <div className="font-serif text-4xl sm:text-5xl text-white">
+                <div className="font-serif text-4xl sm:text-5xl" style={{ color: 'var(--text-primary)' }}>
                   {isUpgrader ? '₦1,500' : '₦3,500'}
                 </div>
                 {isUpgrader && (
