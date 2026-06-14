@@ -1,0 +1,429 @@
+/* ── Express Onboarding ───────────────────────────────────────────────────── */
+.eo-page {
+  min-height: 100vh;
+  background: var(--color-bg-surface);
+  background-image: radial-gradient(circle, rgba(0,102,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl) var(--space-md);
+}
+.eo-header {
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: var(--space-xl);
+}
+.eo-main { width: 100%; max-width: 520px; }
+
+.eo-form {
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  animation: card-enter 0.4s ease forwards;
+}
+.eo-form__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-blue-primary);
+  letter-spacing: 0.12em;
+}
+.eo-form__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--text-2xl);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.eo-form__sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+.eo-form__field { display: flex; flex-direction: column; gap: 6px; }
+.eo-form__label {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.eo-form__input,
+.eo-form__select {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  background: #fff;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  width: 100%;
+}
+.eo-form__input:focus,
+.eo-form__select:focus { border-color: var(--color-blue-primary); }
+.eo-form__radio-group { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.eo-form__radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  padding: 8px 16px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.eo-form__radio input[type="radio"] { display: none; }
+.eo-form__radio--active {
+  border-color: var(--color-blue-primary);
+  background: var(--color-blue-subtle);
+  color: var(--color-blue-primary);
+  font-weight: 600;
+}
+.eo-form__error {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-red);
+  margin: 0;
+}
+.eo-form__submit {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-blue-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+  margin-top: var(--space-sm);
+}
+.eo-form__submit:hover {
+  opacity: 0.9;
+  box-shadow: var(--shadow-blue-glow);
+}
+
+.eo-payment {
+  background: linear-gradient(145deg, #0D1B2A 0%, #091420 100%);
+  border: 1px solid rgba(0,102,255,0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  animation: card-enter 0.4s ease forwards;
+}
+.eo-payment__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-blue-primary);
+  letter-spacing: 0.12em;
+}
+.eo-payment__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--text-2xl);
+  color: var(--color-text-white);
+  margin: 0;
+}
+.eo-payment__features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.eo-payment__features li {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-white-dim);
+  padding-left: 1.5rem;
+  position: relative;
+}
+.eo-payment__features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--color-green);
+  font-weight: 700;
+}
+.eo-payment__price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-white);
+}
+.eo-payment__price span {
+  font-size: var(--text-sm);
+  color: rgba(255,255,255,0.4);
+  font-weight: 400;
+}
+.eo-payment__btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-green);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+}
+.eo-payment__btn:hover:not(:disabled) { opacity: 0.9; box-shadow: var(--shadow-green-glow); }
+.eo-payment__back {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: rgba(255,255,255,0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+.eo-payment__back:hover:not(:disabled) { color: rgba(255,255,255,0.7); }
+
+/* ── Express Shell ────────────────────────────────────────────────────────── */
+.es-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg-surface);
+}
+.es-sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0D1B2A 0%, #091420 100%);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg);
+  gap: var(--space-lg);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.es-sidebar__logo { padding-bottom: var(--space-md); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.es-step-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.es-step-list__item {}
+.es-step-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px var(--space-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  color: rgba(255,255,255,0.5);
+}
+.es-step-btn:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
+.es-step-btn--active { background: rgba(0,102,255,0.15); color: var(--color-text-white); }
+.es-step-btn--done { color: var(--color-green); }
+.es-step-btn--locked { opacity: 0.4; cursor: not-allowed; }
+.es-step-btn__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.es-step-btn--active .es-step-btn__num { background: var(--color-blue-primary); border-color: var(--color-blue-primary); color: #fff; }
+.es-step-btn--done .es-step-btn__num { border-color: var(--color-green); }
+.es-step-btn__name {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  flex: 1;
+}
+.es-step-btn__badge {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-pill);
+  padding: 1px 6px;
+}
+.es-sidebar__footer { margin-top: auto; padding-top: var(--space-md); border-top: 1px solid rgba(255,255,255,0.06); }
+.es-sidebar__footer-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.08em;
+}
+.es-main { flex: 1; overflow-y: auto; padding: var(--space-lg); }
+
+/* ── Express Brief card ───────────────────────────────────────────────────── */
+.eb-brief {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,102,255,0.15);
+  border-left: 3px solid var(--color-blue-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+}
+.eb-brief__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--color-blue-primary);
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.eb-brief__topic {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-white);
+  margin: 0 0 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.eb-brief__meta {
+  display: flex;
+  gap: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-xs);
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Splash Onboarding — Persona Fork ────────────────────────────────────── */
+.so-persona {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: 480px;
+  width: 100%;
+}
+.so-persona__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-blue-primary);
+  letter-spacing: 0.12em;
+}
+.so-persona__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--text-2xl);
+  color: var(--color-text-white);
+  margin: 0;
+  text-align: center;
+}
+.so-persona__sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-white-dim);
+  margin: 0;
+  text-align: center;
+}
+.so-persona__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+.so-persona__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-base);
+}
+.so-persona__option:hover {
+  border-color: var(--color-blue-primary);
+  background: rgba(0, 102, 255, 0.08);
+}
+.so-persona__option-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.so-persona__option-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-text-white);
+}
+.so-persona__option-desc {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--color-text-white-dim);
+  line-height: 1.5;
+}
+
+/* ── Landing Page — Express CTA ──────────────────────────────────────────── */
+.lp-express-cta {
+  padding: var(--space-3xl) var(--space-lg);
+  background: linear-gradient(135deg, #0D1B2A 0%, #0F2235 100%);
+}
+.lp-express-cta__inner {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-md);
+}
+.lp-express-cta__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-blue-primary);
+  letter-spacing: 0.14em;
+}
+.lp-express-cta__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--text-3xl);
+  color: var(--color-text-white);
+  margin: 0;
+  line-height: 1.2;
+}
+.lp-express-cta__body {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-md);
+  color: var(--color-text-white-dim);
+  margin: 0;
+  line-height: 1.7;
+  max-width: 480px;
+}
+.lp-express-cta__btn {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-green);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+  margin-top: var(--space-sm);
+}
+.lp-express-cta__btn:hover { opacity: 0.9; box-shadow: var(--shadow-green-glow); }
