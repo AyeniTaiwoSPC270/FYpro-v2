@@ -74,7 +74,7 @@ const handler = async (req, res) => {
     ? entResult.data.paid_features
     : [];
 
-  if (!paidFeatures.includes('defense_pack')) {
+  if (!paidFeatures.includes('defense_pack') && !paidFeatures.includes('express_defense')) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 
