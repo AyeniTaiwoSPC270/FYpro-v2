@@ -1227,10 +1227,14 @@ export default function DefensePrep() {
 
       // Fire-and-forget progress tracking; await in sequence so tryAwardDefenseReady
       // sees the updated defense_prep + defense_simulator rows before checking.
-      markStepComplete('defense_prep')
-        .then(() => markDefenseSimulatorRun())
-        .then(() => tryAwardDefenseReady())
-      if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
+      // Express is isolated: user_progress is user-keyed (not project-scoped), so
+      // writing it here would leak express activity into the normal app's badges.
+      if (!isExpress) {
+        markStepComplete('defense_prep')
+          .then(() => markDefenseSimulatorRun())
+          .then(() => tryAwardDefenseReady())
+        if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
+      }
 
       // Update defense_sessions row with the final score and completion time.
       // Awaited so the certificate endpoint always finds a complete row.

@@ -485,8 +485,11 @@ export default function ProjectReviewer() {
       weaknesses:          reviewData.weaknesses,
       examiner_questions:  reviewData.examiner_questions,
     })
-    markStepComplete('project_reviewer')
-    if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
+    // Express is isolated — never write the user-keyed user_progress table.
+    if (!isExpress) {
+      markStepComplete('project_reviewer')
+      if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
+    }
     showToast('Project reviewed ✓')
 
     // Check achievements after step completion
@@ -516,7 +519,7 @@ export default function ProjectReviewer() {
       completeStep(4)
     }
     saveStep('project_reviewer', { skipped: true })
-    markStepComplete('project_reviewer')
+    if (!isExpress) markStepComplete('project_reviewer')
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
