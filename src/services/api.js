@@ -244,8 +244,10 @@ async function callClaudeAuth(endpoint, messages, maxTokens = 2000, extra = {}) 
     throw err;
   }
   if (res.status === 403) {
-    const err = new Error('Feature not unlocked');
-    err.code = 'FORBIDDEN';
+    const body = await res.json().catch(() => ({}));
+    const serverCode = body?.error;
+    const err = new Error(serverCode || 'Feature not unlocked');
+    err.code = serverCode === 'FREE_TRIAL_USED' ? 'FREE_TRIAL_USED' : 'FORBIDDEN';
     throw err;
   }
   if (res.status === 429) {
@@ -305,8 +307,10 @@ async function callClaudeAuthRaw(endpoint, messages, maxTokens = 2000, extra = {
     throw err;
   }
   if (res.status === 403) {
-    const err = new Error('Feature not unlocked');
-    err.code = 'FORBIDDEN';
+    const body = await res.json().catch(() => ({}));
+    const serverCode = body?.error;
+    const err = new Error(serverCode || 'Feature not unlocked');
+    err.code = serverCode === 'FREE_TRIAL_USED' ? 'FREE_TRIAL_USED' : 'FORBIDDEN';
     throw err;
   }
   if (res.status === 429) {
