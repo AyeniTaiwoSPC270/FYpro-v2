@@ -378,6 +378,13 @@ const DEFENSE_FEATURES = [
   { type: 'included', label: 'Project Reset' },
 ]
 
+const EXPRESS_FEATURES = [
+  { type: 'check', label: 'Red Flag Scanner' },
+  { type: 'check', label: 'Project Reviewer (PDF upload)' },
+  { type: 'check', label: 'Defence Simulator + voice' },
+  { type: 'check', label: 'Defence certificate (score 7+)' },
+]
+
 
 function BlockAlert({ message, onDismiss }) {
   return (
@@ -430,7 +437,7 @@ function PricingCards() {
     <section>
       <div className="max-w-6xl mx-auto px-6">
         {/* pt-6 gives the floating badge room above the featured card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 items-start pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 items-start pt-6">
 
           {/* ── Free ── */}
           <Reveal delay={0}>
@@ -499,6 +506,35 @@ function PricingCards() {
             </div>
           </Reveal>
 
+          {/* ── Express Defence ── */}
+          <Reveal delay={0.12}>
+            <motion.div
+              className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-5 sm:p-8"
+              whileHover={{ y: -4, borderColor: 'rgba(22,163,74,0.4)', transition: { duration: 0.2 } }}
+            >
+              <div className="font-mono text-sm font-semibold uppercase tracking-wider" style={{ color: '#16A34A' }}>
+                Express Defence
+              </div>
+              <div className="font-serif text-4xl sm:text-5xl text-white mt-2">₦2,000</div>
+              <div className="text-slate-500 text-sm mt-1">already done? skip straight to defence</div>
+              <div className="border-t border-[var(--border-color)] my-6" />
+              <ul className="flex flex-col gap-3">
+                {EXPRESS_FEATURES.map((f, i) => (
+                  <FeatureItem key={i} {...f} />
+                ))}
+              </ul>
+              <a
+                href="/express-onboarding"
+                className="mt-8 flex items-center justify-center w-full py-3 rounded-xl font-sans font-semibold text-sm text-white no-underline transition-all duration-200 hover:-translate-y-0.5"
+                style={{ background: '#16A34A', boxShadow: '0 0 0 0 rgba(22,163,74,0)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(22,163,74,0.35)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 0 0 rgba(22,163,74,0)' }}
+              >
+                Get Express Defence — ₦2,000
+              </a>
+            </motion.div>
+          </Reveal>
+
           {/* ── Defense Plan ── */}
           <Reveal delay={0.16}>
             <motion.div
@@ -562,13 +598,14 @@ function PricingCards() {
 // ─── COMPARISON TABLE ─────────────────────────────────────────────────────────
 
 const TABLE_ROWS = [
-  { feature: 'Topic Validator',     free: true,    student: true,     defense: true },
-  { feature: 'Chapter Architect',   free: true,    student: true,     defense: true },
-  { feature: 'Methodology Advisor', free: true,    student: true,     defense: true },
-  { feature: 'Writing Planner',     free: false,   student: true,     defense: true },
-  { feature: 'Project Reviewer',    free: false,   student: true,     defense: true },
-  { feature: 'Defense Simulator',   free: false,   student: false,    defense: true },
-  { feature: 'Project Reset',       free: false,   student: '₦1,500', defense: 'Included' },
+  { feature: 'Topic Validator',     free: true,    student: true,     express: false,   defense: true },
+  { feature: 'Chapter Architect',   free: true,    student: true,     express: false,   defense: true },
+  { feature: 'Methodology Advisor', free: true,    student: true,     express: false,   defense: true },
+  { feature: 'Writing Planner',     free: false,   student: true,     express: false,   defense: true },
+  { feature: 'Project Reviewer',    free: false,   student: true,     express: true,    defense: true },
+  { feature: 'Red Flag Scanner',    free: false,   student: false,    express: true,    defense: true },
+  { feature: 'Defense Simulator',   free: false,   student: false,    express: true,    defense: true },
+  { feature: 'Project Reset',       free: false,   student: '₦1,500', express: false,   defense: 'Included' },
 ]
 
 function TableCell({ value, isEven }) {
@@ -624,6 +661,9 @@ function ComparisonTable() {
                   <th className="text-center py-4 px-6 text-blue-400 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Student
                   </th>
+                  <th className="text-center py-4 px-6 text-sm font-semibold font-sans border-b border-[var(--border-color)]" style={{ color: '#16A34A' }}>
+                    Express
+                  </th>
                   <th className="text-center py-4 px-6 text-slate-300 text-sm font-semibold font-sans border-b border-[var(--border-color)]">
                     Defense
                   </th>
@@ -642,6 +682,7 @@ function ComparisonTable() {
                       </td>
                       <TableCell value={row.free} isEven={isEven} />
                       <TableCell value={row.student} isEven={isEven} />
+                      <TableCell value={row.express} isEven={isEven} />
                       <TableCell value={row.defense} isEven={isEven} />
                     </tr>
                   )
