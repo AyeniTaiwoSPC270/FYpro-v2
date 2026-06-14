@@ -252,15 +252,6 @@ export default function ExpressOnboarding() {
             >
               {isProcessing ? <Spinner /> : 'Pay ₦2,000 with Paystack'}
             </button>
-            {/* TEST ONLY — remove before final demo. Sets a local bypass flag so
-                RequireExpress lets us into /express without a real payment. */}
-            <button
-              className="eo-payment__back"
-              onClick={() => { localStorage.setItem('fypro_express_test_bypass', 'true'); navigate('/express') }}
-              style={{ color: 'var(--color-amber)', marginTop: 4 }}
-            >
-              [TEST] Skip payment → enter
-            </button>
             <button
               className="eo-payment__back"
               onClick={() => setFormStep('form')}
