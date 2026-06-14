@@ -381,7 +381,9 @@
 /* ── Landing Page — Express CTA ──────────────────────────────────────────── */
 .lp-express-cta {
   padding: var(--space-3xl) var(--space-lg);
-  background: linear-gradient(135deg, #0D1B2A 0%, #0F2235 100%);
+  background: linear-gradient(135deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%);
+  border-top: 1px solid var(--pub-border-dim);
+  border-bottom: 1px solid var(--pub-border-dim);
 }
 .lp-express-cta__inner {
   max-width: 600px;
@@ -401,14 +403,14 @@
 .lp-express-cta__heading {
   font-family: 'DM Serif Display', serif;
   font-size: var(--text-3xl);
-  color: var(--color-text-white);
+  color: var(--pub-text);
   margin: 0;
   line-height: 1.2;
 }
 .lp-express-cta__body {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-md);
-  color: var(--color-text-white-dim);
+  color: var(--pub-text-muted);
   margin: 0;
   line-height: 1.7;
   max-width: 480px;
@@ -418,12 +420,14 @@
   font-size: var(--text-base);
   font-weight: 600;
   color: #fff;
-  background: var(--color-green);
+  background: var(--color-blue-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: 14px 28px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
   transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
   margin-top: var(--space-sm);
 }
-.lp-express-cta__btn:hover { opacity: 0.9; box-shadow: var(--shadow-green-glow); }
+.lp-express-cta__btn:hover { opacity: 0.9; box-shadow: var(--shadow-blue-glow); }
