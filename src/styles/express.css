@@ -381,7 +381,7 @@
 /* ── Landing Page — Express CTA ──────────────────────────────────────────── */
 .lp-express-cta {
   padding: var(--space-3xl) var(--space-lg);
-  background: linear-gradient(135deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%);
+  background: var(--pub-bg);
   border-top: 1px solid var(--pub-border-dim);
   border-bottom: 1px solid var(--pub-border-dim);
 }
