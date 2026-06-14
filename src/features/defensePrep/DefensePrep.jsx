@@ -40,6 +40,7 @@ import PastSessions from './PastSessions'
 import { checkAchievements } from '../../lib/checkAchievements'
 import { shouldShowCelebration } from '../../lib/celebrations'
 import DefenseCelebration from '../../components/celebration/DefenseCelebration'
+import PaidFeatureGate from '../../components/PaidFeatureGate'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -498,6 +499,16 @@ export default function DefensePrep() {
   const { isOverLimit } = useRunLimit(features)
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
+
+  const hasPaidDefenseAccess = features.includes('defense_pack') || features.includes('express_defense')
+  const isFreeTrial = !hasPaidDefenseAccess
+
+  const [trialUsed, setTrialUsed] = useState(
+    () => localStorage.getItem('fypro_free_trial_used') === 'true'
+  )
+  const [trialResult, setTrialResult] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fypro_free_trial_result') || 'null') } catch { return null }
+  })
 
   const uploadedReview = state.uploadedProject?.reviewData
 
@@ -993,6 +1004,14 @@ export default function DefensePrep() {
       })
       setInputLocked(false)
     } catch (err) {
+      if (err.code === 'FREE_TRIAL_USED') {
+        setTrialUsed(true)
+        localStorage.setItem('fypro_free_trial_used', 'true')
+        setSection('input')
+        setOverlayOpen(false)
+        setTypingVisible(false)
+        return
+      }
       logFailure('Defense Simulator', err, state.validatedTopic || '')
       setTypingVisible(false)
       addMsg({
@@ -1170,6 +1189,16 @@ export default function DefensePrep() {
         examiner: 'three_examiner_panel',
         passed:   panelScore >= 7,
       })
+
+      // Persist free trial result so paywall shows personalised score
+      if (isFreeTrial) {
+        const gaps = Array.isArray(data.gaps) ? data.gaps.slice(0, 2) : []
+        const result = { score: panelScore, gaps }
+        localStorage.setItem('fypro_free_trial_used', 'true')
+        localStorage.setItem('fypro_free_trial_result', JSON.stringify(result))
+        setTrialUsed(true)
+        setTrialResult(result)
+      }
 
       // Mark complete without advancing currentStep past the last step
       const isFirstDefenseCompletion = !state.stepsCompleted[5]
@@ -1491,6 +1520,77 @@ export default function DefensePrep() {
               <button className="fy-back-btn" onClick={() => navigateStep(4)}>
                 ← Back to Project Reviewer
               </button>
+
+              {/* ── Free trial gate ─────────────────────────── */}
+              {isFreeTrial && (
+                <div className="dp-free-trial-gate">
+                  {!state.validatedTopic ? (
+                    <div className="dp-trial-locked">
+                      <div className="dp-trial-locked__icon">🔒</div>
+                      <h3 className="dp-trial-locked__heading">Complete Step 1 First</h3>
+                      <p className="dp-trial-locked__body">
+                        Validate your topic in Step 1 to unlock your free Defence Simulator session.
+                        The examiners need to know what your project is about.
+                      </p>
+                    </div>
+                  ) : trialUsed ? (
+                    <div className="dp-trial-paywall">
+                      {trialResult && (
+                        <div className="dp-trial-paywall__score">
+                          <span className="dp-trial-paywall__score-label">Your Free Trial Score</span>
+                          <span className="dp-trial-paywall__score-value">{trialResult.score}<span>/10</span></span>
+                          {trialResult.gaps?.length > 0 && (
+                            <ul className="dp-trial-paywall__gaps">
+                              {trialResult.gaps.map((g, i) => (
+                                <li key={i}>{g}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      <h3 className="dp-trial-paywall__heading">
+                        {trialResult ? 'Fix these gaps. Come back ready.' : 'Your free trial has been used.'}
+                      </h3>
+                      <p className="dp-trial-paywall__body">
+                        Unlock the full Defence Pack to practice again with voice-enabled examiners,
+                        the Red Flag Scanner, and your full project review.
+                      </p>
+                      <div className="dp-trial-paywall__features">
+                        <span>✓ Unlimited defence sessions (5/day)</span>
+                        <span>✓ AI examiner voices</span>
+                        <span>✓ Red Flag Scanner</span>
+                        <span>✓ Project Reviewer</span>
+                        <span>✓ Defence certificate if you score 7+</span>
+                      </div>
+                      <PaidFeatureGate feature="defense_pack" label="Unlock Defence Pack — ₦3,500" />
+                    </div>
+                  ) : (
+                    <div className="dp-trial-sell">
+                      {(!state.chosenMethodology || !state.chapterStructure) && (
+                        <div className="dp-trial-nudge">
+                          💡 Complete Steps 2 and 3 for more targeted examiner questions.
+                        </div>
+                      )}
+                      <div className="dp-trial-sell__eyebrow">FREE TRIAL — 1 SESSION</div>
+                      <h2 className="dp-trial-sell__heading">
+                        Three AI Examiners. Real Questions.<br />Your Weaknesses Identified Live.
+                      </h2>
+                      <p className="dp-trial-sell__body">
+                        This is what your actual defence will feel like — except you get to fail here,
+                        not in front of your supervisor.
+                      </p>
+                      <ul className="dp-trial-sell__list">
+                        <li>The Methodologist attacks your research design and sampling</li>
+                        <li>The Subject Expert demands citations and theoretical grounding</li>
+                        <li>The External Examiner probes whether your conclusions are justified</li>
+                        <li>You receive a readiness score out of 10</li>
+                        <li>Your critical gaps are identified so you know exactly what to fix</li>
+                      </ul>
+                      <p className="dp-trial-sell__note">Text-only · Voice unlocks with the Defence Pack</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Pre-session empty state */}
               <div
