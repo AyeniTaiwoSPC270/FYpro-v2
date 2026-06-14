@@ -9,8 +9,8 @@ import DashSidebar from '../features/dashboard/DashSidebar'
 import DashTopBar from '../features/dashboard/DashTopBar'
 import DashStatCards from '../features/dashboard/DashStatCards'
 import DashProgressJourney from '../features/dashboard/DashProgressJourney'
-import BadgeRow from '../components/badges/BadgeRow'
 import AchievementsRow from '../components/badges/AchievementsRow'
+import { EXPRESS_ACHIEVEMENTS } from '../lib/expressAchievements'
 
 export default function ExpressDashboard() {
   const navigate = useNavigate()
@@ -60,8 +60,7 @@ export default function ExpressDashboard() {
             ← Main app
           </button>
 
-          <BadgeRow projectId={projectId} />
-          <AchievementsRow projectId={projectId} />
+          <AchievementsRow projectId={projectId} catalog={EXPRESS_ACHIEVEMENTS} />
           <DashStatCards STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" />
           <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} navTarget="/express/run" />
 
