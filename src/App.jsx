@@ -59,8 +59,11 @@ function S({ fallback, children }) {
 
 function RequireExpress({ children }) {
   const { features, loading } = usePaidFeatures()
+  // TEST ONLY — remove before final demo. Lets the [TEST] Skip payment button
+  // into /express without a real express_defense entitlement.
+  const testBypass = localStorage.getItem('fypro_express_test_bypass') === 'true'
   if (loading) return <DashboardPageSkeleton />
-  if (!features.includes('express_defense')) return <Navigate to="/express-onboarding" replace />
+  if (!testBypass && !features.includes('express_defense')) return <Navigate to="/express-onboarding" replace />
   return children
 }
 
