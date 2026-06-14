@@ -106,6 +106,24 @@ export async function loadUserState(userId: string): Promise<UserState> {
   return { profile, entitlements, project, steps }
 }
 
+// ─── Profile read ────────────────────────────────────────────────────────────
+// Lightweight single-row profile fetch. Used where we only need the user's
+// academic details (e.g. prefilling Express onboarding) without loading
+// entitlements/projects/steps like loadUserState does.
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('[supabase-client] getUserProfile:', error.message)
+    return null
+  }
+  return (data as UserProfile) ?? null
+}
+
 // ─── Project CRUD ────────────────────────────────────────────────────────────
 
 export async function createProject(data: {

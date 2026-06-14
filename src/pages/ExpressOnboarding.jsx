@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
-import { createExpressProject, getExpressProject, updateProject } from '../lib/db'
+import { createExpressProject, getExpressProject, updateProject, getUserProfile } from '../lib/db'
 import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
@@ -35,16 +35,29 @@ export default function ExpressOnboarding() {
 
   const faculties = university ? getFaculties(university) : []
 
-  // Resume pre-fill: if the user already has an express project, hydrate the form.
+  // Prefill the form so the user only types what's genuinely new. Two sources,
+  // express project taking precedence over the saved profile:
+  //   - profile (users table): university/faculty/dept/level captured at signup +
+  //     standard onboarding. University is profile-only — projects has no
+  //     university column.
+  //   - existing express project: faculty/dept/level/title from a prior visit
+  //     (auto-created blank row or a previous onboarding attempt).
   useEffect(() => {
     if (!user?.id) return
-    getExpressProject(user.id).then(p => {
-      if (!p) return
-      if (p.faculty) setFaculty(p.faculty)
-      if (p.department) setDepartment(p.department)
-      if (p.level) setLevel(p.level)
-      if (p.title) setTopic(p.title)
+    let cancelled = false
+    Promise.all([getUserProfile(user.id), getExpressProject(user.id)]).then(([profile, p]) => {
+      if (cancelled) return
+      if (profile?.university) setUniversity(profile.university)
+      if (profile?.faculty) setFaculty(profile.faculty)
+      if (profile?.department) setDepartment(profile.department)
+      if (profile?.level) setLevel(profile.level)
+      // Express project overrides profile defaults where it has values.
+      if (p?.faculty) setFaculty(p.faculty)
+      if (p?.department) setDepartment(p.department)
+      if (p?.level) setLevel(p.level)
+      if (p?.title) setTopic(p.title)
     })
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
