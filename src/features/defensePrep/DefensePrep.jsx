@@ -1287,7 +1287,7 @@ export default function DefensePrep() {
       setHasHistory(true)
 
       // Fire achievement check after defense session completes
-      checkAchievements().then(newKeys => {
+      checkAchievements(isExpress ? { projectId } : {}).then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
         }

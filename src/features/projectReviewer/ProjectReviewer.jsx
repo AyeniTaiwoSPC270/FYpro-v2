@@ -491,7 +491,7 @@ export default function ProjectReviewer() {
 
     // Check achievements after step completion
     if (isFirstReviewerCompletion) {
-      checkAchievements().then(newKeys => {
+      checkAchievements(isExpress ? { projectId } : {}).then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
           refetchAchievements()
