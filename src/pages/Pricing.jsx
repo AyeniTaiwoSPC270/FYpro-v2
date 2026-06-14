@@ -525,7 +525,7 @@ function PricingCards() {
               </ul>
               <a
                 href="/express-onboarding"
-                className="mt-8 flex items-center justify-center w-full py-3 rounded-xl font-sans font-semibold text-sm text-white no-underline transition-all duration-200 hover:-translate-y-0.5 bg-blue-600 hover:bg-blue-500"
+                className="mt-8 flex items-center justify-center text-center w-full py-3 rounded-xl font-sans font-semibold text-xs text-white no-underline transition-all duration-200 hover:-translate-y-0.5 bg-blue-600 hover:bg-blue-500 whitespace-nowrap"
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 20px rgba(37,99,235,0.4)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
               >
