@@ -362,11 +362,14 @@ async function handleDashboard(req, res) {
 
       let plan = 'Free';
       if (paid) {
-        plan = paid.tiers.includes('defense_pack') ? 'Defense' : 'Student';
+        if (paid.tiers.includes('defense_pack')) plan = 'Defense';
+        else if (paid.tiers.includes('express_defense')) plan = 'Express';
+        else plan = 'Student';
       }
       // Also check admin-granted entitlements (not reflected in payments)
       const grantedFeatures = paidFeaturesByUser[u.id] ?? [];
       if (grantedFeatures.includes('defense_pack')) plan = 'Defense';
+      else if (grantedFeatures.includes('express_defense') && plan === 'Free') plan = 'Express';
       else if (grantedFeatures.includes('student_pack') && plan === 'Free') plan = 'Student';
 
       let status = 'never_used';
@@ -880,8 +883,8 @@ async function handleGrantEntitlement(req, res) {
   if (!rl.allowed) return res.status(429).json({ error: 'Rate limited' });
 
   const { userId, plan } = req.body || {};
-  if (!userId || !['student', 'defense'].includes(plan)) {
-    return res.status(400).json({ error: 'userId and plan (student|defense) required' });
+  if (!userId || !['student', 'defense', 'express'].includes(plan)) {
+    return res.status(400).json({ error: 'userId and plan (student|defense|express) required' });
   }
 
   try {
@@ -898,6 +901,8 @@ async function handleGrantEntitlement(req, res) {
 
     if (plan === 'student') {
       features.add('student_pack');
+    } else if (plan === 'express') {
+      features.add('express_defense');
     } else {
       features.add('defense_pack');
       features.add('project_reset');

@@ -1294,7 +1294,7 @@ function AdminHealth() {
   }
 
   async function handleGrantPlan(userId, email, plan) {
-    const label = plan === 'student' ? 'Student Plan' : 'Defense Plan'
+    const label = plan === 'student' ? 'Student Plan' : plan === 'express' ? 'Express Defence' : 'Defense Plan'
     askConfirm(
       `Grant ${label}`,
       `Grant ${label} to ${email}? This gives them paid access at no charge.`,
@@ -1309,7 +1309,7 @@ function AdminHealth() {
           const json = await res.json()
           if (!res.ok) throw new Error(json.error)
           setActionState(s => { const n = { ...s }; delete n[userId]; return n })
-          setData(prev => prev ? { ...prev, users: prev.users.map(u => u.id === userId ? { ...u, plan: plan === 'defense' ? 'Defense' : 'Student' } : u) } : prev)
+          setData(prev => prev ? { ...prev, users: prev.users.map(u => u.id === userId ? { ...u, plan: plan === 'defense' ? 'Defense' : plan === 'express' ? 'Express' : 'Student' } : u) } : prev)
           showUserToast('success', `${label} granted to ${email}`)
           loadData()
         } catch (err) {
@@ -1928,6 +1928,7 @@ function AdminHealth() {
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleDeleteUser(u.id, u.email)} style={{ color:'rgba(248,113,113,0.7)', borderColor:'rgba(220,38,38,0.2)' }}>{busy?'…':'Del'}</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'student')}>+Stu</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'defense')}>+Def</button>
+                                <button className="mc-action-btn" disabled={busy} onClick={() => handleGrantPlan(u.id, u.email, 'express')}>+Exp</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleResetUsage(u.id, u.email)}>Reset</button>
                                 <button className="mc-action-btn" disabled={busy} onClick={() => handleResetRunCounts(u.id, u.email)}>Runs</button>
                                 <button className="mc-action-btn" disabled={diagnoseBusy[u.id]} onClick={() => handleDiagnose(u.id, u.email)}>{diagnoseBusy[u.id]?'…':'Diag'}</button>
