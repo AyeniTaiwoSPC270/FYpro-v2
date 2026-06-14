@@ -61,13 +61,13 @@ const QUICK_ACTIONS_BASE = [
   },
 ]
 
-export default function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadReport }) {
+export default function DashQuickActions({ STEPS, allComplete, showToastMessage, onDownloadReport, navTarget = '/app' }) {
   const navigate = useNavigate()
   const { navigateStep } = useApp()
   const activeStep = STEPS.find((s) => s.status === 'active') ?? STEPS[STEPS.length - 1]
   const QUICK_ACTIONS = QUICK_ACTIONS_BASE.map((a) =>
     a.pathKey === 'active'
-      ? { ...a, path: '/app', sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
+      ? { ...a, path: navTarget, sub: `Step ${activeStep?.id} — ${activeStep?.name}` }
       : a
   )
 
@@ -116,9 +116,9 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                     : action.onClickKey === 'download'
                     ? handleDownload
                     : action.onClickKey === 'defense'
-                    ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(5); navigate('/app') }
+                    ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(5); navigate(navTarget) }
                     : action.path
-                    ? () => { if (action.path === '/app') sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
+                    ? () => { if (action.path === '/app' || action.path === navTarget) sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined
                 }
                 className={`relative flex flex-col items-start gap-3 md:gap-4 p-4 md:p-6 rounded-2xl text-left transition-all duration-200 w-full db-quick-card ${

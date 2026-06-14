@@ -12,7 +12,7 @@ const cardEnter = {
   }),
 }
 
-export default memo(function DashStatCards({ STUDENT, STEPS }) {
+export default memo(function DashStatCards({ STUDENT, STEPS, navTarget = '/app' }) {
   const navigate = useNavigate()
   const activeStep = STEPS.find((s) => s.status === 'active')
   const [rowRef, rowVisible] = useReveal()
@@ -89,7 +89,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS }) {
         <motion.button
           whileHover={{ y: -1, boxShadow: '0 0 20px rgba(22,163,74,0.38)' }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate('/app') }}
+          onClick={() => { sessionStorage.setItem('intentional_app_entry', 'true'); navigate(navTarget) }}
           className="inline-flex items-center gap-2 px-[22px] py-[11px] bg-green-600 hover:bg-green-500 text-white border-0 rounded-xl font-sans text-[0.82rem] font-semibold cursor-pointer self-start transition-all duration-200 relative z-10"
         >
           Continue <ArrowRightIcon />
