@@ -1224,6 +1224,31 @@ function FinalCTA() {
   )
 }
 
+// ─── Express CTA ──────────────────────────────────────────────────────────────
+
+function ExpressCtaSection() {
+  return (
+    <section className="lp-express-cta">
+      <div className="lp-express-cta__inner">
+        <div className="lp-express-cta__eyebrow">FOR STUDENTS WITH COMPLETED PROJECTS</div>
+        <h2 className="lp-express-cta__heading">
+          Already finished your project?<br />Skip straight to defence practice.
+        </h2>
+        <p className="lp-express-cta__body">
+          You don&apos;t need the full research workflow. Get three tools — Red Flag Scanner,
+          Project Reviewer, and the Defence Simulator — for ₦2,000. Walk in ready.
+        </p>
+        <a
+          href="/express-onboarding"
+          className="lp-express-cta__btn"
+        >
+          Get Express Defence — ₦2,000
+        </a>
+      </div>
+    </section>
+  )
+}
+
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 
 function Footer() {
@@ -1341,6 +1366,8 @@ export default function LandingPage() {
       <TestimonialsSection />
       <SectionDivider />
       <PricingSection />
+      <SectionDivider />
+      <ExpressCtaSection />
       <SectionDivider />
       <LandingFAQSection />
       <TrustedCounter />
