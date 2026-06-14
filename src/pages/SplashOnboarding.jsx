@@ -16,7 +16,7 @@ export default function SplashOnboarding() {
   const navigate = useNavigate()
   const { set, state, isOnboarded } = useApp()
 
-  // Phase: 'splash' | 'onboarding'
+  // Phase: 'splash' | 'persona' | 'onboarding'
   const [phase, setPhase] = useState('splash')
   const [visible, setVisible] = useState(false)
 
@@ -40,10 +40,10 @@ export default function SplashOnboarding() {
     }
   }, [isOnboarded]) // eslint-disable-line
 
-  // Splash → form after 1700ms
+  // Splash → persona after 1700ms
   useEffect(() => {
     const t = setTimeout(() => {
-      setPhase('onboarding')
+      setPhase('persona')
     }, 1700)
     return () => clearTimeout(t)
   }, [])
@@ -154,6 +154,46 @@ export default function SplashOnboarding() {
             <p className="splash__wordmark">
               <span>FY</span><span style={{ color: '#0066FF' }}>Pro</span>
             </p>
+          </div>
+        </motion.div>
+      ) : phase === 'persona' ? (
+        <motion.div
+          key="persona"
+          id="persona-screen"
+          className="persona-screen"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="so-persona">
+            <div className="so-persona__eyebrow">WELCOME TO FYPRO</div>
+            <h1 className="so-persona__heading">What stage are you at?</h1>
+            <p className="so-persona__sub">
+              This helps us route you to the right experience.
+            </p>
+            <div className="so-persona__options">
+              <button
+                className="so-persona__option"
+                onClick={() => setPhase('onboarding')}
+              >
+                <div className="so-persona__option-icon">📚</div>
+                <div className="so-persona__option-title">I&apos;m starting my final year project</div>
+                <div className="so-persona__option-desc">
+                  I need help choosing a topic, building my chapters, and planning my research from scratch.
+                </div>
+              </button>
+              <button
+                className="so-persona__option"
+                onClick={() => navigate('/express-onboarding')}
+              >
+                <div className="so-persona__option-icon">🎯</div>
+                <div className="so-persona__option-title">I already have a project — I need defence practice</div>
+                <div className="so-persona__option-desc">
+                  My project is done (or nearly done). I want to face the AI examiners and get my readiness score.
+                </div>
+              </button>
+            </div>
           </div>
         </motion.div>
       ) : (
