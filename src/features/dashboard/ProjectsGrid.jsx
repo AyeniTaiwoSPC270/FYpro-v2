@@ -182,7 +182,43 @@ function NewProjectCard({ features, featuresLoading, projects, onStartNew, onPay
   )
 }
 
-export default function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay, onDelete, isStartingProject, continuingProjectId }) {
+function ExpressCard({ onOpen }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+      onClick={onOpen}
+      style={{
+        background: 'linear-gradient(145deg, rgba(0,102,255,0.08) 0%, rgba(0,102,255,0.02) 100%)',
+        border: '1.5px solid rgba(0,102,255,0.35)',
+        borderRadius: 16,
+        padding: '24px 24px 20px',
+        display: 'flex', flexDirection: 'column', gap: 12,
+        cursor: 'pointer', position: 'relative',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+      }}
+      whileHover={{ boxShadow: '0 8px 32px rgba(0,102,255,0.18)' }}
+    >
+      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.62rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0066FF' }}>
+        ⚡ Express Defence
+      </span>
+      <h3 className="font-serif" style={{ fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.35, margin: 0 }}>
+        Your fast-track defence app
+      </h3>
+      <p className="font-sans" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+        Separate from your project — its own dashboard and data.
+      </p>
+      <button
+        style={{ width: '100%', background: '#0066FF', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 20px', fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', marginTop: 4 }}
+      >
+        Open Express →
+      </button>
+    </motion.div>
+  )
+}
+
+export default function ProjectsGrid({ projects, features, featuresLoading, onContinue, onStartNew, onPay, onDelete, isStartingProject, continuingProjectId, hasExpress, onOpenExpress }) {
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
@@ -197,6 +233,7 @@ export default function ProjectsGrid({ projects, features, featuresLoading, onCo
         {projects.map(p => (
           <ProjectCard key={p.id} project={p} onContinue={onContinue} onDelete={onDelete} isLoading={continuingProjectId === p.id} />
         ))}
+        {hasExpress && <ExpressCard onOpen={onOpenExpress} />}
         <NewProjectCard features={features} featuresLoading={featuresLoading} projects={projects} onStartNew={onStartNew} onPay={onPay} isStarting={isStartingProject} />
       </div>
     </div>
