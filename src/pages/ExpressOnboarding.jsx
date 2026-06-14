@@ -12,7 +12,7 @@ const LEVELS = ['300', '400', '500']
 export default function ExpressOnboarding() {
   const navigate = useNavigate()
   const { set, state } = useApp()
-  const { handlePay, paying, verifying, payError } = usePaystackCheckout({ loginReturnUrl: '/express-onboarding' })
+  const { handlePay, paying, verifying, payError, blockInfo } = usePaystackCheckout({ loginReturnUrl: '/express-onboarding' })
 
   const universities = Object.keys(UNIVERSITIES)
 
