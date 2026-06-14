@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
+import { usePaidFeatures } from '../hooks/usePaidFeatures'
+import { createExpressProject, getExpressProject } from '../lib/db'
+import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
 import Spinner from '../components/Spinner'
@@ -9,27 +11,44 @@ import Spinner from '../components/Spinner'
 const METHODOLOGIES = ['Quantitative', 'Qualitative', 'Mixed Methods']
 const LEVELS = ['300', '400', '500']
 
+// ExpressOnboarding renders OUTSIDE the express provider stack, so its data must
+// never touch the normal AppContext. It writes only to the express project row.
 export default function ExpressOnboarding() {
   const navigate = useNavigate()
-  const { set, state } = useApp()
   const { handlePay, paying, verifying, payError, blockInfo } = usePaystackCheckout({ loginReturnUrl: '/express-onboarding' })
+  const { features } = usePaidFeatures()
+  const { user } = useUser()
 
   const universities = Object.keys(UNIVERSITIES)
 
-  const [university, setUniversity] = useState(state.university || '')
-  const [faculty, setFaculty] = useState(state.faculty || '')
-  const [department, setDepartment] = useState(state.department || '')
-  const [level, setLevel] = useState(state.level || '400')
+  const [university, setUniversity] = useState('')
+  const [faculty, setFaculty] = useState('')
+  const [department, setDepartment] = useState('')
+  const [level, setLevel] = useState('400')
   const [topic, setTopic] = useState('')
   const [methodology, setMethodology] = useState('')
   const [chapterCount, setChapterCount] = useState(5)
   const [useCustomChapters, setUseCustomChapters] = useState(false)
   const [formStep, setFormStep] = useState('form') // 'form' | 'payment'
   const [formError, setFormError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const faculties = university ? getFaculties(university) : []
 
-  function handleFormSubmit(e) {
+  // Resume pre-fill: if the user already has an express project, hydrate the form.
+  useEffect(() => {
+    if (!user?.id) return
+    getExpressProject(user.id).then(p => {
+      if (!p) return
+      if (p.faculty) setFaculty(p.faculty)
+      if (p.department) setDepartment(p.department)
+      if (p.level) setLevel(p.level)
+      if (p.title) setTopic(p.title)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
+  async function handleFormSubmit(e) {
     e.preventDefault()
     setFormError(null)
     if (!university || !faculty || !department || !level || !topic.trim() || !methodology) {
@@ -40,23 +59,31 @@ export default function ExpressOnboarding() {
       setFormError('Please enter your full project topic.')
       return
     }
-    set({
-      university,
-      faculty,
-      department,
-      level,
-      validatedTopic: topic.trim(),
-      chosenMethodology: methodology,
-      chapterStructure: {
-        total_chapters: useCustomChapters ? chapterCount : 5,
-        total_word_count: null,
-        chapters: [],
-      },
-    })
+    setSubmitting(true)
+    // Create (or reuse) the express project row now. Access stays gated by the
+    // express_defense entitlement (RequireExpress), so a pre-payment row is
+    // invisible and harmless — the payment popup redirects to /payment-success,
+    // so we cannot create it "after" payment on this page.
+    const existing = user?.id ? await getExpressProject(user.id) : null
+    if (!existing) {
+      await createExpressProject({
+        title: topic.trim(),
+        faculty,
+        department,
+        level,
+      })
+    }
+    setSubmitting(false)
+
+    // Already paid (resume / re-onboard) → straight into the express app.
+    if (features.includes('express_defense')) {
+      navigate('/express', { replace: true })
+      return
+    }
     setFormStep('payment')
   }
 
-  const isProcessing = paying === 'express_defense' || verifying
+  const isProcessing = paying === 'express_defense' || verifying || submitting
 
   return (
     <div className="eo-page">
@@ -198,8 +225,8 @@ export default function ExpressOnboarding() {
 
             {formError && <p className="eo-form__error">{formError}</p>}
 
-            <button type="submit" className="eo-form__submit">
-              Continue to Payment →
+            <button type="submit" className="eo-form__submit" disabled={submitting}>
+              {submitting ? <Spinner /> : 'Continue to Payment →'}
             </button>
           </form>
         )}
@@ -224,14 +251,6 @@ export default function ExpressOnboarding() {
               style={isProcessing ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
             >
               {isProcessing ? <Spinner /> : 'Pay ₦2,000 with Paystack'}
-            </button>
-            {/* TEST ONLY — remove before final demo */}
-            <button
-              className="eo-payment__back"
-              onClick={() => navigate('/express')}
-              style={{ color: 'var(--color-amber)', marginTop: 4 }}
-            >
-              [TEST] Skip payment → enter
             </button>
             <button
               className="eo-payment__back"

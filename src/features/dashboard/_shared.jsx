@@ -29,6 +29,28 @@ export function buildSteps(stepsCompleted, activeStepId) {
   }))
 }
 
+// ─── Express step definitions (3-step express app) ─────────────────────────────
+
+export const EXPRESS_STEP_DEFS = [
+  { id: 1, key: 'red_flag',         name: 'Red Flag Scanner',  desc: 'Surface your project’s weaknesses before the panel does.',  path: '/express/run' },
+  { id: 2, key: 'project_reviewer', name: 'Project Reviewer',  desc: 'Full AI review of your submitted document.',                 path: '/express/run' },
+  { id: 3, key: 'defense',          name: 'Defence Simulator', desc: 'Three AI examiners, voice-enabled, real hostile questions.', path: '/express/run' },
+]
+
+// Express progress model is { red_flag, project_reviewer, defense } booleans.
+// The active step is the first incomplete one.
+export function expressBuildSteps(expressSteps = {}) {
+  const firstIncomplete = EXPRESS_STEP_DEFS.findIndex(d => !expressSteps[d.key])
+  return EXPRESS_STEP_DEFS.map((def, i) => ({
+    ...def,
+    status: expressSteps[def.key]
+      ? 'completed'
+      : i === firstIncomplete
+      ? 'active'
+      : 'locked',
+  }))
+}
+
 // ─── Scroll reveal hook ───────────────────────────────────────────────────────
 
 export function useReveal() {

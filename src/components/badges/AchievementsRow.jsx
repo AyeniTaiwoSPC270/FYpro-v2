@@ -29,14 +29,24 @@ const ALL_ACHIEVEMENTS = [
   { key: 'dedicated',     label: 'Dedicated',      emoji: '🔥', hidden: true  },
 ]
 
-export default function AchievementsRow() {
-  const { earnedKeys, loading } = useAchievements()
+export default function AchievementsRow({ projectId = null, catalog = null }) {
+  const { earnedKeys, loading } = useAchievements(projectId)
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
   if (loading) return null
 
-  const earnedCount = ALL_ACHIEVEMENTS.filter(a => earnedKeys.has(a.key)).length
+  // Express passes its own 8-item catalog ({ key, name, emoji, desc }); the
+  // default dashboard uses ALL_ACHIEVEMENTS ({ key, label, emoji, hidden }).
+  // Normalize both shapes here.
+  const defs = (catalog ?? ALL_ACHIEVEMENTS).map(a => ({
+    key: a.key,
+    label: a.label ?? a.name,
+    emoji: a.emoji,
+    hidden: a.hidden ?? false,
+  }))
+
+  const earnedCount = defs.filter(a => earnedKeys.has(a.key)).length
 
   return (
     <motion.div
@@ -73,7 +83,7 @@ export default function AchievementsRow() {
           fontFamily: "'Poppins', sans-serif", fontSize: '0.6rem',
           color: isLight ? 'rgba(13,27,42,0.35)' : 'rgba(255,255,255,0.18)', marginTop: 3,
         }}>
-          {earnedCount}/{ALL_ACHIEVEMENTS.length} earned
+          {earnedCount}/{defs.length} earned
         </span>
         <Link
           to="/account/achievements"
@@ -90,7 +100,7 @@ export default function AchievementsRow() {
       <div style={{ width: 1, alignSelf: 'stretch', background: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.07)', margin: '0 4px', flexShrink: 0 }} />
 
       {/* Achievement chips — show first 12, rest accessible via /account/achievements */}
-      {ALL_ACHIEVEMENTS.slice(0, 12).map(a => {
+      {defs.slice(0, 12).map(a => {
         const earned = earnedKeys.has(a.key)
         const showHidden = a.hidden && !earned
         return (

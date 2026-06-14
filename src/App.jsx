@@ -7,6 +7,7 @@ import { ToastProvider } from './components/Toast'
 import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import { usePaidFeatures } from './hooks/usePaidFeatures'
+import ExpressProviders from './features/expressDefense/ExpressProviders'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
@@ -49,10 +50,18 @@ const AppShell          = lazy(() => import('./features/shell/AppShell'))
 const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
 const ExpressOnboarding = lazy(() => import('./pages/ExpressOnboarding'))
 const ExpressShell      = lazy(() => import('./features/expressDefense/ExpressShell'))
+const ExpressDashboard  = lazy(() => import('./pages/ExpressDashboard'))
 const AdminHealth       = lazy(() => import('./pages/admin/Health'))
 
 function S({ fallback, children }) {
   return <Suspense fallback={fallback}>{children}</Suspense>
+}
+
+function RequireExpress({ children }) {
+  const { features, loading } = usePaidFeatures()
+  if (loading) return <DashboardPageSkeleton />
+  if (!features.includes('express_defense')) return <Navigate to="/express-onboarding" replace />
+  return children
 }
 
 function ExpressDashboardRedirect() {
@@ -115,7 +124,24 @@ function AppRoutes() {
       <Route path="/app"             element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><AppShell /></S></ProtectedRoute>} />
       <Route path="/supervisor-prep" element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><SupervisorPrep /></S></ProtectedRoute>} />
       <Route path="/express-onboarding" element={<ProtectedRoute><S fallback={<AuthPageSkeleton />}><ExpressOnboarding /></S></ProtectedRoute>} />
-      <Route path="/express"            element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><ExpressShell /></S></ProtectedRoute>} />
+      <Route path="/express" element={
+        <ProtectedRoute>
+          <RequireExpress>
+            <ExpressProviders>
+              <S fallback={<DashboardPageSkeleton />}><ExpressDashboard /></S>
+            </ExpressProviders>
+          </RequireExpress>
+        </ProtectedRoute>
+      } />
+      <Route path="/express/run" element={
+        <ProtectedRoute>
+          <RequireExpress>
+            <ExpressProviders>
+              <S fallback={<AppShellSkeleton />}><ExpressShell /></S>
+            </ExpressProviders>
+          </RequireExpress>
+        </ProtectedRoute>
+      } />
 
       {/* 404 */}
       <Route path="*" element={<S fallback={<PublicPageSkeleton />}><NotFound /></S>} />

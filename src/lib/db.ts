@@ -39,6 +39,7 @@ export interface Project {
   faculty: string | null
   department: string | null
   level: string | null
+  mode: 'standard' | 'express'
   supervisor_id: string | null
   institution_id: string | null
   created_at: string
@@ -82,6 +83,7 @@ export async function loadUserState(userId: string): Promise<UserState> {
       .from('projects')
       .select('*')
       .eq('user_id', userId)
+      .eq('mode', 'standard')
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -198,6 +200,7 @@ export async function getAllUserProjects(userId: string): Promise<Project[]> {
     .from('projects')
     .select('id, title, status, current_step, faculty, department, level, created_at, updated_at')
     .eq('user_id', userId)
+    .eq('mode', 'standard')
     .order('created_at', { ascending: false })
   if (error) { console.error('[supabase-client] getAllUserProjects:', error.message); return [] }
   return (data as Project[]) ?? []
@@ -211,6 +214,7 @@ export async function archiveAllActiveProjects(): Promise<void> {
     .update({ status: 'archived', updated_at: new Date().toISOString() })
     .eq('user_id', user.id)
     .neq('status', 'archived')
+    .neq('mode', 'express')
   if (error) console.error('[supabase-client] archiveAllActiveProjects:', error.message)
 }
 
@@ -233,18 +237,26 @@ export async function deleteProject(projectId: string, userId: string): Promise<
 }
 
 export async function deleteAllUserData(userId: string): Promise<void> {
+  // Only the normal app's data — never touch the Express project.
+  const { data: stdProjects } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('mode', 'standard')
+
+  const ids = (stdProjects ?? []).map(p => p.id)
+  if (ids.length === 0) return
+
   const { error: stepsError } = await supabase
     .from('project_steps')
     .delete()
-    .eq('user_id', userId)
-
+    .in('project_id', ids)
   if (stepsError) console.error('[resetProject] delete failed', stepsError)
 
   const { error: projectsError } = await supabase
     .from('projects')
     .delete()
-    .eq('user_id', userId)
-
+    .in('id', ids)
   if (projectsError) console.error('[resetProject] delete failed', projectsError)
 }
 
@@ -265,4 +277,47 @@ export async function updateUserProfile(
     console.error('[supabase-client] updateUserProfile:', error.message)
     throw error
   }
+}
+
+// ─── Express project helpers ─────────────────────────────────────────────────
+
+export async function getExpressProject(userId: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('mode', 'express')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) { console.error('[db] getExpressProject:', error.message); return null }
+  return (data as Project) ?? null
+}
+
+export async function createExpressProject(data: {
+  title: string | null
+  faculty: string | null
+  department: string | null
+  level: string | null
+}): Promise<Project | null> {
+  const user = await sessionUser()
+  if (!user) return null
+
+  const { data: project, error } = await supabase
+    .from('projects')
+    .insert({
+      user_id: user.id,
+      mode: 'express',
+      status: 'active',
+      current_step: 'defense_prep',
+      title: data.title,
+      faculty: data.faculty,
+      department: data.department,
+      level: data.level,
+    })
+    .select()
+    .single()
+
+  if (error) { console.error('[db] createExpressProject:', error.message); return null }
+  return project as Project
 }

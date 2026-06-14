@@ -140,7 +140,7 @@ interface ProjectStateValue {
   selectProject: (projectId: string) => Promise<void>
 }
 
-const ProjectStateContext = createContext<ProjectStateValue | null>(null)
+export const ProjectStateContext = createContext<ProjectStateValue | null>(null)
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 

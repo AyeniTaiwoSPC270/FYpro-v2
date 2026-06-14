@@ -119,6 +119,15 @@ export default function Dashboard() {
 
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { runCounts } = useRunLimit(features)
+
+  const [hasExpressProject, setHasExpressProject] = useState(false)
+  useEffect(() => {
+    if (!user?.id) return
+    if (!features.includes('express_defense')) { setHasExpressProject(false); return }
+    import('../lib/db').then(({ getExpressProject }) =>
+      getExpressProject(user.id).then(p => setHasExpressProject(!!p))
+    )
+  }, [user?.id, features])
   const { handlePay, payError } = usePaystackCheckout({ loginReturnUrl: '/dashboard' })
 
   useEffect(() => { if (payError) showToastMessage(payError) }, [payError])
@@ -360,6 +369,8 @@ export default function Dashboard() {
               onDelete={handleDeleteProject}
               isStartingProject={isStartingProject}
               continuingProjectId={continuingProjectId}
+              hasExpress={hasExpressProject}
+              onOpenExpress={() => navigate('/express')}
             />
           )}
         </main>

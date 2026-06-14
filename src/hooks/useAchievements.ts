@@ -8,28 +8,32 @@ export interface Achievement {
   earned_at: string | null
 }
 
-export function useAchievements() {
+// projectId omitted/null => global (project_id IS NULL).
+// projectId set => express-scoped (project_id = id).
+export function useAchievements(projectId?: string | null) {
   const { user } = useUser()
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async (userId: string) => {
-    const { data } = await supabase
+    let q = supabase
       .from('user_achievements')
       .select('achievement_key, earned_at')
       .eq('user_id', userId)
       .order('earned_at', { ascending: false })
+    q = projectId ? q.eq('project_id', projectId) : q.is('project_id', null)
+    const { data } = await q
 
     setAchievements((data ?? []).map(r => ({ key: r.achievement_key, earned_at: r.earned_at })))
     setLoading(false)
-  }, [])
+  }, [projectId])
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return }
     refresh(user.id)
 
     const channel = supabase
-      .channel(`user_achievements_${user.id}`)
+      .channel(`user_achievements_${user.id}_${projectId ?? 'global'}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -39,7 +43,7 @@ export function useAchievements() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [user?.id, refresh])
+  }, [user?.id, refresh, projectId])
 
   const refetch = useCallback(() => {
     if (user?.id) refresh(user.id)

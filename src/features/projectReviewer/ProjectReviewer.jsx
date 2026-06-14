@@ -227,7 +227,7 @@ function stripScoreRange(raw) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ProjectReviewer() {
-  const { state, set, studentContext, navigateStep, completeStep } = useApp()
+  const { state, set, studentContext, navigateStep, completeStep, isExpress } = useApp()
   const { saveStep, projectId } = useProjectState()
   const { features } = usePaidFeatures()
   const { user } = useUser()
@@ -459,14 +459,23 @@ export default function ProjectReviewer() {
 
   async function handleConfirm() {
     if (!reviewData) return
-    const isFirstReviewerCompletion = !state.stepsCompleted[4]
+    const isFirstReviewerCompletion = isExpress
+      ? !(state.expressSteps && state.expressSteps.project_reviewer)
+      : !state.stepsCompleted[4]
     const fileName = selectedFile
       ? selectedFile.name
       : (state.uploadedProject?.fileName || 'uploaded-project')
     const fileType = selectedFile
       ? (selectedFile.name || '').split('.').pop().toLowerCase()
       : (state.uploadedProject?.fileType || 'unknown')
-    completeStep(4, { uploadedProject: { fileName, fileType, reviewData } })
+    if (isExpress) {
+      set({
+        uploadedProject: { fileName, fileType, reviewData },
+        expressSteps: { ...(state.expressSteps || {}), project_reviewer: true },
+      })
+    } else {
+      completeStep(4, { uploadedProject: { fileName, fileType, reviewData } })
+    }
     await saveStep('project_reviewer', {
       fileName,
       grade:               reviewData.grade,
@@ -476,13 +485,16 @@ export default function ProjectReviewer() {
       weaknesses:          reviewData.weaknesses,
       examiner_questions:  reviewData.examiner_questions,
     })
-    markStepComplete('project_reviewer')
-    if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
+    // Express is isolated — never write the user-keyed user_progress table.
+    if (!isExpress) {
+      markStepComplete('project_reviewer')
+      if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
+    }
     showToast('Project reviewed ✓')
 
     // Check achievements after step completion
     if (isFirstReviewerCompletion) {
-      checkAchievements().then(newKeys => {
+      checkAchievements(isExpress ? { projectId } : {}).then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
           refetchAchievements()
@@ -501,9 +513,13 @@ export default function ProjectReviewer() {
   // ── Skip handler ───────────────────────────────────────────────────────────
 
   function handleSkip() {
-    completeStep(4)
+    if (isExpress) {
+      set({ expressSteps: { ...(state.expressSteps || {}), project_reviewer: true } })
+    } else {
+      completeStep(4)
+    }
     saveStep('project_reviewer', { skipped: true })
-    markStepComplete('project_reviewer')
+    if (!isExpress) markStepComplete('project_reviewer')
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -519,7 +535,7 @@ export default function ProjectReviewer() {
         id="pr-input-section"
         className={`pr-input-section ${section === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}
       >
-        <button className="fy-back-btn" onClick={() => navigateStep(3)}>
+        <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(3) } }}>
           ← Back to Writing Planner
         </button>
         <p className="pr-step-label">Step 5: Project Reviewer</p>

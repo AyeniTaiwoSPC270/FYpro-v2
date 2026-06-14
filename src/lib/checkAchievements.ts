@@ -7,7 +7,7 @@ import { supabase } from './supabase'
  * Pass shared=true when the trigger was a certificate share action.
  * Fire-and-forget safe — never throws, just logs.
  */
-export async function checkAchievements(opts: { shared?: boolean } = {}): Promise<string[]> {
+export async function checkAchievements(opts: { shared?: boolean; projectId?: string | null } = {}): Promise<string[]> {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return []
@@ -18,7 +18,7 @@ export async function checkAchievements(opts: { shared?: boolean } = {}): Promis
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ shared: opts.shared ?? false }),
+      body: JSON.stringify({ shared: opts.shared ?? false, projectId: opts.projectId ?? null }),
     })
 
     if (!res.ok) return []

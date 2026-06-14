@@ -522,6 +522,7 @@ async function handleCheckAchievements(req, res) {
 
   const userId = user.id;
   const shared = req.body?.shared === true;
+  const requestedProjectId = typeof req.body?.projectId === 'string' ? req.body.projectId : null;
 
   // Rate limit: 30 per user per day, 60 per IP per hour
   const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'check-achievements' }).catch(rlErr => {
@@ -531,30 +532,61 @@ async function handleCheckAchievements(req, res) {
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   try {
+    // Identify the user's express project (if any) so we can include/exclude it.
+    const { data: expressProj } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('mode', 'express')
+      .maybeSingle();
+    const expressProjectId = expressProj?.id ?? null;
+    const isExpressScope = !!(requestedProjectId && requestedProjectId === expressProjectId);
+
     // Fetch all user data + existing achievements in parallel
+    const existingQuery = supabaseAdmin.from('user_achievements')
+      .select('achievement_key').eq('user_id', userId);
+
     const [
-      { data: steps },
-      { data: defSessions },
+      { data: stepsRaw },
+      { data: defSessRaw },
       { data: certs },
       { data: referrals },
       { data: credits },
       { data: existing },
     ] = await Promise.all([
-      supabaseAdmin.from('project_steps').select('step_type, created_at').eq('user_id', userId),
-      supabaseAdmin.from('defense_sessions').select('total_score, completed_at').eq('user_id', userId).order('completed_at', { ascending: true }),
+      supabaseAdmin.from('project_steps').select('step_type, created_at, project_id').eq('user_id', userId),
+      supabaseAdmin.from('defense_sessions').select('total_score, completed_at, project_id').eq('user_id', userId).order('completed_at', { ascending: true }),
       supabaseAdmin.from('defense_certificates').select('id').eq('user_id', userId).limit(1),
       supabaseAdmin.from('referrals').select('status, created_at').eq('referrer_user_id', userId),
       supabaseAdmin.from('defense_credits').select('id').eq('user_id', userId).limit(1),
-      supabaseAdmin.from('user_achievements').select('achievement_key').eq('user_id', userId),
+      isExpressScope
+        ? existingQuery.eq('project_id', expressProjectId)
+        : existingQuery.is('project_id', null),
     ]);
+
+    // Scope rows: express scope keeps only express-project rows; normal scope
+    // EXCLUDES the express project so express activity can't earn normal badges.
+    const inScope = (row) => isExpressScope
+      ? row.project_id === expressProjectId
+      : row.project_id !== expressProjectId;
+    const steps = (stepsRaw ?? []).filter(inScope);
+    const defSessions = (defSessRaw ?? []).filter(inScope);
 
     const earned = new Set((existing ?? []).map(r => r.achievement_key));
     const newlyEarned = [];
     const userCreatedAt = new Date(user.created_at);
 
+    const EXPRESS_KEYS = new Set([
+      'defense_ready', 'certified', 'sharp_mind', 'excellence',
+      'perfectionist', 'persistent', 'never_give_up', 'shared',
+    ]);
+
     function check(key, condition) {
+      if (isExpressScope && !EXPRESS_KEYS.has(key)) return;
       if (!earned.has(key) && condition) {
-        newlyEarned.push({ user_id: userId, achievement_key: key });
+        const row = { user_id: userId, achievement_key: key };
+        if (isExpressScope) row.project_id = expressProjectId;
+        newlyEarned.push(row);
         earned.add(key);
       }
     }
@@ -567,7 +599,9 @@ async function handleCheckAchievements(req, res) {
     // ── MILESTONE ──────────────────────────────────────────────────────────────
     check('first_step',    stepNames.includes('topic_validator'));
     check('halfway',       stepNames.length >= 3);
-    check('defense_ready', stepNames.length >= 6 && (defSessions ?? []).length > 0);
+    check('defense_ready', isExpressScope
+      ? (defSessions ?? []).length > 0
+      : stepNames.length >= 6 && (defSessions ?? []).length > 0);
     check('certified',     (certs ?? []).length > 0);
 
     // ── SPEED ──────────────────────────────────────────────────────────────────
@@ -643,7 +677,10 @@ async function handleCheckAchievements(req, res) {
     if (newlyEarned.length > 0) {
       await supabaseAdmin
         .from('user_achievements')
-        .upsert(newlyEarned, { onConflict: 'user_id,achievement_key', ignoreDuplicates: true })
+        .upsert(newlyEarned, {
+          onConflict: isExpressScope ? 'user_id,achievement_key,project_id' : 'user_id,achievement_key',
+          ignoreDuplicates: true,
+        })
         .catch(err => console.error('[check-achievements] upsert error:', err?.message));
     }
 

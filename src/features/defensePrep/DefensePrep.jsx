@@ -492,7 +492,7 @@ function countWords(text) {
 }
 
 export default function DefensePrep() {
-  const { state, studentContext, navigateStep, completeStep, set } = useApp()
+  const { state, studentContext, navigateStep, completeStep, set, isExpress } = useApp()
   const { saveStep, projectId, ensureProject } = useProjectState()
   const { user: authUser, session: authSession } = useUser()
   const { features } = usePaidFeatures()
@@ -500,8 +500,8 @@ export default function DefensePrep() {
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
 
-  const hasPaidDefenseAccess = features.includes('defense_pack') || features.includes('express_defense')
-  const isFreeTrial = !hasPaidDefenseAccess
+  const hasPaidDefenseAccess = isExpress || features.includes('defense_pack') || features.includes('express_defense')
+  const isFreeTrial = !isExpress && !hasPaidDefenseAccess
 
   const [trialUsed, setTrialUsed] = useState(
     () => localStorage.getItem('fypro_free_trial_used') === 'true'
@@ -878,7 +878,9 @@ export default function DefensePrep() {
         methodology,
         chapters
       )
-      set({ redFlags: data.flags })
+      set(isExpress
+        ? { redFlags: data.flags, expressSteps: { ...(state.expressSteps || {}), red_flag: true } }
+        : { redFlags: data.flags })
       setRedFlags(data.flags)
       saveStep('red_flag_detector', { flags: data.flags })
       setVisibleFlags([])
@@ -1201,10 +1203,16 @@ export default function DefensePrep() {
       }
 
       // Mark complete without advancing currentStep past the last step
-      const isFirstDefenseCompletion = !state.stepsCompleted[5]
-      const newCompleted = [...state.stepsCompleted]
-      newCompleted[5] = true
-      set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
+      const isFirstDefenseCompletion = isExpress
+        ? !(state.expressSteps && state.expressSteps.defense)
+        : !state.stepsCompleted[5]
+      if (isExpress) {
+        set({ defenseSummary: data, expressSteps: { ...(state.expressSteps || {}), defense: true } })
+      } else {
+        const newCompleted = [...state.stepsCompleted]
+        newCompleted[5] = true
+        set({ stepsCompleted: newCompleted, defenseSummary: data, currentStep: 5 })
+      }
       saveStep('defense_prep', data)
 
       // Fire-and-forget admin notification
@@ -1219,10 +1227,14 @@ export default function DefensePrep() {
 
       // Fire-and-forget progress tracking; await in sequence so tryAwardDefenseReady
       // sees the updated defense_prep + defense_simulator rows before checking.
-      markStepComplete('defense_prep')
-        .then(() => markDefenseSimulatorRun())
-        .then(() => tryAwardDefenseReady())
-      if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
+      // Express is isolated: user_progress is user-keyed (not project-scoped), so
+      // writing it here would leak express activity into the normal app's badges.
+      if (!isExpress) {
+        markStepComplete('defense_prep')
+          .then(() => markDefenseSimulatorRun())
+          .then(() => tryAwardDefenseReady())
+        if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
+      }
 
       // Update defense_sessions row with the final score and completion time.
       // Awaited so the certificate endpoint always finds a complete row.
@@ -1279,7 +1291,7 @@ export default function DefensePrep() {
       setHasHistory(true)
 
       // Fire achievement check after defense session completes
-      checkAchievements().then(newKeys => {
+      checkAchievements(isExpress ? { projectId } : {}).then(newKeys => {
         if (newKeys.length > 0) {
           showToast(`Achievement unlocked 🏅`, 'success')
         }
@@ -1517,7 +1529,7 @@ export default function DefensePrep() {
               id="dp-input-section"
               className={`dp-input-section ${section === 'input' ? 'dp-section--visible' : 'dp-section--hidden'}`}
             >
-              <button className="fy-back-btn" onClick={() => navigateStep(4)}>
+              <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(4) } }}>
                 ← Back to Project Reviewer
               </button>
 
@@ -1746,7 +1758,7 @@ export default function DefensePrep() {
               >
                 Go Back and Revise
               </button>
-              <button className="fy-back-btn" onClick={() => navigateStep(4)}>
+              <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(4) } }}>
                 ← Back to Project Reviewer
               </button>
             </div>

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback } 
 import { AuthContext } from './AuthContext'
 import { USER_STORAGE_KEYS, clearUserLocalStorage } from '../lib/storage'
 
-const AppContext = createContext(null)
+export const AppContext = createContext(null)
 
 const DEFAULT_STATE = {
   // Onboarding
@@ -75,19 +75,20 @@ function getCurrentAuthUserId() {
   }
 }
 
-function loadFromStorage() {
+function loadFromStorage(storageKey) {
   try {
-    const raw = localStorage.getItem('fypro_session')
+    const ownerKey = `${storageKey}_owner`
+    const raw = localStorage.getItem(storageKey)
     if (!raw) return null
-    const storedOwner     = localStorage.getItem('fypro_session_owner')
+    const storedOwner     = localStorage.getItem(ownerKey)
     const currentAuthUser = getCurrentAuthUserId()
     // Reject the saved session when we know who is logged in and either:
     // - the session belongs to a different user, OR
     // - the session has no owner tag (could be stale from a pre-fix deployment).
     // Both cases are cleared to prevent one user seeing another's data.
     if (currentAuthUser && (!storedOwner || currentAuthUser !== storedOwner)) {
-      localStorage.removeItem('fypro_session')
-      localStorage.removeItem('fypro_session_owner')
+      localStorage.removeItem(storageKey)
+      localStorage.removeItem(ownerKey)
       return null
     }
     return JSON.parse(raw)
@@ -96,29 +97,29 @@ function loadFromStorage() {
   }
 }
 
-export function AppProvider({ children }) {
+export function AppProvider({ children, storageKey = 'fypro_session', isExpress = false }) {
   const { session } = useContext(AuthContext)
   const [state, setState] = useState(() => {
     // Skip localStorage for authenticated users — ProjectStateProvider will populate real data.
     if (getCurrentAuthUserId()) return DEFAULT_STATE
-    const saved = loadFromStorage()
+    const saved = loadFromStorage(storageKey)
     return saved ? { ...DEFAULT_STATE, ...saved } : DEFAULT_STATE
   })
   // Persist to localStorage on every state change
   useEffect(() => {
     try {
-      localStorage.setItem('fypro_session', JSON.stringify(state))
+      localStorage.setItem(storageKey, JSON.stringify(state))
     } catch {
       // Storage full — silent fail
     }
-  }, [state])
+  }, [state, storageKey])
 
   // Stamp the session owner so loadFromStorage() can reject it for a different user
   useEffect(() => {
     if (session?.user?.id) {
-      try { localStorage.setItem('fypro_session_owner', session.user.id) } catch {}
+      try { localStorage.setItem(`${storageKey}_owner`, session.user.id) } catch {}
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, storageKey])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   const set = useCallback((partial) => {
@@ -223,7 +224,8 @@ export function AppProvider({ children }) {
     isOnboarded,
     onboardingResolved,
     markOnboardingResolved,
-  }), [state, set, clearState, clearProjectData, navigateStep, completeStep, studentContext, isOnboarded, onboardingResolved, markOnboardingResolved])
+    isExpress,
+  }), [state, set, clearState, clearProjectData, navigateStep, completeStep, studentContext, isOnboarded, onboardingResolved, markOnboardingResolved, isExpress])
 
   return (
     <AppContext.Provider value={contextValue}>

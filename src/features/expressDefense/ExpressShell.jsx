@@ -3,24 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import FyproLogo from '../../components/FyproLogo'
 import ExpressBrief from './ExpressBrief'
+import { useApp } from '../../context/AppContext'
 
 const DefensePrep = lazy(() => import('../defensePrep/DefensePrep'))
 const ProjectReviewer = lazy(() => import('../projectReviewer/ProjectReviewer'))
 
 const STEPS = [
-  { id: 'red-flag',  num: 1, name: 'Red Flag Scanner',  badge: 'optional' },
-  { id: 'reviewer',  num: 2, name: 'Project Reviewer',  badge: 'optional' },
-  { id: 'defense',   num: 3, name: 'Defence Simulator', badge: null },
+  { id: 'red-flag',  num: 1, name: 'Red Flag Scanner',  badge: 'optional', key: 'red_flag' },
+  { id: 'reviewer',  num: 2, name: 'Project Reviewer',  badge: 'optional', key: 'project_reviewer' },
+  { id: 'defense',   num: 3, name: 'Defence Simulator', badge: null,        key: 'defense' },
 ]
 
 export default function ExpressShell() {
   const [activeStep, setActiveStep] = useState('defense')
-  const [done, setDone] = useState({})
   const navigate = useNavigate()
-
-  function markDone(stepId) {
-    setDone(prev => ({ ...prev, [stepId]: true }))
-  }
+  const { state } = useApp()
+  const expressSteps = state.expressSteps || {}
 
   return (
     <div className="es-shell">
@@ -34,7 +32,7 @@ export default function ExpressShell() {
         <ul className="es-step-list" role="list">
           {STEPS.map(step => {
             const isActive = activeStep === step.id
-            const isDone = done[step.id]
+            const isDone = !!expressSteps[step.key]
             return (
               <li key={step.id} className="es-step-list__item">
                 <button
@@ -62,9 +60,9 @@ export default function ExpressShell() {
           <button
             className="es-sidebar__footer-text"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0 }}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/express')}
           >
-            ← Dashboard
+            ← Express Dashboard
           </button>
         </div>
       </aside>
@@ -72,13 +70,13 @@ export default function ExpressShell() {
       <main className="es-main">
         <Suspense fallback={null}>
           {activeStep === 'defense' && (
-            <DefensePrep onComplete={() => markDone('defense')} />
+            <DefensePrep />
           )}
           {activeStep === 'reviewer' && (
-            <ProjectReviewer onComplete={() => markDone('reviewer')} />
+            <ProjectReviewer />
           )}
           {activeStep === 'red-flag' && (
-            <DefensePrep redFlagOnly onComplete={() => { markDone('red-flag'); setActiveStep('reviewer') }} />
+            <DefensePrep redFlagOnly onComplete={() => setActiveStep('reviewer')} />
           )}
         </Suspense>
       </main>
