@@ -286,8 +286,32 @@ async function handleDefense(req, res) {
   }
 
   const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements?.paid_features : [];
-  if (!paidFeatures.includes('defense_pack')) {
-    return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
+  const hasPaidAccess = paidFeatures.includes('defense_pack') || paidFeatures.includes('express_defense');
+
+  if (!hasPaidAccess) {
+    const { promptType } = req.body || {};
+
+    // Red flag scan: no free trial — paid access required
+    if (promptType === 'red-flag') {
+      return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
+    }
+
+    // Defense simulator (panel): allow if this is the user's first completed session
+    const { count, error: countErr } = await supabaseAdmin
+      .from('defense_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'completed');
+
+    if (countErr) {
+      traceLog(traceId, 'error', '[ai/defense] trial eligibility check failed:', countErr.message);
+      return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+    }
+
+    if (count > 0) {
+      return res.status(403).json({ error: 'FREE_TRIAL_USED' });
+    }
+    // count === 0: allow — this is their free trial session
   }
 
   const today = new Date().toISOString().slice(0, 10);
