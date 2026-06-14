@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { ProjectStateContext } from '../../hooks/useProjectState'
 import { useApp } from '../../context/AppContext'
 import { useUser } from '../../hooks/useUser'
-import { getExpressProject, saveStep as supabaseSaveStep, updateProject } from '../../lib/db'
+import { getExpressProject, createExpressProject, saveStep as supabaseSaveStep, updateProject } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
 
 // Lean ProjectState provider for the Express app. Loads the single express
@@ -22,7 +22,15 @@ export default function ExpressProjectStateProvider({ children }) {
     async function load() {
       if (!user?.id) { setProjectId(null); setIsLoading(false); return }
       setIsLoading(true)
-      const project = await getExpressProject(user.id)
+      let project = await getExpressProject(user.id)
+      // Entitled user landed on /express with no express project (e.g. granted
+      // access via admin, or arrived without going through onboarding). The
+      // provider only mounts under RequireExpress, so reaching here means the
+      // user is entitled — create a blank express project so projectId exists
+      // and saveStep works. Details get filled in via /express-onboarding.
+      if (!project && !cancelled) {
+        project = await createExpressProject({ title: null, faculty: null, department: null, level: null })
+      }
       if (cancelled) return
       if (project) {
         setProjectId(project.id)

@@ -149,7 +149,7 @@ export async function createProject(data: {
 
 export async function updateProject(
   projectId: string,
-  updates: Partial<Pick<Project, 'title' | 'current_step' | 'status'>>
+  updates: Partial<Pick<Project, 'title' | 'current_step' | 'status' | 'faculty' | 'department' | 'level'>>
 ): Promise<void> {
   const user = await sessionUser()
   if (!user) return

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
-import { createExpressProject, getExpressProject } from '../lib/db'
+import { createExpressProject, getExpressProject, updateProject } from '../lib/db'
 import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
@@ -65,7 +65,17 @@ export default function ExpressOnboarding() {
     // invisible and harmless — the payment popup redirects to /payment-success,
     // so we cannot create it "after" payment on this page.
     const existing = user?.id ? await getExpressProject(user.id) : null
-    if (!existing) {
+    if (existing) {
+      // A blank project may already exist (auto-created on a prior /express
+      // visit). Update it with the details from this form rather than leaving
+      // it untitled.
+      await updateProject(existing.id, {
+        title: topic.trim(),
+        faculty,
+        department,
+        level,
+      })
+    } else {
       await createExpressProject({
         title: topic.trim(),
         faculty,
