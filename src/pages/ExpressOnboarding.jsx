@@ -215,6 +215,7 @@ export default function ExpressOnboarding() {
               <li>Defence certificate if you score 7+</li>
             </ul>
             <div className="eo-payment__price">₦2,000 <span>one-time payment</span></div>
+            {blockInfo && <p className="eo-form__error">{blockInfo.message}</p>}
             {payError && <p className="eo-form__error">{payError}</p>}
             <button
               className="eo-payment__btn"
@@ -223,6 +224,14 @@ export default function ExpressOnboarding() {
               style={isProcessing ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
             >
               {isProcessing ? <Spinner /> : 'Pay ₦2,000 with Paystack'}
+            </button>
+            {/* TEST ONLY — remove before final demo */}
+            <button
+              className="eo-payment__back"
+              onClick={() => navigate('/express')}
+              style={{ color: 'var(--color-amber)', marginTop: 4 }}
+            >
+              [TEST] Skip payment → enter
             </button>
             <button
               className="eo-payment__back"
