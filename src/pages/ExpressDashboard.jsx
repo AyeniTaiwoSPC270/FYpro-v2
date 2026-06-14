@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useUser } from '../hooks/useUser'
+import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
 import Footer from '../components/Footer'
 import { DashboardPageSkeleton } from '../components/skeletons/PageSkeletons'
@@ -16,9 +17,18 @@ export default function ExpressDashboard() {
   const navigate = useNavigate()
   const { state } = useApp()
   const { user } = useUser()
+  const { features } = usePaidFeatures()
   const { projectId, isLoading } = useProjectState()
 
   if (isLoading) return <DashboardPageSkeleton />
+
+  // Express-only users have no standard project, and /dashboard would just
+  // bounce them straight back here (ExpressDashboardRedirect). Only show the
+  // "Main app" link to dual-pack users who actually have a real dashboard.
+  const isExpressOnly =
+    features.includes('express_defense') &&
+    !features.includes('defense_pack') &&
+    !features.includes('student_pack')
 
   const expressSteps = state.expressSteps || {}
   const STEPS = expressBuildSteps(expressSteps)
@@ -53,12 +63,14 @@ export default function ExpressDashboard() {
           className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"
           style={{ backgroundColor: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
         >
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontFamily: "'Poppins', sans-serif", fontSize: '0.8rem', fontWeight: 500, padding: '0 0 20px' }}
-          >
-            ← Main app
-          </button>
+          {!isExpressOnly && (
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontFamily: "'Poppins', sans-serif", fontSize: '0.8rem', fontWeight: 500, padding: '0 0 20px' }}
+            >
+              ← Main app
+            </button>
+          )}
 
           <AchievementsRow projectId={projectId} catalog={EXPRESS_ACHIEVEMENTS} />
           <DashStatCards STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" />
