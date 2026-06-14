@@ -18,7 +18,7 @@ export const AuthForgotSchema = z.object({
 });
 
 export const PaymentInitiateSchema = z.object({
-  tier: z.enum(['student_pack', 'defense_pack', 'project_reset']),
+  tier: z.enum(['student_pack', 'defense_pack', 'defense_pack_upgrade', 'express_defense', 'project_reset']),
 });
 
 export const AiMessagesSchema = z.object({
