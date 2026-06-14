@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './components/Toast'
 import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
+import { usePaidFeatures } from './hooks/usePaidFeatures'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
@@ -46,10 +47,27 @@ const MyReferrals       = lazy(() => import('./pages/account/MyReferrals'))
 const Achievements       = lazy(() => import('./pages/account/Achievements'))
 const AppShell          = lazy(() => import('./features/shell/AppShell'))
 const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
+const ExpressOnboarding = lazy(() => import('./pages/ExpressOnboarding'))
+const ExpressShell      = lazy(() => import('./features/expressDefense/ExpressShell'))
 const AdminHealth       = lazy(() => import('./pages/admin/Health'))
 
 function S({ fallback, children }) {
   return <Suspense fallback={fallback}>{children}</Suspense>
+}
+
+function ExpressDashboardRedirect() {
+  const { features, loading } = usePaidFeatures()
+  if (loading) return <DashboardPageSkeleton />
+  const isExpressOnly =
+    features.includes('express_defense') &&
+    !features.includes('defense_pack') &&
+    !features.includes('student_pack')
+  if (isExpressOnly) return <Navigate to="/express" replace />
+  return (
+    <S fallback={<DashboardPageSkeleton />}>
+      <Dashboard />
+    </S>
+  )
 }
 
 // Route transitions — lives inside BrowserRouter so useLocation() works.
@@ -82,7 +100,7 @@ function AppRoutes() {
       <Route path="/verify/:certNumber" element={<S fallback={<PublicPageSkeleton />}><VerifyCertificate /></S>} />
 
       {/* Dashboard + account pages */}
-      <Route path="/dashboard" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Dashboard /></S></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><ExpressDashboardRedirect /></ProtectedRoute>} />
       <Route path="/start"     element={<ProtectedRoute><S fallback={<AuthPageSkeleton />}><SplashOnboarding /></S></ProtectedRoute>} />
       <Route path="/profile"   element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Profile /></S></ProtectedRoute>} />
       <Route path="/settings"  element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Settings /></S></ProtectedRoute>} />
@@ -96,6 +114,8 @@ function AppRoutes() {
       {/* App shell + supervisor */}
       <Route path="/app"             element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><AppShell /></S></ProtectedRoute>} />
       <Route path="/supervisor-prep" element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><SupervisorPrep /></S></ProtectedRoute>} />
+      <Route path="/express-onboarding" element={<ProtectedRoute><S fallback={<AuthPageSkeleton />}><ExpressOnboarding /></S></ProtectedRoute>} />
+      <Route path="/express"            element={<ProtectedRoute><S fallback={<AppShellSkeleton />}><ExpressShell /></S></ProtectedRoute>} />
 
       {/* 404 */}
       <Route path="*" element={<S fallback={<PublicPageSkeleton />}><NotFound /></S>} />
