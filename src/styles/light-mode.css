@@ -1940,15 +1940,5 @@
 }
 
 /* ── Express Onboarding: light mode overrides ────────────── */
-[data-theme="light"] .eo-form__input,
-[data-theme="light"] .eo-form__select,
-.light .eo-form__input,
-.light .eo-form__select {
-  background: #fff;
-}
-[data-theme="light"] .eo-form__radio--active,
-.light .eo-form__radio--active {
-  background: #EFF6FF;
-}
 
 

@@ -1,53 +1,29 @@
-/* ── Express Onboarding ───────────────────────────────────────────────────── */
-.eo-page {
-  min-height: 100vh;
-  background: var(--bg-base);
-  background-image: var(--dot-bg-image);
-  background-size: 28px 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--space-xl) var(--space-md);
-}
-.eo-header {
-  width: 100%;
-  max-width: 520px;
-  margin-bottom: var(--space-xl);
-}
-.eo-header img {
-  height: 36px;
-  width: auto;
-}
-.eo-main { width: 100%; max-width: 520px; }
-
+/* ── Express Onboarding (split-canvas pane) ───────────────────────────────── */
 .eo-form {
-  background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-base) 100%);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-xl);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  width: 100%;
   animation: card-enter 0.4s ease forwards;
 }
 .eo-form__eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--text-xs);
   color: var(--color-blue-primary);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
 }
 .eo-form__heading {
   font-family: 'DM Serif Display', serif;
   font-size: var(--text-2xl);
-  color: var(--color-text-primary);
+  color: var(--onb-pane-text);
   margin: 0;
+  line-height: 1.1;
 }
 .eo-form__sub {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
-  color: var(--color-text-secondary);
-  margin: 0;
+  color: var(--onb-pane-text-dim);
+  margin: 0 0 var(--space-xs);
   line-height: 1.6;
 }
 .eo-form__field { display: flex; flex-direction: column; gap: 6px; }
@@ -55,27 +31,31 @@
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--onb-pane-text);
 }
 .eo-form__input,
 .eo-form__select {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
-  color: var(--text-primary);
-  background: var(--bg-input);
-  border: 1.5px solid var(--border-color);
+  color: var(--onb-pane-text);
+  background: var(--onb-field-bg);
+  border: 1.5px solid var(--onb-field-border);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
 }
 .eo-form__select option {
-  background: var(--bg-input);
-  color: var(--text-primary);
+  background: var(--onb-rail-bg);
+  color: var(--onb-pane-text);
 }
 .eo-form__input:focus,
-.eo-form__select:focus { border-color: var(--color-blue-primary); }
+.eo-form__select:focus {
+  border-color: var(--color-blue-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2), 0 0 14px rgba(0, 102, 255, 0.15);
+}
+.eo-form__input::placeholder { color: var(--onb-pane-text-dim); }
 .eo-form__radio-group { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
 .eo-form__radio {
   display: flex;
@@ -83,9 +63,10 @@
   gap: 6px;
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
-  color: var(--text-secondary);
+  color: var(--onb-pane-text-dim);
+  background: var(--onb-card-bg);
   padding: 8px 16px;
-  border: 1.5px solid var(--border-color);
+  border: 1.5px solid var(--onb-card-border);
   border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -122,8 +103,8 @@
 }
 
 .eo-payment {
-  background: linear-gradient(145deg, #0D1B2A 0%, #091420 100%);
-  border: 1px solid rgba(0,102,255,0.2);
+  background: linear-gradient(145deg, var(--onb-card-bg) 0%, var(--onb-pane-bg) 100%);
+  border: 1px solid var(--color-border-blue);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   box-shadow: var(--shadow-card);
@@ -136,12 +117,12 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--text-xs);
   color: var(--color-blue-primary);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
 }
 .eo-payment__heading {
   font-family: 'DM Serif Display', serif;
   font-size: var(--text-2xl);
-  color: var(--color-text-white);
+  color: var(--onb-pane-text);
   margin: 0;
 }
 .eo-payment__features {
@@ -155,7 +136,7 @@
 .eo-payment__features li {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
-  color: var(--color-text-white-dim);
+  color: var(--onb-pane-text-dim);
   padding-left: 1.5rem;
   position: relative;
 }
@@ -170,11 +151,11 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-text-white);
+  color: var(--onb-pane-text);
 }
 .eo-payment__price span {
   font-size: var(--text-sm);
-  color: rgba(255,255,255,0.4);
+  color: var(--onb-pane-text-dim);
   font-weight: 400;
 }
 .eo-payment__btn {
@@ -197,7 +178,7 @@
 .eo-payment__back {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-sm);
-  color: rgba(255,255,255,0.4);
+  color: var(--onb-pane-text-dim);
   background: none;
   border: none;
   cursor: pointer;
@@ -205,7 +186,7 @@
   padding: 0;
   transition: color var(--transition-fast);
 }
-.eo-payment__back:hover:not(:disabled) { color: rgba(255,255,255,0.7); }
+.eo-payment__back:hover:not(:disabled) { color: var(--onb-pane-text); }
 
 /* ── Express Shell ────────────────────────────────────────────────────────── */
 .es-shell {
