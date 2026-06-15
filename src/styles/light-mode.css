@@ -21,6 +21,12 @@
   --onb-watermark:      rgba(0, 102, 255, 0.10);
 }
 
+/* Onboarding select chevron — dark arrow on light fields */
+[data-theme="light"] .field-select,
+.light .field-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(13,27,42,0.45)' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 /* ── Sidebar (AppShell) ──────────────────────────────────────── */
 [data-theme="light"] .sidebar,
 .light .sidebar {

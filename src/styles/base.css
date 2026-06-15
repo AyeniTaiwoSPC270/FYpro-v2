@@ -214,7 +214,7 @@ html, body {
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--onb-pane-text-dim);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -224,10 +224,10 @@ html, body {
 .field-input {
   width: 100%;
   padding: 11px 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--onb-field-bg);
+  border: 1px solid var(--onb-field-border);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--onb-pane-text);
   font-family: 'Poppins', sans-serif;
   font-size: 0.9rem;
   outline: none;
@@ -244,8 +244,8 @@ html, body {
   cursor: pointer;
 }
 .field-select option {
-  background: #0D1B2A;
-  color: #ffffff;
+  background: var(--onb-rail-bg);
+  color: var(--onb-pane-text);
 }
 .field-select:focus,
 .field-input:focus {
@@ -257,7 +257,7 @@ html, body {
   cursor: not-allowed;
 }
 .field-input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--onb-pane-text-dim);
 }
 
 /* ── Level selector ─────────────────────────── */
@@ -268,10 +268,10 @@ html, body {
 .level-btn {
   flex: 1;
   padding: 11px 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--onb-field-bg);
+  border: 1px solid var(--onb-field-border);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--onb-pane-text-dim);
   font-family: 'Poppins', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
@@ -279,13 +279,13 @@ html, body {
   transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 .level-btn:not(:disabled):hover {
-  border-color: rgba(0, 102, 255, 0.45);
-  color: #ffffff;
+  border-color: var(--color-border-blue);
+  color: var(--onb-pane-text);
 }
 .level-btn.is-selected {
   background: rgba(0, 102, 255, 0.14);
-  border-color: #0066FF;
-  color: #ffffff;
+  border-color: var(--color-blue-primary);
+  color: var(--onb-pane-text);
   box-shadow: 0 0 10px rgba(0, 102, 255, 0.2);
 }
 .level-btn:disabled {
