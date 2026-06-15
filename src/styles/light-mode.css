@@ -2,6 +2,25 @@
    LIGHT MODE — COMPREHENSIVE COMPONENT OVERRIDES
    ============================================================ */
 
+/* ── Onboarding (split canvas) — light overrides ─────────────── */
+[data-theme="light"],
+.light {
+  --onb-rail-bg:        #E8EEF5;
+  --onb-rail-bg-2:      #DCE6F0;
+  --onb-rail-border:    rgba(13, 27, 42, 0.08);
+  --onb-rail-text:      #0D1B2A;
+  --onb-rail-text-dim:  rgba(13, 27, 42, 0.60);
+  --onb-pane-bg:        #F0F4F8;
+  --onb-pane-dot:       rgba(0, 102, 255, 0.06);
+  --onb-pane-text:      #0D1B2A;
+  --onb-pane-text-dim:  rgba(13, 27, 42, 0.55);
+  --onb-card-bg:        #ffffff;
+  --onb-card-border:    rgba(13, 27, 42, 0.12);
+  --onb-field-bg:       #ffffff;
+  --onb-field-border:   rgba(13, 27, 42, 0.14);
+  --onb-watermark:      rgba(0, 102, 255, 0.10);
+}
+
 /* ── Sidebar (AppShell) ──────────────────────────────────────── */
 [data-theme="light"] .sidebar,
 .light .sidebar {
