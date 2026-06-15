@@ -193,6 +193,42 @@ html, body {
   max-width: 520px;
 }
 
+/* ── Onboarding — stack on narrow screens ────── */
+@media (max-width: 900px) {
+  .onb {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .onb__rail {
+    flex: 0 0 auto;
+    max-width: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-right: none;
+    border-bottom: 1px solid var(--onb-rail-border);
+  }
+  .onb__rail-top { display: flex; align-items: center; gap: var(--space-md); }
+  .onb__tagline {
+    margin-top: 0;
+    font-size: var(--text-base);
+    display: none;
+  }
+  .onb__watermark { display: none; }
+  .onb__trust { min-height: 0; }
+  .onb__trust-line { font-size: var(--text-xs); }
+  .onb__pane {
+    align-items: flex-start;
+    padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+  }
+}
+
+@media (max-width: 560px) {
+  .onb__trust { display: none; }
+}
+
 /* ── Field groups ───────────────────────────── */
 .onboarding__fields {
   display: flex;
