@@ -10,6 +10,7 @@ import {
 } from 'framer-motion'
 import ReferralCapture from '../components/onboarding/ReferralCapture'
 import FyproLogo from '../components/FyproLogo'
+import { useTheme } from '../context/ThemeContext'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -651,6 +652,7 @@ function HeroSub() {
 
 function Hero() {
   const heroRef = useRef(null)
+  const { theme } = useTheme()
   const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
   useEffect(() => {
     const el = heroRef.current
@@ -735,7 +737,7 @@ function Hero() {
       <div className="relative z-[1] w-full max-w-[880px]">
         <div className="absolute pointer-events-none blur-[28px]" style={{ top: '8%', left: '5%', right: '5%', bottom: -40, background: 'radial-gradient(ellipse, rgba(0,102,255,0.28) 0%, transparent 70%)' }} />
         <motion.img
-          src="/FYPro-Product-Showcase-v2.png"
+          src={theme === 'light' ? '/FYPro-Product-Showcase-light.png' : '/FYPro-Product-Showcase-v2.png'}
           alt="FYPro — from topic to defence, powered by AI"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
