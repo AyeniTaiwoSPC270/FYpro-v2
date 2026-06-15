@@ -320,34 +320,33 @@
   color: rgba(255,255,255,0.35);
 }
 
-/* ── Splash Onboarding — Persona Fork ────────────────────────────────────── */
+/* ── Splash Onboarding — Persona Fork (in pane) ──────────────── */
 .so-persona {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-md);
-  max-width: 480px;
   width: 100%;
+  text-align: left;
 }
 .so-persona__eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--text-xs);
   color: var(--color-blue-primary);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
 }
 .so-persona__heading {
   font-family: 'DM Serif Display', serif;
-  font-size: var(--text-2xl);
-  color: var(--color-text-white);
+  font-size: var(--text-3xl);
+  color: var(--onb-pane-text);
   margin: 0;
-  text-align: center;
+  line-height: 1.05;
 }
 .so-persona__sub {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
-  color: var(--color-text-white-dim);
-  margin: 0;
-  text-align: center;
+  color: var(--onb-pane-text-dim);
+  margin: 0 0 var(--space-xs);
 }
 .so-persona__options {
   display: flex;
@@ -360,30 +359,55 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  background: rgba(255,255,255,0.04);
-  border: 1.5px solid rgba(255,255,255,0.1);
+  background: var(--onb-card-bg);
+  border: 1.5px solid var(--onb-card-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
 }
 .so-persona__option:hover {
   border-color: var(--color-blue-primary);
   background: rgba(0, 102, 255, 0.08);
+  box-shadow: 0 0 24px rgba(0, 102, 255, 0.15);
 }
 .so-persona__option-icon { font-size: 1.5rem; margin-bottom: 4px; }
 .so-persona__option-title {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-md);
   font-weight: 600;
-  color: var(--color-text-white);
+  color: var(--onb-pane-text);
 }
 .so-persona__option-desc {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-sm);
-  color: var(--color-text-white-dim);
+  color: var(--onb-pane-text-dim);
   line-height: 1.5;
+}
+
+/* ── Onboarding form — pane heading ──────────────────────────── */
+.onb-form { width: 100%; }
+.onb-form__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-xs);
+  color: var(--color-blue-primary);
+  letter-spacing: 0.16em;
+  margin-bottom: var(--space-sm);
+}
+.onb-form__heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: var(--text-2xl);
+  color: var(--onb-pane-text);
+  margin: 0 0 var(--space-xs);
+  line-height: 1.1;
+}
+.onb-form__intro {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--onb-pane-text-dim);
+  line-height: 1.6;
+  margin: 0 0 var(--space-md);
 }
 
 /* ── Landing Page — Express CTA ──────────────────────────────────────────── */
