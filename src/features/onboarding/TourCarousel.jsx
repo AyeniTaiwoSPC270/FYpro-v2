@@ -7,18 +7,25 @@ const GLOW_X = [920, 360, 920, 360]
 
 export default function TourCarousel({ onClose }) {
   const [current, setCurrent] = useState(0)
+  const [ready, setReady] = useState(false)
   const canvasRef = useRef(null)
 
-  // Scale 1280×720 canvas to fit viewport
+  // Scale 1280×720 canvas to cover the full viewport (no letterboxing)
   useEffect(() => {
     function scale() {
       if (!canvasRef.current) return
-      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720)
+      const s = Math.max(window.innerWidth / 1280, window.innerHeight / 720)
       canvasRef.current.style.transform = `scale(${s})`
     }
     scale()
     window.addEventListener('resize', scale)
     return () => window.removeEventListener('resize', scale)
+  }, [])
+
+  // Delay first-slide activation so the CSS transition actually fires on mount
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 120)
+    return () => clearTimeout(t)
   }, [])
 
   const goTo = useCallback((idx) => {
@@ -74,7 +81,7 @@ export default function TourCarousel({ onClose }) {
           </div>
 
           {/* Slide 1 — Topic Validator — phone RIGHT */}
-          <section className={`oq-tour-slide oq-tour-slide--phone-right${current === 0 ? ' oq-tour-slide--active' : ''}`}>
+          <section className={`oq-tour-slide oq-tour-slide--phone-right${ready && current === 0 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-text">
               <div className="oq-tour-eyebrow">STEP 1 · TOPIC VALIDATOR</div>
               <h2 className="oq-tour-headline">Validate your topic before you commit</h2>
@@ -136,7 +143,7 @@ export default function TourCarousel({ onClose }) {
           </section>
 
           {/* Slide 2 — Chapter Architect — phone LEFT */}
-          <section className={`oq-tour-slide oq-tour-slide--phone-left${current === 1 ? ' oq-tour-slide--active' : ''}`}>
+          <section className={`oq-tour-slide oq-tour-slide--phone-left${ready && current === 1 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-phone-col">
               <Phone>
                 <div style={{ padding: '42px 9px 6px', background: '#0D1B2A', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -185,7 +192,7 @@ export default function TourCarousel({ onClose }) {
           </section>
 
           {/* Slide 3 — Writing Planner — phone RIGHT */}
-          <section className={`oq-tour-slide oq-tour-slide--phone-right${current === 2 ? ' oq-tour-slide--active' : ''}`}>
+          <section className={`oq-tour-slide oq-tour-slide--phone-right${ready && current === 2 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-text">
               <div className="oq-tour-eyebrow">STEP 5 · WRITING PLANNER</div>
               <h2 className="oq-tour-headline">A week-by-week plan to actually finish</h2>
@@ -243,7 +250,7 @@ export default function TourCarousel({ onClose }) {
           </section>
 
           {/* Slide 4 — Defence Simulator — phone LEFT */}
-          <section className={`oq-tour-slide oq-tour-slide--phone-left${current === 3 ? ' oq-tour-slide--active' : ''}`}>
+          <section className={`oq-tour-slide oq-tour-slide--phone-left${ready && current === 3 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-phone-col">
               <Phone bg="#030812">
                 <div style={{ padding: '42px 10px 8px', background: '#060E18', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

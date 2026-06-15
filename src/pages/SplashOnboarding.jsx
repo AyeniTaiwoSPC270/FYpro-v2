@@ -58,6 +58,7 @@ export default function SplashOnboarding() {
 
   // Tour
   const [showTour, setShowTour] = useState(false)
+  const [tourTransitioning, setTourTransitioning] = useState(false)
 
   const topicRef = useRef(null)
 
@@ -419,7 +420,7 @@ export default function SplashOnboarding() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="oq-walkthrough">
+            <div className={`oq-walkthrough${tourTransitioning ? ' oq-walkthrough--exiting' : ''}`}>
               <div className="oq-walkthrough__card">
                 <div className="oq-walkthrough__icon">🛡️</div>
                 <h2 className="oq-walkthrough__title">Quick look at FYPro?</h2>
@@ -441,7 +442,8 @@ export default function SplashOnboarding() {
                     onClick={async () => {
                       const { data: { session } } = await supabase.auth.getSession()
                       if (session?.user?.id) markWalkthroughSeen(session.user.id)
-                      setShowTour(true)
+                      setTourTransitioning(true)
+                      setTimeout(() => setShowTour(true), 320)
                     }}
                   >
                     Take the tour

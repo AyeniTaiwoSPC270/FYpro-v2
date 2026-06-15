@@ -199,6 +199,15 @@
   transform: translateX(20px);
 }
 
+/* Walkthrough exit animation */
+.oq-walkthrough {
+  transition: opacity 0.32s ease;
+}
+.oq-walkthrough--exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Congrats screen — full-bleed, outside .onb shell */
 .oq-congrats {
   position: fixed;
@@ -363,6 +372,11 @@
 }
 
 /* Tour carousel overlay */
+@keyframes tour-overlay-enter {
+  from { opacity: 0; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 .oq-tour-overlay {
   position: fixed;
   inset: 0;
@@ -372,6 +386,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  animation: tour-overlay-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .oq-tour-stage {
   width: 100vw;
@@ -379,6 +394,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 .oq-tour-canvas {
   width: 1280px;
