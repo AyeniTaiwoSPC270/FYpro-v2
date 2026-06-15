@@ -1031,3 +1031,68 @@
   color: var(--color-text-white);
   background: var(--color-bg-deep);
 }
+
+/* ── Tour carousel — mobile (≤640px) ─────────────────────────
+   Switches the two-column (phone | text) layout to a vertical
+   stack (phone on top, text below). Desktop layout is untouched.
+   ─────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* 1. Flip slide to column — !important overrides the
+        --phone-right / --phone-left row/row-reverse modifiers */
+  .oq-tour-slide {
+    flex-direction: column !important;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(64px, 10vh, 80px) 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  /* 2. Phone column — remove the flex:1 / height:100% stretch */
+  .oq-tour-phone-col {
+    flex: none;
+    height: auto;
+  }
+
+  /* 3. Phone mockup — scale down while preserving aspect ratio.
+        0.465 matches the desktop width/height ratio.
+        min(300px, 38vh) → 300px on iPhone 14, 253px on iPhone SE */
+  .oq-tour-phone {
+    height: min(300px, 38vh);
+    width: min(140px, calc(38vh * 0.465));
+  }
+
+  /* 4. Text column — full width below the phone */
+  .oq-tour-text {
+    flex: none;
+    width: 100%;
+  }
+
+  /* 5. Eyebrow and headline — centre-align on mobile */
+  .oq-tour-eyebrow {
+    text-align: center;
+  }
+  .oq-tour-headline {
+    font-size: clamp(20px, 5.5vw, 28px);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  /* 6. Glow — pin to centre on mobile.
+        The glow's left/top are set via inline style from JS (GLOW_X_PCT).
+        !important overrides those inline values so the glow doesn't
+        track left/right while content is stacked. */
+  .oq-tour-glow {
+    left: 50% !important;
+    top: 50% !important;
+    width: 80vw;
+    height: 80vw;
+  }
+
+  /* 7. Header/footer — tighter side margins on narrow screens */
+  .oq-tour-header,
+  .oq-tour-footer {
+    left: 16px;
+    right: 16px;
+  }
+}
