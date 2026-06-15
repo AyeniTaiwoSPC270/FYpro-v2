@@ -1941,4 +1941,107 @@
 
 /* ── Express Onboarding: light mode overrides ────────────── */
 
+/* ── Completion Screen (cs-): light mode ─────────────────── */
+[data-theme="light"] .cs-screen,
+.light .cs-screen {
+  background: #F0F4F8 !important;
+  background-image: radial-gradient(rgba(0,102,255,0.07) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+[data-theme="light"] .cs-bg-glow,
+.light .cs-bg-glow {
+  background: radial-gradient(ellipse at 50% 40%,
+    rgba(0,102,255,0.06) 0%,
+    rgba(0,102,255,0.02) 40%,
+    transparent 70%) !important;
+}
+[data-theme="light"] .cs-heading,
+.light .cs-heading {
+  color: #0D1B2A !important;
+}
+[data-theme="light"] .cs-subtitle,
+.light .cs-subtitle {
+  color: rgba(13,27,42,0.65) !important;
+}
+[data-theme="light"] .cs-nudge,
+.light .cs-nudge {
+  color: rgba(13,27,42,0.4) !important;
+}
+[data-theme="light"] .cs-nudge a,
+.light .cs-nudge a {
+  color: #0066FF !important;
+  text-decoration-color: rgba(0,102,255,0.35) !important;
+}
+[data-theme="light"] .cs-nudge a:hover,
+.light .cs-nudge a:hover {
+  color: #0052CC !important;
+  text-decoration-color: rgba(0,82,204,0.6) !important;
+}
+
+/* ── Walkthrough Modal (wt2-): light mode ─────────────────── */
+[data-theme="light"] .wt2-screen,
+.light .wt2-screen {
+  background: #F0F4F8 !important;
+}
+[data-theme="light"] .wt2-screen::before,
+.light .wt2-screen::before {
+  background-image: radial-gradient(rgba(0,102,255,0.07) 1px, transparent 1px) !important;
+}
+[data-theme="light"] .wt2-screen::after,
+.light .wt2-screen::after {
+  background: radial-gradient(ellipse 62% 52% at 50% 50%,
+    rgba(0,102,255,0.05) 0%,
+    transparent 70%) !important;
+}
+[data-theme="light"] .wt2-modal,
+.light .wt2-modal {
+  background: linear-gradient(160deg, #f4f8ff 0%, #ffffff 50%, #fafcff 100%) !important;
+  border-left: 2px solid rgba(0,102,255,0.45) !important;
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+  border-right: 1px solid rgba(0,0,0,0.05) !important;
+  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,102,255,0.06),
+    0 2px 4px rgba(0,0,0,0.04),
+    0 8px 24px rgba(0,0,0,0.08),
+    0 24px 64px rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] .wt2-modal::before,
+.light .wt2-modal::before {
+  background-image: radial-gradient(rgba(0,102,255,0.04) 1px, transparent 1px) !important;
+}
+[data-theme="light"] .wt2-modal::after,
+.light .wt2-modal::after {
+  color: rgba(0,102,255,0.06) !important;
+}
+[data-theme="light"] .wt2-heading,
+.light .wt2-heading {
+  color: #0D1B2A !important;
+}
+[data-theme="light"] .wt2-bullet,
+.light .wt2-bullet {
+  background: rgba(0,102,255,0.03) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  border-left: 2px solid rgba(0,102,255,0.35) !important;
+}
+[data-theme="light"] .wt2-bullet:hover,
+.light .wt2-bullet:hover {
+  background: rgba(0,102,255,0.06) !important;
+  border-left-color: rgba(0,102,255,0.6) !important;
+}
+[data-theme="light"] .wt2-bullet-text,
+.light .wt2-bullet-text {
+  color: rgba(13,27,42,0.72) !important;
+}
+[data-theme="light"] .wt2-btn-ghost,
+.light .wt2-btn-ghost {
+  color: rgba(13,27,42,0.45) !important;
+  border-color: rgba(13,27,42,0.18) !important;
+}
+[data-theme="light"] .wt2-btn-ghost:hover,
+.light .wt2-btn-ghost:hover {
+  color: rgba(13,27,42,0.75) !important;
+  border-color: rgba(13,27,42,0.3) !important;
+  background: rgba(0,0,0,0.03) !important;
+}
 
