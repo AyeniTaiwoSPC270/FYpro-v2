@@ -2045,3 +2045,52 @@
   background: rgba(0,0,0,0.03) !important;
 }
 
+/* ── Tour Carousel (oq-tour-*): light mode ────────────────── */
+[data-theme="light"] .oq-tour-overlay,
+.light .oq-tour-overlay {
+  background: #F0F4F8 !important;
+}
+[data-theme="light"] .oq-tour-bg,
+.light .oq-tour-bg {
+  background: linear-gradient(148deg, #F0F4F8 0%, #E8EFF8 50%, #F0F4F8 100%) !important;
+}
+[data-theme="light"] .oq-tour-bg::before,
+.light .oq-tour-bg::before {
+  background-image: radial-gradient(rgba(0,102,255,0.065) 1px, transparent 1px) !important;
+}
+/* Remove the dark corner vignette — wrong on light backgrounds */
+[data-theme="light"] .oq-tour-bg::after,
+.light .oq-tour-bg::after {
+  background: none !important;
+}
+[data-theme="light"] .oq-tour-glow,
+.light .oq-tour-glow {
+  background: radial-gradient(ellipse, rgba(0,102,255,0.10) 0%, rgba(0,102,255,0.03) 40%, transparent 68%) !important;
+}
+[data-theme="light"] .oq-tour-skip,
+.light .oq-tour-skip {
+  color: rgba(13,27,42,0.38) !important;
+}
+[data-theme="light"] .oq-tour-skip:hover,
+.light .oq-tour-skip:hover {
+  color: rgba(13,27,42,0.65) !important;
+  background: rgba(0,0,0,0.05) !important;
+}
+[data-theme="light"] .oq-tour-dot,
+.light .oq-tour-dot {
+  background: rgba(13,27,42,0.18) !important;
+}
+[data-theme="light"] .oq-tour-dot--active,
+.light .oq-tour-dot--active {
+  background: var(--color-blue-primary) !important;
+  box-shadow: 0 0 8px rgba(0,102,255,0.45) !important;
+}
+[data-theme="light"] .oq-tour-headline,
+.light .oq-tour-headline {
+  color: #0D1B2A !important;
+}
+[data-theme="light"] .oq-tour-step-text,
+.light .oq-tour-step-text {
+  color: rgba(13,27,42,0.62) !important;
+}
+
