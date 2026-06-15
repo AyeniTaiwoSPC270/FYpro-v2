@@ -68,11 +68,6 @@
     max-width: 100% !important;
   }
 
-  /* Onboarding card: full width with padding */
-  .onboarding__card {
-    padding: 40px 24px 48px;
-  }
-
   /* Defense Mode: chat layout adapts */
   .dp-examiner-wrap,
   .dp-student-wrap {
@@ -112,11 +107,6 @@
   /* Cards: reduce padding */
   .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
     padding: 24px 16px 28px !important;
-  }
-
-  /* Onboarding: tight padding */
-  .onboarding__card {
-    padding: 32px 16px 40px;
   }
 
   /* Sidebar toggle: slightly smaller */

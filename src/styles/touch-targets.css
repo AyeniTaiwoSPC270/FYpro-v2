@@ -1061,12 +1061,8 @@ html {
   }
 }
 
-/* ── Onboarding card: full-width safe on very small screens ──────── */
+/* ── Onboarding: compact controls on very small screens ─────────── */
 @media (max-width: 360px) {
-  .onboarding__card {
-    padding: 28px 14px 36px;
-  }
-
   /* Level buttons: compact */
   .level-btn {
     font-size: 0.82rem;
