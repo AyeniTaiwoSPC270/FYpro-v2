@@ -1,26 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import FyproLogo from '../../components/FyproLogo'
 
 const TOTAL = 4
-// Glow X-position: slides 0,2 have phone right (~920px), slides 1,3 have phone left (~360px)
-const GLOW_X = [920, 360, 920, 360]
+// Glow X-position as % of viewport width: slides 0,2 phone right (72%), slides 1,3 phone left (28%)
+const GLOW_X_PCT = [72, 28, 72, 28]
 
 export default function TourCarousel({ onClose }) {
   const [current, setCurrent] = useState(0)
   const [ready, setReady] = useState(false)
-  const canvasRef = useRef(null)
-
-  // Scale 1280×720 canvas to fit viewport (contain — no clipping)
-  useEffect(() => {
-    function scale() {
-      if (!canvasRef.current) return
-      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720)
-      canvasRef.current.style.transform = `scale(${s})`
-    }
-    scale()
-    window.addEventListener('resize', scale)
-    return () => window.removeEventListener('resize', scale)
-  }, [])
 
   // Delay first-slide activation so the CSS transition actually fires on mount
   useEffect(() => {
@@ -62,7 +49,6 @@ export default function TourCarousel({ onClose }) {
       <div className="oq-tour-stage">
         <div
           className="oq-tour-canvas"
-          ref={canvasRef}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -71,7 +57,7 @@ export default function TourCarousel({ onClose }) {
           {/* Blue glow follows phone position */}
           <div
             className="oq-tour-glow"
-            style={{ left: GLOW_X[current], top: 360 }}
+            style={{ left: `${GLOW_X_PCT[current]}%`, top: '50%' }}
           />
 
           {/* Header */}

@@ -396,12 +396,10 @@
   justify-content: center;
 }
 .oq-tour-canvas {
-  width: 1280px;
-  height: 720px;
+  width: 100%;
+  height: 100%;
   position: relative;
   overflow: hidden;
-  transform-origin: center center;
-  flex-shrink: 0;
 }
 .oq-tour-bg {
   position: absolute;
@@ -424,8 +422,8 @@
 }
 .oq-tour-glow {
   position: absolute;
-  width: 640px;
-  height: 640px;
+  width: 50vw;
+  height: 50vw;
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(0, 102, 255, 0.17) 0%, rgba(0, 102, 255, 0.06) 40%, transparent 68%);
   pointer-events: none;
@@ -435,9 +433,9 @@
 }
 .oq-tour-header {
   position: absolute;
-  top: 26px;
-  left: 60px;
-  right: 60px;
+  top: clamp(16px, 3.6vh, 30px);
+  left: clamp(32px, 4.7vw, 60px);
+  right: clamp(32px, 4.7vw, 60px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -463,9 +461,9 @@
 }
 .oq-tour-footer {
   position: absolute;
-  bottom: 30px;
-  left: 60px;
-  right: 60px;
+  bottom: clamp(16px, 4.2vh, 30px);
+  left: clamp(32px, 4.7vw, 60px);
+  right: clamp(32px, 4.7vw, 60px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -518,8 +516,8 @@
   inset: 0;
   display: flex;
   align-items: center;
-  padding: 80px 60px;
-  gap: 64px;
+  padding: clamp(56px, 11vh, 85px) clamp(32px, 4.7vw, 60px);
+  gap: clamp(32px, 5vw, 64px);
   z-index: 10;
   opacity: 0;
   transform: scale(0.975);
@@ -536,7 +534,7 @@
 
 /* Tour text column */
 .oq-tour-text {
-  flex: 0 0 390px;
+  flex: 0 0 clamp(240px, 28vw, 390px);
   display: flex;
   flex-direction: column;
 }
@@ -551,7 +549,7 @@
 }
 .oq-tour-headline {
   font-family: 'DM Serif Display', serif;
-  font-size: 40px;
+  font-size: clamp(22px, 3vw, 40px);
   line-height: 1.1;
   color: var(--color-text-white);
   letter-spacing: -0.8px;
@@ -593,9 +591,10 @@
 }
 .oq-tour-phone {
   position: relative;
-  width: 252px;
-  height: 542px;
-  border-radius: 48px;
+  /* scales with viewport height, capped at original 252×542 */
+  height: min(542px, calc(100vh - 220px));
+  width: min(252px, calc((100vh - 220px) * 0.465));
+  border-radius: min(48px, 19%);
   background: linear-gradient(158deg, #585860 0%, #30303a 10%, #3d3d44 22%, #28282e 40%, #484850 56%, #2c2c34 72%, #404048 86%, #2a2a30 100%);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.09), 0 0 0 2.5px rgba(0,0,0,0.97), 0 52px 104px rgba(0,0,0,0.82), 0 24px 56px rgba(0,0,0,0.58), 0 0 80px rgba(0,102,255,0.22);
   flex-shrink: 0;
@@ -604,7 +603,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 48px;
+  border-radius: min(48px, 19%);
   background: linear-gradient(135deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.05) 16%, transparent 38%, rgba(255,255,255,0.02) 70%, transparent 100%);
   z-index: 50;
   pointer-events: none;
@@ -613,38 +612,47 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 48px;
+  border-radius: min(48px, 19%);
   background: linear-gradient(to bottom, transparent 65%, rgba(0,0,0,0.18) 100%);
   z-index: 49;
   pointer-events: none;
 }
+/* Phone buttons — % positions so they scale with the phone */
 .oq-pbtn { position: absolute; background: linear-gradient(to right, #3a3a40, #28282e); }
-.oq-pbtn-l1 { left: -3px; top: 96px;  width: 3px; height: 25px; border-radius: 2px 0 0 2px; }
-.oq-pbtn-l2 { left: -3px; top: 133px; width: 3px; height: 46px; border-radius: 2px 0 0 2px; }
-.oq-pbtn-l3 { left: -3px; top: 190px; width: 3px; height: 46px; border-radius: 2px 0 0 2px; }
-.oq-pbtn-r  { right: -3px; top: 162px; width: 3px; height: 68px; border-radius: 0 2px 2px 0; }
+.oq-pbtn-l1 { left: -3px; top: 17.7%; width: 3px; height: 4.6%; border-radius: 2px 0 0 2px; }
+.oq-pbtn-l2 { left: -3px; top: 24.5%; width: 3px; height: 8.5%; border-radius: 2px 0 0 2px; }
+.oq-pbtn-l3 { left: -3px; top: 35.1%; width: 3px; height: 8.5%; border-radius: 2px 0 0 2px; }
+.oq-pbtn-r  { right: -3px; top: 29.9%; width: 3px; height: 12.5%; border-radius: 0 2px 2px 0; }
 .oq-usbc {
   position: absolute;
-  bottom: 13px; left: 50%;
+  bottom: 2.4%;
+  left: 50%;
   transform: translateX(-50%);
-  width: 46px; height: 6px;
+  width: 18.25%;
+  height: 6px;
   background: #040912;
-  border-radius: 3px; z-index: 22;
+  border-radius: 3px;
+  z-index: 22;
 }
 .oq-tour-screen {
   position: absolute;
-  top: 8px; left: 7px; right: 7px; bottom: 8px;
-  border-radius: 42px;
+  top: 1.5%;
+  left: 2.8%;
+  right: 2.8%;
+  bottom: 1.5%;
+  border-radius: min(42px, 17%);
   overflow: hidden;
   background: var(--color-bg-deep);
 }
 .oq-tour-di {
   position: absolute;
-  top: 11px; left: 50%;
+  top: 2%;
+  left: 50%;
   transform: translateX(-50%);
-  width: 80px; height: 24px;
+  width: 31.7%;
+  height: 4.4%;
   background: #000;
-  border-radius: 18px;
+  border-radius: min(18px, 50%);
   z-index: 40;
 }
 .oq-tour-glare {
@@ -653,7 +661,7 @@
   background: linear-gradient(148deg, rgba(255,255,255,0.035) 0%, transparent 28%);
   z-index: 60;
   pointer-events: none;
-  border-radius: 42px;
+  border-radius: min(42px, 17%);
 }
 .oq-app-screen {
   position: absolute;
