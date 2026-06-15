@@ -14,6 +14,138 @@ const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.1
 
 const LEVELS = ['400', '500']
 
+const STEP_PHASES = ['onboarding', 'attribution', 'defence-date', 'goal', 'notifications']
+
+const REFERRAL_OPTIONS = [
+  'Friend or colleague', 'Twitter / X', 'TikTok', 'Instagram',
+  'WhatsApp', 'Lecturer', 'Google Search', 'Other',
+]
+const DEFENCE_OPTIONS = [
+  { label: 'Within 1 month', value: '<1m' },
+  { label: '1–3 months',     value: '1-3m' },
+  { label: '3–6 months',     value: '3-6m' },
+  { label: 'Not sure yet',   value: 'unsure' },
+]
+const GOAL_OPTIONS = [
+  { label: 'Validate my topic',  value: 'validate_topic' },
+  { label: 'Build my chapters',  value: 'build_chapters' },
+  { label: 'Plan my writing',    value: 'plan_writing' },
+  { label: 'Defence practice',   value: 'defence_practice' },
+]
+const GOAL_SUBTITLES = {
+  validate_topic:    "Start with Step 1 — let's check if your idea is researchable.",
+  build_chapters:    'Head to Step 2 to generate your chapter structure.',
+  plan_writing:      "Jump to Step 5 when you're ready to build your writing schedule.",
+  defence_practice:  "Jump to Step 6 when you're ready to face the panel.",
+}
+
+function ProgressBar({ stepNum, progressPct, almostDone }) {
+  if (stepNum === 0) return null
+  return (
+    <div className="oq-progress-wrap">
+      {almostDone && <div className="oq-progress-label">Almost done.</div>}
+      <div className="oq-progress">
+        <div className="oq-progress__fill" style={{ width: `${progressPct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function ChipScreen({ eyebrow, heading, options, selected, onSelect, onSkip, onContinue, stepNum, progressPct, almostDone }) {
+  return (
+    <motion.div
+      className="oq-question"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <ProgressBar stepNum={stepNum} progressPct={progressPct} almostDone={almostDone} />
+      <div className="oq-question__eyebrow">{eyebrow}</div>
+      <h1 className="oq-question__heading">{heading}</h1>
+      <div className="oq-chips">
+        {options.map((opt) => {
+          const value = typeof opt === 'string' ? opt : opt.value
+          const label = typeof opt === 'string' ? opt : opt.label
+          return (
+            <button
+              key={value}
+              type="button"
+              className={`oq-chip${selected === value ? ' oq-chip--selected' : ''}`}
+              onClick={() => onSelect(value)}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="oq-actions">
+        <button type="button" className="oq-skip" onClick={onSkip}>Skip</button>
+        <button
+          type="button"
+          className="oq-continue"
+          disabled={!selected}
+          onClick={onContinue}
+        >
+          Continue
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+function NotificationsScreen({ notifyEmail, setNotifyEmail, notifyPush, setNotifyPush, onContinue, stepNum, progressPct, almostDone }) {
+  return (
+    <motion.div
+      className="oq-question"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <ProgressBar stepNum={stepNum} progressPct={progressPct} almostDone={almostDone} />
+      <div className="oq-question__eyebrow">STAY ON TRACK</div>
+      <h1 className="oq-question__heading">Want reminders?</h1>
+      <div className="oq-toggles">
+        <label className={`oq-toggle-row${notifyEmail ? ' oq-toggle-row--on' : ''}`}>
+          <div className="oq-toggle-info">
+            <div className="oq-toggle-label">Email nudges</div>
+            <div className="oq-toggle-desc">Writing reminders and defence tips by email</div>
+          </div>
+          <div className="oq-toggle-switch">
+            <input
+              type="checkbox"
+              checked={notifyEmail}
+              onChange={(e) => setNotifyEmail(e.target.checked)}
+            />
+            <div className="oq-toggle-track" />
+          </div>
+        </label>
+        <label className={`oq-toggle-row${notifyPush ? ' oq-toggle-row--on' : ''}`}>
+          <div className="oq-toggle-info">
+            <div className="oq-toggle-label">Push reminders</div>
+            <div className="oq-toggle-desc">Get nudges on this device</div>
+          </div>
+          <div className="oq-toggle-switch">
+            <input
+              type="checkbox"
+              checked={notifyPush}
+              onChange={(e) => setNotifyPush(e.target.checked)}
+            />
+            <div className="oq-toggle-track" />
+          </div>
+        </label>
+      </div>
+      <div className="oq-actions">
+        <button type="button" className="oq-skip" onClick={onContinue}>Skip</button>
+        <button type="button" className="oq-continue" onClick={onContinue}>
+          Continue
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
 const TRUST_LINES = [
   { icon: '🎓', text: 'Face 3 AI examiners before the real panel' },
   { icon: '★', text: 'Score 7/10+ to unlock your defence certificate' },
@@ -255,34 +387,10 @@ export default function SplashOnboarding() {
   }
 
   // Progress bar — steps 1–5 map to the 5 wizard screens
-  const STEP_PHASES = ['onboarding', 'attribution', 'defence-date', 'goal', 'notifications']
   const stepNum     = STEP_PHASES.indexOf(phase) + 1
   const progressPct = stepNum > 0 ? (stepNum / 5) * 100 : 0
   const almostDone  = stepNum >= 4
 
-  const REFERRAL_OPTIONS = [
-    'Friend or colleague', 'Twitter / X', 'TikTok', 'Instagram',
-    'WhatsApp', 'Lecturer', 'Google Search', 'Other',
-  ]
-  const DEFENCE_OPTIONS = [
-    { label: 'Within 1 month', value: '<1m' },
-    { label: '1–3 months',     value: '1-3m' },
-    { label: '3–6 months',     value: '3-6m' },
-    { label: 'Not sure yet',   value: 'unsure' },
-  ]
-  const GOAL_OPTIONS = [
-    { label: 'Validate my topic',  value: 'validate_topic' },
-    { label: 'Build my chapters',  value: 'build_chapters' },
-    { label: 'Plan my writing',    value: 'plan_writing' },
-    { label: 'Defence practice',   value: 'defence_practice' },
-  ]
-
-  const GOAL_SUBTITLES = {
-    validate_topic:    "Start with Step 1 — let's check if your idea is researchable.",
-    build_chapters:    'Head to Step 2 to generate your chapter structure.',
-    plan_writing:      "Jump to Step 5 when you're ready to build your writing schedule.",
-    defence_practice:  "Jump to Step 6 when you're ready to face the panel.",
-  }
   const congratsSubtitle = primaryGoal
     ? GOAL_SUBTITLES[primaryGoal]
     : 'Your 6-step workflow is ready.'
@@ -291,115 +399,6 @@ export default function SplashOnboarding() {
     const raw = state.fullName || ''
     return raw.split(' ')[0] || 'there'
   })()
-
-  // ── Inner helper components (declared inside so they close over state) ────
-
-  function ProgressBar() {
-    if (stepNum === 0) return null
-    return (
-      <div className="oq-progress-wrap">
-        {almostDone && <div className="oq-progress-label">Almost done.</div>}
-        <div className="oq-progress">
-          <div className="oq-progress__fill" style={{ width: `${progressPct}%` }} />
-        </div>
-      </div>
-    )
-  }
-
-  function ChipScreen({ eyebrow, heading, options, selected, onSelect, onSkip, onContinue }) {
-    return (
-      <motion.div
-        className="oq-question"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <ProgressBar />
-        <div className="oq-question__eyebrow">{eyebrow}</div>
-        <h1 className="oq-question__heading">{heading}</h1>
-        <div className="oq-chips">
-          {options.map((opt) => {
-            const value = typeof opt === 'string' ? opt : opt.value
-            const label = typeof opt === 'string' ? opt : opt.label
-            return (
-              <button
-                key={value}
-                type="button"
-                className={`oq-chip${selected === value ? ' oq-chip--selected' : ''}`}
-                onClick={() => onSelect(value)}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-        <div className="oq-actions">
-          <button type="button" className="oq-skip" onClick={onSkip}>Skip</button>
-          <button
-            type="button"
-            className="oq-continue"
-            disabled={!selected}
-            onClick={onContinue}
-          >
-            Continue
-          </button>
-        </div>
-      </motion.div>
-    )
-  }
-
-  function NotificationsScreen() {
-    return (
-      <motion.div
-        className="oq-question"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <ProgressBar />
-        <div className="oq-question__eyebrow">STAY ON TRACK</div>
-        <h1 className="oq-question__heading">Want reminders?</h1>
-        <div className="oq-toggles">
-          <label className={`oq-toggle-row${notifyEmail ? ' oq-toggle-row--on' : ''}`}>
-            <div className="oq-toggle-info">
-              <div className="oq-toggle-label">Email nudges</div>
-              <div className="oq-toggle-desc">Writing reminders and defence tips by email</div>
-            </div>
-            <div className="oq-toggle-switch">
-              <input
-                type="checkbox"
-                checked={notifyEmail}
-                onChange={(e) => setNotifyEmail(e.target.checked)}
-              />
-              <div className="oq-toggle-track" />
-            </div>
-          </label>
-          <label className={`oq-toggle-row${notifyPush ? ' oq-toggle-row--on' : ''}`}>
-            <div className="oq-toggle-info">
-              <div className="oq-toggle-label">Push reminders</div>
-              <div className="oq-toggle-desc">Get nudges on this device</div>
-            </div>
-            <div className="oq-toggle-switch">
-              <input
-                type="checkbox"
-                checked={notifyPush}
-                onChange={(e) => setNotifyPush(e.target.checked)}
-              />
-              <div className="oq-toggle-track" />
-            </div>
-          </label>
-        </div>
-        <div className="oq-actions">
-          <button type="button" className="oq-skip" onClick={handleSaveAndCongrats}>Skip</button>
-          <button type="button" className="oq-continue" onClick={handleSaveAndCongrats}>
-            Continue
-          </button>
-        </div>
-      </motion.div>
-    )
-  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -626,6 +625,7 @@ export default function SplashOnboarding() {
                       onSelect={setReferralSource}
                       onSkip={() => setPhase('defence-date')}
                       onContinue={() => setPhase('defence-date')}
+                      stepNum={stepNum} progressPct={progressPct} almostDone={almostDone}
                     />
 
                   ) : phase === 'defence-date' ? (
@@ -638,6 +638,7 @@ export default function SplashOnboarding() {
                       onSelect={setDefenceBand}
                       onSkip={() => setPhase('goal')}
                       onContinue={() => setPhase('goal')}
+                      stepNum={stepNum} progressPct={progressPct} almostDone={almostDone}
                     />
 
                   ) : phase === 'goal' ? (
@@ -650,10 +651,17 @@ export default function SplashOnboarding() {
                       onSelect={setPrimaryGoal}
                       onSkip={() => setPhase('notifications')}
                       onContinue={() => setPhase('notifications')}
+                      stepNum={stepNum} progressPct={progressPct} almostDone={almostDone}
                     />
 
                   ) : phase === 'notifications' ? (
-                    <NotificationsScreen key="notifications" />
+                    <NotificationsScreen
+                      key="notifications"
+                      notifyEmail={notifyEmail} setNotifyEmail={setNotifyEmail}
+                      notifyPush={notifyPush}   setNotifyPush={setNotifyPush}
+                      onContinue={handleSaveAndCongrats}
+                      stepNum={stepNum} progressPct={progressPct} almostDone={almostDone}
+                    />
 
                   ) : (
                     /* phase === 'onboarding' — profile form */

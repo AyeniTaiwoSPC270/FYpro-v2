@@ -63,13 +63,14 @@
 .oq-chip {
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
+  font-weight: 600;
   color: var(--onb-pane-text-dim);
   background: var(--onb-card-bg);
   border: 1.5px solid var(--onb-card-border);
   border-radius: var(--radius-pill);
   padding: 9px 18px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
   line-height: 1;
 }
 .oq-chip:hover {
@@ -80,7 +81,6 @@
   border-color: var(--color-blue-primary);
   background: var(--color-blue-glow);
   color: var(--color-blue-primary);
-  font-weight: 600;
 }
 .oq-actions {
   display: flex;
