@@ -61,6 +61,55 @@ export default function SplashOnboarding() {
   const [tourTransitioning, setTourTransitioning] = useState(false)
 
   const topicRef = useRef(null)
+  const starCanvasRef = useRef(null)
+
+  // Star field animation for the completion screen
+  useEffect(() => {
+    if (phase !== 'congrats') return
+    const canvas = starCanvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let rafId
+    let stars = []
+    const N = 55
+
+    function resize() {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    function init() {
+      stars = []
+      for (let i = 0; i < N; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 0.85 + 0.15,
+          a: Math.random() * 0.09 + 0.02,
+          sp: Math.random() * 0.0005 + 0.0002,
+          ph: Math.random() * Math.PI * 2,
+        })
+      }
+    }
+    function frame(t) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      for (const s of stars) {
+        const a = s.a * (0.5 + 0.5 * Math.sin(s.ph + t * s.sp * 700))
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(180,210,255,${a})`
+        ctx.fill()
+      }
+      rafId = requestAnimationFrame(frame)
+    }
+    function handleResize() { resize(); init() }
+    window.addEventListener('resize', handleResize)
+    resize(); init()
+    rafId = requestAnimationFrame(frame)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [phase])
 
   // Resume existing session — only redirect on early phases so that the
   // post-profile question flow is not interrupted by onboarding_completed firing.
@@ -393,22 +442,33 @@ export default function SplashOnboarding() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="oq-congrats">
-              <div className="oq-congrats__icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="80" height="80" fill="currentColor" style={{ color: 'var(--color-blue-primary)' }}>
-                  <path d={SHIELD_D} />
-                </svg>
-              </div>
-              <h1 className="oq-congrats__title">🎉 You&apos;re all set, {firstName}.</h1>
-              <p className="oq-congrats__subtitle">{congratsSubtitle}</p>
-              <p className="oq-congrats__plan">
-                You&apos;re on the free plan —{' '}
-                <a href="/pricing">unlock the 3-examiner defence panel</a>{' '}
-                whenever you&apos;re ready.
-              </p>
-              <button className="oq-congrats__cta" onClick={() => setPhase('walkthrough')}>
-                Enter FYPro
-              </button>
+            <div className="cs-screen">
+              <canvas ref={starCanvasRef} className="cs-canvas" aria-hidden="true" />
+              <div className="cs-bg-glow" aria-hidden="true" />
+              <main className="cs-stage">
+                <div className="cs-shield-wrap" aria-hidden="true">
+                  <div className="cs-ring-mid" />
+                  <div className="cs-ring-inner" />
+                  <svg className="cs-shield" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#0066FF" aria-hidden="true">
+                    <path d={SHIELD_D} />
+                  </svg>
+                </div>
+                <div className="cs-dots" aria-hidden="true">
+                  <div className="cs-dot" /><div className="cs-dot" />
+                  <div className="cs-dot cs-dot--center" />
+                  <div className="cs-dot" /><div className="cs-dot" />
+                </div>
+                <h1 className="cs-heading">🎉 You&apos;re all set, {firstName}.</h1>
+                <p className="cs-subtitle">{congratsSubtitle}</p>
+                <p className="cs-nudge">
+                  You&apos;re on the free plan —{' '}
+                  <a href="/pricing">unlock the 3-examiner defence panel</a>{' '}
+                  whenever you&apos;re ready.
+                </p>
+                <button className="cs-btn-enter" onClick={() => setPhase('walkthrough')}>
+                  Enter FYPro <span className="cs-btn-arrow" aria-hidden="true">→</span>
+                </button>
+              </main>
             </div>
           </motion.div>
 
@@ -420,45 +480,58 @@ export default function SplashOnboarding() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className={`oq-walkthrough${tourTransitioning ? ' oq-walkthrough--exiting' : ''}`}>
-              <div className="oq-walkthrough__card">
-                <div className="oq-walkthrough__icon">🛡️</div>
-                <h2 className="oq-walkthrough__title">Quick look at FYPro?</h2>
-                <ul className="oq-walkthrough__bullets">
-                  {[
-                    'Validate your topic with real research',
-                    'Build chapters, methodology, and a writing schedule',
-                    'Face 3 AI examiners before your real panel',
-                  ].map((b) => (
-                    <li key={b} className="oq-walkthrough__bullet">
-                      <span className="oq-walkthrough__check">✓</span>
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-                <div className="oq-walkthrough__btns">
-                  <button
-                    className="oq-walkthrough__take"
-                    onClick={async () => {
-                      const { data: { session } } = await supabase.auth.getSession()
-                      if (session?.user?.id) markWalkthroughSeen(session.user.id)
-                      setTourTransitioning(true)
-                      setTimeout(() => setShowTour(true), 320)
-                    }}
-                  >
-                    Take the tour
-                  </button>
-                  <button
-                    className="oq-walkthrough__skip-btn"
-                    onClick={async () => {
-                      const { data: { session } } = await supabase.auth.getSession()
-                      if (session?.user?.id) markWalkthroughSeen(session.user.id)
-                      sessionStorage.setItem('intentional_app_entry', 'true')
-                      navigate('/app')
-                    }}
-                  >
-                    Skip to my project
-                  </button>
+            <div className={`wt2-screen${tourTransitioning ? ' wt2-screen--exiting' : ''}`}>
+              <div className="wt2-modal" role="dialog" aria-modal="true" aria-labelledby="wt2-heading">
+                <div className="wt2-inner">
+                  <div className="wt2-icon-block">
+                    <div className="wt2-shield-wrap" aria-hidden="true">
+                      <svg className="wt2-shield-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#0066FF" aria-hidden="true">
+                        <path d={SHIELD_D} />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="wt2-heading-block">
+                    <div className="wt2-eyebrow">Your research companion awaits</div>
+                    <h2 className="wt2-heading" id="wt2-heading">Quick look at FYPro?</h2>
+                  </div>
+                  <div className="wt2-bullets" role="list">
+                    {[
+                      'Validate your topic with real research',
+                      'Build chapters, methodology, and a writing schedule',
+                      'Face 3 AI examiners before your real panel',
+                    ].map((b) => (
+                      <div key={b} className="wt2-bullet" role="listitem">
+                        <div className="wt2-check" aria-hidden="true">
+                          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" /></svg>
+                        </div>
+                        <span className="wt2-bullet-text">{b}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="wt2-btn-group">
+                    <button
+                      className="wt2-btn-primary"
+                      onClick={async () => {
+                        const { data: { session } } = await supabase.auth.getSession()
+                        if (session?.user?.id) markWalkthroughSeen(session.user.id)
+                        setTourTransitioning(true)
+                        setTimeout(() => setShowTour(true), 320)
+                      }}
+                    >
+                      Take the tour <span className="wt2-arrow" aria-hidden="true">→</span>
+                    </button>
+                    <button
+                      className="wt2-btn-ghost"
+                      onClick={async () => {
+                        const { data: { session } } = await supabase.auth.getSession()
+                        if (session?.user?.id) markWalkthroughSeen(session.user.id)
+                        sessionStorage.setItem('intentional_app_entry', 'true')
+                        navigate('/app')
+                      }}
+                    >
+                      Skip to my project
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
