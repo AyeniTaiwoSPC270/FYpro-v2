@@ -2094,3 +2094,34 @@
   color: rgba(13,27,42,0.62) !important;
 }
 
+/* ── Tour phone mockup — light mode ─────────────────────────── */
+/* .oq-tour-phone--defence is excluded — Defence Simulator always stays dark */
+[data-theme="light"] .oq-tour-phone:not(.oq-tour-phone--defence),
+.light .oq-tour-phone:not(.oq-tour-phone--defence) {
+  --ph-header-bg:   #E8EFF8;
+  --ph-header-bdr:  rgba(13,27,42,0.08);
+  --ph-nav-active:  rgba(13,27,42,0.90);
+  --ph-nav-off:     rgba(13,27,42,0.30);
+  --ph-text:        #0D1B2A;
+  --ph-text-sec:    rgba(13,27,42,0.65);
+  --ph-text-dim:    rgba(13,27,42,0.45);
+  --ph-text-muted:  rgba(13,27,42,0.40);
+  --ph-text-faint:  rgba(13,27,42,0.28);
+  --ph-text-ghost:  rgba(13,27,42,0.22);
+  --ph-card-bg:     #FFFFFF;
+  --ph-card-bg-dim: rgba(13,27,42,0.03);
+  --ph-card-bdr:    rgba(13,27,42,0.10);
+  --ph-tab-bg:      rgba(13,27,42,0.05);
+  --ph-tab-bdr:     rgba(13,27,42,0.10);
+  --ph-dot-off:     rgba(13,27,42,0.18);
+}
+[data-theme="light"] .oq-tour-phone:not(.oq-tour-phone--defence) .oq-tour-screen,
+.light .oq-tour-phone:not(.oq-tour-phone--defence) .oq-tour-screen {
+  background: #F0F4F8 !important;
+}
+[data-theme="light"] .oq-tour-phone:not(.oq-tour-phone--defence) .oq-app-screen,
+.light .oq-tour-phone:not(.oq-tour-phone--defence) .oq-app-screen {
+  background: #F0F4F8 !important;
+  color: #0D1B2A !important;
+}
+

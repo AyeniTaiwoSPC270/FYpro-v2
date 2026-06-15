@@ -941,6 +941,23 @@
   background: linear-gradient(158deg, #585860 0%, #30303a 10%, #3d3d44 22%, #28282e 40%, #484850 56%, #2c2c34 72%, #404048 86%, #2a2a30 100%);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.09), 0 0 0 2.5px rgba(0,0,0,0.97), 0 52px 104px rgba(0,0,0,0.82), 0 24px 56px rgba(0,0,0,0.58), 0 0 80px rgba(0,102,255,0.22);
   flex-shrink: 0;
+  /* Phone content theme tokens — dark defaults; overridden in light-mode.css */
+  --ph-header-bg:   #0D1B2A;
+  --ph-header-bdr:  rgba(255,255,255,0.07);
+  --ph-nav-active:  rgba(255,255,255,0.90);
+  --ph-nav-off:     rgba(255,255,255,0.30);
+  --ph-text:        #FFFFFF;
+  --ph-text-sec:    rgba(255,255,255,0.65);
+  --ph-text-dim:    rgba(255,255,255,0.45);
+  --ph-text-muted:  rgba(255,255,255,0.40);
+  --ph-text-faint:  rgba(255,255,255,0.28);
+  --ph-text-ghost:  rgba(255,255,255,0.22);
+  --ph-card-bg:     rgba(255,255,255,0.04);
+  --ph-card-bg-dim: rgba(255,255,255,0.03);
+  --ph-card-bdr:    rgba(255,255,255,0.08);
+  --ph-tab-bg:      rgba(255,255,255,0.05);
+  --ph-tab-bdr:     rgba(255,255,255,0.10);
+  --ph-dot-off:     rgba(255,255,255,0.18);
 }
 .oq-tour-phone::before {
   content: '';

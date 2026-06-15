@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import FyproLogo from '../../components/FyproLogo'
-import { useTheme } from '../../context/ThemeContext'
 
 const TOTAL = 4
 // Glow X-position as % of viewport width: slides 0,2 phone right (72%), slides 1,3 phone left (28%)
@@ -10,32 +9,6 @@ export default function TourCarousel({ onClose }) {
   const [current, setCurrent] = useState(0)
   const [ready, setReady] = useState(false)
   const [exiting, setExiting] = useState(false)
-
-  const { theme } = useTheme()
-  const dk = theme !== 'light'
-
-  // Phone mockup theme tokens — slides 1–3 only; slide 4 (Defence) stays hardcoded dark
-  const ph = {
-    screenBg:    dk ? '#0D1B2A'                 : '#F0F4F8',
-    headerBg:    dk ? '#0D1B2A'                 : '#E8EFF8',
-    headerBdr:   dk ? 'rgba(255,255,255,0.07)'  : 'rgba(13,27,42,0.08)',
-    navActive:   dk ? 'rgba(255,255,255,0.9)'   : 'rgba(13,27,42,0.9)',
-    navInactive: dk ? 'rgba(255,255,255,0.3)'   : 'rgba(13,27,42,0.3)',
-    text:        dk ? '#FFFFFF'                  : '#0D1B2A',
-    textSec:     dk ? 'rgba(255,255,255,0.65)'  : 'rgba(13,27,42,0.65)',
-    textDim:     dk ? 'rgba(255,255,255,0.45)'  : 'rgba(13,27,42,0.45)',
-    textMuted:   dk ? 'rgba(255,255,255,0.40)'  : 'rgba(13,27,42,0.40)',
-    textFaint:   dk ? 'rgba(255,255,255,0.28)'  : 'rgba(13,27,42,0.28)',
-    textGhost:   dk ? 'rgba(255,255,255,0.22)'  : 'rgba(13,27,42,0.22)',
-    cardBg:      dk ? 'rgba(255,255,255,0.04)'  : '#FFFFFF',
-    cardBgDim:   dk ? 'rgba(255,255,255,0.03)'  : 'rgba(13,27,42,0.03)',
-    cardBdr:     dk ? 'rgba(255,255,255,0.08)'  : 'rgba(13,27,42,0.10)',
-    tabBg:       dk ? 'rgba(255,255,255,0.05)'  : 'rgba(13,27,42,0.05)',
-    tabBdr:      dk ? 'rgba(255,255,255,0.10)'  : 'rgba(13,27,42,0.10)',
-    dotOff:      dk ? 'rgba(255,255,255,0.18)'  : 'rgba(13,27,42,0.18)',
-    inputBg:     dk ? 'rgba(255,255,255,0.04)'  : 'rgba(13,27,42,0.04)',
-    inputBdr:    dk ? 'rgba(255,255,255,0.09)'  : 'rgba(13,27,42,0.10)',
-  }
 
   // Delay first-slide activation so the CSS transition actually fires on mount
   useEffect(() => {
@@ -119,27 +92,27 @@ export default function TourCarousel({ onClose }) {
               </div>
             </div>
             <div className="oq-tour-phone-col">
-              <Phone bg={ph.screenBg}>
-                <div style={{ padding: '42px 8px 5px', background: ph.headerBg, borderBottom: `1px solid ${ph.headerBdr}` }}>
+              <Phone>
+                <div style={{ padding: '42px 8px 5px', background: 'var(--ph-header-bg)', borderBottom: '1px solid var(--ph-header-bdr)' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, marginBottom: 3 }}>
                     {['#0066FF','#F59E0B','#16A34A','#0891B2','#8B5CF6','#DC2626'].map((c, i) => (
                       <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <div style={{ width: 13, height: 13, borderRadius: '50%', background: c, opacity: i === 0 ? 1 : 0.5 + (i * 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#fff', fontWeight: 700 }}>{i === 0 ? '✓' : ''}</div>
-                        {i < 5 && <div style={{ width: 10, height: 1, background: ph.headerBdr }} />}
+                        {i < 5 && <div style={{ width: 10, height: 1, background: 'var(--ph-header-bdr)' }} />}
                       </span>
                     ))}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 3 }}>
                     {['Topic','Chapter','Method','Writing','Defence'].map((l, i) => (
-                      <span key={l} style={{ font: `${i === 0 ? 600 : 400} 5.5px/1 Poppins,sans-serif`, color: i === 0 ? ph.navActive : ph.navInactive }}>{l}</span>
+                      <span key={l} style={{ font: `${i === 0 ? 600 : 400} 5.5px/1 Poppins,sans-serif`, color: i === 0 ? 'var(--ph-nav-active)' : 'var(--ph-nav-off)' }}>{l}</span>
                     ))}
                   </div>
                 </div>
                 <div style={{ padding: '9px 9px 0', overflow: 'hidden', height: 'calc(100% - 76px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: ph.text, marginBottom: 7 }}>Step 1: Topic Validator</div>
+                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 7 }}>Step 1: Topic Validator</div>
                   <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 5, padding: '6px 7px', marginBottom: 6 }}>
                     <div style={{ font: "600 7px/1 'JetBrains Mono',monospace", color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>NEEDS REFINEMENT</div>
-                    <div style={{ font: '400 6.5px/1.5 Poppins,sans-serif', color: ph.textSec }}>Topic is technically sound but over-scoped for a 5,000-word undergraduate project.</div>
+                    <div style={{ font: '400 6.5px/1.5 Poppins,sans-serif', color: 'var(--ph-text-sec)' }}>Topic is technically sound but over-scoped for a 5,000-word undergraduate project.</div>
                   </div>
                   <div style={{ font: "500 6px/1 'JetBrains Mono',monospace", color: '#0066FF', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>RELATED RESEARCH FOUND</div>
                   {[
@@ -147,13 +120,13 @@ export default function TourCarousel({ onClose }) {
                     ['Monitoring kraft recovery boiler fouling using PCA', 'Peter Verstee · 2009'],
                     ['Heat recovery boiler', '· 1992'],
                   ].map(([t, a]) => (
-                    <div key={t} style={{ background: ph.cardBg, border: `1px solid ${ph.cardBdr}`, borderRadius: 4, padding: '5px 6px', marginBottom: 3 }}>
-                      <div style={{ font: '500 7px/1.3 Poppins,sans-serif', color: ph.text }}>{t}</div>
-                      <div style={{ font: '400 5.5px/1 Poppins,sans-serif', color: ph.textMuted, marginTop: 2 }}>{a}</div>
+                    <div key={t} style={{ background: 'var(--ph-card-bg)', border: '1px solid var(--ph-card-bdr)', borderRadius: 4, padding: '5px 6px', marginBottom: 3 }}>
+                      <div style={{ font: '500 7px/1.3 Poppins,sans-serif', color: 'var(--ph-text)' }}>{t}</div>
+                      <div style={{ font: '400 5.5px/1 Poppins,sans-serif', color: 'var(--ph-text-muted)', marginTop: 2 }}>{a}</div>
                     </div>
                   ))}
                   <div style={{ font: "500 6px/1 'JetBrains Mono',monospace", color: '#0066FF', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, marginTop: 6 }}>REFINED TOPIC</div>
-                  <div style={{ font: '600 7.5px/1.45 Poppins,sans-serif', color: ph.text, marginBottom: 6 }}>FEA-Based Thermal Stress Analysis of a Boiler Chimney Under Fouling-Induced Gradients Using ANSYS Mechanical</div>
+                  <div style={{ font: '600 7.5px/1.45 Poppins,sans-serif', color: 'var(--ph-text)', marginBottom: 6 }}>FEA-Based Thermal Stress Analysis of a Boiler Chimney Under Fouling-Induced Gradients Using ANSYS Mechanical</div>
                   <div style={{ background: '#16A34A', borderRadius: 5, padding: 7, textAlign: 'center' }}>
                     <span style={{ font: '600 8px/1 Poppins,sans-serif', color: '#fff' }}>Use This Topic</span>
                   </div>
@@ -165,15 +138,15 @@ export default function TourCarousel({ onClose }) {
           {/* Slide 2 — Chapter Architect — phone LEFT */}
           <section className={`oq-tour-slide oq-tour-slide--phone-left${ready && current === 1 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-phone-col">
-              <Phone bg={ph.screenBg}>
-                <div style={{ padding: '42px 9px 6px', background: ph.headerBg, borderBottom: `1px solid ${ph.headerBdr}` }}>
-                  <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: ph.textDim }}>← Back to Topic Validator</div>
+              <Phone>
+                <div style={{ padding: '42px 9px 6px', background: 'var(--ph-header-bg)', borderBottom: '1px solid var(--ph-header-bdr)' }}>
+                  <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>← Back to Topic Validator</div>
                 </div>
                 <div style={{ padding: '9px', overflow: 'hidden', height: 'calc(100% - 60px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: ph.text, marginBottom: 6 }}>Step 2: Chapter Architect</div>
+                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 6 }}>Step 2: Chapter Architect</div>
                   <div style={{ display: 'flex', gap: 3, marginBottom: 7 }}>
                     <div style={{ flex: 1, background: '#0066FF', borderRadius: 4, padding: '5px 4px', textAlign: 'center' }}><span style={{ font: '600 7px/1 Poppins,sans-serif', color: '#fff' }}>Standard 5-Chapter</span></div>
-                    <div style={{ flex: 1, background: ph.tabBg, border: `1px solid ${ph.tabBdr}`, borderRadius: 4, padding: '5px 4px', textAlign: 'center' }}><span style={{ font: '500 7px/1 Poppins,sans-serif', color: ph.textDim }}>Custom</span></div>
+                    <div style={{ flex: 1, background: 'var(--ph-tab-bg)', border: '1px solid var(--ph-tab-bdr)', borderRadius: 4, padding: '5px 4px', textAlign: 'center' }}><span style={{ font: '500 7px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>Custom</span></div>
                   </div>
                   {[
                     ['Introduction to Thermal Stress Analysis of Boiler Chimney Heat Recovery Units', '01'],
@@ -182,8 +155,8 @@ export default function TourCarousel({ onClose }) {
                     ['Results: Temperature Distribution, Thermal Stress Contours, Fouling Severity', '04'],
                     ['Conclusion and Recommendations for Fouling Management and Structural Design', '05'],
                   ].map(([t, n]) => (
-                    <div key={n} style={{ background: ph.cardBg, border: `1px solid ${ph.cardBdr}`, borderRadius: 5, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 3 }}>
-                      <div style={{ font: '500 7px/1.35 Poppins,sans-serif', color: ph.text, flex: 1 }}>{t}</div>
+                    <div key={n} style={{ background: 'var(--ph-card-bg)', border: '1px solid var(--ph-card-bdr)', borderRadius: 5, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 3 }}>
+                      <div style={{ font: '500 7px/1.35 Poppins,sans-serif', color: 'var(--ph-text)', flex: 1 }}>{t}</div>
                       <div style={{ font: "700 11px/1 'JetBrains Mono',monospace", color: 'rgba(0,102,255,0.5)', flexShrink: 0 }}>{n}</div>
                     </div>
                   ))}
@@ -230,13 +203,13 @@ export default function TourCarousel({ onClose }) {
               </div>
             </div>
             <div className="oq-tour-phone-col">
-              <Phone bg={ph.screenBg}>
-                <div style={{ padding: '42px 9px 6px', background: ph.headerBg, borderBottom: `1px solid ${ph.headerBdr}` }}>
-                  <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: ph.textDim }}>← Back to Methodology Advisor</div>
+              <Phone>
+                <div style={{ padding: '42px 9px 6px', background: 'var(--ph-header-bg)', borderBottom: '1px solid var(--ph-header-bdr)' }}>
+                  <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>← Back to Methodology Advisor</div>
                 </div>
                 <div style={{ padding: '9px', overflow: 'hidden', height: 'calc(100% - 60px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: ph.text, marginBottom: 2 }}>Step 4: Writing Planner</div>
-                  <div style={{ font: '400 6.5px/1.4 Poppins,sans-serif', color: ph.textDim, marginBottom: 7 }}>Week-by-week schedule, weighted by chapter complexity.</div>
+                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 2 }}>Step 4: Writing Planner</div>
+                  <div style={{ font: '400 6.5px/1.4 Poppins,sans-serif', color: 'var(--ph-text-dim)', marginBottom: 7 }}>Week-by-week schedule, weighted by chapter complexity.</div>
                   <div style={{ background: '#0066FF', borderRadius: 5, padding: '6px 8px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginBottom: 7 }}>
                     {[['6','Total Weeks'],['3000','Words/Wk Avg'],['18000','Total Words']].map(([v, l]) => (
                       <span key={l} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -250,17 +223,17 @@ export default function TourCarousel({ onClose }) {
                     { wk: 'WEEK 2', dates: 'May 18 – May 24', text: 'Writing Chapter 2: Literature Review — fouling mechanisms, heat recovery thermal behaviour.', words: '4000 words', active: false },
                     { wk: 'WEEK 3', dates: 'May 25 – May 31', text: 'Writing Chapter 3: Methodology — ANSYS FEA geometry, boundary conditions, mesh setup.', words: '4500 words', active: false, holiday: true },
                   ].map(({ wk, dates, text, words, active, holiday }) => (
-                    <div key={wk} style={{ background: active ? 'rgba(0,102,255,0.1)' : ph.cardBgDim, border: `1px solid ${active ? 'rgba(0,102,255,0.28)' : ph.cardBdr}`, borderRadius: 5, padding: '6px 8px', marginBottom: 4 }}>
+                    <div key={wk} style={{ background: active ? 'rgba(0,102,255,0.1)' : 'var(--ph-card-bg-dim)', border: `1px solid ${active ? 'rgba(0,102,255,0.28)' : 'var(--ph-card-bdr)'}`, borderRadius: 5, padding: '6px 8px', marginBottom: 4 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#0066FF' : ph.dotOff, flexShrink: 0 }} />
-                        <span style={{ font: "500 6px/1 'JetBrains Mono',monospace", color: ph.textMuted }}>{wk}</span>
-                        <span style={{ font: '600 6.5px/1 Poppins,sans-serif', color: ph.text, marginLeft: 2 }}>{dates}</span>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? '#0066FF' : 'var(--ph-dot-off)', flexShrink: 0 }} />
+                        <span style={{ font: "500 6px/1 'JetBrains Mono',monospace", color: 'var(--ph-text-muted)' }}>{wk}</span>
+                        <span style={{ font: '600 6.5px/1 Poppins,sans-serif', color: 'var(--ph-text)', marginLeft: 2 }}>{dates}</span>
                         {active && <div style={{ background: '#0066FF', borderRadius: 2, padding: '1px 4px', marginLeft: 'auto', flexShrink: 0 }}><span style={{ font: '700 5px/1 Poppins,sans-serif', color: '#fff' }}>YOU ARE HERE</span></div>}
                       </div>
-                      <div style={{ font: '400 7px/1.45 Poppins,sans-serif', color: ph.textSec }}>{text}</div>
+                      <div style={{ font: '400 7px/1.45 Poppins,sans-serif', color: 'var(--ph-text-sec)' }}>{text}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
                         {holiday && <div style={{ background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 3, padding: '1px 5px' }}><span style={{ font: '600 5.5px/1 Poppins,sans-serif', color: '#F59E0B' }}>HOLIDAY WEEK</span></div>}
-                        <span style={{ font: '500 6px/1 Poppins,sans-serif', color: ph.textFaint }}>{words}</span>
+                        <span style={{ font: '500 6px/1 Poppins,sans-serif', color: 'var(--ph-text-faint)' }}>{words}</span>
                       </div>
                     </div>
                   ))}
@@ -272,7 +245,7 @@ export default function TourCarousel({ onClose }) {
           {/* Slide 4 — Defence Simulator — phone LEFT — always dark (tribunal mode) */}
           <section className={`oq-tour-slide oq-tour-slide--phone-left${ready && current === 3 ? ' oq-tour-slide--active' : ''}`}>
             <div className="oq-tour-phone-col">
-              <Phone bg="#030812">
+              <Phone bg="#030812" defence>
                 <div style={{ padding: '42px 10px 8px', background: '#060E18', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ width: 16, height: 16, background: '#0066FF', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ font: '700 9px/1 sans-serif', color: '#fff' }}>★</span></div>
                   <div style={{ font: "500 6.5px/1 'JetBrains Mono',monospace", color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>DEFENCE EXAMINATION PANEL</div>
@@ -349,9 +322,9 @@ export default function TourCarousel({ onClose }) {
   )
 }
 
-function Phone({ children, bg }) {
+function Phone({ children, bg, defence }) {
   return (
-    <div className="oq-tour-phone">
+    <div className={`oq-tour-phone${defence ? ' oq-tour-phone--defence' : ''}`}>
       <div className="oq-pbtn oq-pbtn-l1" />
       <div className="oq-pbtn oq-pbtn-l2" />
       <div className="oq-pbtn oq-pbtn-l3" />
