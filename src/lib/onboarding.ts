@@ -3,12 +3,21 @@ import { supabase } from './supabase'
 interface OnboardingRow {
   user_id: string
   topic_validator_nudge_dismissed_at: string | null
+  referral_source: string | null
+  expected_defence_band: string | null
+  primary_goal: string | null
+  notify_email: boolean | null
+  notify_push: boolean | null
+  walkthrough_seen_at: string | null
   created_at: string
 }
 
+const SELECT_COLS =
+  'user_id, topic_validator_nudge_dismissed_at, referral_source, expected_defence_band, primary_goal, notify_email, notify_push, walkthrough_seen_at, created_at'
+
 /**
  * Fetches the user_onboarding row for userId.
- * If no row exists, inserts one (dismissed_at = null) and returns it.
+ * If no row exists, inserts one (all nullable cols = null) and returns it.
  * Returns null on any network or unexpected error — callers treat null as
  * "suppressed": do not show the nudge, do not surface an error.
  */
@@ -16,7 +25,7 @@ export async function fetchOrCreateOnboardingRow(userId: string): Promise<Onboar
   try {
     const { data, error } = await supabase
       .from('user_onboarding')
-      .select('user_id, topic_validator_nudge_dismissed_at, created_at')
+      .select(SELECT_COLS)
       .eq('user_id', userId)
       .single()
 
@@ -27,7 +36,7 @@ export async function fetchOrCreateOnboardingRow(userId: string): Promise<Onboar
       const { data: inserted, error: insertErr } = await supabase
         .from('user_onboarding')
         .insert({ user_id: userId })
-        .select('user_id, topic_validator_nudge_dismissed_at, created_at')
+        .select(SELECT_COLS)
         .single()
 
       if (!insertErr) return inserted
@@ -37,7 +46,7 @@ export async function fetchOrCreateOnboardingRow(userId: string): Promise<Onboar
       if (insertErr.code === '23505') {
         const { data: refetched, error: refetchErr } = await supabase
           .from('user_onboarding')
-          .select('user_id, topic_validator_nudge_dismissed_at, created_at')
+          .select(SELECT_COLS)
           .eq('user_id', userId)
           .single()
 
@@ -76,6 +85,63 @@ export async function dismissTopicValidatorNudge(userId: string): Promise<boolea
     return true
   } catch (err) {
     console.error('[onboarding] dismiss unexpected error:', err)
+    return false
+  }
+}
+
+export interface OnboardingAnswers {
+  referral_source?: string | null
+  expected_defence_band?: string | null
+  primary_goal?: string | null
+  notify_email?: boolean | null
+  notify_push?: boolean | null
+}
+
+/**
+ * Upserts onboarding question answers for the user.
+ * All fields are optional — only non-undefined keys are written.
+ * Returns true on success, false on any error (caller should not block on failure).
+ */
+export async function saveOnboardingAnswers(
+  userId: string,
+  answers: OnboardingAnswers
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('user_onboarding')
+      .upsert({ user_id: userId, ...answers }, { onConflict: 'user_id' })
+
+    if (error) {
+      console.error('[onboarding] saveOnboardingAnswers failed:', error.message)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[onboarding] saveOnboardingAnswers unexpected error:', err)
+    return false
+  }
+}
+
+/**
+ * Records that the user has seen (or dismissed) the walkthrough card.
+ * Prevents the walkthrough from reappearing on future logins.
+ */
+export async function markWalkthroughSeen(userId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('user_onboarding')
+      .upsert(
+        { user_id: userId, walkthrough_seen_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+
+    if (error) {
+      console.error('[onboarding] markWalkthroughSeen failed:', error.message)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('[onboarding] markWalkthroughSeen unexpected error:', err)
     return false
   }
 }
