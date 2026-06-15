@@ -12,6 +12,20 @@ const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.1
 
 const LEVELS = ['400', '500']
 
+const TRUST_LINES = [
+  { icon: '🎓', text: 'Face 3 AI examiners before the real panel' },
+  { icon: '★', text: 'Score 7/10+ to unlock your defence certificate' },
+  { icon: '🇳🇬', text: 'Built for Nigerian final-year students' },
+]
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 export default function SplashOnboarding() {
   const navigate = useNavigate()
   const { set, state, isOnboarded } = useApp()
@@ -19,6 +33,7 @@ export default function SplashOnboarding() {
   // Phase: 'splash' | 'persona' | 'onboarding'
   const [phase, setPhase] = useState('splash')
   const [visible, setVisible] = useState(false)
+  const [trustIdx, setTrustIdx] = useState(0)
 
   const [university, setUniversity] = useState(state.university || '')
   const [faculty, setFaculty] = useState(state.faculty || '')
@@ -54,6 +69,16 @@ export default function SplashOnboarding() {
       const t = setTimeout(() => setVisible(true), 50)
       return () => clearTimeout(t)
     }
+  }, [phase])
+
+  // Rotating trust line in the rail (paused during splash + when reduced motion)
+  useEffect(() => {
+    if (phase === 'splash') return
+    if (prefersReducedMotion()) return
+    const t = setInterval(() => {
+      setTrustIdx((i) => (i + 1) % TRUST_LINES.length)
+    }, 3500)
+    return () => clearInterval(t)
   }, [phase])
 
   const universities = Object.keys(UNIVERSITIES)
@@ -134,8 +159,8 @@ export default function SplashOnboarding() {
           key="splash"
           id="splash-screen"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, scale: 0.7, x: -120, y: -90 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="splash__content">
             <motion.svg
@@ -156,191 +181,226 @@ export default function SplashOnboarding() {
             </p>
           </div>
         </motion.div>
-      ) : phase === 'persona' ? (
-        <motion.div
-          key="persona"
-          id="persona-screen"
-          className="persona-screen"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="so-persona">
-            <div className="so-persona__eyebrow">WELCOME TO FYPRO</div>
-            <h1 className="so-persona__heading">What stage are you at?</h1>
-            <p className="so-persona__sub">
-              This helps us route you to the right experience.
-            </p>
-            <div className="so-persona__options">
-              <button
-                className="so-persona__option"
-                onClick={() => setPhase('onboarding')}
-              >
-                <div className="so-persona__option-icon">📚</div>
-                <div className="so-persona__option-title">I&apos;m starting my final year project</div>
-                <div className="so-persona__option-desc">
-                  I need help choosing a topic, building my chapters, and planning my research from scratch.
-                </div>
-              </button>
-              <button
-                className="so-persona__option"
-                onClick={() => navigate('/express-onboarding')}
-              >
-                <div className="so-persona__option-icon">🎯</div>
-                <div className="so-persona__option-title">I already have a project — I need defence practice</div>
-                <div className="so-persona__option-desc">
-                  My project is done (or nearly done). I want to face the AI examiners and get my readiness score.
-                </div>
-              </button>
-            </div>
-          </div>
-        </motion.div>
       ) : (
         <motion.div
-          key="onboarding"
-          id="onboarding-screen"
-          className={visible ? '' : 'onboarding--hidden'}
+          key="shell"
+          className="onb"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="onboarding__card">
-
-            <div className={`onboarding__brand reveal-item${visible ? ' is-visible' : ''}`}>
-              <FyproLogo style={{ height: 44, width: 'auto' }} />
+          {/* Persistent left brand rail */}
+          <aside className="onb__rail">
+            <div className="onb__rail-top">
+              <FyproLogo className="onb__logo" style={{ height: 40, width: 'auto' }} />
+              <p className="onb__tagline">The supervisor you never had.</p>
             </div>
 
-            <p className={`onboarding__tagline reveal-item${visible ? ' is-visible' : ''}`}>
-              The Supervisor You Never Had.
-            </p>
+            <svg className="onb__watermark" viewBox="0 0 256 256" aria-hidden="true">
+              <path d={SHIELD_D} />
+            </svg>
 
-            <p className={`onboarding__intro reveal-item${visible ? ' is-visible' : ''}`}>
-              Tell FYPro about your project and we will tell you if it is researchable.
-            </p>
-
-            <form
-              onSubmit={handleSubmit}
-              className={`onboarding__fields reveal-item${visible ? ' is-visible' : ''}`}
-            >
-              {/* University */}
-              <div className="field-group">
-                <label className="field-label" htmlFor="sel-university">University</label>
-                <select
-                  id="sel-university"
-                  className="field-select"
-                  value={university}
-                  onChange={handleUniversityChange}
+            <div className="onb__trust">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={trustIdx}
+                  className="onb__trust-line"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.4 }}
                 >
-                  <option value="">Select university…</option>
-                  {universities.map((u) => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-              </div>
+                  <span className="onb__trust-ic">{TRUST_LINES[trustIdx].icon}</span>
+                  {TRUST_LINES[trustIdx].text}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </aside>
 
-              {/* Faculty */}
-              <div className={`field-group${!showFaculty ? ' field-group--locked' : ''}`}>
-                <label className="field-label" htmlFor="sel-faculty">Faculty</label>
-                <select
-                  id="sel-faculty"
-                  className="field-select"
-                  disabled={!showFaculty}
-                  value={faculty}
-                  onChange={handleFacultyChange}
-                >
-                  <option value="">Select faculty…</option>
-                  {faculties.map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
-              </div>
+          {/* Right interactive pane */}
+          <main className="onb__pane">
+            <div className="onb__pane-inner">
+              <AnimatePresence mode="wait">
+                {phase === 'persona' ? (
+                  <motion.div
+                    key="persona"
+                    className="so-persona"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <div className="so-persona__eyebrow">WELCOME TO FYPRO</div>
+                    <h1 className="so-persona__heading">What stage are you at?</h1>
+                    <p className="so-persona__sub">
+                      This helps us route you to the right experience.
+                    </p>
+                    <div className="so-persona__options">
+                      <button
+                        className="so-persona__option"
+                        onClick={() => setPhase('onboarding')}
+                      >
+                        <div className="so-persona__option-icon">📚</div>
+                        <div className="so-persona__option-title">I&apos;m starting my final year project</div>
+                        <div className="so-persona__option-desc">
+                          I need help choosing a topic, building my chapters, and planning my research from scratch.
+                        </div>
+                      </button>
+                      <button
+                        className="so-persona__option"
+                        onClick={() => navigate('/express-onboarding')}
+                      >
+                        <div className="so-persona__option-icon">🎯</div>
+                        <div className="so-persona__option-title">I already have a project — I need defence practice</div>
+                        <div className="so-persona__option-desc">
+                          My project is done (or nearly done). I want to face the AI examiners and get my readiness score.
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="form"
+                    className="onb-form"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <div className={`onb-form__eyebrow reveal-item${visible ? ' is-visible' : ''}`}>
+                      YOUR PROFILE
+                    </div>
+                    <h1 className={`onb-form__heading reveal-item${visible ? ' is-visible' : ''}`}>
+                      Let&apos;s set up your project.
+                    </h1>
+                    <p className={`onb-form__intro reveal-item${visible ? ' is-visible' : ''}`}>
+                      Tell FYPro about your project and we&apos;ll tell you if it&apos;s researchable.
+                    </p>
 
-              {/* Department */}
-              <div className={`field-group${!showDept ? ' field-group--locked' : ''}`}>
-                <label className="field-label" htmlFor="sel-department">Department</label>
-                <select
-                  id="sel-department"
-                  className="field-select"
-                  disabled={!showDept}
-                  value={department}
-                  onChange={handleDeptChange}
-                >
-                  <option value="">Select department…</option>
-                  {departments.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Level */}
-              <div className={`field-group${!showLevel ? ' field-group--locked' : ''}`}>
-                <label className="field-label">Level</label>
-                <div id="level-selector" className="level-selector">
-                  {LEVELS.map((l) => (
-                    <motion.button
-                      key={l}
-                      type="button"
-                      className={`level-btn${level === l ? ' is-selected' : ''}`}
-                      data-level={l}
-                      disabled={!showLevel}
-                      onClick={() => handleLevelClick(l)}
-                      whileTap={showLevel ? { scale: 0.95 } : {}}
+                    <form
+                      onSubmit={handleSubmit}
+                      className={`onboarding__fields reveal-item${visible ? ' is-visible' : ''}`}
                     >
-                      {l}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
+                      {/* University */}
+                      <div className="field-group">
+                        <label className="field-label" htmlFor="sel-university">University</label>
+                        <select
+                          id="sel-university"
+                          className="field-select"
+                          value={university}
+                          onChange={handleUniversityChange}
+                        >
+                          <option value="">Select university…</option>
+                          {universities.map((u) => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
+                      </div>
 
-              {/* Topic */}
-              <div className={`field-group${!showTopic ? ' field-group--locked' : ''}`}>
-                <label className="field-label" htmlFor="inp-topic">Research Topic</label>
-                <input
-                  id="inp-topic"
-                  ref={topicRef}
-                  className="field-input"
-                  type="text"
-                  disabled={!showTopic}
-                  placeholder="e.g. Impact of social media on academic performance among undergraduates"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                />
-              </div>
+                      {/* Faculty */}
+                      <div className={`field-group${!showFaculty ? ' field-group--locked' : ''}`}>
+                        <label className="field-label" htmlFor="sel-faculty">Faculty</label>
+                        <select
+                          id="sel-faculty"
+                          className="field-select"
+                          disabled={!showFaculty}
+                          value={faculty}
+                          onChange={handleFacultyChange}
+                        >
+                          <option value="">Select faculty…</option>
+                          {faculties.map((f) => (
+                            <option key={f} value={f}>{f}</option>
+                          ))}
+                        </select>
+                      </div>
 
-              {submitError && (
-                <div
-                  role="alert"
-                  style={{
-                    marginBottom: 12,
-                    padding: '10px 14px',
-                    background: 'rgba(220, 38, 38, 0.1)',
-                    border: '1px solid rgba(220, 38, 38, 0.3)',
-                    borderRadius: 8,
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.8rem',
-                    color: '#FCA5A5',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {submitError}
-                </div>
-              )}
+                      {/* Department */}
+                      <div className={`field-group${!showDept ? ' field-group--locked' : ''}`}>
+                        <label className="field-label" htmlFor="sel-department">Department</label>
+                        <select
+                          id="sel-department"
+                          className="field-select"
+                          disabled={!showDept}
+                          value={department}
+                          onChange={handleDeptChange}
+                        >
+                          <option value="">Select department…</option>
+                          {departments.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
 
-              <motion.button
-                id="btn-begin"
-                type="submit"
-                className={`begin-btn${canSubmit && !isSubmitting ? ' is-ready' : ''}`}
-                disabled={!canSubmit || isSubmitting}
-                whileHover={canSubmit && !isSubmitting ? { scale: 1.02, boxShadow: '0 8px 24px rgba(0,102,255,0.4)' } : {}}
-                whileTap={canSubmit && !isSubmitting ? { scale: 0.97 } : {}}
-                transition={{ duration: 0.15 }}
-              >
-                {isSubmitting ? 'Saving…' : 'Begin'}
-              </motion.button>
-            </form>
+                      {/* Level */}
+                      <div className={`field-group${!showLevel ? ' field-group--locked' : ''}`}>
+                        <label className="field-label">Level</label>
+                        <div id="level-selector" className="level-selector">
+                          {LEVELS.map((l) => (
+                            <motion.button
+                              key={l}
+                              type="button"
+                              className={`level-btn${level === l ? ' is-selected' : ''}`}
+                              data-level={l}
+                              disabled={!showLevel}
+                              onClick={() => handleLevelClick(l)}
+                              whileTap={showLevel ? { scale: 0.95 } : {}}
+                            >
+                              {l}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
 
-          </div>
+                      {/* Topic */}
+                      <div className={`field-group${!showTopic ? ' field-group--locked' : ''}`}>
+                        <label className="field-label" htmlFor="inp-topic">Research Topic</label>
+                        <input
+                          id="inp-topic"
+                          ref={topicRef}
+                          className="field-input"
+                          type="text"
+                          disabled={!showTopic}
+                          placeholder="e.g. Impact of social media on academic performance among undergraduates"
+                          value={topic}
+                          onChange={(e) => setTopic(e.target.value)}
+                        />
+                      </div>
+
+                      {submitError && (
+                        <div
+                          role="alert"
+                          style={{
+                            marginBottom: 12,
+                            padding: '10px 14px',
+                            background: 'rgba(220, 38, 38, 0.1)',
+                            border: '1px solid rgba(220, 38, 38, 0.3)',
+                            borderRadius: 8,
+                            fontFamily: "'Poppins', sans-serif",
+                            fontSize: '0.8rem',
+                            color: '#FCA5A5',
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {submitError}
+                        </div>
+                      )}
+
+                      <motion.button
+                        id="btn-begin"
+                        type="submit"
+                        className={`begin-btn${canSubmit && !isSubmitting ? ' is-ready' : ''}`}
+                        disabled={!canSubmit || isSubmitting}
+                        whileHover={canSubmit && !isSubmitting ? { scale: 1.02, boxShadow: '0 8px 24px rgba(0,102,255,0.4)' } : {}}
+                        whileTap={canSubmit && !isSubmitting ? { scale: 0.97 } : {}}
+                        transition={{ duration: 0.15 }}
+                      >
+                        {isSubmitting ? 'Saving…' : 'Begin'}
+                      </motion.button>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </main>
         </motion.div>
       )}
     </AnimatePresence>
