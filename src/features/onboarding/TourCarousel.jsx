@@ -10,11 +10,11 @@ export default function TourCarousel({ onClose }) {
   const [ready, setReady] = useState(false)
   const canvasRef = useRef(null)
 
-  // Scale 1280×720 canvas to cover the full viewport (no letterboxing)
+  // Scale 1280×720 canvas to fit viewport (contain — no clipping)
   useEffect(() => {
     function scale() {
       if (!canvasRef.current) return
-      const s = Math.max(window.innerWidth / 1280, window.innerHeight / 720)
+      const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720)
       canvasRef.current.style.transform = `scale(${s})`
     }
     scale()
