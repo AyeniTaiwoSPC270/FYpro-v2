@@ -8,12 +8,19 @@ const GLOW_X_PCT = [72, 28, 72, 28]
 export default function TourCarousel({ onClose }) {
   const [current, setCurrent] = useState(0)
   const [ready, setReady] = useState(false)
+  const [exiting, setExiting] = useState(false)
 
   // Delay first-slide activation so the CSS transition actually fires on mount
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 120)
     return () => clearTimeout(t)
   }, [])
+
+  function handleClose() {
+    if (exiting) return
+    setExiting(true)
+    setTimeout(onClose, 420)
+  }
 
   const goTo = useCallback((idx) => {
     if (idx < 0 || idx >= TOTAL) return
@@ -22,19 +29,19 @@ export default function TourCarousel({ onClose }) {
 
   const next = useCallback(() => {
     if (current < TOTAL - 1) goTo(current + 1)
-    else onClose()
-  }, [current, goTo, onClose])
+    else handleClose()
+  }, [current, goTo, exiting]) // eslint-disable-line
 
   // Keyboard navigation
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next() }
       if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1) }
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [current, next, goTo, onClose])
+  }, [current, next, goTo, exiting]) // eslint-disable-line
 
   // Touch swipe
   const touchX = useRef(0)
@@ -45,7 +52,7 @@ export default function TourCarousel({ onClose }) {
   }
 
   return (
-    <div className="oq-tour-overlay">
+    <div className={`oq-tour-overlay${exiting ? ' oq-tour-overlay--exiting' : ''}`}>
       <div className="oq-tour-stage">
         <div
           className="oq-tour-canvas"
@@ -63,7 +70,7 @@ export default function TourCarousel({ onClose }) {
           {/* Header */}
           <div className="oq-tour-header">
             <FyproLogo className="oq-tour-logo" />
-            <button className="oq-tour-skip" onClick={onClose}>Skip tour</button>
+            <button className="oq-tour-skip" onClick={handleClose}>Skip tour</button>
           </div>
 
           {/* Slide 1 — Topic Validator — phone RIGHT */}

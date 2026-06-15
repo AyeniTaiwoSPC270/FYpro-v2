@@ -439,8 +439,8 @@ export default function SplashOnboarding() {
             key="congrats"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
           >
             <div className="cs-screen">
               <canvas ref={starCanvasRef} className="cs-canvas" aria-hidden="true" />

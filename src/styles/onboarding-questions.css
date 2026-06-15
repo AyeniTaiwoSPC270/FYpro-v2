@@ -251,7 +251,8 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 30px;
-  animation: cs-shieldDrop 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* delay lets the screen fade in first, then the shield drops */
+  animation: cs-shieldDrop 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
 .cs-shield-wrap::before {
   content: '';
@@ -295,6 +296,7 @@
   justify-content: center;
   gap: 6px;
   margin-bottom: 30px;
+  animation: cs-fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
 }
 .cs-dot {
   width: 3px;
@@ -316,6 +318,7 @@
   color: #ffffff;
   letter-spacing: -0.5px;
   margin-bottom: 18px;
+  animation: cs-fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.65s both;
 }
 .cs-subtitle {
   font-size: 16px;
@@ -323,6 +326,7 @@
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 14px;
+  animation: cs-fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.78s both;
 }
 .cs-nudge {
   font-size: 13px;
@@ -330,6 +334,7 @@
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.37);
   margin-bottom: 48px;
+  animation: cs-fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
 }
 .cs-nudge a {
   color: #3B82F6;
@@ -349,6 +354,7 @@
   gap: 10px;
   padding: 17px 56px;
   background: #16A34A;
+  animation: cs-fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1s both;
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
   font-size: 15px;
@@ -390,12 +396,21 @@
   from { transform: translateY(-14px) scale(0.86); }
   to   { transform: translateY(0) scale(1); }
 }
+@keyframes cs-fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes cs-haloPulse {
   0%, 100% { opacity: 0.7; transform: scale(1); }
   50%       { opacity: 1;   transform: scale(1.07); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cs-shield-wrap, .cs-ring-mid { animation: none !important; }
+  .cs-shield-wrap, .cs-ring-mid,
+  .cs-dots, .cs-heading, .cs-subtitle, .cs-nudge, .cs-btn-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* ── Walkthrough Screen v2 (wt2-) ────────────────────────── */
@@ -709,6 +724,12 @@
   justify-content: center;
   overflow: hidden;
   animation: tour-overlay-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.4, 0, 1, 1);
+}
+.oq-tour-overlay--exiting {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
 }
 .oq-tour-stage {
   width: 100vw;
