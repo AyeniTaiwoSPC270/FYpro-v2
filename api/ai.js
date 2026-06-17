@@ -14,6 +14,8 @@ import { callAnthropic } from './_lib/anthropic-proxy.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { validate, AiMessagesSchema } from './_lib/validate.js';
 import { FREE_STEP_LIMITS as SERVER_FREE_LIMITS } from './_lib/free-limits.js';
+import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
+import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
 
 export const config = { maxDuration: 60 };
 
@@ -756,7 +758,7 @@ async function handleDefenceBrief(req, res) {
 
   const { data: entitlements } = await supabaseAdmin
     .from('user_entitlements')
-    .select('paid_features')
+    .select('paid_features, run_counts')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -781,10 +783,43 @@ async function handleDefenceBrief(req, res) {
   const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
   const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
+  // Lifetime cap for express-only users (one-time unlock — daily caps alone leave
+  // total cost unbounded). Defense Pack holders are exempt. Reserved after validation
+  // so a bad request never burns a slot; refunded if the Anthropic call fails.
+  const expressOnly = paidFeatures.includes('express_defense') && !paidFeatures.includes('defense_pack');
+  const dbRunCounts = (entitlements?.run_counts && typeof entitlements.run_counts === 'object')
+    ? entitlements.run_counts
+    : {};
+  let refundRun = () => {};
+  let reservedCount = null;
+  if (expressOnly) {
+    const r = await reserveRun({
+      dbKey: 'express_defence_brief',
+      userId: user.id,
+      limit: EXPRESS_TOTAL_LIMITS.express_defence_brief,
+      dbRunCounts,
+    });
+    if (!r.allowed) {
+      return res.status(429).json({
+        error: `You've used all ${EXPRESS_TOTAL_LIMITS.express_defence_brief} of your Express Defence Brief generations.`,
+      });
+    }
+    refundRun     = r.refund;
+    reservedCount = r.reservedCount;
+  }
+
   try {
     const { response, data } = await callAnthropic({ feature: 'defence-brief', userId: user.id, model, max_tokens, system, messages });
+    if (response.ok) {
+      if (expressOnly && reservedCount !== null) {
+        await syncRunCount({ userId: user.id, dbKey: 'express_defence_brief', newCount: reservedCount, dbRunCounts });
+      }
+    } else {
+      refundRun(); // Anthropic returned an error status — don't charge the run
+    }
     return res.status(response.status).json(data);
   } catch (err) {
+    refundRun(); // request never produced a result — don't charge the run
     traceLog(traceId, 'error', '[ai/defence-brief] error:', err.message);
     await sendTelegramAlert(`🔴 Defence Brief failed: ${user.id.slice(0, 8)} - ${err.message}`);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
