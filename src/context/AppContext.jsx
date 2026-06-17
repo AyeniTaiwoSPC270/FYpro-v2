@@ -39,6 +39,9 @@ const DEFAULT_STATE = {
   // Step 5 — Project Reviewer
   uploadedProject:    null,   // { fileName, fileType, reviewData }
 
+  // Express — Defence Brief
+  defenseBrief:       null,   // { openingStatement, weakSpots, examinerQas } | null
+
   // Step 6 — Defence Prep
   redFlags:           null,
   defenseMode:        'text',
