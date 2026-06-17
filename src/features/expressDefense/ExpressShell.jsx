@@ -3,22 +3,28 @@ import { useNavigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import FyproLogo from '../../components/FyproLogo'
 import ExpressBrief from './ExpressBrief'
+import DefenceBrief from './DefenceBrief'
 import { useApp } from '../../context/AppContext'
 
-const DefensePrep = lazy(() => import('../defensePrep/DefensePrep'))
+const DefensePrep    = lazy(() => import('../defensePrep/DefensePrep'))
 const ProjectReviewer = lazy(() => import('../projectReviewer/ProjectReviewer'))
 
 const STEPS = [
-  { id: 'red-flag',  num: 1, name: 'Red Flag Scanner',  badge: 'optional', key: 'red_flag' },
-  { id: 'reviewer',  num: 2, name: 'Project Reviewer',  badge: 'optional', key: 'project_reviewer' },
-  { id: 'defense',   num: 3, name: 'Defence Simulator', badge: null,        key: 'defense' },
+  { id: 'reviewer', num: 1, name: 'Project Reviewer',  key: 'project_reviewer', lockedBy: null },
+  { id: 'brief',    num: 2, name: 'Defence Brief',     key: 'defense_brief',    lockedBy: 'project_reviewer' },
+  { id: 'defense',  num: 3, name: 'Defence Simulator', key: 'defense',          lockedBy: 'defense_brief' },
 ]
 
 export default function ExpressShell() {
-  const [activeStep, setActiveStep] = useState('defense')
+  const [activeStep, setActiveStep] = useState('reviewer')
   const navigate = useNavigate()
   const { state } = useApp()
   const expressSteps = state.expressSteps || {}
+
+  function handleStepClick(step) {
+    // Always allow navigation — each component renders its own locked-state UI
+    setActiveStep(step.id)
+  }
 
   return (
     <div className="es-shell">
@@ -31,25 +37,24 @@ export default function ExpressShell() {
 
         <ul className="es-step-list" role="list">
           {STEPS.map(step => {
-            const isActive = activeStep === step.id
-            const isDone = !!expressSteps[step.key]
+            const isActive  = activeStep === step.id
+            const isDone    = !!expressSteps[step.key]
+            const isLocked  = step.lockedBy ? !expressSteps[step.lockedBy] : false
             return (
               <li key={step.id} className="es-step-list__item">
                 <button
                   className={[
                     'es-step-btn',
-                    isActive ? 'es-step-btn--active' : '',
-                    isDone ? 'es-step-btn--done' : '',
+                    isActive  ? 'es-step-btn--active' : '',
+                    isDone    ? 'es-step-btn--done'   : '',
+                    isLocked  ? 'es-step-btn--locked' : '',
                   ].filter(Boolean).join(' ')}
-                  onClick={() => setActiveStep(step.id)}
+                  onClick={() => handleStepClick(step)}
                 >
                   <span className="es-step-btn__num">
-                    {isDone ? '✓' : step.num}
+                    {isDone ? '✓' : isLocked ? '🔒' : step.num}
                   </span>
                   <span className="es-step-btn__name">{step.name}</span>
-                  {step.badge && (
-                    <span className="es-step-btn__badge">{step.badge}</span>
-                  )}
                 </button>
               </li>
             )
@@ -69,15 +74,9 @@ export default function ExpressShell() {
 
       <main className="es-main">
         <Suspense fallback={null}>
-          {activeStep === 'defense' && (
-            <DefensePrep />
-          )}
-          {activeStep === 'reviewer' && (
-            <ProjectReviewer />
-          )}
-          {activeStep === 'red-flag' && (
-            <DefensePrep redFlagOnly onComplete={() => setActiveStep('reviewer')} />
-          )}
+          {activeStep === 'reviewer' && <ProjectReviewer />}
+          {activeStep === 'brief'    && <DefenceBrief />}
+          {activeStep === 'defense'  && <DefensePrep />}
         </Suspense>
       </main>
     </div>
