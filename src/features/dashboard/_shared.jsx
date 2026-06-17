@@ -32,9 +32,9 @@ export function buildSteps(stepsCompleted, activeStepId) {
 // ─── Express step definitions (3-step express app) ─────────────────────────────
 
 export const EXPRESS_STEP_DEFS = [
-  { id: 1, key: ‘project_reviewer’, name: ‘Project Reviewer’,  desc: ‘Upload your draft for AI-powered feedback on structure, argument, and academic quality.’, path: ‘/express/run’ },
-  { id: 2, key: ‘defense_brief’,    name: ‘Defence Brief’,     desc: ‘Get your personalised opening statement, model answers for weak spots, and likely examiner Q&As.’, path: ‘/express/run’ },
-  { id: 3, key: ‘defense’,          name: ‘Defence Simulator’, desc: ‘Three AI examiners, voice-enabled, real hostile questions. Score 7/10+ to earn your certificate.’, path: ‘/express/run’ },
+  { id: 1, key: 'project_reviewer', name: 'Project Reviewer',  desc: 'Upload your draft for AI-powered feedback on structure, argument, and academic quality.', path: '/express/run' },
+  { id: 2, key: 'defense_brief',    name: 'Defence Brief',     desc: 'Get your personalised opening statement, model answers for weak spots, and likely examiner Q&As.', path: '/express/run' },
+  { id: 3, key: 'defense',          name: 'Defence Simulator', desc: 'Three AI examiners, voice-enabled, real hostile questions. Score 7/10+ to earn your certificate.', path: '/express/run' },
 ]
 
 // Express progress model is { project_reviewer, defense_brief, defense } booleans.
