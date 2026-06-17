@@ -4,7 +4,7 @@ import { EXPRESS_STEP_DEFS, expressBuildSteps } from './_shared'
 describe('EXPRESS_STEP_DEFS', () => {
   it('has 3 steps in order', () => {
     expect(EXPRESS_STEP_DEFS.map(s => s.name)).toEqual([
-      'Red Flag Scanner', 'Project Reviewer', 'Defence Simulator',
+      'Project Reviewer', 'Defence Brief', 'Defence Simulator',
     ])
   })
   it('each step has id, key, desc', () => {
@@ -18,7 +18,7 @@ describe('EXPRESS_STEP_DEFS', () => {
 
 describe('expressBuildSteps', () => {
   it('marks completed and active from the express step model', () => {
-    const steps = expressBuildSteps({ red_flag: true, project_reviewer: false, defense: false })
+    const steps = expressBuildSteps({ project_reviewer: true, defense_brief: false, defense: false })
     expect(steps[0].status).toBe('completed')
     expect(steps[1].status).toBe('active')
     expect(steps[2].status).toBe('locked')
@@ -30,7 +30,7 @@ describe('expressBuildSteps', () => {
     expect(steps[2].status).toBe('locked')
   })
   it('all completed when all done', () => {
-    const steps = expressBuildSteps({ red_flag: true, project_reviewer: true, defense: true })
+    const steps = expressBuildSteps({ project_reviewer: true, defense_brief: true, defense: true })
     expect(steps.every(s => s.status === 'completed')).toBe(true)
   })
 })
