@@ -329,6 +329,32 @@ async function handleDefense(req, res) {
     // count === 0: allow — this is their free trial session
   }
 
+  // Lifetime simulator cap for express-only users (one-time unlock). Counted by
+  // COMPLETED defense_sessions rather than run_counts: a session is multi-turn, so
+  // turn-level counting would be wrong, and a completed row only exists once a
+  // session genuinely finishes (no refund logic needed). Gating on completed count
+  // lets an in-progress session finish while blocking the next one. Defense Pack
+  // holders are exempt. Note: not resettable via admin reset-run-counts (it's
+  // derived from session history, not the run_counts column).
+  const expressOnly = paidFeatures.includes('express_defense') && !paidFeatures.includes('defense_pack');
+  if (expressOnly) {
+    const { count: doneCount, error: doneErr } = await supabaseAdmin
+      .from('defense_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'completed');
+
+    if (doneErr) {
+      traceLog(traceId, 'error', '[ai/defense] express simulator cap check failed:', doneErr.message);
+      return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+    }
+    if (doneCount >= EXPRESS_TOTAL_LIMITS.express_simulator) {
+      return res.status(429).json({
+        error: `You've completed all ${EXPRESS_TOTAL_LIMITS.express_simulator} of your Express defense simulations.`,
+      });
+    }
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   if (!cap.allowed) {
     sendTelegramAlertOnce(`⚠️ Spend cap hit: $${cap.spent.toFixed(2)} spent today. Claude requests blocked.`, `tg:spend:cap:${today}`)
