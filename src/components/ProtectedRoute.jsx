@@ -24,12 +24,30 @@ function writeBanCache(userId, banned) {
   } catch {}
 }
 
+// Admin route gate compares a SHA-256 hash of the signed-in email against
+// VITE_ADMIN_EMAIL_HASH, so the admin email is never shipped in plaintext in the
+// JS bundle. This is a convenience gate ONLY — real enforcement is server-side in
+// api/admin.js via a timing-safe ADMIN_EMAIL check on the verified JWT.
+async function emailMatchesAdminHash(email) {
+  const target = import.meta.env.VITE_ADMIN_EMAIL_HASH
+  if (!target || !email || !globalThis.crypto?.subtle) return false
+  const bytes = new TextEncoder().encode(email.trim().toLowerCase())
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const hex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+  return hex === target.trim().toLowerCase()
+}
+
 // SQL required (run once in Supabase SQL Editor):
 //   ALTER TABLE user_entitlements
 //   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useUser()
   const [banned, setBanned] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  // Only admin routes need the async hash check; non-admin routes never block on it.
+  const [adminChecking, setAdminChecking] = useState(adminOnly)
   // Lazy initializer: only show ban-check spinner if no valid cache exists for this user.
   const [banChecking, setBanChecking] = useState(() => {
     if (!user?.id) return false
@@ -66,8 +84,21 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
       .finally(() => setBanChecking(false))
   }, [user?.id])
 
-  // Show spinner while auth resolves or (first-visit only) ban check is in flight.
-  if (loading || (banChecking && !!user?.id)) return (
+  // Resolve admin status for admin-only routes via the hashed-email comparison.
+  useEffect(() => {
+    if (!adminOnly) { setAdminChecking(false); return }
+    if (!user?.email) { setIsAdmin(false); setAdminChecking(false); return }
+    let cancelled = false
+    setAdminChecking(true)
+    emailMatchesAdminHash(user.email).then((ok) => {
+      if (!cancelled) { setIsAdmin(ok); setAdminChecking(false) }
+    })
+    return () => { cancelled = true }
+  }, [adminOnly, user?.email])
+
+  // Show spinner while auth resolves, the ban check is in flight (first visit only),
+  // or the admin hash check is resolving for an admin-only route.
+  if (loading || (banChecking && !!user?.id) || (adminChecking && !!user?.id)) return (
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -89,7 +120,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (adminOnly && user.email !== import.meta.env.VITE_ADMIN_EMAIL) {
+  if (adminOnly && !isAdmin) {
     return <Navigate to="/dashboard" replace />
   }
 

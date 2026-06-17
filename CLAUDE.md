@@ -28,6 +28,15 @@ Additional features:
 - Red Flag Scanner (identifies research weaknesses)
 - Writing Planner (week-by-week writing schedule)
 
+**Express Defence** is a separate, isolated product (entitlement: `express_defense`, ₦2,000):
+Targeted at students who already have a completed draft and just need defense preparation.
+Three-step linear flow (no full 6-step workflow):
+1. Project Reviewer — upload PDF for AI review
+2. Defence Brief — personalised opening statement, model answers for weak spots, examiner Q&A prep. Downloads as a jsPDF-generated PDF.
+3. Defence Simulator — same 3-AI-examiner simulator as the main app, with certificates.
+Express users get their own isolated dashboard (/express), onboarding (/express-onboarding),
+and shell (/express/run) that never touches the main workflow state.
+
 The Defense Simulator is the core differentiator:
 Claude plays a hostile external examiner — three AI personas:
 - The Methodologist
@@ -87,7 +96,9 @@ fypro-v2/
 │   │   ├── Terms.jsx
 │   │   ├── CookiePolicy.jsx
 │   │   ├── Dashboard.jsx          # Multi-project dashboard — project cards grid
-│   │   ├── SplashOnboarding.jsx   # First-time onboarding flow
+│   │   ├── SplashOnboarding.jsx   # First-time onboarding flow (split-canvas shell, chip questions, TourCarousel)
+│   │   ├── ExpressDashboard.jsx   # Express Defence dashboard (/express — 3-step progress view)
+│   │   ├── ExpressOnboarding.jsx  # Express onboarding (/express-onboarding — split-canvas shell)
 │   │   ├── Login.jsx
 │   │   ├── Signup.jsx
 │   │   ├── ForgotPassword.jsx
@@ -119,6 +130,7 @@ fypro-v2/
 │   │   ├── shell/
 │   │   │   └── AppShell.jsx       # Sidebar + layout wrapper for /app routes (RankPill, Achievements nav)
 │   │   ├── dashboard/             # Dashboard sub-components (DashTopBar with notification bell, etc.)
+│   │   │   └── _shared.jsx        # STEP_DEFS, EXPRESS_STEP_DEFS, expressBuildSteps helper
 │   │   ├── topicValidator/
 │   │   │   └── TopicValidator.jsx
 │   │   ├── chapterArchitect/
@@ -134,6 +146,12 @@ fypro-v2/
 │   │   ├── defensePrep/
 │   │   │   ├── DefensePrep.jsx    # Defense Simulator (academic tribunal UI)
 │   │   │   └── PastSessions.jsx   # Past Sessions tab — session history + transcripts
+│   │   ├── expressDefense/        # All Express Defence components
+│   │   │   ├── ExpressShell.jsx          # 3-step shell (/express/run) with sidebar + step nav
+│   │   │   ├── ExpressBrief.jsx          # Project context card in Express sidebar (topic/methodology)
+│   │   │   ├── DefenceBrief.jsx          # Defence Brief feature — generate/coach/download flow
+│   │   │   ├── ExpressProjectStateProvider.jsx  # Isolated project state for Express
+│   │   │   └── ExpressProviders.jsx      # Wraps Express routes with isolated providers
 │   │   ├── supervisorPrep/
 │   │   │   └── SupervisorPrep.jsx # Supervisor Meeting Prep Agent
 │   │   └── supervisorEmail/
@@ -185,6 +203,7 @@ fypro-v2/
 │   │   ├── checkAchievements.ts   # Calls /api/ai?action=check-achievements
 │   │   ├── celebrations.ts        # localStorage celebration dedupe
 │   │   ├── generateReport.js      # PDF progress report (Bold Nigerian Tech design) + generateReport.test.js
+│   │   ├── generateDefenceBrief.js # jsPDF Defence Brief PDF (A4, db- CSS prefix, multi-section)
 │   │   ├── notifications.js       # Client helpers to insert notifications
 │   │   ├── offline-snapshot.ts    # Persist/patch/read/clear offline project snapshot
 │   │   ├── db.ts
@@ -192,14 +211,14 @@ fypro-v2/
 │   │   ├── routingCache.ts
 │   │   ├── entitlements-cache.ts
 │   │   ├── feedback.ts
-│   │   ├── onboarding.ts
+│   │   ├── onboarding.ts          # saveOnboardingAnswers(), markWalkthroughSeen() helpers
 │   │   ├── progress.ts
 │   │   ├── referral.ts
 │   │   ├── shareCard.ts
 │   │   └── sync-queue.ts
 │   ├── services/
-│   │   ├── api.js                 # Frontend API call helpers (OFFLINE early exit + timeouts)
-│   │   └── prompts.js             # AI prompt builders (defense + reviewer prompts now resolved SERVER-side)
+│   │   ├── api.js                 # Frontend API call helpers (OFFLINE early exit + timeouts) — includes generateDefenceBrief(), coachDefenceBriefAnswer()
+│   │   └── prompts.js             # AI prompt builders (defense + reviewer + defence-brief prompts now resolved SERVER-side; client sends action identifier only)
 │   ├── context/
 │   │   ├── AppContext.jsx         # Global state (project data, step results)
 │   │   └── ThemeContext.jsx       # Light/dark mode state
@@ -213,7 +232,26 @@ fypro-v2/
 │           ├── welcome.tsx
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
+│   ├── styles/                    # CSS split from single index.css into per-concern files (June 2026)
+│   │   ├── base.css               # Base resets + root variables
+│   │   ├── design-system.css      # Design tokens (colors, spacing, typography)
+│   │   ├── steps-core.css         # Shared step card patterns
+│   │   ├── step-accents.css       # Per-step left-border accent colors
+│   │   ├── defense.css            # Defense Simulator styles (dp- prefix)
+│   │   ├── defense-brief.css      # Defence Brief styles (db- prefix, light + dark mode)
+│   │   ├── defense-premium.css    # Premium defense UI elements
+│   │   ├── express.css            # Express Defence shell (es-, eb- prefixes)
+│   │   ├── instrument-builder.css # Instrument Builder (ib- prefix)
+│   │   ├── abstract-generator.css # Abstract Generator (ag- prefix)
+│   │   ├── onboarding-questions.css  # Onboarding chip questions + TourCarousel (oq- prefix)
+│   │   ├── light-mode.css         # Light mode overrides
+│   │   ├── theme-responsive.css   # Theme-responsive helpers
+│   │   ├── responsive.css         # Breakpoint-driven layout
+│   │   ├── touch-targets.css      # Mobile touch target sizing
+│   │   ├── utilities-shared.css   # Shared utility classes
+│   │   └── writing-planner-email.css  # Writing planner email preview
 │   # NOTE: src/old files/ (v1 vanilla JS) was deleted from the repo May 2026
+│   # NOTE: index.css now @imports from src/styles/ — MUST stay as CSS @imports (Tailwind v3 appends variants at stylesheet end)
 ├── api/                           # Vercel serverless functions (12 max on Hobby plan)
 │   ├── admin.js                   # Admin data + Sentry + Telegram commands + ping + error-check + maintenance toggle
 │   ├── ai.js                      # Claude proxy — workflow + defense + supervisor-prep + check-achievements
@@ -251,7 +289,10 @@ fypro-v2/
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
 ├── migrations/                    # SQL files — run in Supabase SQL Editor
-│   └── 0002 through 0028_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions, 0026 user_achievements)
+│   └── 0002 through 0032_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
+│                                  #  0026 user_achievements, 0029 express_defense_tier,
+│                                  #  0030 project_mode, 0031 achievements_project_scope,
+│                                  #  0032 onboarding_questions)
 ├── scripts/                       # Dev/ops scripts — NOT deployed
 │   ├── verify-rls-after-refactor.js  # RLS regression test
 │   ├── flush-reviewer-rate-limits.js
@@ -294,7 +335,7 @@ fypro-v2/
 - VITE_SUPABASE_ANON_KEY
 - VITE_PAYSTACK_PUBLIC_KEY         ← LIVE key active
 - VITE_POSTHOG_KEY
-- VITE_ADMIN_EMAIL                 ← used by ProtectedRoute adminOnly check (see note below)
+- VITE_ADMIN_EMAIL_HASH            ← SHA-256 hex of ADMIN_EMAIL; ProtectedRoute adminOnly convenience gate (no plaintext email in bundle)
 - VITE_SENTRY_DSN                  ← Sentry error reporting from frontend
 - VITE_VAPID_PUBLIC_KEY            ← Web Push subscription (same value as VAPID_PUBLIC_KEY)
 - VITE_APP_ENV                     ← "staging" on the staging Vercel project ONLY; unset in production
@@ -325,11 +366,12 @@ fypro-v2/
 - GMAIL_USER                       ← unused, kept for future use
 - GMAIL_APP_PASSWORD               ← unused, kept for future use
 
-### KNOWN INCONSISTENCY (resolve eventually): .env.example says "never create
-### VITE_ADMIN_EMAIL" (it exposes the admin email in the JS bundle), but
-### src/components/ProtectedRoute.jsx:92 still reads it for the adminOnly route
-### gate. The client gate is convenience only — real enforcement is server-side
-### via ADMIN_EMAIL. Do not add any NEW reliance on VITE_ADMIN_EMAIL.
+### ADMIN GATE (resolved 2026-06-17): ProtectedRoute's adminOnly gate compares a
+### SHA-256 hash of the signed-in email against VITE_ADMIN_EMAIL_HASH, so the admin
+### email is NEVER shipped as plaintext in the JS bundle. The client gate is
+### convenience only — real enforcement is server-side via a timing-safe ADMIN_EMAIL
+### check on the verified JWT in api/admin.js. Never reintroduce a plaintext
+### VITE_ADMIN_EMAIL.
 
 ### Rule: if you are ever putting a server-only key into a component, hook,
 ### or any file inside src/ — STOP. That is a critical security mistake.
@@ -458,8 +500,26 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - name, short_name (text)
 - faculty (text)
 
+### user_onboarding (extended — migration 0032)
+New columns added June 2026 (all nullable — skipped question leaves column NULL):
+- referral_source (text)
+- expected_defence_band (text) — CHECK IN ('<1m','1-3m','3-6m','unsure')
+- primary_goal (text) — CHECK IN ('validate_topic','build_chapters','plan_writing','defence_practice')
+- notify_email (boolean)
+- notify_push (boolean)
+- walkthrough_seen_at (timestamptz)
+No new RLS policies needed — existing own-row policies cover these columns.
+
+### projects (extended — migration 0030)
+- mode (text) — 'standard' | 'express' (project_mode migration 0030)
+Express projects are auto-created on first /express load and have mode='express'.
+
+### user_achievements (extended — migration 0031)
+- project_id (uuid, nullable) — achievement scope isolation (express vs standard)
+Express achievements are scoped to the express project; main achievements scoped to main.
+
 ### referrals, email_log, email_preferences, generation_failures,
-### auth_attempts, payment_issues, feature_feedback, user_onboarding,
+### auth_attempts, payment_issues, feature_feedback,
 ### response_times, daily_usage (all exist — see Supabase dashboard for full schema)
 
 ---
@@ -493,7 +553,14 @@ Plans and prices (LIVE Paystack keys active — source of truth: api/_lib/pricin
 - student_pack:         ₦2,000 (200000 kobo)
 - defense_pack:         ₦3,500 (350000 kobo)
 - defense_pack_upgrade: ₦1,500 (150000 kobo) — upgrade path from Student Pack to Defense Pack
+- express_defense:      ₦2,000 (200000 kobo) — Express Defence product (for students with completed drafts)
 - project_reset:        ₦1,500 (150000 kobo)
+
+express_defense entitlement unlocks:
+- /express-onboarding → /express → /express/run routes
+- Project Reviewer, Defence Brief, Defence Simulator (in Express shell only)
+- Auto-creates an express project (mode='express') on first /express load
+- express-only users are redirected from /dashboard → /express by ExpressDashboardRedirect
 
 Payment flow:
 1. Frontend calls POST /api/payments?action=initiate
@@ -536,9 +603,11 @@ Actions handled by /api/ai:
 - defense (Defense Simulator turns)
 - supervisor-prep (merged from api/supervisor-prep.js to stay within 12-function limit)
 - check-achievements (gamification unlock checks — server-side, rate-limited)
+- defence-brief (generates opening statement + model answers + examiner Q&A for Express)
+- defence-brief-coach (evaluates student's practice answer, gives corrective hint if needed)
 
 Hardening (June 2026):
-- Defense + reviewer SYSTEM PROMPTS are resolved server-side from api/_lib/ai-prompts.js.
+- Defense + reviewer + defence-brief SYSTEM PROMPTS are resolved server-side from api/_lib/ai-prompts.js.
   The client sends an action/step identifier, never the prompt text.
 - Request bodies validated with Zod (api/_lib/validate.js). Every request gets a trace ID
   (api/_lib/trace.js) returned as X-Trace-Id and attached as a Sentry tag on the frontend.
@@ -552,6 +621,8 @@ Rate limits (enforced via Upstash Redis):
 - General: 30 req/IP/hour, 30 req/user/day
 - Defense: 5 sessions/user/day
 - Supervisor prep: 5 req/user/day, 15 req/IP/hour
+- Defence Brief: 30 req/user/day, 60 req/IP/day
+- Defence Brief Coach: 60 req/user/day, 120 req/IP/day
 - Free-tier per-step run limits: Chapter Architect and Methodology Advisor allow 3 free runs
 
 Daily spend cap: DAILY_CAP_USD env var ($10 default).
@@ -564,6 +635,8 @@ Response caching (Upstash, TTL varies):
 - Writing Planner: 6h
 - Defense Simulator: NOT cached (each turn is unique)
 - Project Reviewer: NOT cached
+- Defence Brief: NOT cached (output depends on unique review + weak-spots context)
+- Defence Brief Coach: NOT cached (coaching is conversational)
 
 Cache key = SHA-256 hash of (system prompt + user prompt + parameters).
 
@@ -626,10 +699,13 @@ Test all alerts: GET /api/admin?action=test-all-alerts (admin only)
 
 ## 11. MULTI-PROJECT DASHBOARD
 
-Route: /dashboard — shows project grid
+Route: /dashboard — shows project grid (standard users)
 Route: /dashboard?project=PROJECT_ID — shows individual project dashboard
+Route: /express — Express Defence dashboard (express-only users)
+Route: /express/run — Express Defence 3-step shell
+Route: /express-onboarding — Express onboarding flow (if no express_defense entitlement)
 
-Flow:
+Standard dashboard flow:
 - New users: blank welcome state
 - Returning users: project cards grid
 - Each card: project title, status badge, created date, Continue button
@@ -640,6 +716,13 @@ Flow:
 - Delete button: confirms then hard-deletes project + project_steps
 
 selectProject(pid) in useProjectState.ts hydrates AppContext with the selected project's data.
+
+Express routing:
+- ExpressDashboardRedirect (at /dashboard): detects express-only users and redirects to /express
+- RequireExpress guard: checks express_defense entitlement; redirects to /express-onboarding if missing
+- ExpressProviders wraps /express and /express/run with isolated state (ExpressProjectStateProvider)
+- Express projects are scoped by project mode='express'; their achievements are isolated to the express project_id
+- Admin can grant express_defense entitlement from Mission Control (/admin/health)
 
 ---
 
@@ -730,8 +813,8 @@ Anti-patterns (NEVER do these):
 8. Admin route: /admin/health client-gated via ProtectedRoute adminOnly; real enforcement
    is server-side (ADMIN_EMAIL checks in api/ endpoints). Bans enforced at auth level.
 
-9. AI system prompts (defense + reviewer) resolved server-side from api/_lib/ai-prompts.js —
-   never accept prompt text from the client.
+9. AI system prompts (defense + reviewer + defence-brief + defence-brief-coach) resolved
+   server-side from api/_lib/ai-prompts.js — never accept prompt text from the client.
 
 10. Secrets scanning: gitleaks runs in CI. npm audit kept clean.
 
@@ -743,10 +826,10 @@ re-enabled, reviewer 4 MB upload cap, achievements total_score column.
 
 ---
 
-## 16. WHAT IS FULLY BUILT AND LIVE (as of June 2026)
+## 16. WHAT IS FULLY BUILT AND LIVE (as of June 17, 2026)
 
 All features shipped and working in production (fypro.com.ng):
-- Landing page (urgency CTAs, product showcase hero image) + pricing page
+- Landing page (urgency CTAs, light/dark product showcase hero image) + pricing page
 - Full auth (signup with email confirmation, login, forgot password, reset, Google OAuth,
   /auth/confirm redirect route)
 - Complete 6-step workflow (Topic Validator → Defense Prep)
@@ -759,8 +842,8 @@ All features shipped and working in production (fypro.com.ng):
 - Past Sessions — defense history tab with transcripts and per-turn scores
 - Multi-project dashboard with project cards
 - Project Reset payment flow (₦1,500, consumable entitlement, CAS-guarded)
-- All four payment tiers (Student Pack, Defense Pack, Defense Pack Upgrade,
-  Project Reset) — LIVE keys
+- All five payment tiers (Student Pack, Defense Pack, Defense Pack Upgrade,
+  Express Defence, Project Reset) — LIVE keys
 - Certificate generation (FYP-2026-XXXXXX, unlocks at score >= 7/10) —
   3 PDF styles × 2 orientations, QR code, public verify page at /verify/:certNumber
 - PDF progress report (Bold Nigerian Tech design, includes companion card sections)
@@ -772,7 +855,7 @@ All features shipped and working in production (fypro.com.ng):
 - Performance overhaul — lazy routes, per-route skeleton screens, optimistic UI updates
 - Social share card (Satori PNG)
 - Admin dashboard (/admin/health) — Mission Control tabbed redesign, realtime feed,
-  user actions (reset limits, grant packs, diagnose), maintenance kill switch
+  user actions (reset limits, grant packs, grant express_defense, diagnose), maintenance kill switch
 - PostHog analytics (incl. paywall_shown funnel event)
 - Telegram bot — alerts, admin commands, daily report, /broadcast + /broadcast_paid
 - Email — Day 0/3/7 nurture, payment receipt, broadcast (Dark Prestige design,
@@ -781,12 +864,20 @@ All features shipped and working in production (fypro.com.ng):
 - Staging environment (separate Vercel project, VITE_APP_ENV banner + Sentry env tag)
 - API hardening — Zod validation, trace IDs, server-side prompts, server-side run limits
 - Cookie consent banner (NDPA 2023)
-- Light mode + dark mode (both fully working, incl. public pages redesign)
+- Light mode + dark mode (both fully working, incl. public pages + Express shell)
 - Changelog + roadmap pages
 - Referral system with defense credits
 - Sentry error monitoring
 - Security audit passed (30 checks) + June 10 bug hunt (9 fixes)
 - Live brain — public architecture viewer (public/brain.html, Supabase Realtime)
+- Onboarding questions + product walkthrough — chip question screens (referral source,
+  defence date band, primary goal), notification opt-in, 4-slide TourCarousel; answers
+  saved to user_onboarding (migration 0032); walkthrough_seen_at marks completion
+- Express Defence — isolated 3-step product (₦2,000): Project Reviewer → Defence Brief
+  → Defence Simulator; own dashboard (/express), onboarding (/express-onboarding),
+  shell (/express/run), isolated state providers, achievement scope isolation
+- Defence Brief — jsPDF-generated preparation document (opening statement, model answers
+  for weak spots, examiner Q&A); practice mode with AI coaching per question (db- CSS prefix)
 
 Deferred to v3:
 - Supervisor Dashboard
@@ -819,6 +910,16 @@ Session discipline:
   `npm run test` (vitest) before committing non-trivial changes
 - Commit one fix per commit during bug-fix sessions (established pattern)
 
+CSS naming prefixes — NEVER mix prefixes between features:
+- es-  Express shell (ExpressShell.jsx sidebar, step nav)
+- eb-  Express Brief sidebar card (ExpressBrief.jsx)
+- db-  Defence Brief (DefenceBrief.jsx) — src/styles/defense-brief.css
+- oq-  Onboarding questions + TourCarousel — src/styles/onboarding-questions.css
+All other prefixes (tv-, ca-, ma-, di-, wp-, dp-, se-) remain as before.
+
+CSS architecture: index.css @imports from src/styles/ — MUST stay as CSS @imports,
+not JS imports (Tailwind v3 appends variants at stylesheet end; switching to JS imports breaks this).
+
 Critical pitfall — hardcoded colors:
 The color #0D1B2A appears in both dark backgrounds AND as text color in some components.
 Always use CSS variables. Never hardcode hex in component CSS.
@@ -833,7 +934,7 @@ GitHub repo:      AyeniTaiwoSPC270/FYpro-v2
 Telegram bot:     @fypro_admin_bot
 Support email:    hello@fypro.com.ng (forwards to ayenit381@gmail.com via Cloudflare)
 Admin dashboard:  https://www.fypro.com.ng/admin/health
-Target launch:    June 12, 2026
+Launched:         June 2026 (live and accepting payments)
 v3 target:        December 2026
 
 ---

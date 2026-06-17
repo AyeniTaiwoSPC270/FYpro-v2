@@ -638,7 +638,7 @@ const SECURITY_GATES=[
   {n:'PDF Magic Byte Validation',desc:'Project Reviewer checks first 4 bytes equal %PDF (0x25 0x50 0x44 0x46). MIME type also checked. Rejected before reaching Anthropic.',where:['api/project-reviewer.js']},
   {n:'PII Scrubbing (Sentry)',desc:'beforeSend hook deletes email, username, ip_address, and any key containing "token" or "key" before leaving the browser.',where:['src/lib/sentry.ts']},
   {n:'Service Role Key: Server Only',desc:'SUPABASE_SERVICE_ROLE_KEY exists only as a Vercel env var and used only in api/_lib/supabase-admin.js. Never in src/.',where:['api/_lib/supabase-admin.js']},
-  {n:'Admin Route Gate',desc:'/admin/health gated by VITE_ADMIN_EMAIL check in ProtectedRoute.jsx. Regular users redirected.',where:['src/components/ProtectedRoute.jsx']},
+  {n:'Admin Route Gate',desc:'/admin/health gated client-side by a SHA-256 hash check (VITE_ADMIN_EMAIL_HASH) in ProtectedRoute.jsx — no plaintext admin email in the bundle. Real enforcement is server-side via ADMIN_EMAIL in api/admin.js.',where:['src/components/ProtectedRoute.jsx']},
   {n:'bodyParser: false (Payments)',desc:'Must be disabled in payments.js for raw body HMAC. If enabled, HMAC computed against original raw bytes would always fail.',where:['api/payments.js']},
   {n:'Free-Tier Server-Side Enforcement',desc:'Free trial limits enforced in api/ai.js by checking user_entitlements via service role. Client-side gates are UI only.',where:['api/ai.js','api/_lib/defense-credit-check.js']},
   {n:'Idempotency Guard (Payments)',desc:'paystack_reference UNIQUE constraint. Webhook handler queries WHERE status="pending". Duplicate events find "success" and do nothing.',where:['api/payments.js','migrations/']},
