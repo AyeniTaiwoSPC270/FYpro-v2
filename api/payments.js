@@ -21,6 +21,7 @@ const PLAN_DISPLAY_NAMES = {
   student_pack:          'Student Pack',
   defense_pack:          'Defense Pack',
   defense_pack_upgrade:  'Defense Pack (Upgrade)',
+  express_defense:       'Express Defence',
   project_reset:         'Project Reset',
 };
 

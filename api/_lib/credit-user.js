@@ -81,6 +81,7 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
     student_pack:         'Student Pack',
     defense_pack:         'Defense Pack',
     defense_pack_upgrade: 'Defense Pack',
+    express_defense:      'Express Defence',
     project_reset:        'Project Reset',
   };
   const tierLabel = TIER_LABELS[payment.tier] || payment.tier;
@@ -122,6 +123,7 @@ async function grantEntitlement(userId, tier, amountKobo) {
     defensePacks += 1;
   }
   if (tier === 'project_reset') features.add('project_reset');
+  if (tier === 'express_defense') features.add('express_defense');
 
   // upsert so a missing row is created rather than silently skipped
   await supabaseAdmin

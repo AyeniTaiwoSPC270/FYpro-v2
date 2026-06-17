@@ -246,6 +246,20 @@ describe('creditUser — successful grant', () => {
     expect(payload.total_lifetime_paid_ngn).toBe(1500)
   })
 
+  it('express_defense: grants express_defense, no defense pack credits', async () => {
+    const p = pendingPayment({ tier: 'express_defense', amount_kobo: PRICING_KOBO.express_defense })
+    h.db = happyMockFor(p)
+    const res = await creditUser(validParams({ paystackAmountKobo: PRICING_KOBO.express_defense }))
+    expect(res).toMatchObject({ status: 'success', tier: 'express_defense' })
+
+    const payload = grantedPayload()
+    expect(payload.paid_features).toContain('express_defense')
+    expect(payload.paid_features).not.toContain('defense_pack')
+    expect(payload.paid_features).not.toContain('project_reset')
+    expect(payload.defense_packs_remaining).toBe(0)
+    expect(payload.total_lifetime_paid_ngn).toBe(2000)
+  })
+
   it('project_reset: grants only project_reset', async () => {
     const p = pendingPayment({ tier: 'project_reset', amount_kobo: PRICING_KOBO.project_reset })
     h.db = happyMockFor(p)
