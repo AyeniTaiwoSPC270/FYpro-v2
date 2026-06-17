@@ -14,6 +14,8 @@ import {
   buildProjectReviewerPDFPrompt,
   buildDocumentRelevanceCheckPrompt,
   buildDocumentRelevanceCheckPDFPrompt,
+  buildDefenceBriefPrompt,
+  buildDefenceBriefCoachPrompt,
 } from './prompts.js';
 import { supabase } from '../lib/supabase';
 import { setTraceId } from '../lib/sentry';
@@ -675,6 +677,29 @@ export async function logFailure(feature, err, inputPreview = '') {
   } catch {
     // silent — never affect UX
   }
+}
+
+// ── Defence Brief ─────────────────────────────────────────────────────────────
+
+const DEFENCE_BRIEF_ENDPOINT       = '/api/ai?action=defence-brief';
+const DEFENCE_BRIEF_COACH_ENDPOINT = '/api/ai?action=defence-brief-coach';
+
+export async function generateDefenceBrief(studentCtx, weaknesses, examinerQuestions) {
+  return callClaudeAuth(
+    DEFENCE_BRIEF_ENDPOINT,
+    [{ role: 'user', content: buildDefenceBriefPrompt(studentCtx, weaknesses, examinerQuestions) }],
+    2000,
+    { promptType: 'defence-brief' }
+  );
+}
+
+export async function coachDefenceBriefAnswer(weakSpot, conversationHistory) {
+  return callClaudeAuth(
+    DEFENCE_BRIEF_COACH_ENDPOINT,
+    [{ role: 'user', content: buildDefenceBriefCoachPrompt(weakSpot, conversationHistory) }],
+    500,
+    { promptType: 'defence-brief-coach' }
+  );
 }
 
 // ── Push Notifications ────────────────────────────────────────────────────────
