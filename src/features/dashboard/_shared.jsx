@@ -32,12 +32,12 @@ export function buildSteps(stepsCompleted, activeStepId) {
 // ─── Express step definitions (3-step express app) ─────────────────────────────
 
 export const EXPRESS_STEP_DEFS = [
-  { id: 1, key: 'red_flag',         name: 'Red Flag Scanner',  desc: 'Surface your project’s weaknesses before the panel does.',  path: '/express/run' },
-  { id: 2, key: 'project_reviewer', name: 'Project Reviewer',  desc: 'Full AI review of your submitted document.',                 path: '/express/run' },
-  { id: 3, key: 'defense',          name: 'Defence Simulator', desc: 'Three AI examiners, voice-enabled, real hostile questions.', path: '/express/run' },
+  { id: 1, key: ‘project_reviewer’, name: ‘Project Reviewer’,  desc: ‘Upload your draft for AI-powered feedback on structure, argument, and academic quality.’, path: ‘/express/run’ },
+  { id: 2, key: ‘defense_brief’,    name: ‘Defence Brief’,     desc: ‘Get your personalised opening statement, model answers for weak spots, and likely examiner Q&As.’, path: ‘/express/run’ },
+  { id: 3, key: ‘defense’,          name: ‘Defence Simulator’, desc: ‘Three AI examiners, voice-enabled, real hostile questions. Score 7/10+ to earn your certificate.’, path: ‘/express/run’ },
 ]
 
-// Express progress model is { red_flag, project_reviewer, defense } booleans.
+// Express progress model is { project_reviewer, defense_brief, defense } booleans.
 // The active step is the first incomplete one.
 export function expressBuildSteps(expressSteps = {}) {
   const firstIncomplete = EXPRESS_STEP_DEFS.findIndex(d => !expressSteps[d.key])
