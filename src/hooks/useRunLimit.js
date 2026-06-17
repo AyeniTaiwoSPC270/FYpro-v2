@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { getCachedEntitlements, invalidateCachedEntitlements } from '../lib/entitlements-cache'
 import { useUser } from './useUser'
 import { FREE_STEP_LIMITS } from '../../api/_lib/free-limits.js'
+import { EXPRESS_TOTAL_LIMITS } from '../../api/_lib/express-limits.js'
 
 // Server-enforced free limits (shared source of truth) plus red_flag_detector,
 // which is gated client-side only. This drives the "X runs left" UI; the server
@@ -78,6 +79,15 @@ function mergeRemoteIntoLocal(remote) {
 export function resolveLimit(stepKey, features) {
   const hasStudent = Array.isArray(features) && features.includes('student_pack')
   const hasDefense = Array.isArray(features) && features.includes('defense_pack')
+  const hasExpress = Array.isArray(features) && features.includes('express_defense')
+
+  // Express-only lifetime caps (one-time unlock). Mirrors the server enforcement
+  // in api/ai.js + api/project-reviewer.js. Defense Pack holders are exempt — they
+  // fall through to the richer paid tier below. Only express_* keys hit this branch;
+  // standard keys (project_reviewer, etc.) are unaffected for express users.
+  if (hasExpress && !hasDefense && stepKey in EXPRESS_TOTAL_LIMITS) {
+    return EXPRESS_TOTAL_LIMITS[stepKey]
+  }
 
   if (hasStudent || hasDefense) {
     if (hasDefense) return DEFENSE_LIMITS[stepKey] ?? null
