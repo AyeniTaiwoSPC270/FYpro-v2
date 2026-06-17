@@ -536,9 +536,9 @@ export default function ProjectReviewer() {
         className={`pr-input-section ${section === 'input' ? 'tv-section--visible' : 'tv-section--hidden'}`}
       >
         <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(3) } }}>
-          ← Back to Writing Planner
+          {isExpress ? '← Express Dashboard' : '← Back to Writing Planner'}
         </button>
-        <p className="pr-step-label">Step 5: Project Reviewer</p>
+        <p className="pr-step-label">{isExpress ? 'Step 1: Project Reviewer' : 'Step 5: Project Reviewer'}</p>
         <p className="pr-description">
           Upload your full project or a single chapter. FYPro will grade it, identify 3 strengths
           and 3 weaknesses specific to your content, and generate the 5 most dangerous examiner
@@ -753,7 +753,7 @@ export default function ProjectReviewer() {
             </div>
 
             <button id="pr-btn-confirm" className="pr-btn-confirm" onClick={handleConfirm}>
-              Continue to Defence Prep
+              {isExpress ? 'Save Review & Continue to Defence Brief →' : 'Continue to Defence Prep'}
             </button>
 
             <FeedbackThumbs feature="project_reviewer" contextId={projectId || undefined} />
