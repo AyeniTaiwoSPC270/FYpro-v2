@@ -6,11 +6,13 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { getCachedEntitlements, invalidateCachedEntitlements } from '../lib/entitlements-cache'
 import { useUser } from './useUser'
+import { FREE_STEP_LIMITS } from '../../api/_lib/free-limits.js'
 
+// Server-enforced free limits (shared source of truth) plus red_flag_detector,
+// which is gated client-side only. This drives the "X runs left" UI; the server
+// is the authoritative gate.
 const FREE_LIMITS = {
-  topic_validator:     3,
-  chapter_architect:   3,
-  methodology_advisor: 3,
+  ...FREE_STEP_LIMITS,
   red_flag_detector:   3,
 }
 

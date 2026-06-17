@@ -13,6 +13,7 @@ import { isAllowedGeneralStep, getGeneralSystemPrompt, getDefenseSystemPrompt } 
 import { callAnthropic } from './_lib/anthropic-proxy.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { validate, AiMessagesSchema } from './_lib/validate.js';
+import { FREE_STEP_LIMITS as SERVER_FREE_LIMITS } from './_lib/free-limits.js';
 
 export const config = { maxDuration: 60 };
 
@@ -24,15 +25,6 @@ const TTL_BY_STEP = {
   'chapter-architect':   86400,
   'methodology-advisor': 43200,
   'writing-planner':     21600,
-};
-
-// Server-enforced per-step limits for free-tier users.
-// Mirrors the FREE_LIMITS object in src/hooks/useRunLimit.js.
-// Keep these two in sync when adjusting free tier quotas.
-const SERVER_FREE_LIMITS = {
-  'topic-validator':     3,
-  'chapter-architect':   3,
-  'methodology-advisor': 3,
 };
 
 // User-facing copy for the per-user daily spend ceiling (checkUserCap).
@@ -132,15 +124,16 @@ async function handleGeneral(req, res) {
   const isPaid = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
 
   // Server-side run limit gate — only applies to free (unpaid) users.
-  // DB stores keys as snake_case (topic_validator); step param uses kebab-case (topic-validator)
-  const isLimitedStep = !isPaid && SERVER_FREE_LIMITS[step] !== undefined;
+  // DB stores keys as snake_case (topic_validator); step param uses kebab-case
+  // (topic-validator), so normalise to the snake_case key before looking up limits.
   const dbKey = step.replace(/-/g, '_');
+  const isLimitedStep = !isPaid && SERVER_FREE_LIMITS[dbKey] !== undefined;
   const dbRunCounts = (entData?.run_counts && typeof entData.run_counts === 'object')
     ? entData.run_counts
     : {};
   const serverCount = typeof dbRunCounts[dbKey] === 'number' ? dbRunCounts[dbKey] : 0;
 
-  if (isLimitedStep && serverCount >= SERVER_FREE_LIMITS[step]) {
+  if (isLimitedStep && serverCount >= SERVER_FREE_LIMITS[dbKey]) {
     return res.status(429).json({
       error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
     });
@@ -185,7 +178,7 @@ async function handleGeneral(req, res) {
       await redis.set(key, serverCount, { nx: true });
       reservedCount = await redis.incr(key);
       runKey = key;
-      if (reservedCount > SERVER_FREE_LIMITS[step]) {
+      if (reservedCount > SERVER_FREE_LIMITS[dbKey]) {
         // Over limit — no refund needed, the counter staying above the limit is harmless
         return res.status(429).json({
           error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.',
