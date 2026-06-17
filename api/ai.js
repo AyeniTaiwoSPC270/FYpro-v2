@@ -691,6 +691,129 @@ async function handleCheckAchievements(req, res) {
   }
 }
 
+/**
+ * Generates a complete Defence Brief from Project Reviewer results.
+ * Requires express_defense OR defense_pack entitlement.
+ */
+async function handleDefenceBrief(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  let authResult, rl, cap;
+  try {
+    [authResult, rl, cap] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'defence-brief' }).catch(() => ({ allowed: true, reason: '' })),
+      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+    ]);
+  } catch (authErr) {
+    traceLog(traceId, 'error', '[ai/defence-brief] auth threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (!cap.allowed) {
+    sendTelegramAlertOnce(`⚠️ Spend cap hit: defence-brief blocked`, `tg:spend:cap:${today}`);
+    return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
+  }
+
+  const { data: entitlements } = await supabaseAdmin
+    .from('user_entitlements')
+    .select('paid_features')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
+  const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
+  if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked. Please purchase Express Defence or the Defense Pack.' });
+
+  const { messages, max_tokens: rawMaxTokens = 2000, model: rawModel = 'claude-sonnet-4-6' } = req.body || {};
+  const v = validate(AiMessagesSchema, { messages });
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const system = getDefenseSystemPrompt('defence-brief', {});
+  const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+  const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
+
+  try {
+    const { response, data } = await callAnthropic({ feature: 'defence-brief', userId: user.id, model, max_tokens, system, messages });
+    return res.status(response.status).json(data);
+  } catch (err) {
+    traceLog(traceId, 'error', '[ai/defence-brief] error:', err.message);
+    await sendTelegramAlert(`🔴 Defence Brief failed: ${user.id.slice(0, 8)} - ${err.message}`);
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+  }
+}
+
+/**
+ * Single coaching turn for one Defence Brief weak spot.
+ * Requires express_defense OR defense_pack entitlement.
+ */
+async function handleDefenceBriefCoach(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  let authResult, rl, cap;
+  try {
+    [authResult, rl, cap] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 60, ipDay: 120, prefix: 'defence-brief-coach' }).catch(() => ({ allowed: true, reason: '' })),
+      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+    ]);
+  } catch (authErr) {
+    traceLog(traceId, 'error', '[ai/defence-brief-coach] auth threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (!cap.allowed) {
+    sendTelegramAlertOnce(`⚠️ Spend cap hit: defence-brief-coach blocked`, `tg:spend:cap:${today}`);
+    return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
+  }
+
+  const { data: entitlements } = await supabaseAdmin
+    .from('user_entitlements')
+    .select('paid_features')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
+  const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
+  if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked.' });
+
+  const { messages, max_tokens: rawMaxTokens = 500, model: rawModel = 'claude-sonnet-4-6' } = req.body || {};
+  const v = validate(AiMessagesSchema, { messages });
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const system     = getDefenseSystemPrompt('defence-brief-coach', {});
+  const model      = ALLOWED_MODELS.has(rawModel) ? rawModel : 'claude-sonnet-4-6';
+  const max_tokens = Math.min(Number(rawMaxTokens) || 500, MAX_TOKENS_LIMIT);
+
+  try {
+    const { response, data } = await callAnthropic({ feature: 'defence-brief-coach', userId: user.id, model, max_tokens, system, messages });
+    return res.status(response.status).json(data);
+  } catch (err) {
+    traceLog(traceId, 'error', '[ai/defence-brief-coach] error:', err.message);
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+  }
+}
+
 export default async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -701,5 +824,7 @@ export default async function handler(req, res) {
   if (req.query.action === 'supervisor-prep')     return handleSupervisorPrep(req, res);
   if (req.query.action === 'sync-run-counts')     return handleSyncRunCounts(req, res);
   if (req.query.action === 'check-achievements')  return handleCheckAchievements(req, res);
+  if (req.query.action === 'defence-brief')       return handleDefenceBrief(req, res);
+  if (req.query.action === 'defence-brief-coach') return handleDefenceBriefCoach(req, res);
   return handleGeneral(req, res);
 }
