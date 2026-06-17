@@ -110,10 +110,21 @@ async function handleWebhook(req, res, rawBody) {
           source:             'webhook',
         });
         if (result.status === 'success') {
-          const email     = event.data.customer?.email || 'unknown'
-          const amountNGN = (event.data.amount / 100).toLocaleString('en-NG')
+          // Only the path that wins creditUser's race returns 'success', so the
+          // receipt + alert fire exactly once even when verify and webhook both run.
+          // Best-effort: a notify failure must not 500 the webhook (Paystack would retry).
+          const email     = event.data.customer?.email
+          const amountNGN = event.data.amount / 100
           const planName  = PLAN_DISPLAY_NAMES[result.tier] || result.tier
-          await sendTelegramAlertOnce(`💰 Payment received: ${email} paid ₦${amountNGN} for ${planName}`, `tg:payment:${event.data.reference}`)
+          try {
+            const tasks = [
+              sendTelegramAlertOnce(`💰 Payment received: ${email || 'unknown'} paid ₦${amountNGN.toLocaleString('en-NG')} for ${planName}`, `tg:payment:${event.data.reference}`),
+            ];
+            if (email) tasks.push(sendReceiptEmail(email, planName, amountNGN, event.data.reference));
+            await Promise.all(tasks);
+          } catch (notifyErr) {
+            console.error('[webhook] post-credit notify failed', { reference: event.data.reference, message: notifyErr.message });
+          }
         }
         return res.status(200).json({ received: true, status: result.status });
       } catch (err) {

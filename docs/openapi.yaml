@@ -763,7 +763,7 @@ paths:
         1. Validates the Paystack reference exists in the `payments` table with `status = 'pending'` (idempotency guard — prevents double-crediting if both webhook and client-side verify fire).
         2. Verifies `amount` matches the expected kobo amount for the tier.
         3. Updates `user_entitlements.paid_features` via the service-role client (bypasses RLS).
-        4. Fires a Telegram alert (deduplicated per reference).
+        4. Fires a Telegram alert and sends the customer a receipt email (both deduplicated per reference — only the path that wins the credit race emits them, so verify + webhook never double-send).
 
         All other event types (`charge.failed`, etc.) return `{ received: true, ignored: "<event>" }`.
 
