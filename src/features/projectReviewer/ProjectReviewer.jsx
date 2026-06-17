@@ -626,14 +626,6 @@ export default function ProjectReviewer() {
             You've reached your limit for this feature. Start a new project or upgrade your plan.
           </p>
         )}
-
-        <button
-          id="pr-btn-skip"
-          className="pr-btn-skip"
-          onClick={handleSkip}
-        >
-          {isExpress ? 'Skip — Go Straight to Defence Simulator' : 'Skip — Proceed to Defence'}
-        </button>
       </div>
 
       {/* ── Loading Section ─────────────────────────────────────── */}

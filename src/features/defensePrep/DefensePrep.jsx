@@ -1606,6 +1606,7 @@ export default function DefensePrep() {
 
               {/* Pre-session empty state */}
               <div
+                className="dp-simulator-inner"
                 style={{
                   background: 'var(--color-bg-deep)',
                   minHeight: '400px',
@@ -1642,6 +1643,7 @@ export default function DefensePrep() {
                   ].map((examiner) => (
                     <div
                       key={examiner.name}
+                      className="dp-examiner-card"
                       style={{
                         background: 'rgba(0,102,255,0.08)',
                         border: '1px solid rgba(0,102,255,0.2)',
@@ -1651,10 +1653,10 @@ export default function DefensePrep() {
                         minWidth: '160px',
                       }}
                     >
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#3B82F6', fontWeight: 600, marginBottom: '4px' }}>
+                      <div className="dp-examiner-card__name" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#3B82F6', fontWeight: 600, marginBottom: '4px' }}>
                         {examiner.name}
                       </div>
-                      <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                      <div className="dp-examiner-card__desc" style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
                         {examiner.desc}
                       </div>
                     </div>

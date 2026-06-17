@@ -544,3 +544,70 @@
   border-left: 4px solid #DC2626 !important;
   box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04) !important;
 }
+
+/* ── Defence Simulator inner section light mode ────────────────────────────── */
+[data-theme="light"] .es-main .dp-simulator-inner,
+.light .es-main .dp-simulator-inner {
+  background: #F0F4F8 !important;
+}
+[data-theme="light"] .es-main .dp-simulator-inner h2,
+.light .es-main .dp-simulator-inner h2 { color: var(--color-text-primary) !important; }
+[data-theme="light"] .es-main .dp-simulator-inner > p,
+.light .es-main .dp-simulator-inner > p { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] .es-main .dp-examiner-card,
+.light .es-main .dp-examiner-card {
+  background: rgba(0,102,255,0.05) !important;
+  border-color: rgba(0,102,255,0.15) !important;
+}
+[data-theme="light"] .es-main .dp-examiner-card__desc,
+.light .es-main .dp-examiner-card__desc { color: rgba(13,27,42,0.55) !important; }
+
+/* ── Express shell — mobile layout ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .es-shell { flex-direction: column; }
+
+  .es-sidebar {
+    width: 100%;
+    min-height: unset;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  [data-theme="light"] .es-sidebar,
+  .light .es-sidebar { border-bottom-color: rgba(13,27,42,0.1); }
+
+  .es-sidebar__logo,
+  .eb-brief,
+  .es-sidebar__footer { display: none; }
+
+  .es-step-list {
+    flex-direction: row;
+    flex: 1;
+    gap: 4px;
+  }
+  .es-step-list__item { flex: 1; min-width: 0; }
+
+  .es-step-btn {
+    width: 100%;
+    padding: 8px 6px;
+    gap: 5px;
+    border-radius: var(--radius-sm);
+    justify-content: center;
+  }
+  .es-step-btn__num { width: 20px; height: 20px; font-size: 0.65rem; }
+  .es-step-btn__name { font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .es-main { padding: var(--space-md); }
+
+  /* Tighten card padding on mobile */
+  .es-main .pr-card,
+  .es-main .db-card,
+  .es-main .dp-card { padding: 24px 20px !important; }
+
+  .dp-simulator-inner { padding: 32px 20px !important; }
+}
