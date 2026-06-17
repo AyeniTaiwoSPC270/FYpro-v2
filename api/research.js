@@ -2,13 +2,14 @@
 // ?action=validate → Topic Validator (5 papers, augments system prompt)
 // ?action=lit-map  → Literature Map  (20 papers, clusters into themes)
 
-import { rateLimitCheck }                 from './_lib/rate-limit.js';
+import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }                 from './_lib/cors.js';
 import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts.js';
+import { FREE_STEP_LIMITS }               from './_lib/free-limits.js';
 
 export const config = { maxDuration: 60 };
 
@@ -21,20 +22,26 @@ const CLAUDE_TTL = 86400; // 24h
  * entitlement tier (so paid users get the higher ceiling), then checks their
  * per-user counter. On a 429 it writes the response and returns true.
  * If entitlements can't be read we conservatively assume the free tier.
+ * @param {string}  userId
+ * @param {object}  res
+ * @param {boolean} [knownIsPaid] - If provided, skips the entitlement fetch (caller already knows the tier).
  * @returns {Promise<boolean>} true if the request was blocked (response sent)
  */
-async function userCapBlocked(userId, res) {
-  let isPaid = false;
-  try {
-    const { data } = await supabaseAdmin
-      .from('user_entitlements')
-      .select('paid_features')
-      .eq('user_id', userId)
-      .maybeSingle();
-    const pf = Array.isArray(data?.paid_features) ? data.paid_features : [];
-    isPaid = pf.includes('student_pack') || pf.includes('defense_pack') || pf.includes('express_defense');
-  } catch (e) {
-    console.error('[research] entitlements fetch for cap tier failed (assuming free):', e.message);
+async function userCapBlocked(userId, res, knownIsPaid) {
+  let isPaid = knownIsPaid;
+  if (typeof isPaid !== 'boolean') {
+    try {
+      const { data } = await supabaseAdmin
+        .from('user_entitlements')
+        .select('paid_features')
+        .eq('user_id', userId)
+        .maybeSingle();
+      const pf = Array.isArray(data?.paid_features) ? data.paid_features : [];
+      isPaid = pf.includes('student_pack') || pf.includes('defense_pack') || pf.includes('express_defense');
+    } catch (e) {
+      console.error('[research] entitlements fetch for cap tier failed (assuming free):', e.message);
+      isPaid = false;
+    }
   }
   const userCap = await checkUserCap(userId, isPaid);
   if (!userCap.allowed) {
@@ -107,8 +114,61 @@ async function handleValidate(req, res) {
     return res.status(200).json(claudeCached);
   }
 
+  // Fetch entitlements once on the cache-miss path: tier (for the per-user spend
+  // cap) and run_counts (for the free-tier run limit below).
+  let entData = null;
+  try {
+    const { data } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('paid_features, run_counts')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    entData = data;
+  } catch (e) {
+    console.error('[research/validate] entitlements fetch failed (assuming free):', e.message);
+  }
+  const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
+  // Spend cap counts express_defense as paid; the run limit does not (it must
+  // match the client gate in useRunLimit.js, which only exempts these two packs).
+  const capIsPaid     = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack') || paidFeatures.includes('express_defense');
+  const runLimitExempt = paidFeatures.includes('student_pack') || paidFeatures.includes('defense_pack');
+
   // Per-user spend gate on cache miss (cache hits above cost nothing).
-  if (await userCapBlocked(user.id, res)) return;
+  if (await userCapBlocked(user.id, res, capIsPaid)) return;
+
+  // Server-side free-tier run limit for Topic Validator. The client enforces the
+  // same limit, but the client check is bypassable — this is the authoritative
+  // gate. Mirrors the atomic reservation pattern in api/ai.js handleGeneral.
+  const freeLimit   = FREE_STEP_LIMITS.topic_validator;
+  const dbRunCounts = (entData?.run_counts && typeof entData.run_counts === 'object') ? entData.run_counts : {};
+  const serverCount = typeof dbRunCounts.topic_validator === 'number' ? dbRunCounts.topic_validator : 0;
+
+  if (!runLimitExempt && serverCount >= freeLimit) {
+    return res.status(429).json({ error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.' });
+  }
+
+  // Atomic run reservation — closes the concurrency race where N parallel requests
+  // all pass the read-check above before any increment lands. Counter is seeded
+  // from the DB count (SET NX), then INCR reserves a slot. Refunded if the call
+  // fails. Fails open to the read-check above if Redis is unavailable.
+  let runKey = null;
+  let reservedCount = null;
+  if (!runLimitExempt) {
+    try {
+      const key = freeRunKey('topic_validator', user.id);
+      await redis.set(key, serverCount, { nx: true });
+      reservedCount = await redis.incr(key);
+      runKey = key;
+      if (reservedCount > freeLimit) {
+        return res.status(429).json({ error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.' });
+      }
+    } catch (redisErr) {
+      console.error('[research/validate] run reservation failed (failing open):', redisErr?.message);
+      runKey = null;
+      reservedCount = null;
+    }
+  }
+  const refundRun = () => { if (runKey) redis.decr(runKey).catch(() => {}); };
 
   try {
 
@@ -171,6 +231,7 @@ async function handleValidate(req, res) {
     }
 
     if (!response.ok) {
+      refundRun(); // Anthropic returned an error status — don't charge the run
       const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
       console.error('[research/validate] Anthropic error:', response.status, errorMsg);
       return res.status(502).json({ error: errorMsg });
@@ -178,6 +239,20 @@ async function handleValidate(req, res) {
 
     res.setHeader('X-Cache', 'MISS');
     setCached(claudeKey, data, CLAUDE_TTL);
+
+    // Sync the DB run count for free users — fire-and-forget, mirrors the Redis
+    // reservation (or read+1 when Redis was unavailable). Display/fallback only.
+    if (!runLimitExempt) {
+      const newCount = reservedCount ?? (serverCount + 1);
+      supabaseAdmin
+        .from('user_entitlements')
+        .upsert(
+          { user_id: user.id, run_counts: { ...dbRunCounts, topic_validator: newCount }, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        )
+        .catch(err => console.error('[research/validate] run count sync failed:', err?.message));
+    }
+
     const duration = Date.now() - start;
     const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id });
     const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
@@ -186,6 +261,7 @@ async function handleValidate(req, res) {
     });
     return res.status(200).json(data);
   } catch (err) {
+    refundRun(); // request never produced a result — don't charge the run
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[research/validate] Anthropic request timed out after 50s');
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
