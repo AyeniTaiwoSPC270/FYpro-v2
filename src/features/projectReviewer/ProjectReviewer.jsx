@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -238,8 +238,13 @@ export default function ProjectReviewer() {
   const [celebration, setCelebration] = useState(null)
   const { refetch: refetchAchievements } = useAchievements()
 
-  const { isOverLimit } = useRunLimit(features)
-  const overLimit = isOverLimit('project_reviewer')
+  // Express-only users have a lifetime cap (server-enforced); standard users use
+  // the project_reviewer key (unlimited for Defense Pack). The counter + soft gate
+  // below read the matching key; the server is the authoritative gate either way.
+  const reviewerKey = isExpress ? 'express_reviewer' : 'project_reviewer'
+  const { isOverLimit, getRemainingRuns } = useRunLimit(features)
+  const overLimit = isOverLimit(reviewerKey)
+  const remainingReviews = getRemainingRuns(reviewerKey)
 
   const savedData = state.uploadedProject?.reviewData ??
     (state.uploadedProject?.grade ? state.uploadedProject : null)
@@ -436,6 +441,11 @@ export default function ProjectReviewer() {
       setReviewData(data)
       setSection('result')
       setIsProcessing(false)
+      // Decrement the express lifetime counter for display only — the server already
+      // reserved the slot authoritatively. Fired AFTER success so a failed call never
+      // burns a count, and never before the request (which would double-count the
+      // server-side reservation seed).
+      if (isExpress) recordStepRun('express_reviewer')
       set({ uploadedProject: {
         fileName: selectedFile?.name || 'Uploaded document',
         fileType: (selectedFile?.name || '').split('.').pop().toLowerCase() || 'unknown',
@@ -621,9 +631,16 @@ export default function ProjectReviewer() {
         >
           {isProcessing ? <><Spinner /> Working…</> : 'Review My Project'}
         </button>
+        {isExpress && remainingReviews !== null && !overLimit && (
+          <p className="font-mono" style={{ marginTop: 8, fontSize: '0.7rem', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
+            {remainingReviews} {remainingReviews === 1 ? 'review' : 'reviews'} left
+          </p>
+        )}
         {overLimit && (
           <p className="pr-error-text tv-section--visible" style={{ marginTop: 8 }}>
-            You've reached your limit for this feature. Start a new project or upgrade your plan.
+            {isExpress
+              ? "You've used all your Express project reviews."
+              : "You've reached your limit for this feature. Start a new project or upgrade your plan."}
           </p>
         )}
       </div>

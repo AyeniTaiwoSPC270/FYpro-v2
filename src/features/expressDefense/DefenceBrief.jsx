@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
+import { usePaidFeatures } from '../../hooks/usePaidFeatures'
+import { recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
 import { generateDefenceBrief, coachDefenceBriefAnswer, handleApiError } from '../../services/api'
 import { generateDefenceBrief as buildPDF } from '../../lib/generateDefenceBrief'
 import ApiErrorBox from '../../components/ApiErrorBox'
@@ -17,6 +19,12 @@ const LOADING_MESSAGES = [
 
 export default function DefenceBrief() {
   const { state, set, studentContext } = useApp()
+  // Defence Brief lifetime cap for express-only users (server-enforced). getRemainingRuns
+  // returns null for Defense Pack holders (exempt), so the counter/gate self-disable.
+  const { features } = usePaidFeatures()
+  const { isOverLimit, getRemainingRuns } = useRunLimit(features)
+  const briefOverLimit = isOverLimit('express_defence_brief')
+  const remainingBriefs = getRemainingRuns('express_defence_brief')
   const { saveStep } = useProjectState()
 
   const reviewData = state.uploadedProject?.reviewData ?? null
@@ -100,6 +108,9 @@ export default function DefenceBrief() {
       set({ defenseBrief: normalized })
       setSection('result')
       setGenerating(false)
+      // Decrement the lifetime counter for display only — the server already reserved
+      // the slot. Fired after success so a failed generation never burns a count.
+      recordStepRun('express_defence_brief')
     } catch (err) {
       setGenerating(false)
       setSection('input')
@@ -301,10 +312,20 @@ export default function DefenceBrief() {
             <span className="db-pill db-pill--green">Downloadable PDF</span>
           </div>
           <ApiErrorBox error={error} onRetry={handleGenerate} />
-          <button className="db-btn-generate" onClick={handleGenerate} disabled={isGenerating}>
+          <button className="db-btn-generate" onClick={handleGenerate} disabled={isGenerating || briefOverLimit}>
             {isGenerating ? <><Spinner /> Generating…</> : '⚡ Generate My Brief'}
           </button>
-          <p className="db-note">Reads your Project Review results — no extra input needed</p>
+          {briefOverLimit ? (
+            <p className="db-note" style={{ color: 'var(--color-red)' }}>
+              You've used all your Express Defence Brief generations.
+            </p>
+          ) : remainingBriefs !== null ? (
+            <p className="db-note">
+              Reads your Project Review results — no extra input needed · {remainingBriefs} {remainingBriefs === 1 ? 'generation' : 'generations'} left
+            </p>
+          ) : (
+            <p className="db-note">Reads your Project Review results — no extra input needed</p>
+          )}
         </>
       )}
 

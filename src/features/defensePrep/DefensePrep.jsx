@@ -21,6 +21,7 @@ import {
   buildThreeExaminerFollowUpPrompt,
 } from '../../services/prompts.js'
 import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { EXPRESS_TOTAL_LIMITS } from '../../../api/_lib/express-limits.js'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useTheme } from '../../context/ThemeContext'
@@ -500,6 +501,18 @@ export default function DefensePrep() {
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
 
+  // Express-only lifetime simulator cap. Unlike the other express caps this is
+  // derived from the COMPLETED defense_sessions count (the same signal the server
+  // gates on), not run_counts — so getRemainingRuns can't be used here. Defense
+  // Pack holders are exempt. completedSims is re-counted whenever the section
+  // changes (so it refreshes after a session finishes → 'summary').
+  const simsExpressOnly = isExpress && features.includes('express_defense') && !features.includes('defense_pack')
+  const [completedSims, setCompletedSims] = useState(null)
+  const remainingSims = (simsExpressOnly && completedSims !== null)
+    ? Math.max(0, EXPRESS_TOTAL_LIMITS.express_simulator - completedSims)
+    : null
+  const simsOverLimit = remainingSims !== null && remainingSims <= 0
+
   const hasPaidDefenseAccess = isExpress || features.includes('defense_pack') || features.includes('express_defense')
   const isFreeTrial = !isExpress && !hasPaidDefenseAccess
 
@@ -617,6 +630,21 @@ export default function DefensePrep() {
       .then(({ count }) => { if (count > 0) setHasHistory(true) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
+
+  // Count completed simulations for the express lifetime cap display + soft gate.
+  // Project-scoped count matches the server's user-scoped count for express-only
+  // users (a single express project). Re-runs on section change to refresh after
+  // a session completes.
+  useEffect(() => {
+    if (!simsExpressOnly || !projectId) { setCompletedSims(null); return }
+    supabase
+      .from('defense_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', projectId)
+      .eq('status', 'completed')
+      .then(({ count }) => setCompletedSims(count ?? 0))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simsExpressOnly, projectId, section])
 
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {
@@ -1743,14 +1771,21 @@ export default function DefensePrep() {
                 id="dp-btn-enter-defense"
                 className="dp-btn-enter-defense"
                 onClick={enterDefenseMode}
-                disabled={dsOverLimit}
-                style={dsOverLimit ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                disabled={dsOverLimit || simsOverLimit}
+                style={(dsOverLimit || simsOverLimit) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
               >
                 Enter Defence Mode
               </button>
-              {dsOverLimit && (
+              {simsExpressOnly && remainingSims !== null && !simsOverLimit && (
+                <p className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--color-text-white-dim)', marginTop: 8 }}>
+                  {remainingSims} {remainingSims === 1 ? 'simulation' : 'simulations'} left
+                </p>
+              )}
+              {(dsOverLimit || simsOverLimit) && (
                 <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: 8 }}>
-                  You've reached your limit for this feature. Start a new project or upgrade your plan.
+                  {simsOverLimit
+                    ? "You've completed all your Express defense simulations."
+                    : "You've reached your limit for this feature. Start a new project or upgrade your plan."}
                 </p>
               )}
               <button
