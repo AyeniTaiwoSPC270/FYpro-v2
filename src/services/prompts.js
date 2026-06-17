@@ -711,7 +711,7 @@ Review the entire PDF content carefully. Every strength, weakness, and examiner 
 Return ONLY this exact JSON structure:
 
 {
-  "grade": "Distinction" | "Merit" | "Pass" | "Fail",
+  "grade": "Distinction | Merit | Pass | Fail",
   "grade_justification": "One sentence explaining the grade — must reference specific aspects of the PDF content",
   "score_estimate": "Numeric estimate e.g. '68% — Merit'",
   "strengths": [
@@ -731,6 +731,105 @@ Return ONLY this exact JSON structure:
     {"number": 4,"question": "...","target": "..."},
     {"number": 5,"question": "...","target": "..."}
   ]
+}
+
+Return only the JSON. Nothing else.
+`.trim();
+}
+
+// ── Defence Brief ────────────────────────────────────────────────────────────
+
+export function buildDefenceBriefPrompt(student, weaknesses, examinerQuestions) {
+  const weaknessBlock = (weaknesses || [])
+    .map((w, i) => `Weakness ${i + 1} — ${w.title}: ${w.detail}${w.fix ? ` Suggested fix: ${w.fix}` : ''}`)
+    .join('\n');
+
+  const questionsBlock = (examinerQuestions || [])
+    .map(q => `Q${q.number}: ${q.question}${q.target ? ` [Targets: ${q.target}]` : ''}`)
+    .join('\n');
+
+  return `
+${buildStudentContext(student)}
+
+PROJECT REVIEWER RESULTS — use these as the source material:
+
+IDENTIFIED WEAKNESSES:
+${wrapUserInput('WEAKNESSES', weaknessBlock)}
+
+EXAMINER QUESTIONS GENERATED FROM THE DOCUMENT:
+${wrapUserInput('EXAMINER_QUESTIONS', questionsBlock)}
+
+Generate the complete Defence Brief for this student.
+The opening statement must reference the exact topic, methodology, and a plausible key finding.
+Every model answer must be specific to this project — not generic academic advice.
+
+Return ONLY this exact JSON structure:
+
+{
+  "opening_statement": "Full word-for-word 2-3 sentence script. First person. Includes [Your Name] placeholder. Ends with I am ready to walk the panel through my work.",
+  "weak_spots": [
+    {
+      "severity": "Critical",
+      "title": "Short name matching the weakness title above",
+      "examiner_question": "The exact question from the reviewer results",
+      "model_answer": "Complete word-for-word answer. 60-90 words. Cites formula/theory/standard specific to this project."
+    },
+    {
+      "severity": "Serious",
+      "title": "...",
+      "examiner_question": "...",
+      "model_answer": "..."
+    },
+    {
+      "severity": "Minor",
+      "title": "...",
+      "examiner_question": "...",
+      "model_answer": "..."
+    }
+  ],
+  "examiner_qas": [
+    { "number": 1, "question": "Exact question from reviewer results", "answer": "Prepared response. 40-60 words. Project-specific." },
+    { "number": 2, "question": "...", "answer": "..." },
+    { "number": 3, "question": "...", "answer": "..." },
+    { "number": 4, "question": "...", "answer": "..." },
+    { "number": 5, "question": "...", "answer": "..." }
+  ]
+}
+
+Return only the JSON. Nothing else.
+`.trim();
+}
+
+export function buildDefenceBriefCoachPrompt(weakSpot, conversationHistory) {
+  const historyBlock = (conversationHistory || [])
+    .map(t => `${t.role === 'user' ? 'Student' : 'Coach'}: ${t.content}`)
+    .join('\n');
+
+  return `
+WEAK SPOT BEING COACHED:
+Severity: ${weakSpot.severity || ''}
+Title: ${weakSpot.title || ''}
+Examiner question: ${weakSpot.examiner_question || ''}
+Model answer (for reference only — do NOT reveal this to the student): ${weakSpot.model_answer || ''}
+
+CONVERSATION SO FAR:
+${wrapUserInput('CONVERSATION', historyBlock || 'No prior turns.')}
+
+Evaluate the student's most recent answer. If it is adequate, mark it passed. If not, give one short corrective hint.
+
+Return ONLY this exact JSON structure:
+
+{
+  "passed": true,
+  "feedback": "One sentence of feedback. Encouraging if passed, corrective if not."
+}
+
+OR if they need to try again:
+
+{
+  "passed": false,
+  "feedback": "One sentence explaining what is weak about their answer.",
+  "hint": "One sentence pointing toward what they should add or change — without giving the full answer."
 }
 
 Return only the JSON. Nothing else.
