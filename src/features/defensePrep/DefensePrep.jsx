@@ -1529,8 +1529,8 @@ export default function DefensePrep() {
               id="dp-input-section"
               className={`dp-input-section ${section === 'input' ? 'dp-section--visible' : 'dp-section--hidden'}`}
             >
-              <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(4) } }}>
-                ← Back to Project Reviewer
+              <button className="fy-back-btn" onClick={() => { if (isExpress) { sessionStorage.setItem('express_active_step', 'brief'); window.location.assign('/express/run') } else { navigateStep(4) } }}>
+                {isExpress ? '← Back to Defence Brief' : '← Back to Project Reviewer'}
               </button>
 
               {/* ── Free trial gate ─────────────────────────── */}
@@ -1758,8 +1758,8 @@ export default function DefensePrep() {
               >
                 Go Back and Revise
               </button>
-              <button className="fy-back-btn" onClick={() => { if (isExpress) { window.location.assign('/express') } else { navigateStep(4) } }}>
-                ← Back to Project Reviewer
+              <button className="fy-back-btn" onClick={() => { if (isExpress) { sessionStorage.setItem('express_active_step', 'brief'); window.location.assign('/express/run') } else { navigateStep(4) } }}>
+                {isExpress ? '← Back to Defence Brief' : '← Back to Project Reviewer'}
               </button>
             </div>
 

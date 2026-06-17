@@ -484,6 +484,52 @@
 [data-theme="light"] .es-main .pr-upload-zone,
 .light .es-main .pr-upload-zone { border-color: rgba(13,27,42,0.2); }
 
+/* ── Express sidebar light mode ────────────────────────────────────────────── */
+[data-theme="light"] .es-sidebar,
+.light .es-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #F0F4F8 100%);
+  border-right: 1px solid rgba(13,27,42,0.1);
+}
+[data-theme="light"] .es-sidebar__logo,
+.light .es-sidebar__logo { border-bottom-color: rgba(13,27,42,0.1); }
+
+[data-theme="light"] .es-step-btn,
+.light .es-step-btn {
+  color: rgba(13,27,42,0.55);
+}
+[data-theme="light"] .es-step-btn__name,
+.light .es-step-btn__name { color: rgba(13,27,42,0.7); }
+[data-theme="light"] .es-step-btn--active,
+.light .es-step-btn--active {
+  background: rgba(0,102,255,0.08);
+  color: var(--color-blue-primary);
+}
+[data-theme="light"] .es-step-btn--active .es-step-btn__name,
+.light .es-step-btn--active .es-step-btn__name { color: var(--color-blue-primary); }
+[data-theme="light"] .es-step-btn--active .es-step-btn__num,
+.light .es-step-btn--active .es-step-btn__num { background: var(--color-blue-primary); color: #fff; }
+[data-theme="light"] .es-step-btn--done .es-step-btn__num,
+.light .es-step-btn--done .es-step-btn__num { background: #16A34A; color: #fff; }
+[data-theme="light"] .es-step-btn--locked,
+.light .es-step-btn--locked { color: rgba(13,27,42,0.3); }
+
+[data-theme="light"] .es-sidebar__footer,
+.light .es-sidebar__footer { border-top-color: rgba(13,27,42,0.1); }
+[data-theme="light"] .es-sidebar__footer-text,
+.light .es-sidebar__footer-text { color: rgba(13,27,42,0.4); }
+
+[data-theme="light"] .eb-brief,
+.light .eb-brief {
+  background: rgba(0,102,255,0.04);
+  border-color: rgba(0,102,255,0.2);
+}
+[data-theme="light"] .eb-brief__topic,
+.light .eb-brief__topic { color: var(--color-text-primary); }
+[data-theme="light"] .eb-brief__meta,
+.light .eb-brief__meta { color: rgba(13,27,42,0.4); }
+[data-theme="light"] .eb-brief__label,
+.light .eb-brief__label { color: var(--color-blue-primary); }
+
 /* ── Express cards: dp-card (DefensePrep in Express) ──────────────────────── */
 .es-main .dp-card {
   background: linear-gradient(145deg, #0F2235 0%, #0A1929 100%) !important;

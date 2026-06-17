@@ -16,7 +16,11 @@ const STEPS = [
 ]
 
 export default function ExpressShell() {
-  const [activeStep, setActiveStep] = useState('reviewer')
+  const [activeStep, setActiveStep] = useState(() => {
+    const saved = sessionStorage.getItem('express_active_step')
+    if (saved) { sessionStorage.removeItem('express_active_step'); return saved }
+    return 'reviewer'
+  })
   const navigate = useNavigate()
   const { state } = useApp()
   const expressSteps = state.expressSteps || {}

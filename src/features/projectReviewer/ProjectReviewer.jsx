@@ -632,7 +632,7 @@ export default function ProjectReviewer() {
           className="pr-btn-skip"
           onClick={handleSkip}
         >
-          Skip &mdash; Proceed to Defence
+          {isExpress ? 'Skip — Go Straight to Defence Simulator' : 'Skip — Proceed to Defence'}
         </button>
       </div>
 
