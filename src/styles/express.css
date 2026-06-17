@@ -192,7 +192,7 @@
 .es-shell {
   display: flex;
   min-height: 100vh;
-  background: var(--color-bg-surface);
+  background: var(--color-bg-deep, #060E18);
 }
 .es-sidebar {
   width: 260px;
@@ -264,7 +264,13 @@
   color: rgba(255,255,255,0.2);
   letter-spacing: 0.08em;
 }
-.es-main { flex: 1; overflow-y: auto; padding: var(--space-lg); }
+.es-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  background-image: radial-gradient(circle, rgba(0,102,255,0.06) 1.2px, transparent 1px);
+  background-size: 28px 28px;
+}
 
 /* ── Express Brief card ───────────────────────────────────────────────────── */
 .eb-brief {
@@ -444,3 +450,51 @@
   margin-top: var(--space-sm);
 }
 .lp-express-cta__btn:hover { opacity: 0.9; box-shadow: var(--shadow-blue-glow); }
+
+/* ── Express Shell — light/dark theme overrides ───────────────────────────── */
+
+[data-theme="light"] .es-shell,
+.light .es-shell { background: #F0F4F8; }
+
+[data-theme="light"] .es-main,
+.light .es-main {
+  background-color: #F0F4F8;
+  background-image: radial-gradient(circle, rgba(0,102,255,0.10) 1.2px, transparent 1px);
+}
+
+/* ── Express cards: pr-card ────────────────────────────────────────────────── */
+/* Dark default (inside Express shell) */
+.es-main .pr-card {
+  background: linear-gradient(145deg, #0F2235 0%, #0A1929 100%) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-left: 4px solid #0066FF !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
+}
+/* Light override */
+[data-theme="light"] .es-main .pr-card,
+.light .es-main .pr-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fffdf5 100%) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  border-left: 4px solid #F59E0B !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04) !important;
+}
+
+/* Upload zone — fix dashed border in dark mode */
+.es-main .pr-upload-zone { border-color: rgba(255,255,255,0.14); }
+[data-theme="light"] .es-main .pr-upload-zone,
+.light .es-main .pr-upload-zone { border-color: rgba(13,27,42,0.2); }
+
+/* ── Express cards: dp-card (DefensePrep in Express) ──────────────────────── */
+.es-main .dp-card {
+  background: linear-gradient(145deg, #0F2235 0%, #0A1929 100%) !important;
+  border: 1px solid rgba(220,38,38,0.09) !important;
+  border-left: 4px solid #DC2626 !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 36px rgba(220,38,38,0.09) !important;
+}
+[data-theme="light"] .es-main .dp-card,
+.light .es-main .dp-card {
+  background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%) !important;
+  border: 1px solid rgba(0,0,0,0.07) !important;
+  border-left: 4px solid #DC2626 !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04) !important;
+}

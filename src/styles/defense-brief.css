@@ -504,85 +504,117 @@
 .db-chat-send:hover:not(:disabled) { opacity: 0.9; }
 .db-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Dark mode overrides (.app-content mirrors dark Express shell) ─────────── */
-.app-content .db-card {
+/* ── Dark mode overrides (Express shell — .es-main context) ───────────────── */
+/* Defence Brief only ever renders inside .es-main, never .app-content.        */
+/* All overrides are gated on dark theme so light mode uses base styles.       */
+
+[data-theme="dark"] .es-main .db-card,
+.dark .es-main .db-card {
   background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(0,102,255,0.04) 100%) !important;
   border-color: rgba(0, 102, 255, 0.25) !important;
 }
-.app-content .db-step-label  { color: rgba(255,255,255,0.92) !important; }
-.app-content .db-description { color: rgba(255,255,255,0.60) !important; }
 
-.app-content .db-pill {
+[data-theme="dark"] .es-main .db-step-label,
+.dark .es-main .db-step-label  { color: rgba(255,255,255,0.92) !important; }
+[data-theme="dark"] .es-main .db-description,
+.dark .es-main .db-description { color: rgba(255,255,255,0.60) !important; }
+
+[data-theme="dark"] .es-main .db-pill,
+.dark .es-main .db-pill {
   background: rgba(0,102,255,0.10) !important;
   border-color: rgba(0,102,255,0.25) !important;
   color: rgba(255,255,255,0.65) !important;
 }
 
-.app-content .db-opening {
+[data-theme="dark"] .es-main .db-opening,
+.dark .es-main .db-opening {
   background: rgba(0,102,255,0.08) !important;
   border-color: rgba(0,102,255,0.20) !important;
 }
-.app-content .db-opening__text { color: rgba(255,255,255,0.75) !important; }
+[data-theme="dark"] .es-main .db-opening__text,
+.dark .es-main .db-opening__text { color: rgba(255,255,255,0.75) !important; }
 
-.app-content .db-weakness-item {
+[data-theme="dark"] .es-main .db-weakness-item,
+.dark .es-main .db-weakness-item {
   background: rgba(220,38,38,0.07) !important;
   border-color: rgba(220,38,38,0.20) !important;
 }
-.app-content .db-weakness__title   { color: rgba(255,255,255,0.90) !important; }
-.app-content .db-weakness__answer  { color: rgba(255,255,255,0.70) !important; }
-.app-content .db-weakness__question { color: rgba(255,255,255,0.45) !important; }
+[data-theme="dark"] .es-main .db-weakness__title,
+.dark .es-main .db-weakness__title    { color: rgba(255,255,255,0.90) !important; }
+[data-theme="dark"] .es-main .db-weakness__answer,
+.dark .es-main .db-weakness__answer   { color: rgba(255,255,255,0.70) !important; }
+[data-theme="dark"] .es-main .db-weakness__question,
+.dark .es-main .db-weakness__question { color: rgba(255,255,255,0.45) !important; }
 
-.app-content .db-coach-btn {
+[data-theme="dark"] .es-main .db-coach-btn,
+.dark .es-main .db-coach-btn {
   border-color: rgba(255,255,255,0.15) !important;
   color: rgba(255,255,255,0.55) !important;
 }
-.app-content .db-coach-btn:hover {
+[data-theme="dark"] .es-main .db-coach-btn:hover,
+.dark .es-main .db-coach-btn:hover {
   border-color: var(--color-blue-primary) !important;
   color: var(--color-blue-primary) !important;
 }
 
-.app-content .db-question-text   { color: rgba(255,255,255,0.88) !important; }
-.app-content .db-question-answer { color: rgba(255,255,255,0.60) !important; }
+[data-theme="dark"] .es-main .db-question-text,
+.dark .es-main .db-question-text   { color: rgba(255,255,255,0.88) !important; }
+[data-theme="dark"] .es-main .db-question-answer,
+.dark .es-main .db-question-answer { color: rgba(255,255,255,0.60) !important; }
 
-.app-content .db-result__title  { color: rgba(255,255,255,0.92) !important; }
-.app-content .db-result__meta   { color: rgba(255,255,255,0.35) !important; }
-.app-content .db-result__header { border-color: rgba(255,255,255,0.08) !important; }
+[data-theme="dark"] .es-main .db-result__title,
+.dark .es-main .db-result__title  { color: rgba(255,255,255,0.92) !important; }
+[data-theme="dark"] .es-main .db-result__meta,
+.dark .es-main .db-result__meta   { color: rgba(255,255,255,0.35) !important; }
+[data-theme="dark"] .es-main .db-result__header,
+.dark .es-main .db-result__header { border-color: rgba(255,255,255,0.08) !important; }
 
-.app-content .db-note           { color: rgba(255,255,255,0.30) !important; }
-.app-content .db-locked__text   { color: rgba(255,255,255,0.35) !important; }
+[data-theme="dark"] .es-main .db-note,
+.dark .es-main .db-note         { color: rgba(255,255,255,0.30) !important; }
+[data-theme="dark"] .es-main .db-locked__text,
+.dark .es-main .db-locked__text { color: rgba(255,255,255,0.35) !important; }
 
-.app-content .db-chat-bubble--ai {
+[data-theme="dark"] .es-main .db-chat-bubble--ai,
+.dark .es-main .db-chat-bubble--ai {
   background: rgba(0,102,255,0.10) !important;
   border-color: rgba(0,102,255,0.20) !important;
   color: rgba(255,255,255,0.88) !important;
 }
-.app-content .db-chat-bubble--user {
+[data-theme="dark"] .es-main .db-chat-bubble--user,
+.dark .es-main .db-chat-bubble--user {
   background: rgba(255,255,255,0.05) !important;
   border-color: rgba(255,255,255,0.10) !important;
   color: rgba(255,255,255,0.65) !important;
 }
-.app-content .db-chat-bubble--feedback {
+[data-theme="dark"] .es-main .db-chat-bubble--feedback,
+.dark .es-main .db-chat-bubble--feedback {
   background: rgba(245,158,11,0.08) !important;
   border-color: rgba(245,158,11,0.25) !important;
   color: rgba(255,255,255,0.85) !important;
 }
-.app-content .db-chat-bubble--success {
+[data-theme="dark"] .es-main .db-chat-bubble--success,
+.dark .es-main .db-chat-bubble--success {
   background: rgba(22,163,74,0.08) !important;
   border-color: rgba(22,163,74,0.25) !important;
   color: rgba(255,255,255,0.85) !important;
 }
-.app-content .db-chat-input-row {
+[data-theme="dark"] .es-main .db-chat-input-row,
+.dark .es-main .db-chat-input-row {
   background: rgba(255,255,255,0.04) !important;
   border-color: rgba(255,255,255,0.12) !important;
 }
-.app-content .db-chat-input-row input {
-  color: rgba(255,255,255,0.80) !important;
-}
-.app-content .db-coaching-topic { color: rgba(255,255,255,0.92) !important; }
-.app-content .db-coaching-header { border-color: rgba(255,255,255,0.08) !important; }
-.app-content .db-back-btn {
+[data-theme="dark"] .es-main .db-chat-input-row input,
+.dark .es-main .db-chat-input-row input { color: rgba(255,255,255,0.80) !important; }
+[data-theme="dark"] .es-main .db-coaching-topic,
+.dark .es-main .db-coaching-topic { color: rgba(255,255,255,0.92) !important; }
+[data-theme="dark"] .es-main .db-coaching-header,
+.dark .es-main .db-coaching-header { border-color: rgba(255,255,255,0.08) !important; }
+[data-theme="dark"] .es-main .db-back-btn,
+.dark .es-main .db-back-btn {
   border-color: rgba(255,255,255,0.15) !important;
   color: rgba(255,255,255,0.55) !important;
 }
-.app-content .db-btn-skip { color: rgba(255,255,255,0.30) !important; }
-.app-content .db-btn-skip:hover { color: rgba(255,255,255,0.55) !important; }
+[data-theme="dark"] .es-main .db-btn-skip,
+.dark .es-main .db-btn-skip { color: rgba(255,255,255,0.30) !important; }
+[data-theme="dark"] .es-main .db-btn-skip:hover,
+.dark .es-main .db-btn-skip:hover { color: rgba(255,255,255,0.55) !important; }
