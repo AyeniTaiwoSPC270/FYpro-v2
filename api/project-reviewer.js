@@ -8,6 +8,8 @@ import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
 import { getReviewerSystemPrompt } from './_lib/ai-prompts.js';
+import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
+import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
 
 export const config = { maxDuration: 60 };
 
@@ -61,7 +63,7 @@ const handler = async (req, res) => {
 
   // Phase 2: entitlements + daily cap in parallel (both need user.id or are independent)
   const [entResult, cap] = await Promise.all([
-    supabaseAdmin.from('user_entitlements').select('paid_features').eq('user_id', user.id).maybeSingle(),
+    supabaseAdmin.from('user_entitlements').select('paid_features, run_counts').eq('user_id', user.id).maybeSingle(),
     checkDailyCap().catch(() => ({ allowed: true })),
   ]);
 
@@ -88,6 +90,17 @@ const handler = async (req, res) => {
   if (!userCap.allowed) {
     return res.status(429).json({ error: "You've reached today's usage limit. It resets at midnight UTC." });
   }
+
+  // Lifetime cap for express-only users. Express Defence is a one-time unlock, so
+  // the daily ceiling alone leaves total cost unbounded. Defense Pack holders are
+  // exempt (richer purchase, bounded by daily caps only). Reserved below, after
+  // PDF validation passes, so a malformed upload never consumes a slot.
+  const expressOnly = paidFeatures.includes('express_defense') && !paidFeatures.includes('defense_pack');
+  const dbRunCounts = (entResult.data?.run_counts && typeof entResult.data.run_counts === 'object')
+    ? entResult.data.run_counts
+    : {};
+  let refundRun = () => {};
+  let reservedCount = null;
 
   try {
     const {
@@ -137,6 +150,23 @@ const handler = async (req, res) => {
       }
     }
 
+    // Reserve a lifetime slot for express-only users now that the PDF is valid.
+    if (expressOnly) {
+      const r = await reserveRun({
+        dbKey: 'express_reviewer',
+        userId: user.id,
+        limit: EXPRESS_TOTAL_LIMITS.express_reviewer,
+        dbRunCounts,
+      });
+      if (!r.allowed) {
+        return res.status(429).json({
+          error: `You've used all ${EXPRESS_TOTAL_LIMITS.express_reviewer} of your Express project reviews.`,
+        });
+      }
+      refundRun     = r.refund;
+      reservedCount = r.reservedCount;
+    }
+
     const start    = Date.now();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -158,16 +188,25 @@ const handler = async (req, res) => {
     }
 
     if (response.ok) {
+      // Persist the reserved lifetime count (display/fallback only — Redis is the
+      // enforcement source). Fire before responding; Vercel freezes after.
+      if (expressOnly && reservedCount !== null) {
+        await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts });
+      }
+
       const duration = Date.now() - start;
       const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id });
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.race([insertPromise, timeoutPromise]).catch(err => {
         console.error('[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
+    } else {
+      refundRun(); // Anthropic returned an error status — don't charge the run
     }
 
     return res.status(response.status).json(data);
   } catch (err) {
+    refundRun(); // request never produced a result — don't charge the run
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       console.error('[project-reviewer] Anthropic request timed out after 50s');
       sendTelegramAlert(`⏱️ Project Reviewer timed out for user:${user.id.slice(0, 8)} (Defense Pack)`).catch(() => null);
