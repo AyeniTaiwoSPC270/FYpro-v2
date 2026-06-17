@@ -686,6 +686,11 @@ async function handleResetRunCounts(req, res) {
       freeRunKey('topic_validator', userId),
       freeRunKey('chapter_architect', userId),
       freeRunKey('methodology_advisor', userId),
+      // Express Defence lifetime-cap reservation counters (reviewer + defence brief).
+      // The simulator cap is derived from completed defense_sessions, not a Redis
+      // counter, so it is intentionally not reset here.
+      freeRunKey('express_reviewer', userId),
+      freeRunKey('express_defence_brief', userId),
     ).catch(err => console.error('[admin/reset-run-counts] redis del failed:', err?.message));
     return res.status(200).json({ ok: true });
   } catch (err) {
