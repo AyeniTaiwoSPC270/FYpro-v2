@@ -4,7 +4,7 @@
 
 import { rateLimitCheck }                 from './_lib/rate-limit.js';
 import { setCorsHeaders }                 from './_lib/cors.js';
-import { checkDailyCap, trackUsage }      from './_lib/usage-tracker.js';
+import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
@@ -13,6 +13,40 @@ import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts
 export const config = { maxDuration: 60 };
 
 const CLAUDE_TTL = 86400; // 24h
+
+/**
+ * Per-user daily spend gate for the research endpoints. Topic Validator and
+ * Literature Map are reachable by free users, so this is a primary place a
+ * free-tier abuser could try to run up the global bill. Looks up the user's
+ * entitlement tier (so paid users get the higher ceiling), then checks their
+ * per-user counter. On a 429 it writes the response and returns true.
+ * If entitlements can't be read we conservatively assume the free tier.
+ * @returns {Promise<boolean>} true if the request was blocked (response sent)
+ */
+async function userCapBlocked(userId, res) {
+  let isPaid = false;
+  try {
+    const { data } = await supabaseAdmin
+      .from('user_entitlements')
+      .select('paid_features')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const pf = Array.isArray(data?.paid_features) ? data.paid_features : [];
+    isPaid = pf.includes('student_pack') || pf.includes('defense_pack') || pf.includes('express_defense');
+  } catch (e) {
+    console.error('[research] entitlements fetch for cap tier failed (assuming free):', e.message);
+  }
+  const userCap = await checkUserCap(userId, isPaid);
+  if (!userCap.allowed) {
+    res.status(429).json({
+      error: isPaid
+        ? "You've reached today's usage limit. It resets at midnight UTC."
+        : "You've reached today's free usage limit. Upgrade for more, or try again after midnight UTC.",
+    });
+    return true;
+  }
+  return false;
+}
 
 /**
  * Topic Validator — fetches up to 5 real papers from Semantic Scholar/OpenAlex, augments the
@@ -73,6 +107,9 @@ async function handleValidate(req, res) {
     return res.status(200).json(claudeCached);
   }
 
+  // Per-user spend gate on cache miss (cache hits above cost nothing).
+  if (await userCapBlocked(user.id, res)) return;
+
   try {
 
     const papersResult = await fetchPapersForValidation(topic.trim());
@@ -111,7 +148,10 @@ async function handleValidate(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
+    }
 
     if (response.ok && data.content?.[0]?.text) {
       try {
@@ -209,6 +249,9 @@ async function handleLitMap(req, res) {
     return res.status(200).json(claudeCached);
   }
 
+  // Per-user spend gate on cache miss (cache hits above cost nothing).
+  if (await userCapBlocked(user.id, res)) return;
+
   try {
 
     const papersResult = await fetchPapersForLitMap(topic.trim());
@@ -256,7 +299,10 @@ async function handleLitMap(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
+    }
 
     if (response.ok && data.content?.[0]?.text) {
       try {

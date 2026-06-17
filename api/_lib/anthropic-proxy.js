@@ -3,7 +3,7 @@
 // Does NOT handle: auth, rate limiting, caching, entitlement checks — those belong in callers.
 
 import { supabaseAdmin }    from './supabase-admin.js';
-import { trackUsage }       from './usage-tracker.js';
+import { trackUsage, trackUserUsage } from './usage-tracker.js';
 import { sendTelegramAlert } from './telegram.js';
 
 const ANTHROPIC_API_URL  = 'https://api.anthropic.com/v1/messages';
@@ -54,6 +54,7 @@ export async function callAnthropic({
 
   if (data.usage) {
     await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+    await trackUserUsage(userId, data.usage.input_tokens, data.usage.output_tokens);
   }
 
   if (response.ok) {

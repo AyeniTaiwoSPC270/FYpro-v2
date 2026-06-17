@@ -3,7 +3,7 @@
 // default         → General Claude proxy (cached, no auth required)
 
 import { rateLimitCheck, extractUserId, redis, freeRunKey } from './_lib/rate-limit.js';
-import { checkDailyCap, trackUsage }     from './_lib/usage-tracker.js';
+import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
@@ -34,6 +34,14 @@ const SERVER_FREE_LIMITS = {
   'chapter-architect':   3,
   'methodology-advisor': 3,
 };
+
+// User-facing copy for the per-user daily spend ceiling (checkUserCap).
+// Free users are nudged to upgrade; paid users are told it resets at midnight UTC.
+function userCapMessage(isPaid) {
+  return isPaid
+    ? "You've reached today's usage limit. It resets at midnight UTC."
+    : "You've reached today's free usage limit. Upgrade for more, or try again after midnight UTC.";
+}
 
 /**
  * General Claude proxy for all six workflow steps (topic-validator, chapter-architect, etc.).
@@ -149,6 +157,18 @@ async function handleGeneral(req, res) {
   if (cached) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
+  }
+
+  // Per-user daily spend ceiling — gate the actual Anthropic call (cache hits
+  // above cost nothing and are never blocked). Stops one account draining the
+  // global budget; free users are held lower than paid. Fails open on Redis error.
+  const userCap = await checkUserCap(user.id, isPaid);
+  if (!userCap.allowed) {
+    sendTelegramAlertOnce(
+      `🧢 Per-user cap hit: ${user.id.slice(0, 8)} ($${userCap.spent.toFixed(2)}/$${userCap.cap.toFixed(2)}, ${isPaid ? 'paid' : 'free'})`,
+      `tg:usercap:${user.id}:${today}`
+    );
+    return res.status(429).json({ error: userCapMessage(isPaid) });
   }
 
   // Atomic run reservation — closes the concurrency race where N parallel
@@ -323,6 +343,16 @@ async function handleDefense(req, res) {
     sendTelegramAlertOnce(`🔶 Spend warning: 80% of daily cap used ($${cap.spent.toFixed(2)}/$${cap.cap.toFixed(2)})`, `tg:spend:warn:${today}`)
   }
 
+  // Per-user daily spend ceiling — applies to paid sessions and free-trial turns alike.
+  const userCap = await checkUserCap(user.id, hasPaidAccess);
+  if (!userCap.allowed) {
+    sendTelegramAlertOnce(
+      `🧢 Per-user cap hit: ${user.id.slice(0, 8)} on defense ($${userCap.spent.toFixed(2)}/$${userCap.cap.toFixed(2)}, ${hasPaidAccess ? 'paid' : 'free'})`,
+      `tg:usercap:${user.id}:${today}`
+    );
+    return res.status(429).json({ error: userCapMessage(hasPaidAccess) });
+  }
+
   const {
     promptType,
     defenseContext,
@@ -462,7 +492,13 @@ async function handleSupervisorPrep(req, res) {
     });
 
     const data = await response.json();
-    if (data.usage) await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+    if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      // Count this toward the shared per-user daily counter. No dedicated cap gate
+      // here: supervisor-prep is rate-limited to 5/user/day and cheap, so it can't
+      // drain the budget — but its spend still counts against the heavier endpoints' gates.
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error?.message || 'Anthropic error' });
@@ -735,6 +771,15 @@ async function handleDefenceBrief(req, res) {
   const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
   if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked. Please purchase Express Defence or the Defense Pack.' });
 
+  const userCap = await checkUserCap(user.id, true);
+  if (!userCap.allowed) {
+    sendTelegramAlertOnce(
+      `🧢 Per-user cap hit: ${user.id.slice(0, 8)} on defence-brief ($${userCap.spent.toFixed(2)}/$${userCap.cap.toFixed(2)})`,
+      `tg:usercap:${user.id}:${today}`
+    );
+    return res.status(429).json({ error: userCapMessage(true) });
+  }
+
   const { messages, max_tokens: rawMaxTokens = 2000, model: rawModel = 'claude-sonnet-4-6' } = req.body || {};
   const v = validate(AiMessagesSchema, { messages });
   if (!v.ok) return res.status(400).json({ error: v.error });
@@ -796,6 +841,15 @@ async function handleDefenceBriefCoach(req, res) {
   const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
   const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
   if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked.' });
+
+  const userCap = await checkUserCap(user.id, true);
+  if (!userCap.allowed) {
+    sendTelegramAlertOnce(
+      `🧢 Per-user cap hit: ${user.id.slice(0, 8)} on defence-brief-coach ($${userCap.spent.toFixed(2)}/$${userCap.cap.toFixed(2)})`,
+      `tg:usercap:${user.id}:${today}`
+    );
+    return res.status(429).json({ error: userCapMessage(true) });
+  }
 
   const { messages, max_tokens: rawMaxTokens = 500, model: rawModel = 'claude-sonnet-4-6' } = req.body || {};
   const v = validate(AiMessagesSchema, { messages });

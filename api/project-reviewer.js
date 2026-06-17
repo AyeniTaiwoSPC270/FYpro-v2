@@ -3,7 +3,7 @@
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
-import { checkDailyCap, trackUsage } from './_lib/usage-tracker.js';
+import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
@@ -82,6 +82,13 @@ const handler = async (req, res) => {
     return res.status(503).json({ error: 'FYPro is at capacity for today. Please try again tomorrow.' });
   }
 
+  // Per-user daily spend ceiling. Reviewer is paid-only, so use the paid tier.
+  // PDF reviews are the heaviest calls — this stops one account running up the bill.
+  const userCap = await checkUserCap(user.id, true);
+  if (!userCap.allowed) {
+    return res.status(429).json({ error: "You've reached today's usage limit. It resets at midnight UTC." });
+  }
+
   try {
     const {
       promptType,
@@ -147,6 +154,7 @@ const handler = async (req, res) => {
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
       await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
     }
 
     if (response.ok) {
