@@ -332,7 +332,7 @@
 .wp-btn-confirm {
   width: 100%;
   padding: 14px;
-  background: #0066FF;
+  background: #16A34A;
   border: none;
   border-radius: 10px;
   color: #ffffff;
@@ -344,8 +344,8 @@
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
 }
 .wp-btn-confirm:hover:not(:disabled) {
-  background: #0052CC;
-  box-shadow: 0 0 20px rgba(0,102,255,0.4);
+  background: #15803D;
+  box-shadow: 0 0 20px rgba(22,163,74,0.35);
   transform: translateY(-1px);
 }
 .wp-btn-confirm:active:not(:disabled) { transform: translateY(0); }
