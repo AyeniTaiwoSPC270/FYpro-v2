@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { UNIVERSITIES, getFaculties, getDepartments } from '../data/universities'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -401,6 +401,13 @@ export default function SplashOnboarding() {
   })()
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  // Hard guard: if this user is already onboarded (localStorage flag or context),
+  // bail out immediately without showing even the splash animation.
+  // Prevents low-network / Supabase-down cases from landing a real user here.
+  if (isOnboarded && !POST_PROFILE_PHASES.includes(phase)) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <>

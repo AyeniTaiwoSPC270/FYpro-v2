@@ -30,6 +30,9 @@ export function clearRoutingCache(): void {
 // Runs two parallel Supabase queries (profile + most recent active project)
 // and caches the result in localStorage so subsequent page loads are instant.
 export async function resolveRouteAfterLogin(userId: string): Promise<string> {
+  // Read cache before the DB query — used as fallback if Supabase is unreachable.
+  const cached = getRoutingCache()
+
   const [profileRes, projectRes] = await Promise.all([
     supabase
       .from('users')
@@ -45,6 +48,19 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
       .limit(1),
   ])
 
+  // If Supabase returned a network/server error (not PGRST116 "no rows"), do NOT
+  // route to /start — that would wrongly send an existing user through onboarding.
+  // Fall back to the cache, or default to /dashboard.
+  const isNetworkError = profileRes.error && profileRes.error.code !== 'PGRST116'
+  if (isNetworkError) {
+    if (cached?.onboarded) {
+      return cached.activeProjectId
+        ? `/dashboard?project=${cached.activeProjectId}`
+        : '/dashboard'
+    }
+    return '/dashboard'
+  }
+
   const isOnboarded = Boolean(
     profileRes.data?.faculty && profileRes.data?.department,
   )
@@ -54,6 +70,8 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
   setRoutingCache({ onboarded: isOnboarded, activeProjectId })
 
   // Keep legacy isOnboarded flag in sync so AppContext reads correctly immediately.
+  // Only clear it when Supabase CONFIRMS the user hasn't set faculty/department —
+  // never clear it on a network failure (that would incorrectly route to /start).
   if (isOnboarded) {
     localStorage.setItem('isOnboarded', 'true')
   } else {
