@@ -625,7 +625,7 @@ html, body {
   letter-spacing: 0.03em;
   pointer-events: none;
 }
-.nav-pill--current  .nav-pill__label { color: #7ab8ff; font-weight: 600; }
+.nav-pill--current  .nav-pill__label { color: var(--color-blue-primary); font-weight: 600; }
 .nav-pill--completed .nav-pill__label { color: rgba(0,0,0,0.5); }
 
 /* ── Placeholder Card ────────────────────────── */

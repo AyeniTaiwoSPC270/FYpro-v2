@@ -612,7 +612,7 @@
 
 /* Upload icon */
 .pr-upload-icon {
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   opacity: 0.8;
 }
 
@@ -788,7 +788,7 @@
 }
 
 .pr-grade-badge[data-grade="distinction"] .pr-grade-label { color: #16A34A; }
-.pr-grade-badge[data-grade="merit"]       .pr-grade-label { color: #7ab8ff; }
+.pr-grade-badge[data-grade="merit"]       .pr-grade-label { color: var(--color-blue-primary); }
 .pr-grade-badge[data-grade="pass"]        .pr-grade-label { color: #D97706; }
 .pr-grade-badge[data-grade="fail"]        .pr-grade-label { color: #DC2626; }
 

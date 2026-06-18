@@ -155,7 +155,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.3rem;
   font-weight: 500;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .wp-summary-stat__label {
   font-family: 'Poppins', sans-serif;
@@ -494,7 +494,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 4px;

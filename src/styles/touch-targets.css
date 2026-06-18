@@ -356,7 +356,7 @@
   color: rgba(160,173,184,0.85) !important;
 }
 .app-content .tv-paper-citations {
-  color: #7ab8ff !important;
+  color: var(--color-blue-primary) !important;
 }
 
 /* ── 5. Light mode overrides — keep existing tv-paper light colours ───── */

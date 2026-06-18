@@ -688,7 +688,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   background: rgba(0, 102, 255, 0.12);
   border-radius: 5px;
   padding: 3px 7px;

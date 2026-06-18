@@ -226,7 +226,7 @@
 }
 .tv-btn-edit:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .tv-btn-save {
   padding: 7px 16px;
@@ -337,7 +337,7 @@
 }
 .tv-btn-use-alt:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 
 
@@ -384,7 +384,7 @@
 }
 .tv-paper-author  { color: rgba(13,27,42,0.7); }
 .tv-paper-year    { color: rgba(13,27,42,0.6); }
-.tv-paper-citations { color: #7ab8ff; }
+.tv-paper-citations { color: var(--color-blue-primary); }
 .tv-papers-sparse-note {
   font-family: 'Poppins', sans-serif;
   font-size: 0.75rem;
@@ -553,7 +553,7 @@
 }
 .ca-toggle-btn:hover:not(.ca-toggle-btn--active) {
   background: rgba(0,102,255,0.05);
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-toggle-btn--active {
   background: #0066FF;
@@ -790,7 +790,7 @@
 }
 .ca-btn-edit-chapter:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-btn-save-chapter {
   margin-top: 14px;
@@ -858,7 +858,7 @@
 }
 .ca-btn-regenerate:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-btn-confirm {
   width: 100%;
@@ -1067,7 +1067,7 @@
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(0,102,255,0.1);
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   flex-shrink: 0;
 }
 
@@ -1145,7 +1145,7 @@
 }
 .ma-btn-select:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ma-btn-select--active {
   background: #0066FF;
