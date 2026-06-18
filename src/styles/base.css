@@ -451,7 +451,7 @@ html, body {
   color: rgba(255,255,255,0.85);
 }
 .context-card__item--topic {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.55);
   font-style: italic;
   margin-top: 4px;
   white-space: normal;
@@ -485,7 +485,7 @@ html, body {
   background: rgba(0,102,255,0.18);
 }
 .step-list__item--completed { opacity: 0.75; }
-.step-list__item--locked    { opacity: 0.35; }
+.step-list__item--locked    { opacity: 0.55; cursor: not-allowed; }
 .step-list__badge {
   width: 24px;
   height: 24px;
