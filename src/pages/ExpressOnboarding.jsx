@@ -16,7 +16,7 @@ const LEVELS = ['300', '400', '500']
 
 const EXPRESS_TRUST_LINES = [
   { icon: '🎓', text: 'Face 3 AI examiners — voice-enabled' },
-  { icon: '🚩', text: 'Red Flag Scanner finds weak points first' },
+  { icon: '📋', text: 'Defence Brief — personalised prep document' },
   { icon: '★', text: 'Certificate when you score 7+' },
 ]
 
@@ -312,7 +312,7 @@ export default function ExpressOnboarding() {
             <div className="eo-payment__eyebrow">EXPRESS DEFENCE PACK</div>
             <h2 className="eo-payment__heading">You&apos;re one step away</h2>
             <ul className="eo-payment__features">
-              <li>Red Flag Scanner — find your project&apos;s weaknesses before the panel does</li>
+              <li>Defence Brief — personalised opening statement, model answers, and examiner Q&amp;A prep</li>
               <li>Project Reviewer — full AI review of your submitted document</li>
               <li>Defence Simulator — 3 AI examiners, voice-enabled, real hostile questions</li>
               <li>Defence certificate if you score 7+</li>

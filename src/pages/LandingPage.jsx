@@ -1237,7 +1237,7 @@ function ExpressCtaSection() {
           Already finished your project?<br />Skip straight to defence practice.
         </h2>
         <p className="lp-express-cta__body">
-          You don&apos;t need the full research workflow. Get three tools — Red Flag Scanner,
+          You don&apos;t need the full research workflow. Get three tools — Defence Brief,
           Project Reviewer, and the Defence Simulator — for ₦2,000. Walk in ready.
         </p>
         <a

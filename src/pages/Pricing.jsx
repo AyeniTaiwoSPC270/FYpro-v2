@@ -379,7 +379,7 @@ const DEFENSE_FEATURES = [
 ]
 
 const EXPRESS_FEATURES = [
-  { type: 'check', label: 'Red Flag Scanner' },
+  { type: 'check', label: 'Defence Brief' },
   { type: 'check', label: 'Project Reviewer (PDF upload)' },
   { type: 'check', label: 'Defence Simulator + voice' },
   { type: 'check', label: 'Defence certificate (score 7+)' },
@@ -602,7 +602,7 @@ const TABLE_ROWS = [
   { feature: 'Methodology Advisor', free: true,    student: true,     express: false,   defense: true },
   { feature: 'Writing Planner',     free: false,   student: true,     express: false,   defense: true },
   { feature: 'Project Reviewer',    free: false,   student: true,     express: true,    defense: true },
-  { feature: 'Red Flag Scanner',    free: false,   student: false,    express: true,    defense: true },
+  { feature: 'Defence Brief',        free: false,   student: false,    express: true,    defense: false },
   { feature: 'Defense Simulator',   free: false,   student: false,    express: true,    defense: true },
   { feature: 'Project Reset',       free: false,   student: '₦1,500', express: false,   defense: 'Included' },
 ]

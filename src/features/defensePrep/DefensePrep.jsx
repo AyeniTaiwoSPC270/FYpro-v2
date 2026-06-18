@@ -1592,13 +1592,12 @@ export default function DefensePrep() {
                         {trialResult ? 'Fix these gaps. Come back ready.' : 'Your free trial has been used.'}
                       </h3>
                       <p className="dp-trial-paywall__body">
-                        Unlock the full Defence Pack to practice again with voice-enabled examiners,
-                        the Red Flag Scanner, and your full project review.
+                        Unlock the full Defence Pack to practice again with voice-enabled examiners
+                        and your full project review.
                       </p>
                       <div className="dp-trial-paywall__features">
                         <span>✓ Unlimited defence sessions (5/day)</span>
                         <span>✓ AI examiner voices</span>
-                        <span>✓ Red Flag Scanner</span>
                         <span>✓ Project Reviewer</span>
                         <span>✓ Defence certificate if you score 7+</span>
                       </div>

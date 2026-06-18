@@ -30,7 +30,8 @@ const FEATURE_LABELS = {
   instrument_builder:  'Instrument Builder',
   project_reviewer:    'Project Reviewer',
   defense_simulator:   'Defense Simulator',
-  red_flag_detector:   'Red Flag Scanner',
+  red_flag_detector:   'Defence Brief (legacy)',
+  defence_brief:       'Defence Brief',
   meeting_prep:        'Meeting Prep',
 }
 
