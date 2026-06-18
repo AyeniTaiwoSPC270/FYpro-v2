@@ -1,0 +1,37 @@
+/* ============================================================
+   LANDING PAGE — lp- prefix
+   Extracted from LandingPage.jsx inline <style> tag (June 2026).
+   ============================================================ */
+
+@keyframes lp-drain { from { width: 90%; } to { width: 15%; } }
+@keyframes lp-blink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
+@keyframes lp-pulse-red {
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
+  50%      { opacity: 0.7; box-shadow: 0 0 0 4px rgba(248,113,113,0); }
+}
+
+.lp-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #F87171, #DC2626);
+  border-radius: 2px;
+  animation: lp-drain 8s linear infinite;
+}
+
+.lp-typing-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #60A5FA;
+}
+.lp-typing-dot:nth-child(1) { animation: lp-blink 1.2s ease-in-out infinite 0s; }
+.lp-typing-dot:nth-child(2) { animation: lp-blink 1.2s ease-in-out infinite 0.2s; }
+.lp-typing-dot:nth-child(3) { animation: lp-blink 1.2s ease-in-out infinite 0.4s; }
+
+.lp-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #F87171;
+  animation: lp-pulse-red 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
