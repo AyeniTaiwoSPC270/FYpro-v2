@@ -54,6 +54,85 @@
     <meta name="twitter:title" content="FYPro — The Supervisor You Never Had" />
     <meta name="twitter:description" content="AI-powered final year project companion for Nigerian university students." />
     <meta name="twitter:image" content="https://www.fypro.com.ng/flyers/flyer-twitter.png" />
+
+    <!-- Structured data — Organization + SoftwareApplication + WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.fypro.com.ng/#organization",
+          "name": "FYPro",
+          "url": "https://www.fypro.com.ng",
+          "logo": "https://www.fypro.com.ng/fypro-logo.png",
+          "description": "FYPro is an AI-powered research companion for Nigerian university final year students. It guides students from topic validation to a live three-examiner AI defence simulation.",
+          "foundingDate": "2026",
+          "founder": {
+            "@type": "Person",
+            "name": "Taiwo Ayeni"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "hello@fypro.com.ng",
+            "contactType": "customer support",
+            "areaServed": "NG"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.fypro.com.ng/#app",
+          "name": "FYPro",
+          "url": "https://www.fypro.com.ng",
+          "applicationCategory": "EducationApplication",
+          "operatingSystem": "Web",
+          "description": "FYPro guides Nigerian university final year students through a 6-step research workflow — Topic Validator, Chapter Architect, Methodology Advisor, Writing Planner, and a live three-AI-examiner Defence Simulator — with little or no supervisor guidance.",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free Plan",
+              "price": "0",
+              "priceCurrency": "NGN",
+              "description": "Topic Validator, Chapter Architect, Methodology Advisor (limited runs), Defence Simulator free trial (3 questions)"
+            },
+            {
+              "@type": "Offer",
+              "name": "Student Plan",
+              "price": "2000",
+              "priceCurrency": "NGN",
+              "description": "Adds Writing Planner and Project Reviewer to the free plan. One-time payment per project."
+            },
+            {
+              "@type": "Offer",
+              "name": "Express Defence",
+              "price": "2000",
+              "priceCurrency": "NGN",
+              "description": "For students with a completed draft. Includes Project Reviewer, Defence Brief, and Defence Simulator."
+            },
+            {
+              "@type": "Offer",
+              "name": "Defense Plan",
+              "price": "3500",
+              "priceCurrency": "NGN",
+              "description": "Full access including Defence Simulator, Defence Certificates, and all features. One-time payment."
+            }
+          ],
+          "publisher": {
+            "@id": "https://www.fypro.com.ng/#organization"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.fypro.com.ng/#website",
+          "url": "https://www.fypro.com.ng",
+          "name": "FYPro",
+          "publisher": {
+            "@id": "https://www.fypro.com.ng/#organization"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

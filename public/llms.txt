@@ -1,0 +1,64 @@
+# FYPro
+
+> FYPro is an AI-powered research companion for Nigerian university final year students. It guides students step-by-step from a rough topic idea to a defensible final year project — including a live three-examiner AI defense simulation before the real thing.
+
+FYPro was built specifically for the ~500,000 Nigerian university final year students who complete a research project annually with little or no supervisor guidance. It is not a plagiarism tool or essay writer. It is a structured research workflow companion.
+
+## What FYPro Does
+
+FYPro provides a 6-step structured workflow:
+
+1. **Topic Validator** — AI validates whether a topic is researchable, scoped, and original for a Nigerian university context
+2. **Chapter Architect** — Generates a full chapter outline with Literature Map (clusters key papers by theme) and Abstract Generator
+3. **Methodology Advisor** — Recommends the right research methodology with an embedded Instrument Builder for data collection
+4. **Writing Planner** — Creates a week-by-week writing schedule based on the student's defence date
+5. **Defense Prep** — Three-AI-examiner simulation: The Methodologist, The Subject Expert, and The External Examiner. Questions adapt based on answers. Students scoring 7/10+ unlock a downloadable defence certificate.
+
+Additionally:
+- **Project Reviewer** — AI review of uploaded PDF drafts (Defense Pack)
+- **Defence Brief** — Personalised opening statement, model answers for weak spots, and examiner Q&A prep (Express Defence)
+- **Supervisor Meeting Prep** — Generates questions to bring to supervisor meetings
+
+## Express Defence
+
+A separate product (₦2,000) for students who already have a completed draft and only need defence preparation:
+1. Project Reviewer — upload PDF for AI review
+2. Defence Brief — personalised preparation document with opening statement and model answers
+3. Defence Simulator — same 3-AI-examiner experience as the main product
+
+## Pricing
+
+- **Free** — Topic Validator, Chapter Architect, Methodology Advisor (limited runs), Defence Simulator free trial (3 questions)
+- **Student Plan** — ₦2,000 one-time per project. Adds: Writing Planner, Project Reviewer (10 runs)
+- **Express Defence** — ₦2,000 one-time. For students with a completed draft: Project Reviewer + Defence Brief + Defence Simulator
+- **Defense Plan** — ₦3,500 one-time (₦1,500 upgrade from Student Plan). Full access including Defence Simulator, certificates, all features
+- **Project Reset** — ₦1,500 add-on. Start a new project without losing your existing one
+
+Payments via Paystack (Nigerian payment processor). No subscriptions — all plans are one-time payments.
+
+## Who It Is For
+
+- Nigerian final year university students (primary: UNILAG, expanding to all Nigerian universities)
+- Students in 300L, 400L, or 500L with a research project requirement
+- Students with little or no supervisor guidance
+- Students preparing for oral defence examinations
+
+## Key Facts
+
+- Built by a Nigerian student for Nigerian students
+- Launched June 2026
+- Built for the CBC UNILAG Claude AI Hackathon, April 2026
+- Hosted at fypro.com.ng
+- Support: hello@fypro.com.ng
+- Stack: React (Vite), Supabase, Anthropic Claude API, Paystack, ElevenLabs TTS
+
+## Pages
+
+- Homepage: https://www.fypro.com.ng/
+- Pricing: https://www.fypro.com.ng/pricing
+- About: https://www.fypro.com.ng/about
+- Contact: https://www.fypro.com.ng/contact
+- Changelog: https://www.fypro.com.ng/changelog
+- Roadmap: https://www.fypro.com.ng/roadmap
+- Privacy Policy: https://www.fypro.com.ng/privacy
+- Terms of Service: https://www.fypro.com.ng/terms
