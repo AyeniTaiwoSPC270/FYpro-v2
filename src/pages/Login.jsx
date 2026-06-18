@@ -233,7 +233,10 @@ export default function Login() {
     }
   }
 
-  if (!authLoading && user) return <Navigate to="/dashboard" replace />
+  if (!authLoading && user) {
+    const dest = searchParams.get('returnUrl')
+    return <Navigate to={dest?.startsWith('/') ? dest : '/dashboard'} replace />
+  }
 
   return (
     <div
