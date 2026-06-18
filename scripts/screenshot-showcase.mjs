@@ -36,12 +36,17 @@ function startServer() {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const url = decodeURIComponent((req.url || '/').split('?')[0]);
+      const resolvedPublicDir = path.resolve(publicDir);
       const file = url === '/board.html'
         ? boardPath
         : path.join(publicDir, url.replace(/^\/+/, ''));
-      fs.readFile(file, (err, buf) => {
-        if (err) { res.writeHead(404); res.end('not found: ' + url); return; }
-        res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
+      const resolvedFile = path.resolve(file);
+      if (resolvedFile !== path.resolve(boardPath) && !resolvedFile.startsWith(resolvedPublicDir + path.sep)) {
+        res.writeHead(403); res.end('forbidden'); return;
+      }
+      fs.readFile(resolvedFile, (err, buf) => {
+        if (err) { res.writeHead(404); res.end('not found'); return; }
+        res.writeHead(200, { 'Content-Type': MIME[path.extname(resolvedFile)] || 'application/octet-stream' });
         res.end(buf);
       });
     });
