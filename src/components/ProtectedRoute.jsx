@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -44,6 +44,7 @@ async function emailMatchesAdminHash(email) {
 //   ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ DEFAULT NULL;
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useUser()
+  const location = useLocation()
   const [banned, setBanned] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   // Only admin routes need the async hash check; non-admin routes never block on it.
@@ -118,7 +119,10 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     </div>
   )
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    const returnUrl = location.pathname + location.search
+    return <Navigate to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`} replace />
+  }
 
   if (adminOnly && !isAdmin) {
     return <Navigate to="/dashboard" replace />
