@@ -98,7 +98,7 @@
 /* ── Light mode: dp-share-section labels ─────────────────────────────────── */
 [data-theme="light"] .dp-share-section .dp-summary-section-label,
 .light .dp-share-section .dp-summary-section-label {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 
 /* ── Dark mode: dp-share-section "Download Result Card" label ─────────────── */
@@ -869,7 +869,7 @@ html {
 
 /* FAQ chevron icon */
 [data-theme="light"] [data-pub] .lp-faq-card .text-slate-500 {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 
 /* ── Hero eyebrow pill: softer on warm light bg ───────────────────── */

@@ -31,7 +31,7 @@
 .wp-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -8px;
 }
@@ -46,7 +46,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -161,7 +161,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.65rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -267,7 +267,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -303,7 +303,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
 }
 
 /* ── Week type tags ──────────────────────────────────────── */
@@ -325,7 +325,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.78rem;
   font-style: italic;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
 }
 
 /* ── Confirm button ──────────────────────────────────────── */

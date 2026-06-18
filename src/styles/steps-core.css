@@ -42,7 +42,7 @@
 .tv-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -6px;
 }
@@ -163,7 +163,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -189,7 +189,7 @@
 .tv-refined-explanation {
   font-family: 'Poppins', sans-serif;
   font-size: 0.82rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
 }
 .tv-refined-edit-area {
@@ -351,7 +351,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -379,7 +379,7 @@
 .tv-paper-meta {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   line-height: 1.4;
 }
 .tv-paper-author  { color: rgba(13,27,42,0.7); }
@@ -510,7 +510,7 @@
 .ca-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -8px;
 }
@@ -523,7 +523,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -541,7 +541,7 @@
   background: transparent;
   border: none;
   border-right: 1.5px solid rgba(13,27,42,0.12);
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   font-family: 'Poppins', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
@@ -646,7 +646,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.85rem;
   font-style: italic;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   line-height: 1.6;
 }
 
@@ -741,7 +741,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 5px;
@@ -770,7 +770,7 @@
 .ca-word-target {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   margin-top: 14px;
 }
 
@@ -915,7 +915,7 @@
 .ma-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -8px;
 }
@@ -1076,7 +1076,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 7px;
@@ -1118,7 +1118,7 @@
 .ma-instrument-access {
   font-family: 'Poppins', sans-serif;
   font-size: 0.78rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.5;
 }
 .ma-trade-offs {
@@ -1167,7 +1167,7 @@
 .ma-defense-hint {
   font-family: 'Poppins', sans-serif;
   font-size: 0.78rem;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   line-height: 1.55;
   margin-top: -4px;
 }
