@@ -372,6 +372,8 @@
 .light .app-content .tv-paper-author { color: rgba(13,27,42,0.7) !important; }
 [data-theme="light"] .app-content .tv-paper-year,
 .light .app-content .tv-paper-year { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] .app-content .tv-paper-citations,
+.light .app-content .tv-paper-citations { color: var(--color-blue-primary) !important; }
 
 /* ── 6. Landing page — force dark mode variables regardless of theme ──── */
 [data-landing-page="true"] {

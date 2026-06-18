@@ -1712,6 +1712,8 @@
 .light .app-content .ma-fit-badge--moderate { background: rgba(245,158,11,0.1) !important; color: #B45309 !important; }
 [data-theme="light"] .app-content .ma-fit-badge--weak,
 .light .app-content .ma-fit-badge--weak { background: rgba(220,38,38,0.1) !important; color: #DC2626 !important; }
+[data-theme="light"] .app-content .ma-recommended-tag,
+.light .app-content .ma-recommended-tag { color: var(--color-blue-primary) !important; }
 
 /* ── 14. WP writing planner ───────────────────────────────── */
 [data-theme="light"] .app-content .wp-date-input,
