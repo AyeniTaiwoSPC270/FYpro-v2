@@ -41,6 +41,17 @@ function XCircleIcon() {
   )
 }
 
+// Reads and clears the returnUrl saved before Google OAuth redirect.
+function consumeOAuthReturn() {
+  try {
+    const val = sessionStorage.getItem('fypro_oauth_return')
+    sessionStorage.removeItem('fypro_oauth_return')
+    return val?.startsWith('/') ? val : null
+  } catch {
+    return null
+  }
+}
+
 // phase: 'processing' | 'error'
 export default function AuthConfirm() {
   const navigate = useNavigate()
@@ -94,7 +105,8 @@ export default function AuthConfirm() {
           setErrorMsg(error.message || 'Confirmation failed. The link may have expired.')
           setPhase('error')
         } else {
-          navigate(hashType === 'signup' ? '/start' : '/dashboard', { replace: true })
+          const pending = consumeOAuthReturn()
+          navigate(pending || (hashType === 'signup' ? '/start' : '/dashboard'), { replace: true })
         }
         return
       }
@@ -144,7 +156,8 @@ export default function AuthConfirm() {
               body: JSON.stringify({ action: 'oauth_signup' }),
             }).catch(() => {})
           }
-          navigate(hasOnboarded ? '/dashboard' : '/start', { replace: true })
+          const pending = consumeOAuthReturn()
+          navigate(pending || (hasOnboarded ? '/dashboard' : '/start'), { replace: true })
           return
         }
         error = oauthError
@@ -154,7 +167,8 @@ export default function AuthConfirm() {
         const { data: sessionData } = await supabase.auth.getSession()
         if (sessionData?.session) {
           window.history.replaceState(null, '', window.location.pathname)
-          navigate('/dashboard', { replace: true })
+          const pending = consumeOAuthReturn()
+          navigate(pending || '/dashboard', { replace: true })
         } else {
           setErrorMsg('No confirmation token found. The link may be invalid or already used.')
           setPhase('error')
@@ -169,7 +183,8 @@ export default function AuthConfirm() {
       }
 
       window.history.replaceState(null, '', window.location.pathname)
-      navigate('/dashboard', { replace: true })
+      const pending = consumeOAuthReturn()
+      navigate(pending || '/dashboard', { replace: true })
     }
 
     confirm()

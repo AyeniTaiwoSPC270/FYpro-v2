@@ -162,6 +162,12 @@ export default function Login() {
     googleClickedRef.current = true
     setTimeout(() => { googleClickedRef.current = false }, 3000)
     setGoogleLoading(true)
+    // Persist the returnUrl so AuthConfirm can redirect there after OAuth completes.
+    // Google's auth flow leaves this page entirely, so the URL param would be lost.
+    const returnUrl = searchParams.get('returnUrl')
+    if (returnUrl?.startsWith('/')) {
+      try { sessionStorage.setItem('fypro_oauth_return', returnUrl) } catch {}
+    }
     // Always redirect to the canonical www origin so the PKCE code verifier
     // is stored and retrieved from the same localStorage origin.
     const callbackOrigin = import.meta.env.PROD
