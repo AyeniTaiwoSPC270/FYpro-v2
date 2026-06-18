@@ -69,10 +69,24 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
     onToggle(idx)
   }
 
+  function handleHeaderKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      if (!e.target.closest('.ca-btn-edit-chapter, .ca-btn-save-chapter')) onToggle(idx)
+    }
+  }
+
   return (
     <div className={`ca-chapter-row${isOpen ? ' ca-chapter-row--open' : ''}`} style={{ '--ca-row-delay': `${idx * 80}ms` }}>
 
-      <div className="ca-chapter-header" onClick={handleHeaderClick}>
+      <div
+        className="ca-chapter-header"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        onClick={handleHeaderClick}
+        onKeyDown={handleHeaderKeyDown}
+      >
         <span className="ca-chapter-num-bg" aria-hidden="true">{numStr}</span>
 
         {isEditing ? (

@@ -264,7 +264,9 @@ function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
     >
       <div className="flex gap-[3px]">
         {[0,1,2,3,4].map(idx => (
-          <span key={idx} className="lp-star" style={{ '--lp-star-delay': `${idx * 60}ms`, color: '#F59E0B', fontSize: '0.75rem' }}>★</span>
+          <span key={idx} className="lp-star" style={{ '--lp-star-delay': `${idx * 60}ms`, color: 'var(--color-amber)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
         ))}
       </div>
       <div className="flex-1">
@@ -288,21 +290,21 @@ const TESTI_DATA = [
     name: "Adaeze O.",
     dept: "Mass Communication · UNILAG · 400 Level",
     initials: "AO",
-    avatarStyle: { background: 'linear-gradient(135deg, #0066FF, #3B82F6)' },
+    avatarStyle: { background: 'linear-gradient(135deg, var(--color-blue-primary), var(--color-blue-light))' },
   },
   {
     quote: "The defense simulator asked me about the generalisability of my sample — a question I had genuinely never considered. I would have frozen in front of the panel. Instead, I had an answer ready.",
     name: "Tunde F.",
     dept: "Business Administration · LASU · 400 Level",
     initials: "TF",
-    avatarStyle: { background: 'linear-gradient(135deg, #16A34A, #4ADE80)' },
+    avatarStyle: { background: 'linear-gradient(135deg, var(--color-green), #4ADE80)' },
   },
   {
     quote: "I spent three months on a topic that wasn't even researchable at my level. FYPro would have told me in three minutes. I wish this existed when I started, not when I was already in a panic.",
     name: "Chisom M.",
     dept: "Computer Science · FUTA · 400 Level",
     initials: "CM",
-    avatarStyle: { background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' },
+    avatarStyle: { background: 'linear-gradient(135deg, var(--color-amber), #FCD34D)' },
   },
 ]
 
@@ -506,17 +508,6 @@ function HeroMockup() {
 
   return (
     <>
-      <style>{`
-        @keyframes lp-drain { from { width: 90%; } to { width: 15%; } }
-        @keyframes lp-blink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
-        @keyframes lp-pulse-red { 0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(248,113,113,0.5); } 50% { opacity:0.7; box-shadow:0 0 0 4px rgba(248,113,113,0); } }
-        .lp-timer-fill { height: 100%; background: linear-gradient(90deg, #F87171, #DC2626); border-radius: 2px; animation: lp-drain 8s linear infinite; }
-        .lp-typing-dot { width: 4px; height: 4px; border-radius: 50%; background: #60A5FA; }
-        .lp-typing-dot:nth-child(1) { animation: lp-blink 1.2s ease-in-out infinite 0s; }
-        .lp-typing-dot:nth-child(2) { animation: lp-blink 1.2s ease-in-out infinite 0.2s; }
-        .lp-typing-dot:nth-child(3) { animation: lp-blink 1.2s ease-in-out infinite 0.4s; }
-        .lp-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #F87171; animation: lp-pulse-red 1.4s ease-in-out infinite; flex-shrink: 0; }
-      `}</style>
       <div className="lp-hero-mockup-outer relative rounded-[24px] border border-[rgba(0,102,255,0.22)] overflow-hidden" style={{ background: '#080F1C', boxShadow: '0 0 0 1px rgba(0,102,255,0.08), 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.4)' }}>
         {/* Chrome */}
         <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-white/[0.03]">

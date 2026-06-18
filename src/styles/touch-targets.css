@@ -98,7 +98,7 @@
 /* ── Light mode: dp-share-section labels ─────────────────────────────────── */
 [data-theme="light"] .dp-share-section .dp-summary-section-label,
 .light .dp-share-section .dp-summary-section-label {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 
 /* ── Dark mode: dp-share-section "Download Result Card" label ─────────────── */
@@ -356,7 +356,7 @@
   color: rgba(160,173,184,0.85) !important;
 }
 .app-content .tv-paper-citations {
-  color: #7ab8ff !important;
+  color: var(--color-blue-primary) !important;
 }
 
 /* ── 5. Light mode overrides — keep existing tv-paper light colours ───── */
@@ -372,6 +372,8 @@
 .light .app-content .tv-paper-author { color: rgba(13,27,42,0.7) !important; }
 [data-theme="light"] .app-content .tv-paper-year,
 .light .app-content .tv-paper-year { color: rgba(13,27,42,0.6) !important; }
+[data-theme="light"] .app-content .tv-paper-citations,
+.light .app-content .tv-paper-citations { color: var(--color-blue-primary) !important; }
 
 /* ── 6. Landing page — force dark mode variables regardless of theme ──── */
 [data-landing-page="true"] {
@@ -869,7 +871,7 @@ html {
 
 /* FAQ chevron icon */
 [data-theme="light"] [data-pub] .lp-faq-card .text-slate-500 {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 
 /* ── Hero eyebrow pill: softer on warm light bg ───────────────────── */

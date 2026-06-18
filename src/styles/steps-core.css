@@ -42,7 +42,7 @@
 .tv-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -6px;
 }
@@ -163,7 +163,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -189,7 +189,7 @@
 .tv-refined-explanation {
   font-family: 'Poppins', sans-serif;
   font-size: 0.82rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
 }
 .tv-refined-edit-area {
@@ -226,7 +226,7 @@
 }
 .tv-btn-edit:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .tv-btn-save {
   padding: 7px 16px;
@@ -337,7 +337,7 @@
 }
 .tv-btn-use-alt:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 
 
@@ -351,7 +351,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -379,12 +379,12 @@
 .tv-paper-meta {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   line-height: 1.4;
 }
 .tv-paper-author  { color: rgba(13,27,42,0.7); }
 .tv-paper-year    { color: rgba(13,27,42,0.6); }
-.tv-paper-citations { color: #7ab8ff; }
+.tv-paper-citations { color: var(--color-blue-primary); }
 .tv-papers-sparse-note {
   font-family: 'Poppins', sans-serif;
   font-size: 0.75rem;
@@ -510,7 +510,7 @@
 .ca-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -8px;
 }
@@ -523,7 +523,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -541,7 +541,7 @@
   background: transparent;
   border: none;
   border-right: 1.5px solid rgba(13,27,42,0.12);
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   font-family: 'Poppins', sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
@@ -553,7 +553,7 @@
 }
 .ca-toggle-btn:hover:not(.ca-toggle-btn--active) {
   background: rgba(0,102,255,0.05);
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-toggle-btn--active {
   background: #0066FF;
@@ -646,7 +646,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.85rem;
   font-style: italic;
-  color: rgba(13,27,42,0.45);
+  color: rgba(13,27,42,0.60);
   line-height: 1.6;
 }
 
@@ -741,7 +741,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 5px;
@@ -770,7 +770,7 @@
 .ca-word-target {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   margin-top: 14px;
 }
 
@@ -790,7 +790,7 @@
 }
 .ca-btn-edit-chapter:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-btn-save-chapter {
   margin-top: 14px;
@@ -858,7 +858,7 @@
 }
 .ca-btn-regenerate:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ca-btn-confirm {
   width: 100%;
@@ -915,7 +915,7 @@
 .ma-description {
   font-family: 'Poppins', sans-serif;
   font-size: 0.875rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.6;
   margin-top: -8px;
 }
@@ -1067,7 +1067,7 @@
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(0,102,255,0.1);
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   flex-shrink: 0;
 }
 
@@ -1076,7 +1076,7 @@
   font-family: 'Poppins', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 7px;
@@ -1118,7 +1118,7 @@
 .ma-instrument-access {
   font-family: 'Poppins', sans-serif;
   font-size: 0.78rem;
-  color: rgba(13,27,42,0.5);
+  color: rgba(13,27,42,0.65);
   line-height: 1.5;
 }
 .ma-trade-offs {
@@ -1145,7 +1145,7 @@
 }
 .ma-btn-select:hover {
   border-color: #0066FF;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
 }
 .ma-btn-select--active {
   background: #0066FF;
@@ -1167,7 +1167,7 @@
 .ma-defense-hint {
   font-family: 'Poppins', sans-serif;
   font-size: 0.78rem;
-  color: rgba(13,27,42,0.4);
+  color: rgba(13,27,42,0.55);
   line-height: 1.55;
   margin-top: -4px;
 }

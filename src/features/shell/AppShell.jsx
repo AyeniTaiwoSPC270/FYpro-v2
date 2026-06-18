@@ -196,6 +196,9 @@ export default function AppShell() {
   return (
     <div id="app-shell" style={{ display: 'flex', overflow: 'hidden', flexDirection: 'column' }}>
 
+      {/* ── Skip link for keyboard users ──────────────────────────────────────── */}
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
+
       {/* ── Offline / sync indicator ────────────────────────────────────────── */}
       <OfflineBanner isOfflineMode={isOfflineMode} />
 
@@ -357,7 +360,7 @@ export default function AppShell() {
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <main className="app-content">
+      <main className="app-content" id="main-content">
 
         {/* Top step navigator */}
         <div className="step-navigator" id="step-navigator" role="navigation" aria-label="Step progress">

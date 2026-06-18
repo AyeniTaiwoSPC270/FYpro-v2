@@ -502,7 +502,12 @@ export default function TopicValidator() {
 
             {showPushCard && (
               <div className="tv-push-card">
-                <div className="tv-push-card__icon">🔔</div>
+                <div className="tv-push-card__icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </div>
                 <div className="tv-push-card__text">
                   <strong>Stay on track</strong>
                   <p>Get a nudge if you go quiet for a few days. Research projects stall — we'll remind you.</p>

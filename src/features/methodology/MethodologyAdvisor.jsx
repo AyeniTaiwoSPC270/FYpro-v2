@@ -468,6 +468,7 @@ export default function MethodologyAdvisor() {
                 <div
                   id="ma-defense-body"
                   className={`ma-defense-body${defenseRevealed ? '' : ' ma-defense-body--blurred'}`}
+                  aria-hidden={!defenseRevealed}
                 >
                   <p id="ma-defense-text" className="ma-defense-text">
                     {maData.defense_answer_template || ''}

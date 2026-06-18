@@ -356,11 +356,11 @@
 .light .nav-pill {
   background: rgba(0,0,0,0.05) !important;
   border-color: rgba(13,27,42,0.15) !important;
-  color: rgba(13,27,42,0.45) !important;
+  color: rgba(13,27,42,0.60) !important;
 }
 [data-theme="light"] .nav-pill__label,
 .light .nav-pill__label {
-  color: rgba(13,27,42,0.45) !important;
+  color: rgba(13,27,42,0.60) !important;
 }
 [data-theme="light"] .nav-pill--current .nav-pill__label,
 .light .nav-pill--current .nav-pill__label {
@@ -388,11 +388,11 @@
 }
 [data-theme="light"] .dp-summary-verdicts .dp-summary-section-label,
 .light .dp-summary-verdicts .dp-summary-section-label {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 [data-theme="light"] .dp-summary-section .dp-summary-section-label,
 .light .dp-summary-section .dp-summary-section-label {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 [data-theme="light"] .dp-summary-section:has(.dp-summary-list--strengths) .dp-summary-section-label,
 .light .dp-summary-section:has(.dp-summary-list--strengths) .dp-summary-section-label {
@@ -688,7 +688,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #7ab8ff;
+  color: var(--color-blue-primary);
   background: rgba(0, 102, 255, 0.12);
   border-radius: 5px;
   padding: 3px 7px;
@@ -1628,7 +1628,7 @@
 .light .app-content .tv-btn-use-alt,
 .light .app-content .tv-btn-edit {
   border-color: rgba(13,27,42,0.15) !important;
-  color: rgba(13,27,42,0.5) !important;
+  color: rgba(13,27,42,0.65) !important;
 }
 [data-theme="light"] .app-content .tv-difficulty--easy,
 .light .app-content .tv-difficulty--easy { background: rgba(22,163,74,0.1) !important; color: #16A34A !important; }
@@ -1712,6 +1712,8 @@
 .light .app-content .ma-fit-badge--moderate { background: rgba(245,158,11,0.1) !important; color: #B45309 !important; }
 [data-theme="light"] .app-content .ma-fit-badge--weak,
 .light .app-content .ma-fit-badge--weak { background: rgba(220,38,38,0.1) !important; color: #DC2626 !important; }
+[data-theme="light"] .app-content .ma-recommended-tag,
+.light .app-content .ma-recommended-tag { color: var(--color-blue-primary) !important; }
 
 /* ── 14. WP writing planner ───────────────────────────────── */
 [data-theme="light"] .app-content .wp-date-input,
@@ -1965,7 +1967,7 @@
 }
 [data-theme="light"] .cs-nudge,
 .light .cs-nudge {
-  color: rgba(13,27,42,0.4) !important;
+  color: rgba(13,27,42,0.55) !important;
 }
 [data-theme="light"] .cs-nudge a,
 .light .cs-nudge a {
@@ -2035,7 +2037,7 @@
 }
 [data-theme="light"] .wt2-btn-ghost,
 .light .wt2-btn-ghost {
-  color: rgba(13,27,42,0.45) !important;
+  color: rgba(13,27,42,0.60) !important;
   border-color: rgba(13,27,42,0.18) !important;
 }
 [data-theme="light"] .wt2-btn-ghost:hover,
