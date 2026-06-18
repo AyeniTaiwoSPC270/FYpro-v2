@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../context/AppContext'
 import { useUser } from '../hooks/useUser'
@@ -56,9 +56,9 @@ export default function Dashboard() {
   const { state, clearProjectData, isOnboarded, onboardingResolved } = useApp()
   const { selectProject, projectId: activeProjectId, isLoading: projectStateLoading } = useProjectState()
 
+  // Kept as a safety net in case the render-path guard below is bypassed.
   useEffect(() => {
-    if (projectStateLoading) return
-    if (!onboardingResolved) return  // wait for Supabase before acting on localStorage cache
+    if (projectStateLoading || !onboardingResolved) return
     if (!isOnboarded) navigate('/start', { replace: true })
   }, [isOnboarded, onboardingResolved, navigate, projectStateLoading])
 
@@ -233,7 +233,12 @@ export default function Dashboard() {
     }
   }
 
-  if (projectStateLoading || projectsLoading) return <DashboardPageSkeleton />
+  // Hold the skeleton until Supabase has confirmed onboarding status —
+  // prevents the dashboard from rendering and flashing before the /start redirect.
+  if (projectStateLoading || projectsLoading || !onboardingResolved) return <DashboardPageSkeleton />
+
+  // Render-path guard: redirect immediately without painting any dashboard content.
+  if (!isOnboarded) return <Navigate to="/start" replace />
 
   return (
     <div className="flex h-dvh-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
