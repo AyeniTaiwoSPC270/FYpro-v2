@@ -966,11 +966,11 @@
   color: #D97706;
 }
 
-/* ── Confirm / Continue button (blue — CTA pattern) ─────── */
+/* ── Confirm / Continue button (green — Commit category) ─── */
 .pr-btn-confirm {
   width: 100%;
   padding: 14px;
-  background: var(--color-blue-primary);
+  background: #16A34A;
   color: #ffffff;
   font-family: 'Poppins', sans-serif;
   font-size: var(--text-base);
@@ -981,8 +981,8 @@
   transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 .pr-btn-confirm:hover {
-  background: #0052CC;
-  box-shadow: var(--shadow-blue-glow);
+  background: #15803D;
+  box-shadow: 0 0 20px rgba(22,163,74,0.35);
   transform: translateY(-1px);
 }
 .pr-btn-confirm:active { transform: translateY(0); }
