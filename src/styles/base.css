@@ -483,8 +483,9 @@ html, body {
   border-left: 3px solid #0066FF;
   padding-left: 9px;
   background: rgba(0,102,255,0.18);
+  cursor: pointer;
 }
-.step-list__item--completed { opacity: 0.75; }
+.step-list__item--completed { opacity: 0.75; cursor: pointer; }
 .step-list__item--locked    { opacity: 0.55; cursor: not-allowed; }
 .step-list__badge {
   width: 24px;
