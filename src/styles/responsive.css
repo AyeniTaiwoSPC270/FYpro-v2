@@ -105,9 +105,16 @@
   }
 
   /* Cards: reduce padding */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card {
     padding: 24px 16px 28px !important;
   }
+
+  /* Project Reviewer: tighten upload zone vertical padding on small screens */
+  .pr-upload-zone { padding: 24px 16px !important; }
+  /* Grade label: scale down so "Distinction — 72/100" fits in one line */
+  .pr-grade-label { font-size: 1.15rem !important; }
+  /* Feedback items: reduce horizontal padding to free up text width */
+  .pr-feedback-item { padding: 12px 14px !important; }
 
   /* Sidebar toggle: slightly smaller */
   .sidebar-toggle-btn {
@@ -150,7 +157,7 @@
 /* ── 375px small phones ──────────────────────────────────────── */
 @media (max-width: 375px) {
   /* Ensure content cards have minimal padding so text isn't clipped */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card {
     padding: 22px 14px 28px !important;
   }
 
