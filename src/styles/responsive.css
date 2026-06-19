@@ -105,9 +105,21 @@
   }
 
   /* Cards: reduce padding */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card,
+  .lm-card, .ag-card {
     padding: 24px 16px 28px !important;
   }
+
+  /* Defence Brief inside Express shell: further reduce below the ≤640px rule */
+  .es-main .db-card { padding: 20px 14px 24px !important; }
+
+  /* Step labels: scale down from 1.4rem so they don't crowd narrow screens */
+  .tv-step-label, .ca-step-label, .ma-step-label, .di-step-label,
+  .wp-step-label, .dp-step-label, .se-step-label, .ag-step-label,
+  .pr-step-label { font-size: 1.15rem !important; }
+
+  /* Writing Planner summary bar stat value: 1.3rem is tight at ≤480px */
+  .wp-summary-stat__value { font-size: 1.1rem !important; }
 
   /* Project Reviewer: tighten upload zone vertical padding on small screens */
   .pr-upload-zone { padding: 24px 16px !important; }
@@ -157,9 +169,18 @@
 /* ── 375px small phones ──────────────────────────────────────── */
 @media (max-width: 375px) {
   /* Ensure content cards have minimal padding so text isn't clipped */
-  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card {
+  .tv-card, .ca-card, .ma-card, .di-card, .wp-card, .dp-card, .se-card, .pr-card,
+  .lm-card, .ag-card {
     padding: 22px 14px 28px !important;
   }
+
+  .es-main .db-card { padding: 18px 12px 22px !important; }
+
+  .tv-step-label, .ca-step-label, .ma-step-label, .di-step-label,
+  .wp-step-label, .dp-step-label, .se-step-label, .ag-step-label,
+  .pr-step-label { font-size: 1.05rem !important; }
+
+  .wp-summary-stat__value { font-size: 1rem !important; }
 
   /* Defense chat bubbles: nearly full width, room for avatar/padding */
   .dp-examiner-wrap,
