@@ -33,7 +33,7 @@ const GENERIC_LOADING_MESSAGES = [
 export default function MethodologyAdvisor() {
   const { state, studentContext, navigateStep, set } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
   const { user } = useUser()
   const CELEBRATION_KEY = 'step_3_complete'
   const STEP_EMOJI = '⚗️'
@@ -43,7 +43,7 @@ export default function MethodologyAdvisor() {
   const { refetch: refetchAchievements } = useAchievements()
 
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
-  const { isOverLimit } = useRunLimit(features)
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const maOverLimit = isOverLimit('methodology_advisor')
   const diOverLimit = isOverLimit('instrument_builder')
 

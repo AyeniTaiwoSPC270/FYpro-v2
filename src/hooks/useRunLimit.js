@@ -170,7 +170,7 @@ export function recordStepRun(stepKey) {
   })
 }
 
-export function useRunLimit(features) {
+export function useRunLimit(features, featuresLoading = false) {
   const { user } = useUser()
   const [runCounts, setRunCounts] = useState(getRunCounts)
 
@@ -193,6 +193,7 @@ export function useRunLimit(features) {
   }, [])
 
   function isOverLimit(stepKey) {
+    if (featuresLoading) return false
     const limit = resolveLimit(stepKey, features)
     if (limit === null) return false
     return (runCounts[stepKey] ?? 0) >= limit

@@ -18,8 +18,8 @@ const LOADING_MESSAGES = [
 export default function LiteratureMap({ chapters }) {
   const { state, set, studentContext } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
-  const { isOverLimit } = useRunLimit(features)
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const overLimit = isOverLimit('literature_map')
 
   const [hasSubmitted, setHasSubmitted] = useState(false)

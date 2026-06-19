@@ -141,8 +141,8 @@ export default function AppShell() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; onboardingResolved only flips once
   }, [isLoading, onboardingResolved])
 
-  const { features } = usePaidFeatures()
-  const { isOverLimit } = useRunLimit(features)
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
 
   const currentStepKey = FREE_STEP_KEYS[state.currentStep]
 

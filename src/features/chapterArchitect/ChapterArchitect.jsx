@@ -176,7 +176,7 @@ function ChapterRow({ chapter, idx, isOpen, isEditing, editDraft, setBodyRef, on
 export default function ChapterArchitect() {
   const { state, set, studentContext, completeStep, navigateStep } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
   const { user } = useUser()
   const CELEBRATION_KEY = 'step_2_complete'
   const STEP_EMOJI = '📐'
@@ -186,7 +186,7 @@ export default function ChapterArchitect() {
   const { refetch: refetchAchievements } = useAchievements()
 
   const hasPaid = features.includes('student_pack') || features.includes('defense_pack')
-  const { isOverLimit } = useRunLimit(features)
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const overLimit   = isOverLimit('chapter_architect')
   const agOverLimit = isOverLimit('abstract_generator')
 

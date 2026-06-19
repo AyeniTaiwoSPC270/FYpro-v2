@@ -496,8 +496,8 @@ export default function DefensePrep() {
   const { state, studentContext, navigateStep, completeStep, set, isExpress } = useApp()
   const { saveStep, projectId, ensureProject } = useProjectState()
   const { user: authUser, session: authSession } = useUser()
-  const { features } = usePaidFeatures()
-  const { isOverLimit } = useRunLimit(features)
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const rfOverLimit = isOverLimit('red_flag_detector')
   const dsOverLimit = isOverLimit('defense_simulator')
 

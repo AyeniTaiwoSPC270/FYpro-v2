@@ -21,8 +21,8 @@ export default function DefenceBrief() {
   const { state, set, studentContext } = useApp()
   // Defence Brief lifetime cap for express-only users (server-enforced). getRemainingRuns
   // returns null for Defense Pack holders (exempt), so the counter/gate self-disable.
-  const { features } = usePaidFeatures()
-  const { isOverLimit, getRemainingRuns } = useRunLimit(features)
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { isOverLimit, getRemainingRuns } = useRunLimit(features, featuresLoading)
   const briefOverLimit = isOverLimit('express_defence_brief')
   const remainingBriefs = getRemainingRuns('express_defence_brief')
   const { saveStep } = useProjectState()

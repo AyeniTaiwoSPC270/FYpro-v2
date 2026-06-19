@@ -39,7 +39,7 @@ function computeUrgency(dateStr) {
 export default function WritingPlanner() {
   const { state, studentContext, navigateStep, completeStep } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
   const { user } = useUser()
   const CELEBRATION_KEY = 'step_4_complete'
   const STEP_EMOJI = '📝'
@@ -49,7 +49,7 @@ export default function WritingPlanner() {
   const { refetch: refetchAchievements } = useAchievements()
 
   const isFree = !features.includes('student_pack') && !features.includes('defense_pack')
-  const { isOverLimit } = useRunLimit(features)
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const overLimit = isOverLimit('writing_planner')
 
   const [hasSubmitted, setHasSubmitted] = useState(false)

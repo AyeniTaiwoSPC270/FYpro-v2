@@ -43,7 +43,7 @@ function urlBase64ToUint8Array(base64String) {
 export default function TopicValidator() {
   const { state, studentContext, completeStep, set } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
   const { user } = useUser()
 
   // If already completed, restore straight to result section
@@ -73,7 +73,7 @@ export default function TopicValidator() {
 
   const { showNudge, dismiss, loading: nudgeLoading } = useOnboardingState()
 
-  const { isOverLimit } = useRunLimit(features)
+  const { isOverLimit } = useRunLimit(features, featuresLoading)
   const overLimit = isOverLimit('topic_validator')
   const wordCount = countWords(topic)
 

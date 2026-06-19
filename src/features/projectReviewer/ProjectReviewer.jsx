@@ -229,7 +229,7 @@ function stripScoreRange(raw) {
 export default function ProjectReviewer() {
   const { state, set, studentContext, navigateStep, completeStep, isExpress } = useApp()
   const { saveStep, projectId } = useProjectState()
-  const { features } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
   const { user } = useUser()
   const CELEBRATION_KEY = 'step_5_complete'
   const STEP_EMOJI = '📄'
@@ -242,7 +242,7 @@ export default function ProjectReviewer() {
   // the project_reviewer key (unlimited for Defense Pack). The counter + soft gate
   // below read the matching key; the server is the authoritative gate either way.
   const reviewerKey = isExpress ? 'express_reviewer' : 'project_reviewer'
-  const { isOverLimit, getRemainingRuns } = useRunLimit(features)
+  const { isOverLimit, getRemainingRuns } = useRunLimit(features, featuresLoading)
   const overLimit = isOverLimit(reviewerKey)
   const remainingReviews = getRemainingRuns(reviewerKey)
 
