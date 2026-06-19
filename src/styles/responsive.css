@@ -241,7 +241,19 @@
   }
 }
 
-/* ── 5. Defence summary overlay — reduce inner padding on small screens ─
+/* ── 5. Past Sessions — mobile layout fixes ────────────────────────────
+   The cert chip (🎓 FYP-2026-XXXXXX) was inside dp-history-item__right
+   alongside score + badge + chevron, making the right column ~285px on a
+   320px screen with flex-shrink:0 — crushing the date/count column to zero.
+   It now lives in the meta column (JSX change). These rules tighten padding
+   so transcript text isn't squished on small phones. */
+@media (max-width: 480px) {
+  .dp-history-item__header    { padding: 12px 12px !important; }
+  .dp-history-item__transcript { padding: 12px 12px 14px !important; }
+  .dp-history-item__score     { font-size: 0.92rem !important; }
+}
+
+/* ── 6. Defence summary overlay — reduce inner padding on small screens ─
    dp-summary-card has 40px horizontal padding by default. On a 320px phone
    that leaves only ~190px for content, making the certificate card and the
    share-card preview overflow or look severely cramped. */

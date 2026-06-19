@@ -133,15 +133,15 @@ export default function PastSessions({ projectId }) {
                 <span className="dp-history-item__count">
                   {session.turns_count || 0} question{session.turns_count !== 1 ? 's' : ''}
                 </span>
+                {certNumber && (
+                  <span className="dp-history-cert-chip">🎓 {certNumber}</span>
+                )}
               </div>
               <div className="dp-history-item__right">
                 <span className="dp-history-item__score">{session.total_score ?? '?'}/10</span>
                 <span className={`dp-summary-score-badge dp-summary-score--${label}`}>
                   {label.toUpperCase()}
                 </span>
-                {certNumber && (
-                  <span className="dp-history-cert-chip">🎓 {certNumber}</span>
-                )}
                 <svg
                   className={`dp-history-chevron${isExpanded ? ' dp-history-chevron--open' : ''}`}
                   width="16" height="16" viewBox="0 0 24 24" fill="none"
