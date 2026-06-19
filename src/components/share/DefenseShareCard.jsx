@@ -23,8 +23,9 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
     <div
       aria-label="Defense result share card preview"
       style={{
-        width: 270,
-        height: 337,
+        width: 'min(270px, 100%)',
+        aspectRatio: '270 / 337',
+        height: 'auto',
         borderRadius: 16,
         overflow: 'hidden',
         background: 'linear-gradient(160deg, #060E18 0%, #0D1B2A 55%, #0F2235 100%)',
@@ -33,7 +34,6 @@ export default function DefenseShareCard({ score, scoreLabel, topic }) {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        flexShrink: 0,
       }}
     >
       {/* Subtle grid texture */}

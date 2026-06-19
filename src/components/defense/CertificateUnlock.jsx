@@ -115,7 +115,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
   // ── Celebration — score qualifies ─────────────────────────────────────────
   return (
     <div style={{
-      padding:       '28px 24px',
+      padding:       'clamp(16px, 5vw, 28px) clamp(14px, 4.5vw, 24px)',
       borderRadius:  16,
       background:    isLight ? 'linear-gradient(145deg, #F0F4F8 0%, #E8EEF5 100%)' : 'linear-gradient(145deg, #0F2235 0%, #0D1B2A 100%)',
       border:        isLight ? '1px solid rgba(13,27,42,0.1)' : '1px solid rgba(255,255,255,0.08)',
@@ -130,7 +130,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
       <span style={{ fontSize: '2rem', lineHeight: 1, marginBottom: 12 }} aria-hidden="true">🎓</span>
       <p style={{
         fontFamily:   "'DM Serif Display', Georgia, serif",
-        fontSize:     '1.5rem',
+        fontSize:     'clamp(1.1rem, 5vw, 1.5rem)',
         color:        isLight ? '#0D1B2A' : '#FFFFFF',
         marginBottom: 8,
         lineHeight:   1.2,

@@ -423,13 +423,13 @@ const SummaryCard = memo(function SummaryCard({ data, onClose, projectId, topic,
             </div>
 
             <p className="dp-summary-section-label" style={{ marginBottom: 16 }}>Download Result Card</p>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
               <DefenseShareCard
                 score={data.panel_score ?? null}
                 scoreLabel={data.panel_score_label || null}
                 topic={topic || ''}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 180 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minWidth: 0 }}>
                 <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.78rem', color: isLight ? 'rgba(13,27,42,0.55)' : 'rgba(255,255,255,0.55)', lineHeight: 1.6, margin: 0 }}>
                   Download your result card and share it on WhatsApp.
                 </p>
