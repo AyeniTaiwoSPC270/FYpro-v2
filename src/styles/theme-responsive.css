@@ -112,12 +112,13 @@ html, body {
 }
 
 /* ── Light mode: text class overrides ───────────────────────── */
-.light .text-white,
-[data-theme="light"] .text-white {
+/* Exclude button and a elements — colored-bg buttons must keep white text */
+.light .text-white:not(button):not(a),
+[data-theme="light"] .text-white:not(button):not(a) {
   color: var(--text-primary) !important;
 }
-.light .text-slate-50,
-[data-theme="light"] .text-slate-50 {
+.light .text-slate-50:not(button):not(a),
+[data-theme="light"] .text-slate-50:not(button):not(a) {
   color: var(--text-primary) !important;
 }
 .light .text-slate-300,
