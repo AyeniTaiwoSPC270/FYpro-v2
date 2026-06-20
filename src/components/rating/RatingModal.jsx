@@ -134,7 +134,7 @@ export default function RatingModal({ prompt, onClose }) {
                     style={{
                       background: 'none', border: 'none', padding: 2, cursor: 'pointer',
                       fontSize: '2rem', lineHeight: 1,
-                      color: n <= fillCount ? '#F59E0B' : 'rgba(13,27,42,0.15)',
+                      color: n <= fillCount ? 'var(--color-amber)' : 'rgba(13,27,42,0.15)',
                       transition: 'color var(--transition-fast)',
                     }}
                   >
@@ -168,7 +168,7 @@ export default function RatingModal({ prompt, onClose }) {
                 onClick={() => setSection('suggestion')}
                 disabled={!selectedStars}
                 style={{
-                  background:    selectedStars ? 'var(--color-blue-primary)' : 'rgba(13,27,42,0.1)',
+                  background:    selectedStars ? 'var(--color-blue-primary)' : 'var(--color-border)',
                   color:         selectedStars ? '#fff' : 'var(--color-text-muted)',
                   border:        'none', borderRadius: 'var(--radius-sm)',
                   padding:       '9px 20px',
@@ -229,7 +229,7 @@ export default function RatingModal({ prompt, onClose }) {
                   placeholder="e.g. A way to export my chapter outline to PDF…"
                   rows={3}
                   style={{
-                    width: '100%', resize: 'none',
+                    width: '100%', resize: 'none', boxSizing: 'border-box',
                     background: 'var(--color-bg-surface)',
                     border: '1.5px solid var(--color-border)',
                     borderRadius: 'var(--radius-sm)',
@@ -258,7 +258,7 @@ export default function RatingModal({ prompt, onClose }) {
                   placeholder="e.g. The sidebar feels cramped on my laptop…"
                   rows={3}
                   style={{
-                    width: '100%', resize: 'none',
+                    width: '100%', resize: 'none', boxSizing: 'border-box',
                     background: 'var(--color-bg-surface)',
                     border: '1.5px solid var(--color-border)',
                     borderRadius: 'var(--radius-sm)',
