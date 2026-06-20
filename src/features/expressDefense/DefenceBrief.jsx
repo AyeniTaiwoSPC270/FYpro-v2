@@ -47,6 +47,19 @@ export default function DefenceBrief() {
   const loadingTimerRef = useRef(null)
   const chatEndRef      = useRef(null)
 
+  // Hydration race guard: ExpressProjectStateProvider loads asynchronously.
+  // If this component mounted before hydration completed, state.defenseBrief was
+  // null at init time so useState set section='input' and brief=null. This effect
+  // fires when hydration arrives and restores the brief without requiring a remount.
+  useEffect(() => {
+    const restored = state.defenseBrief
+    if (restored && !brief && !isGenerating) {
+      setBrief(restored)
+      setSection('result')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.defenseBrief])
+
   useEffect(() => {
     if (section === 'loading') {
       loadingTimerRef.current = setTimeout(() => {
