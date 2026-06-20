@@ -629,6 +629,11 @@ function AdminHealth() {
   const [activeTab, setActiveTab] = useState('overview')
   const counterKeyRef = useRef(0)
 
+  const [reports, setReports]               = useState([])
+  const [reportsLoading, setReportsLoading] = useState(false)
+  const [reportFilter, setReportFilter]     = useState('open')
+  const [expandedReport, setExpandedReport] = useState(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
@@ -716,6 +721,28 @@ function AdminHealth() {
       .then(d => { if (d.error) throw new Error(d.error); setFeedbackData(d.rows); setFeedbackError(null); setLastUpdated(new Date()) })
       .catch(e => setFeedbackError(e.message || 'Failed to load'))
       .finally(() => setFeedbackLoading(false))
+  }, [session?.access_token])
+
+  const loadReports = useCallback(async () => {
+    if (!session?.access_token) return
+    setReportsLoading(true)
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action: 'get-reports' }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setReports(data.reports || [])
+    } catch (err) {
+      console.error('[Health/loadReports]', err)
+    } finally {
+      setReportsLoading(false)
+    }
   }, [session?.access_token])
 
   const loadMaintenanceMode = useCallback(() => {
@@ -968,6 +995,17 @@ function AdminHealth() {
     }, POLL_PAYMENTS)
     return () => clearInterval(feedbackTimerRef.current)
   }, [isAdmin, session, loadFeedbackSummary])
+
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    loadReports()
+    if (activeTab !== 'reports') return
+    const id = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      loadReports()
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [isAdmin, session, loadReports, activeTab])
 
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
@@ -1562,13 +1600,34 @@ function AdminHealth() {
     borderTop: `1px solid ${BORDER}`,
   }
 
+  const openReportCount = reports.filter(r => r.status === 'open').length
+
   const TAB_ITEMS = [
     { id: 'overview',  label: 'Overview' },
     { id: 'users',     label: 'Users' },
     { id: 'payments',  label: 'Payments' },
     { id: 'vitals',    label: 'Vitals' },
     { id: 'logs',      label: 'Logs' },
+    { id: 'reports',   label: openReportCount > 0 ? `Reports (${openReportCount})` : 'Reports' },
   ]
+
+  async function updateReportStatus(reportId, status) {
+    if (!session?.access_token) return
+    setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r))
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action: 'update-report-status', report_id: reportId, status }),
+      })
+      if (!res.ok) loadReports()
+    } catch {
+      loadReports()
+    }
+  }
 
   // Status thresholds (match vitals tab rendering below):
   //   HEALTHY  — latency < 3000ms, 0 failures
@@ -1598,6 +1657,7 @@ function AdminHealth() {
     else if (id === 'vitals') { loadVitals(); loadAuthAttempts() }
     else if (id === 'payments') { loadPaymentIssues(); loadFeedbackSummary() }
     else if (id === 'logs') { loadSystemLogs(); loadFailures() }
+    else if (id === 'reports') loadReports()
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
@@ -2317,6 +2377,124 @@ function AdminHealth() {
               </>
             )}
           </>
+        )}
+
+        {activeTab === 'reports' && (
+          <div style={{ padding: '24px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: WHITE, margin: 0 }}>
+                User Reports
+              </h2>
+              <button
+                onClick={loadReports}
+                style={{ background: 'none', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '6px 14px', color: DIM, fontFamily: "'Poppins', sans-serif", fontSize: 12, cursor: 'pointer' }}
+              >
+                Refresh
+              </button>
+            </div>
+
+            {/* Filter row */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              {['all', 'open', 'acknowledged', 'resolved'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setReportFilter(f)}
+                  style={{
+                    background: reportFilter === f ? BLUE : 'none',
+                    border: `1px solid ${reportFilter === f ? BLUE : BORDER}`,
+                    borderRadius: 999,
+                    padding: '5px 14px',
+                    color: reportFilter === f ? WHITE : MUTED,
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: 12,
+                    fontWeight: reportFilter === f ? 600 : 400,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {reportsLoading && reports.length === 0 && (
+              <p style={{ color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>Loading reports…</p>
+            )}
+
+            {!reportsLoading && reports.filter(r => reportFilter === 'all' || r.status === reportFilter).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
+                {reportFilter === 'open' ? '✅ No open reports' : `No ${reportFilter} reports`}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {reports
+                .filter(r => reportFilter === 'all' || r.status === reportFilter)
+                .map(r => {
+                  const isExpanded   = expandedReport === r.id
+                  const statusColor  = r.status === 'open' ? RED : r.status === 'acknowledged' ? AMBER : GREEN
+                  const typeColor    = r.type === 'error' ? RED : BLUE
+
+                  return (
+                    <div key={r.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden' }}>
+                      {/* Summary row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: WHITE, background: `${statusColor}33`, border: `1px solid ${statusColor}66`, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                          {r.status}
+                        </span>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: typeColor, background: `${typeColor}18`, border: `1px solid ${typeColor}44`, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
+                          {r.type}
+                        </span>
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: DIM, flexShrink: 0 }}>
+                          {(r.email || '—').slice(0, 30)}
+                        </span>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: MUTED, flexShrink: 0 }}>
+                          {r.context?.step_name || r.context?.url || '—'}
+                        </span>
+                        <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: 12, color: DIM, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {(r.description || '').slice(0, 80)}
+                        </span>
+                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: MUTED, flexShrink: 0 }}>
+                          {timeAgo(r.created_at)}
+                        </span>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          {r.status === 'open' && (
+                            <button onClick={() => updateReportStatus(r.id, 'acknowledged')} style={{ background: `${AMBER}22`, border: `1px solid ${AMBER}55`, borderRadius: 6, padding: '4px 10px', color: AMBER, fontFamily: "'Poppins', sans-serif", fontSize: 11, cursor: 'pointer' }}>
+                              Acknowledge
+                            </button>
+                          )}
+                          {r.status !== 'resolved' && (
+                            <button onClick={() => updateReportStatus(r.id, 'resolved')} style={{ background: `${GREEN}22`, border: `1px solid ${GREEN}55`, borderRadius: 6, padding: '4px 10px', color: GREEN, fontFamily: "'Poppins', sans-serif", fontSize: 11, cursor: 'pointer' }}>
+                              Resolve
+                            </button>
+                          )}
+                          <button onClick={() => setExpandedReport(isExpanded ? null : r.id)} style={{ background: 'none', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '4px 10px', color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 11, cursor: 'pointer' }}>
+                            {isExpanded ? 'Collapse' : 'Expand'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded detail */}
+                      {isExpanded && (
+                        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '16px', background: BG }}>
+                          <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Full Description</div>
+                            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: 13, color: DIM, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{r.description}</p>
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: "'Poppins', sans-serif", fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Context</div>
+                            <pre style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: DIM, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '10px 12px', margin: 0, overflowX: 'auto' }}>
+                              {JSON.stringify(r.context, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
         )}
 
       </div>
