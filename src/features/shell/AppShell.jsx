@@ -18,6 +18,8 @@ const SupervisorEmail    = lazy(() => import('../supervisorEmail/SupervisorEmail
 import FyproLogo from '../../components/FyproLogo'
 import { AppShellSkeleton } from '../../components/skeletons/PageSkeletons'
 import RankPill from '../../components/rank/RankPill'
+import RatingModal from '../../components/rating/RatingModal'
+import { useRatingTrigger } from '../../hooks/useRatingTrigger'
 
 const STEPS = [
   'Topic Validator',
@@ -148,6 +150,11 @@ export default function AppShell() {
 
   const [sidebarOpen, setSidebarOpen]           = useState(false)
   const [showSupervisorEmail, setShowSupervisorEmail] = useState(false)
+  const [ratingPrompt, setRatingPrompt] = useState({
+    show: false, triggerType: 'defense_simulator', feature: '',
+  })
+
+  useRatingTrigger(state.stepsCompleted, setRatingPrompt)
 
   // Step slide direction: 1 = forward (slide left), -1 = backward (slide right)
   const prevStepRef  = useRef(state.currentStep)
@@ -453,6 +460,13 @@ export default function AppShell() {
 
       </main>
       </div>{/* end flex row wrapper */}
+
+      {/* ── Rating modal ──────────────────────────────────────────────────── */}
+      <RatingModal
+        prompt={ratingPrompt}
+        onClose={() => setRatingPrompt(p => ({ ...p, show: false }))}
+      />
+
     </div>
   )
 }
