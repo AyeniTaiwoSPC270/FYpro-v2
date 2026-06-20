@@ -189,9 +189,9 @@ export default function PastSessions({ projectId }) {
                             return (
                               <span
                                 key={i}
-                                className={`dp-score-badge dp-score-badge--${chipLabel}`}
+                                className={`dp-score-badge dp-score-badge--${chipLabel} dp-score--visible`}
                               >
-                                {abbr} · {s.score ?? '?'}/10
+                                {abbr} · {chipLabel.toUpperCase()} · {s.score ?? '?'}/10
                               </span>
                             )
                           })}
