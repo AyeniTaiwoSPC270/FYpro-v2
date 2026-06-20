@@ -11,7 +11,7 @@ import { resetUser } from '../lib/analytics'
 import { useUser } from '../hooks/useUser'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationPanel from '../components/NotificationPanel'
-import { unsubscribePush } from '../services/api'
+import { subscribePush, unsubscribePush } from '../services/api'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -433,6 +433,15 @@ function PasswordInput({ label, name, value, onChange, showStrength = false }) {
   )
 }
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const output = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i)
+  return output
+}
+
 // ─── Shared card style ────────────────────────────────────────────────────────
 
 const cardStyle = {
@@ -483,18 +492,41 @@ export default function Settings() {
   }, [])
 
   async function handlePushToggle() {
-    if (!pushEnabled) return // opt-in only via Step 1 — can't subscribe from Settings
     setSavingPush(true)
     try {
-      const reg = await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.getSubscription()
-      if (sub) {
-        await sub.unsubscribe()
-        await unsubscribePush()
+      if (pushEnabled) {
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await sub.unsubscribe()
+          await unsubscribePush()
+        }
+        setPushEnabled(false)
+      } else {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          showToast('Push notifications are not supported in this browser')
+          return
+        }
+        if (!import.meta.env.VITE_VAPID_PUBLIC_KEY) {
+          showToast('Push notifications are not configured')
+          return
+        }
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          showToast('Permission denied — enable notifications in your browser settings')
+          return
+        }
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+        })
+        await subscribePush(sub.toJSON())
+        setPushEnabled(true)
+        showToast('Push notifications enabled ✓')
       }
-      setPushEnabled(false)
     } catch (err) {
-      console.error('[push] unsubscribe failed:', err)
+      console.error('[push] toggle failed:', err)
       showToast('Failed to update notification settings')
     } finally {
       setSavingPush(false)
@@ -686,14 +718,10 @@ export default function Settings() {
           <div className="flex flex-col gap-5">
             <ToggleRow
               title="Push notifications"
-              desc={
-                pushEnabled
-                  ? 'Nudges sent if you go quiet on your project for 3+ days'
-                  : 'Enable from Step 1 after validating your topic'
-              }
+              desc="Nudges sent if you go quiet on your project for 3+ days"
               checked={pushEnabled}
               onChange={handlePushToggle}
-              disabled={savingPush || !pushEnabled}
+              disabled={savingPush}
             />
             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
             <ToggleRow

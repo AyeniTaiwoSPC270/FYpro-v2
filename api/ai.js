@@ -730,14 +730,13 @@ async function handleCheckAchievements(req, res) {
     }
     check('dedicated', actionDays.size >= 5);
 
-    // Write newly earned — upsert is safe (UNIQUE constraint prevents duplicates)
+    // Write newly earned. Partial unique indexes (migration 0031) mean we can't
+    // specify onConflict columns — PostgREST requires a named constraint for that.
+    // Omitting onConflict sends "ON CONFLICT DO NOTHING" which works with partial indexes.
     if (newlyEarned.length > 0) {
       const { error: upsertErr } = await supabaseAdmin
         .from('user_achievements')
-        .upsert(newlyEarned, {
-          onConflict: isExpressScope ? 'user_id,achievement_key,project_id' : 'user_id,achievement_key',
-          ignoreDuplicates: true,
-        });
+        .upsert(newlyEarned, { ignoreDuplicates: true });
       if (upsertErr) console.error('[check-achievements] upsert error:', upsertErr?.message);
     }
 
