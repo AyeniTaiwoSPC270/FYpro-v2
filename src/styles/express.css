@@ -562,6 +562,39 @@
 [data-theme="light"] .es-main .dp-examiner-card__desc,
 .light .es-main .dp-examiner-card__desc { color: rgba(13,27,42,0.55) !important; }
 
+/* ── Dark mode: dp-trial-paywall — base style has hardcoded white gradient ── */
+[data-theme="dark"] .es-main .dp-trial-paywall,
+.dark .es-main .dp-trial-paywall {
+  background: linear-gradient(145deg, #0F2235 0%, #0A1929 100%) !important;
+  border-color: rgba(0, 102, 255, 0.2) !important;
+}
+[data-theme="dark"] .es-main .dp-trial-paywall__heading,
+.dark .es-main .dp-trial-paywall__heading  { color: rgba(255,255,255,0.90) !important; }
+[data-theme="dark"] .es-main .dp-trial-paywall__body,
+.dark .es-main .dp-trial-paywall__body     { color: rgba(255,255,255,0.60) !important; }
+[data-theme="dark"] .es-main .dp-trial-paywall__features span,
+.dark .es-main .dp-trial-paywall__features span { color: rgba(255,255,255,0.65) !important; }
+[data-theme="dark"] .es-main .dp-trial-paywall__score-label,
+.dark .es-main .dp-trial-paywall__score-label  { color: rgba(255,255,255,0.40) !important; }
+[data-theme="dark"] .es-main .dp-trial-paywall__score-value,
+.dark .es-main .dp-trial-paywall__score-value  { color: rgba(255,255,255,0.92) !important; }
+[data-theme="dark"] .es-main .dp-trial-paywall__gaps li,
+.dark .es-main .dp-trial-paywall__gaps li { color: rgba(255,255,255,0.60) !important; }
+
+/* ── Dark mode: dp-loading-section text + skeleton bars on dark dp-card ───── */
+/* dp-step-label base color is #0D1B2A — dark on the dark #0F2235 dp-card bg   */
+[data-theme="dark"] .es-main .dp-step-label,
+.dark .es-main .dp-step-label { color: rgba(255,255,255,0.88) !important; }
+[data-theme="dark"] .es-main .dp-loading-section .skeleton-bar,
+.dark .es-main .dp-loading-section .skeleton-bar {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.07) 25%,
+    rgba(255,255,255,0.14) 50%,
+    rgba(255,255,255,0.07) 75%
+  ) !important;
+  background-size: 200% 100%;
+}
+
 /* ── Express shell — mobile layout ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .es-shell { flex-direction: column; }

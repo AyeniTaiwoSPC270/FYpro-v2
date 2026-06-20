@@ -618,3 +618,20 @@
 .dark .es-main .db-btn-skip { color: rgba(255,255,255,0.30) !important; }
 [data-theme="dark"] .es-main .db-btn-skip:hover,
 .dark .es-main .db-btn-skip:hover { color: rgba(255,255,255,0.55) !important; }
+
+/* ── Dark mode: loading skeleton bars visible on near-black card ───────────── */
+[data-theme="dark"] .es-main .db-loading-section .skeleton-bar,
+.dark .es-main .db-loading-section .skeleton-bar {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.07) 25%,
+    rgba(255,255,255,0.14) 50%,
+    rgba(255,255,255,0.07) 75%
+  ) !important;
+  background-size: 200% 100%;
+}
+/* ── Dark mode: loading status text (fy-loading-status defaults to dark colour;
+      .app-content override never applies inside .es-main) ─────────────────── */
+[data-theme="dark"] .es-main .fy-loading-status,
+.dark .es-main .fy-loading-status {
+  color: rgba(255,255,255,0.55) !important;
+}
