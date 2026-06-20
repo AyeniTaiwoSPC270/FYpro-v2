@@ -2,6 +2,7 @@
 // Server-side enforcement: frontend gating alone is not enough.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
+import { Sentry }        from './_lib/sentry-server.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
 import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
 import { writeSystemLog } from './_lib/system-log.js';
@@ -27,6 +28,7 @@ const MAX_TOKENS_LIMIT = 4096;
  * @throws {Error} If Anthropic request times out after 50s (returns 504)
  */
 const handler = async (req, res) => {
+  try {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -222,6 +224,11 @@ const handler = async (req, res) => {
       raw_detail: { error: err.message, userId: user.id },
     });
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+  }
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/project-reviewer] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }
 };
 

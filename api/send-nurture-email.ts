@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { Sentry } from './_lib/sentry-server.js'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert } from './_lib/telegram.js'
 
@@ -72,6 +73,7 @@ function renderText(type: EmailType, name: string, baseUrl: string): string {
 }
 
 export default async function handler(req: any, res: any) {
+  try {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -141,4 +143,9 @@ export default async function handler(req: any, res: any) {
   }
 
   return res.status(200).json({ ok: status === 'sent', resendId, alreadySent: false })
+  } catch (err: any) {
+    Sentry.captureException(err)
+    console.error('[api/send-nurture-email] unhandled error:', err)
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' })
+  }
 }

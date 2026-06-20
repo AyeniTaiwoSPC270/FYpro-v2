@@ -1,4 +1,5 @@
 import crypto, { randomBytes } from 'crypto';
+import { Sentry }              from './_lib/sentry-server.js';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { expectedAmountKobo } from './_lib/pricing.js';
@@ -418,6 +419,7 @@ async function handleConsumeReset(req, res) {
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
+  try {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -462,4 +464,9 @@ export default async function handler(req, res) {
   if (action === 'consume-reset') return handleConsumeReset(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/payments] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
+  }
 }

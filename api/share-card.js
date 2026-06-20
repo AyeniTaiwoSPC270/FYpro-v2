@@ -12,6 +12,7 @@
 //   4:5 portrait renders full-width in WhatsApp chat with no letterboxing.
 
 import { ImageResponse }    from '@vercel/og'
+import { Sentry }           from './_lib/sentry-server.js'
 import { supabaseAdmin }    from './_lib/supabase-admin.js'
 import { rateLimitCheck }   from './_lib/rate-limit.js'
 import { setCorsHeaders }   from './_lib/cors.js'
@@ -260,6 +261,7 @@ function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
 }
 
 export default async function handler(req, res) {
+  try {
   setCorsHeaders(req, res)
 
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -348,5 +350,10 @@ export default async function handler(req, res) {
     console.error('[share-card] render failed:', err.message)
     sendTelegramAlert(`🔴 Share card render failed — ${err.message}`).catch(() => null)
     return res.status(500).json({ error: 'Image generation failed' })
+  }
+  } catch (err) {
+    Sentry.captureException(err)
+    console.error('[api/share-card] unhandled error:', err)
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' })
   }
 }

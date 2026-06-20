@@ -12,6 +12,7 @@ import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { isAllowedGeneralStep, getGeneralSystemPrompt, getDefenseSystemPrompt } from './_lib/ai-prompts.js';
 import { callAnthropic } from './_lib/anthropic-proxy.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
+import { Sentry }                   from './_lib/sentry-server.js';
 import { validate, AiMessagesSchema } from './_lib/validate.js';
 import { FREE_STEP_LIMITS as SERVER_FREE_LIMITS } from './_lib/free-limits.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
@@ -215,13 +216,13 @@ async function handleGeneral(req, res) {
       // (or falls back to read+1 when Redis was unavailable).
       if (isLimitedStep) {
         const newCount = reservedCount ?? (serverCount + 1);
-        supabaseAdmin
+        const { error: syncErr } = await supabaseAdmin
           .from('user_entitlements')
           .upsert(
             { user_id: user.id, run_counts: { ...dbRunCounts, [dbKey]: newCount }, updated_at: new Date().toISOString() },
             { onConflict: 'user_id' }
-          )
-          .catch(err => traceLog(traceId, 'error', '[ai/general] run count sync failed:', err?.message));
+          );
+        if (syncErr) traceLog(traceId, 'error', '[ai/general] run count sync failed:', syncErr?.message);
       }
     } else {
       refundRun(); // Anthropic returned an error status — don't charge the run
@@ -922,16 +923,22 @@ async function handleDefenceBriefCoach(req, res) {
 }
 
 export default async function handler(req, res) {
-  setCorsHeaders(req, res);
+  try {
+    setCorsHeaders(req, res);
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.query.action === 'defense')             return handleDefense(req, res);
-  if (req.query.action === 'supervisor-prep')     return handleSupervisorPrep(req, res);
-  if (req.query.action === 'sync-run-counts')     return handleSyncRunCounts(req, res);
-  if (req.query.action === 'check-achievements')  return handleCheckAchievements(req, res);
-  if (req.query.action === 'defence-brief')       return handleDefenceBrief(req, res);
-  if (req.query.action === 'defence-brief-coach') return handleDefenceBriefCoach(req, res);
-  return handleGeneral(req, res);
+    if (req.query.action === 'defense')             return handleDefense(req, res);
+    if (req.query.action === 'supervisor-prep')     return handleSupervisorPrep(req, res);
+    if (req.query.action === 'sync-run-counts')     return handleSyncRunCounts(req, res);
+    if (req.query.action === 'check-achievements')  return handleCheckAchievements(req, res);
+    if (req.query.action === 'defence-brief')       return handleDefenceBrief(req, res);
+    if (req.query.action === 'defence-brief-coach') return handleDefenceBriefCoach(req, res);
+    return handleGeneral(req, res);
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/ai] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
+  }
 }

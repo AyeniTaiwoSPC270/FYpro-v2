@@ -2,6 +2,7 @@
 // POST /api/referral?action=credit — qualify referral + award milestone (auth required)
 
 import { Ratelimit } from '@upstash/ratelimit';
+import { Sentry }    from './_lib/sentry-server.js';
 import { Redis } from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { extractUserId } from './_lib/rate-limit.js';
@@ -22,16 +23,22 @@ const trackLimiter = new Ratelimit({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const action = req.query.action;
+
+    if (action === 'track') return handleTrack(req, res);
+    if (action === 'credit') return handleCredit(req, res);
+
+    return res.status(400).json({ error: 'Unknown action' });
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/referral] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }
-
-  const action = req.query.action;
-
-  if (action === 'track') return handleTrack(req, res);
-  if (action === 'credit') return handleCredit(req, res);
-
-  return res.status(400).json({ error: 'Unknown action' });
 }
 
 // ─── track ────────────────────────────────────────────────────────────────────

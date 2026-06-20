@@ -5,6 +5,7 @@
 // POST with { action, payload } + JWT           → outbound admin alerts (defense complete, project created)
 
 import { Resend } from 'resend'
+import { Sentry } from './_lib/sentry-server.js'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
@@ -1127,27 +1128,33 @@ async function handleUnsubscribe(req, res) {
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  setCorsHeaders(req, res)
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  try {
+    setCorsHeaders(req, res)
+    if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // GET: cron-triggered actions
-  if (req.method === 'GET') {
-    const action = req.query?.action
-    if (action === 'send-nudges') return handleSendNudges(req, res)
-    return res.status(405).end()
+    // GET: cron-triggered actions
+    if (req.method === 'GET') {
+      const action = req.query?.action
+      if (action === 'send-nudges') return handleSendNudges(req, res)
+      return res.status(405).end()
+    }
+
+    if (req.method !== 'POST') return res.status(405).end()
+
+    // Telegram updates always carry update_id; our notify calls never do.
+    if (req.body?.update_id !== undefined) return handleTelegramBot(req, res)
+
+    // Contact form — public, no JWT required
+    if (req.body?.action === 'contact') return handleContact(req, res)
+
+    // Push subscription management — JWT required
+    if (req.body?.action === 'subscribe')   return handleSubscribe(req, res)
+    if (req.body?.action === 'unsubscribe') return handleUnsubscribe(req, res)
+
+    return handleNotify(req, res)
+  } catch (err) {
+    Sentry.captureException(err)
+    console.error('[api/notify] unhandled error:', err)
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' })
   }
-
-  if (req.method !== 'POST') return res.status(405).end()
-
-  // Telegram updates always carry update_id; our notify calls never do.
-  if (req.body?.update_id !== undefined) return handleTelegramBot(req, res)
-
-  // Contact form — public, no JWT required
-  if (req.body?.action === 'contact') return handleContact(req, res)
-
-  // Push subscription management — JWT required
-  if (req.body?.action === 'subscribe')   return handleSubscribe(req, res)
-  if (req.body?.action === 'unsubscribe') return handleUnsubscribe(req, res)
-
-  return handleNotify(req, res)
 }

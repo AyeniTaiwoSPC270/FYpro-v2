@@ -8,6 +8,7 @@
 //   3. Cross-user access blocked: .eq('user_id', user.id) on every DB fetch.
 
 import { supabaseAdmin } from './_lib/supabase-admin.js';
+import { Sentry }        from './_lib/sentry-server.js';
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { jsPDF } from 'jspdf';
@@ -948,6 +949,7 @@ function drawWordmark(doc, cx, font, y) {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
+  try {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -1150,5 +1152,10 @@ export default async function handler(req, res) {
     console.error('[certificate] PDF generation failed:', err.message);
     sendTelegramAlert(`🔴 Certificate PDF failed for user:${user?.email || 'unknown'} (cert exists, download broken) — ${err.message}`).catch(() => null);
     return res.status(500).json({ error: 'PDF generation failed. Please try again.' });
+  }
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/certificate] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }
 }

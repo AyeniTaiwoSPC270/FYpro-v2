@@ -1,4 +1,5 @@
 import crypto           from 'crypto';
+import { Sentry }      from './_lib/sentry-server.js';
 import { Resend }              from 'resend';
 import { Redis }               from '@upstash/redis';
 import { supabaseAdmin }       from './_lib/supabase-admin.js';
@@ -1982,6 +1983,7 @@ async function handlePing(req, res) {
 }
 
 export default async function handler(req, res) {
+  try {
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -2046,4 +2048,9 @@ export default async function handler(req, res) {
   }
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/admin] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
+  }
 }

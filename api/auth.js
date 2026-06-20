@@ -2,6 +2,7 @@
 // The frontend calls these endpoints instead of supabase.auth.* directly.
 
 import { createClient }   from '@supabase/supabase-js';
+import { Sentry }         from './_lib/sentry-server.js';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
@@ -230,16 +231,22 @@ async function handleForgotPassword(req, res) {
 // ── Router ────────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  setCorsHeaders(req, res);
+  try {
+    setCorsHeaders(req, res);
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const action = req.query.action;
+    const action = req.query.action;
 
-  if (action === 'login')            return handleLogin(req, res);
-  if (action === 'signup')           return handleSignup(req, res);
-  if (action === 'forgot-password')  return handleForgotPassword(req, res);
+    if (action === 'login')            return handleLogin(req, res);
+    if (action === 'signup')           return handleSignup(req, res);
+    if (action === 'forgot-password')  return handleForgotPassword(req, res);
 
-  return res.status(400).json({ error: `Unknown action: ${action}` });
+    return res.status(400).json({ error: `Unknown action: ${action}` });
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/auth] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
+  }
 }

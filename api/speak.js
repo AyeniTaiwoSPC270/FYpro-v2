@@ -5,6 +5,7 @@
 // environment and never exposed to the browser.
 
 import { rateLimitCheck } from './_lib/rate-limit.js';
+import { Sentry }         from './_lib/sentry-server.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
@@ -71,6 +72,7 @@ function resolveVoiceKey(examiner) {
  * the audio/mpeg binary back to the browser as a blob response.
  */
 const handler = async (req, res) => {
+  try {
   setCorsHeaders(req, res);
 
   // Handle CORS preflight so browsers don't block the POST
@@ -199,6 +201,11 @@ const handler = async (req, res) => {
     console.error('[speak] error:', err.message);
     sendTelegramAlert(`🔴 TTS failed for user:${user?.id?.slice(0, 8) || 'unknown'} — ${err.message}`).catch(() => null);
     return res.status(500).json({ error: err.message });
+  }
+  } catch (err) {
+    Sentry.captureException(err);
+    console.error('[api/speak] unhandled error:', err);
+    if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
