@@ -224,7 +224,7 @@ async function awardMilestoneCredit(referrerId, triggerReferralId, now) {
     .catch(() => null);
 
   // Notify the referrer — best-effort
-  supabaseAdmin
+  const { error: notifErr } = await supabaseAdmin
     .from('notifications')
     .insert({
       user_id:  referrerId,
@@ -232,8 +232,8 @@ async function awardMilestoneCredit(referrerId, triggerReferralId, now) {
       title:    'Referral credit earned',
       message:  "You've earned a defense credit — 3 referrals qualified.",
       metadata: {},
-    })
-    .catch(e => console.error('[referral/credit] notification insert failed:', e.message));
+    });
+  if (notifErr) console.error('[referral/credit] notification insert failed:', notifErr.message);
 
   const { data: toReward } = await supabaseAdmin
     .from('referrals')

@@ -732,13 +732,13 @@ async function handleCheckAchievements(req, res) {
 
     // Write newly earned — upsert is safe (UNIQUE constraint prevents duplicates)
     if (newlyEarned.length > 0) {
-      await supabaseAdmin
+      const { error: upsertErr } = await supabaseAdmin
         .from('user_achievements')
         .upsert(newlyEarned, {
           onConflict: isExpressScope ? 'user_id,achievement_key,project_id' : 'user_id,achievement_key',
           ignoreDuplicates: true,
-        })
-        .catch(err => console.error('[check-achievements] upsert error:', err?.message));
+        });
+      if (upsertErr) console.error('[check-achievements] upsert error:', upsertErr?.message);
     }
 
     return res.status(200).json({ newlyEarned: newlyEarned.map(r => r.achievement_key) });

@@ -244,13 +244,13 @@ async function handleValidate(req, res) {
     // reservation (or read+1 when Redis was unavailable). Display/fallback only.
     if (!runLimitExempt) {
       const newCount = reservedCount ?? (serverCount + 1);
-      supabaseAdmin
+      const { error: runSyncErr } = await supabaseAdmin
         .from('user_entitlements')
         .upsert(
           { user_id: user.id, run_counts: { ...dbRunCounts, topic_validator: newCount }, updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
-        )
-        .catch(err => console.error('[research/validate] run count sync failed:', err?.message));
+        );
+      if (runSyncErr) console.error('[research/validate] run count sync failed:', runSyncErr?.message);
     }
 
     const duration = Date.now() - start;

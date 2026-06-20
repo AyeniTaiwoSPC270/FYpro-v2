@@ -1113,7 +1113,7 @@ export default async function handler(req, res) {
     sendTelegramAlert(`🏆 Certificate issued: ${escapeTgHtml(fullName)} (${escapeTgHtml(user.email)}) scored ${sessionScore}/10\n<code>${escapeTgHtml(newCert.certificate_number)}</code>`).catch(() => null);
 
     // Notify user — best-effort
-    supabaseAdmin
+    const { error: notifErr } = await supabaseAdmin
       .from('notifications')
       .insert({
         user_id:  user.id,
@@ -1121,8 +1121,8 @@ export default async function handler(req, res) {
         title:    'Defense certificate unlocked',
         message:  `You scored ${sessionScore}/10 — ${newCert.certificate_number} is ready.`,
         metadata: { certificate_number: newCert.certificate_number, score: sessionScore },
-      })
-      .catch(e => console.error('[certificate] notification insert failed:', e.message));
+      });
+    if (notifErr) console.error('[certificate] notification insert failed:', notifErr.message);
   }
 
   // Generate PDF (stateless — no storage, generated fresh every download).
