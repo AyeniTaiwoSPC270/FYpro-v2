@@ -105,12 +105,22 @@ export default function DefenceBrief() {
       }
 
       setBrief(normalized)
-      set({ defenseBrief: normalized })
+      set({
+        defenseBrief: normalized,
+        expressSteps: { ...(state.expressSteps || {}), defense_brief: true },
+      })
       setSection('result')
       setGenerating(false)
       // Decrement the lifetime counter for display only — the server already reserved
       // the slot. Fired after success so a failed generation never burns a count.
       recordStepRun('express_defence_brief')
+      // Auto-save so the brief survives navigation away and back within the same
+      // session. handleConfirm re-saves later to capture any coaching updates.
+      saveStep('defense_brief', {
+        openingStatement: normalized.openingStatement,
+        weakSpots:        normalized.weakSpots,
+        examinerQas:      normalized.examinerQas,
+      })
     } catch (err) {
       setGenerating(false)
       setSection('input')
@@ -120,7 +130,7 @@ export default function DefenceBrief() {
 
   async function handleConfirm() {
     if (!brief) return
-    set({ expressSteps: { ...(state.expressSteps || {}), defense_brief: true } })
+    // Re-save to capture any coaching updates (student answers added after generation)
     await saveStep('defense_brief', {
       openingStatement: brief.openingStatement,
       weakSpots:        brief.weakSpots,
