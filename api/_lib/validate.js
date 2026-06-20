@@ -32,6 +32,14 @@ export const AiMessagesSchema = z.object({
     .min(1, 'At least one message is required.'),
 });
 
+export const SubmitRatingSchema = z.object({
+  stars:              z.number().int().min(1).max(5),
+  trigger_type:       z.enum(['defense_simulator', 'steps_milestone']),
+  feature:            z.string().min(1).max(100),
+  suggestion_feature: z.string().max(500).nullable().optional(),
+  suggestion_ui:      z.string().max(500).nullable().optional(),
+});
+
 /**
  * Returns { ok: true } or { ok: false, error: '<first Zod issue message>' }.
  * @param {import('zod').ZodTypeAny} schema

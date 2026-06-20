@@ -8,6 +8,7 @@ import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
+import { validate, SubmitRatingSchema } from './_lib/validate.js';
 
 // Redis client used exclusively by admin actions (key inspection, reset)
 let _adminRedis = null;
@@ -1479,6 +1480,115 @@ async function handleFeedbackSummary(req, res) {
   }
 }
 
+// action: "submit-rating" — authenticated users only (no admin gate)
+async function handleSubmitRating(req, res) {
+  // Rate limit: 3 req/user/day, 10 req/IP/hour
+  const rl = await rateLimitCheck(req, { userDay: 3, ipHour: 10, prefix: 'rating' });
+  if (!rl.allowed) return res.status(429).json({ error: 'Too many requests. Please try again tomorrow.' });
+
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  let user;
+  try {
+    const { data, error: authErr } = await supabaseAdmin.auth.getUser(token);
+    if (authErr || !data?.user) return res.status(401).json({ error: 'Unauthorized' });
+    user = data.user;
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const v = validate(SubmitRatingSchema, req.body);
+  if (!v.ok) return res.status(400).json({ error: v.error });
+
+  const { stars, trigger_type, feature, suggestion_feature, suggestion_ui } = req.body;
+
+  const { error: insertErr } = await supabaseAdmin.from('user_ratings').insert({
+    user_id:            user.id,
+    stars,
+    trigger_type,
+    feature,
+    suggestion_feature: suggestion_feature ?? null,
+    suggestion_ui:      suggestion_ui ?? null,
+  });
+  if (insertErr) {
+    console.error('[admin/submit-rating] insert error:', insertErr.message);
+    return res.status(500).json({ error: 'Failed to save rating' });
+  }
+
+  const starStr   = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+  const featLine  = suggestion_feature ? `\n💡 Feature request: "${suggestion_feature.slice(0, 120)}"` : '';
+  const uiLine    = suggestion_ui      ? `\n🎨 UI feedback: "${suggestion_ui.slice(0, 120)}"` : '';
+
+  await sendTelegramAlert(
+    `⭐ <b>New Rating</b>\n` +
+    `👤 ${user.email}\n` +
+    `📋 Feature: ${feature}\n` +
+    `⭐ Stars: ${starStr} (${stars}/5)` +
+    featLine +
+    uiLine
+  ).catch(err => console.error('[admin/submit-rating] Telegram error:', err.message));
+
+  return res.status(200).json({ ok: true });
+}
+
+// action: "get-ratings" — admin only
+async function handleGetRatings(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data: rows, error: fetchErr } = await supabaseAdmin
+      .from('user_ratings')
+      .select('id, user_id, stars, trigger_type, feature, suggestion_feature, suggestion_ui, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (fetchErr) throw fetchErr;
+
+    const allRows = rows || [];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const total          = allRows.length;
+    const withSuggestions = allRows.filter(r => r.suggestion_feature || r.suggestion_ui).length;
+    const thisWeek       = allRows.filter(r => r.created_at >= weekAgo).length;
+    const avgStars       = total > 0
+      ? parseFloat((allRows.reduce((s, r) => s + r.stars, 0) / total).toFixed(1))
+      : 0;
+
+    const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+    const byTriggerAcc = {};
+    for (const r of allRows) {
+      distribution[String(r.stars)] = (distribution[String(r.stars)] || 0) + 1;
+      if (!byTriggerAcc[r.trigger_type]) byTriggerAcc[r.trigger_type] = { sum: 0, count: 0 };
+      byTriggerAcc[r.trigger_type].sum += r.stars;
+      byTriggerAcc[r.trigger_type].count++;
+    }
+    const by_trigger = {};
+    for (const [k, v] of Object.entries(byTriggerAcc)) {
+      by_trigger[k] = { avg: parseFloat((v.sum / v.count).toFixed(1)), count: v.count };
+    }
+
+    const recent = allRows.slice(0, 20);
+    const emailMap = {};
+    await Promise.all(
+      [...new Set(recent.map(r => r.user_id))].map(async uid => {
+        try {
+          const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(uid);
+          if (user) emailMap[uid] = user.email;
+        } catch {}
+      })
+    );
+
+    return res.status(200).json({
+      stats: { avg_stars: avgStars, total, with_suggestions: withSuggestions, this_week: thisWeek, by_trigger, distribution },
+      recent: recent.map(r => ({ ...r, user_email: emailMap[r.user_id] || '—' })),
+    });
+  } catch (err) {
+    console.error('[admin/get-ratings] error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 // ─── Nurture email dispatcher helpers ────────────────────────────────────────
 
 const NURTURE_BASE_URL = 'https://www.fypro.com.ng';
@@ -2032,6 +2142,8 @@ export default async function handler(req, res) {
   if (action === 'system_logs')        return handleSystemLogs(req, res);
   if (action === 'resolve_log')         return handleResolveLog(req, res);
   if (action === 'feedback-summary')        return handleFeedbackSummary(req, res);
+  if (action === 'submit-rating')           return handleSubmitRating(req, res);
+  if (action === 'get-ratings')             return handleGetRatings(req, res);
   if (action === 'report-payment-issue')    return handleReportPaymentIssue(req, res);
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'test-sentry-webhook')     return handleTestSentryWebhook(req, res);
