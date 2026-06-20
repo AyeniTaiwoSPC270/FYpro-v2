@@ -700,6 +700,68 @@ async function cmdReports() {
   return `📋 <b>Open Reports (${rows.length})</b>\n\n${lines}`
 }
 
+async function cmdRatings() {
+  const { data: rows } = await supabaseAdmin
+    .from('user_ratings')
+    .select('user_id, stars, trigger_type, suggestion_feature, suggestion_ui, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (!rows || rows.length === 0) return '⭐ <b>No ratings yet</b>'
+
+  const weekAgo    = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const twoWksAgo  = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+  const total      = rows.length
+  const avg        = rows.reduce((s, r) => s + r.stars, 0) / total
+  const withText   = rows.filter(r => r.suggestion_feature || r.suggestion_ui).length
+  const thisWeek   = rows.filter(r => r.created_at >= weekAgo).length
+  const lastWeek   = rows.filter(r => r.created_at < weekAgo && r.created_at >= twoWksAgo).length
+  const delta      = thisWeek - lastWeek
+  const deltaStr   = delta >= 0 ? `↑${delta}` : `↓${Math.abs(delta)}`
+  const starStr    = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg))
+
+  const dsRows = rows.filter(r => r.trigger_type === 'defense_simulator')
+  const smRows = rows.filter(r => r.trigger_type === 'steps_milestone')
+  const dsAvg  = dsRows.length ? (dsRows.reduce((s,r) => s+r.stars, 0) / dsRows.length).toFixed(1) : '—'
+  const smAvg  = smRows.length ? (smRows.reduce((s,r) => s+r.stars, 0) / smRows.length).toFixed(1) : '—'
+
+  const recent5  = rows.slice(0, 5)
+  const emailMap = {}
+  await Promise.all(
+    [...new Set(recent5.map(r => r.user_id))].map(async uid => {
+      try {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(uid)
+        if (user) emailMap[uid] = (user.email || '').split('@')[0]
+      } catch {}
+    })
+  )
+
+  const lines = recent5.map((r, i) => {
+    const name    = escapeTgHtml(emailMap[r.user_id] || '—')
+    const stars   = '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars)
+    const feat    = r.suggestion_feature
+      ? `\n   💡 "${escapeTgHtml(r.suggestion_feature.slice(0, 80))}"`
+      : '\n   💡 —'
+    const ui      = r.suggestion_ui
+      ? `\n   🎨 "${escapeTgHtml(r.suggestion_ui.slice(0, 80))}"`
+      : '\n   🎨 —'
+    return `${i + 1}. ${name} · ${stars} · ${r.trigger_type}${feat}${ui}`
+  }).join('\n\n')
+
+  return (
+    `⭐ <b>Ratings Summary</b>\n\n` +
+    `Avg score:   ${starStr}  ${avg.toFixed(1)} / 5\n` +
+    `Total:       ${total} ratings\n` +
+    `With text:   ${withText} (${Math.round((withText/total)*100)}%)\n` +
+    `This week:   ${thisWeek}  ${deltaStr} vs last\n\n` +
+    `By trigger:\n` +
+    `🎓 Defense Simulator  — ★${dsAvg}  (${dsRows.length})\n` +
+    `📋 Steps Milestone    — ★${smAvg}  (${smRows.length})\n\n` +
+    `── Recent submissions ──\n\n` +
+    lines
+  )
+}
+
 async function cmdResolveReport(id) {
   if (!id || id.length < 4) return '❌ Usage: /resolve-report &lt;id-prefix&gt; (min 4 chars)'
 
@@ -741,6 +803,7 @@ Tap a button or type a command:
 /certs — certificate stats
 /referrals — referral stats
 /reports — open user reports
+/ratings — star rating summary
 /spend — API spend detail
 /errors — unresolved errors
 /logs — recent system logs
@@ -779,6 +842,7 @@ const KEYBOARD = {
     ],
     [
       { text: '📋 Reports',   callback_data: 'reports'   },
+      { text: '⭐ Ratings',   callback_data: 'ratings'   },
     ],
   ],
 }
@@ -801,6 +865,7 @@ async function runCommand(key, args = []) {
   else if (key === 'resolve'         ) return cmdResolve(args[0])
   else if (key === 'resolve-report'  ) return cmdResolveReport(args[0])
   else if (key === 'reports'         ) return cmdReports()
+  else if (key === 'ratings'         ) return cmdRatings()
   else if (key === 'maintenance'     ) return cmdMaintenance(args)
   else if (key === 'help'            ) return cmdHelp()
   return null
