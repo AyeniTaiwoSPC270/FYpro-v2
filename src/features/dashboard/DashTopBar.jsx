@@ -11,6 +11,7 @@ import { BellIcon, GearIcon, SunIcon, MoonIcon, PlusIcon } from './_shared'
 import { useUser } from '../../hooks/useUser'
 import { useNotifications } from '../../hooks/useNotifications'
 import NotificationPanel from '../../components/NotificationPanel'
+import ReportButton from '../../components/ReportButton'
 
 export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar }) {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
   const [panelOpen, setPanelOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [avatarImgError, setAvatarImgError] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const avatarRef = useRef(null)
 
   async function handleLogout() {
@@ -47,6 +49,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
   }, [])
 
   return (
+    <>
     <header
       className="h-[68px] flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 flex-shrink-0 relative border-b border-slate-800/60"
       style={{ background: 'var(--bg-sidebar)' }}
@@ -211,6 +214,12 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
                   <Link to="/account/referrals" onClick={() => setAvatarOpen(false)} className="flex items-center gap-3 px-4 py-2.5 no-underline hover:bg-white/5 transition-colors duration-150">
                     <span className="font-sans text-[0.82rem] text-slate-300">My Referrals</span>
                   </Link>
+                  <button
+                    onClick={() => { setAvatarOpen(false); setReportOpen(true) }}
+                    className="flex items-center gap-3 px-4 py-2.5 w-full text-left hover:bg-white/5 transition-colors duration-150"
+                  >
+                    <span className="font-sans text-[0.82rem] text-slate-400">Report an issue</span>
+                  </button>
                   <div className="mx-3 my-1 h-px" style={{ background: 'var(--border-color)' }} />
                   <button
                     onClick={handleLogout}
@@ -232,5 +241,16 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
         style={{ background: 'linear-gradient(to right, transparent 0%, rgba(0,102,255,0.18) 20%, rgba(0,102,255,0.45) 50%, rgba(0,102,255,0.18) 80%, transparent 100%)' }}
       />
     </header>
+
+    {reportOpen && (
+      <ReportButton
+        type="general"
+        context={{ url: window.location.pathname }}
+        label=""
+        initialOpen={true}
+        onClose={() => setReportOpen(false)}
+      />
+    )}
+    </>
   )
 })
