@@ -72,27 +72,51 @@ function extractPDF(file) {
   })
 }
 
-// Parses ZIP structure of a DOCX and returns the decompressed word/document.xml text.
+// Parses the ZIP Central Directory to locate and decompress word/document.xml.
+// Using the Central Directory (at the end of the file) instead of walking local
+// file headers fixes compatibility with ZIP generators that set the data-descriptor
+// flag (bit 3 of the general purpose bit flag), including the docx npm library and
+// JSZip. When bit 3 is set, the compressed size in the local header is zero/garbage,
+// but the Central Directory entry always has the correct compressed size.
 async function extractDocumentXmlFromZip(buffer) {
   const bytes = new Uint8Array(buffer)
   const view  = new DataView(buffer)
-  let   offset = 0
 
-  while (offset + 30 <= bytes.length) {
-    if (view.getUint32(offset, true) !== 0x504B0304) break
+  // Locate End of Central Directory (EOCD). Signature = PK\x05\x06 = 0x06054b50 (LE).
+  // Scan backwards; the comment field can push EOCD up to 65535 bytes from the end.
+  let eocdOffset = -1
+  const searchStart = Math.max(0, bytes.length - 22 - 65535)
+  for (let i = bytes.length - 22; i >= searchStart; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) { eocdOffset = i; break }
+  }
+  if (eocdOffset === -1) return null
 
-    const flags       = view.getUint16(offset + 6,  true)
-    const compression = view.getUint16(offset + 8,  true)
-    const cmpSize     = view.getUint32(offset + 18, true)
-    const fileNameLen = view.getUint16(offset + 26, true)
-    const extraLen    = view.getUint16(offset + 28, true)
-    const fileName    = new TextDecoder().decode(bytes.slice(offset + 30, offset + 30 + fileNameLen))
-    const dataStart   = offset + 30 + fileNameLen + extraLen
+  const cdOffset = view.getUint32(eocdOffset + 16, true)
+  if (cdOffset === 0xFFFFFFFF) return null  // Zip64 — not handled
 
-    // Bit 3 = data descriptor present; compressed size is unreliable — abort ZIP parse
-    if (flags & 0x0008) return null
+  // Walk Central Directory entries. Signature = PK\x01\x02 = 0x02014b50 (LE).
+  let pos = cdOffset
+  while (pos + 46 <= bytes.length) {
+    if (view.getUint32(pos, true) !== 0x02014b50) break
+
+    const compression = view.getUint16(pos + 10, true)
+    const cmpSize     = view.getUint32(pos + 20, true)  // reliable regardless of bit 3
+    const fileNameLen = view.getUint16(pos + 28, true)
+    const extraLen    = view.getUint16(pos + 30, true)
+    const commentLen  = view.getUint16(pos + 32, true)
+    const lhOffset    = view.getUint32(pos + 42, true)  // offset of local file header
+    const fileName    = new TextDecoder().decode(bytes.slice(pos + 46, pos + 46 + fileNameLen))
 
     if (fileName === 'word/document.xml') {
+      // Jump to local file header only to find where the data actually starts.
+      // The local extra field can differ in length from the CD extra — read it fresh.
+      if (lhOffset + 30 > bytes.length) return null
+      if (view.getUint32(lhOffset, true) !== 0x04034b50) return null  // PK\x03\x04
+
+      const lhFileNameLen = view.getUint16(lhOffset + 26, true)
+      const lhExtraLen    = view.getUint16(lhOffset + 28, true)
+      const dataStart     = lhOffset + 30 + lhFileNameLen + lhExtraLen
+
       const data = bytes.slice(dataStart, dataStart + cmpSize)
 
       if (compression === 0) {
@@ -114,8 +138,8 @@ async function extractDocumentXmlFromZip(buffer) {
           }
           const total = chunks.reduce((s, c) => s + c.length, 0)
           const out   = new Uint8Array(total)
-          let pos = 0
-          for (const c of chunks) { out.set(c, pos); pos += c.length }
+          let p = 0
+          for (const c of chunks) { out.set(c, p); p += c.length }
           return new TextDecoder('utf-8', { fatal: false }).decode(out)
         } catch (e) {
           console.warn('[FYPro] DEFLATE decompress error:', e.message)
@@ -127,7 +151,7 @@ async function extractDocumentXmlFromZip(buffer) {
       return null
     }
 
-    offset = dataStart + cmpSize
+    pos += 46 + fileNameLen + extraLen + commentLen
   }
 
   return null
