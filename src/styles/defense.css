@@ -766,3 +766,49 @@
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
+
+/* ── Express dark mode — dp-card and flag items inside .es-main ───────────── */
+/* dp-card in the main app (.app-content) is handled by light-mode.css.        */
+/* In Express (.es-main) there were no dark overrides so it stayed white.      */
+[data-theme="dark"] .es-main .dp-card,
+.dark .es-main .dp-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(220,38,38,0.04) 100%) !important;
+  border-color: rgba(220, 38, 38, 0.22) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2) !important;
+}
+
+[data-theme="dark"] .es-main .dp-step-label,
+.dark .es-main .dp-step-label { color: rgba(255,255,255,0.90) !important; }
+
+[data-theme="dark"] .es-main .dp-flags-header,
+.dark .es-main .dp-flags-header { color: rgba(255,255,255,0.28) !important; }
+
+[data-theme="dark"] .es-main .dp-flag-item,
+.dark .es-main .dp-flag-item {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border-color: rgba(220, 38, 38, 0.18) !important;
+}
+
+[data-theme="dark"] .es-main .dp-flag-title,
+.dark .es-main .dp-flag-title { color: rgba(255,255,255,0.88) !important; }
+
+[data-theme="dark"] .es-main .dp-flag-description,
+.dark .es-main .dp-flag-description { color: rgba(255,255,255,0.52) !important; }
+
+[data-theme="dark"] .es-main .dp-flag-meta-label,
+.dark .es-main .dp-flag-meta-label { color: rgba(255,255,255,0.24) !important; }
+
+[data-theme="dark"] .es-main .dp-flag-meta-text,
+.dark .es-main .dp-flag-meta-text { color: rgba(255,255,255,0.58) !important; }
+
+[data-theme="dark"] .es-main .dp-btn-go-back,
+.dark .es-main .dp-btn-go-back {
+  border-color: rgba(255,255,255,0.14) !important;
+  color: rgba(255,255,255,0.42) !important;
+}
+[data-theme="dark"] .es-main .dp-btn-go-back:hover,
+.dark .es-main .dp-btn-go-back:hover {
+  border-color: rgba(255,255,255,0.30) !important;
+  color: rgba(255,255,255,0.68) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
