@@ -688,7 +688,7 @@ export async function generateDefenceBrief(studentCtx, weaknesses, examinerQuest
   return callClaudeAuth(
     DEFENCE_BRIEF_ENDPOINT,
     [{ role: 'user', content: buildDefenceBriefPrompt(studentCtx, weaknesses, examinerQuestions) }],
-    2000,
+    3500,
     { promptType: 'defence-brief' }
   );
 }
