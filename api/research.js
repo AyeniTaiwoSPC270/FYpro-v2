@@ -12,6 +12,7 @@ import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts
 import { FREE_STEP_LIMITS }               from './_lib/free-limits.js';
 import { sendTelegramAlert }              from './_lib/telegram.js';
 import { writeSystemLog }                 from './_lib/system-log.js';
+import { Sentry }                         from './_lib/sentry-server.js';
 
 export const config = { maxDuration: 60 };
 
@@ -447,17 +448,8 @@ async function handleUserCount(req, res) {
 
 export default async function handler(req, res) {
   // Top-level catch-all so that any future bug in any action branch — including
-  // bugs inside action handlers that escape their own try/catch — reaches Telegram
-  // and the system_logs table rather than silently producing a Vercel 500.
-  //
-  // NOTE: @sentry/node is not installed in this project; only @sentry/react (browser)
-  // is available. Sentry.captureException() cannot be called here until @sentry/node
-  // is added as a dependency and a server-side Sentry initializer is created in
-  // api/_lib/sentry-server.js. Until then, sendTelegramAlert + writeSystemLog are
-  // the server-side alerting path. This is why the Sentry → Telegram bridge did NOT
-  // fire for the .catch()-is-not-a-function 500: no server-side SDK exists, so no
-  // events ever reach Sentry from api/, and therefore the Sentry webhook to
-  // /api/admin?action=sentry_webhook is never triggered.
+  // bugs inside action handlers that escape their own try/catch — reaches Sentry,
+  // Telegram, and the system_logs table rather than silently producing a Vercel 500.
   try {
     setCorsHeaders(req, res);
 
@@ -473,6 +465,7 @@ export default async function handler(req, res) {
     if (action === 'lit-map')  return handleLitMap(req, res);
     return res.status(400).json({ error: 'Unknown action. Use ?action=validate, ?action=lit-map, or ?action=user-count' });
   } catch (err) {
+    Sentry.captureException(err);
     console.error('[api/research] unhandled error:', err);
     sendTelegramAlert(`🔴 Unhandled error in /api/research?action=${req.query?.action || 'unknown'} — ${err.message}`).catch(() => null);
     writeSystemLog({ severity: 'critical', feature: 'research', source: 'api', plain_message: `Unhandled error: ${err.message}`, raw_detail: { stack: err.stack, action: req.query?.action } }).catch(() => null);
