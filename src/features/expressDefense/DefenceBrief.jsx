@@ -127,6 +127,7 @@ export default function DefenceBrief() {
       examinerQas:      brief.examinerQas,
     })
     showToast('Defence Brief saved ✓')
+    document.dispatchEvent(new CustomEvent('express:navigate', { detail: { step: 'defense' } }))
   }
 
   function handleSkip() {

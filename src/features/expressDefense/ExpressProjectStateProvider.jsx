@@ -46,7 +46,7 @@ export default function ExpressProjectStateProvider({ children }) {
           .eq('project_id', project.id)
           .eq('user_id', user.id)
 
-        const expressSteps = { red_flag: false, project_reviewer: false, defense: false }
+        const expressSteps = { red_flag: false, project_reviewer: false, defense_brief: false, defense: false }
         for (const s of steps ?? []) {
           if (s.step_type === 'red_flag_detector') {
             expressSteps.red_flag = true
@@ -57,6 +57,12 @@ export default function ExpressProjectStateProvider({ children }) {
             hydration.uploadedProject = {
               fileName: s.result_json?.fileName || s.result_json?.file_name || 'Uploaded document',
               reviewData: s.result_json?.reviewData ?? s.result_json,
+            }
+          }
+          if (s.step_type === 'defense_brief') {
+            expressSteps.defense_brief = true
+            if (!s.result_json?.skipped) {
+              hydration.defenseBrief = s.result_json
             }
           }
           if (s.step_type === 'defense_prep') {

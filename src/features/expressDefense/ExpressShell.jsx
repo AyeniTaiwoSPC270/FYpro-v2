@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import FyproLogo from '../../components/FyproLogo'
@@ -25,8 +25,15 @@ export default function ExpressShell() {
   const { state } = useApp()
   const expressSteps = state.expressSteps || {}
 
+  useEffect(() => {
+    function onNav(e) { setActiveStep(e.detail.step) }
+    document.addEventListener('express:navigate', onNav)
+    return () => document.removeEventListener('express:navigate', onNav)
+  }, [])
+
   function handleStepClick(step) {
-    // Always allow navigation — each component renders its own locked-state UI
+    const isLocked = step.lockedBy ? !expressSteps[step.lockedBy] : false
+    if (isLocked) return
     setActiveStep(step.id)
   }
 

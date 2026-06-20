@@ -525,6 +525,9 @@ export default function ProjectReviewer() {
       if (isFirstReviewerCompletion) notifyStepCompleted(user?.id, 'project_reviewer', 4).catch(() => {})
     }
     showToast('Project reviewed ✓')
+    if (isExpress) {
+      document.dispatchEvent(new CustomEvent('express:navigate', { detail: { step: 'brief' } }))
+    }
 
     // Check achievements after step completion
     if (isFirstReviewerCompletion) {
