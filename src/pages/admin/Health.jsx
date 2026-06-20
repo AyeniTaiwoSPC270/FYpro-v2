@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import FeatureFeedbackWidget from './widgets/FeatureFeedbackWidget'
+import RatingsWidget from './widgets/RatingsWidget'
 import { supabase } from '../../lib/supabase'
 
 // ── Design tokens (dark admin theme) ────────────────────────────────
@@ -634,6 +635,10 @@ function AdminHealth() {
   const [reportFilter, setReportFilter]     = useState('open')
   const [expandedReport, setExpandedReport] = useState(null)
 
+  const [ratingsData, setRatingsData]       = useState(null)
+  const [ratingsLoading, setRatingsLoading] = useState(false)
+  const [ratingsError, setRatingsError]     = useState(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
@@ -742,6 +747,25 @@ function AdminHealth() {
       console.error('[Health/loadReports]', err)
     } finally {
       setReportsLoading(false)
+    }
+  }, [session?.access_token])
+
+  const loadRatings = useCallback(async () => {
+    if (!session?.access_token) return
+    setRatingsLoading(true)
+    setRatingsError(null)
+    try {
+      const res = await fetch('/api/admin?action=get-ratings', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setRatingsData(data)
+    } catch (err) {
+      console.error('[Health/loadRatings]', err)
+      setRatingsError(err.message || 'Failed to load')
+    } finally {
+      setRatingsLoading(false)
     }
   }, [session?.access_token])
 
@@ -1006,6 +1030,11 @@ function AdminHealth() {
     }, 30_000)
     return () => clearInterval(id)
   }, [isAdmin, session, loadReports, activeTab])
+
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    loadRatings()
+  }, [isAdmin, session, loadRatings])
 
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
@@ -1609,6 +1638,7 @@ function AdminHealth() {
     { id: 'vitals',    label: 'Vitals' },
     { id: 'logs',      label: 'Logs' },
     { id: 'reports',   label: openReportCount > 0 ? `Reports (${openReportCount})` : 'Reports' },
+    { id: 'ratings',   label: '⭐ Ratings' },
   ]
 
   async function updateReportStatus(reportId, status) {
@@ -1658,6 +1688,7 @@ function AdminHealth() {
     else if (id === 'payments') { loadPaymentIssues(); loadFeedbackSummary() }
     else if (id === 'logs') { loadSystemLogs(); loadFailures() }
     else if (id === 'reports') loadReports()
+    else if (id === 'ratings') loadRatings()
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
@@ -2495,6 +2526,15 @@ function AdminHealth() {
                 })}
             </div>
           </div>
+        )}
+
+        {activeTab === 'ratings' && (
+          <RatingsWidget
+            stats={ratingsData?.stats}
+            recent={ratingsData?.recent}
+            loading={ratingsLoading}
+            error={ratingsError}
+          />
         )}
 
       </div>
