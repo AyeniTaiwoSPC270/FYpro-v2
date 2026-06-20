@@ -10,6 +10,8 @@ import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts.js';
 import { FREE_STEP_LIMITS }               from './_lib/free-limits.js';
+import { sendTelegramAlert }              from './_lib/telegram.js';
+import { writeSystemLog }                 from './_lib/system-log.js';
 
 export const config = { maxDuration: 60 };
 
@@ -444,17 +446,38 @@ async function handleUserCount(req, res) {
 }
 
 export default async function handler(req, res) {
-  setCorsHeaders(req, res);
+  // Top-level catch-all so that any future bug in any action branch — including
+  // bugs inside action handlers that escape their own try/catch — reaches Telegram
+  // and the system_logs table rather than silently producing a Vercel 500.
+  //
+  // NOTE: @sentry/node is not installed in this project; only @sentry/react (browser)
+  // is available. Sentry.captureException() cannot be called here until @sentry/node
+  // is added as a dependency and a server-side Sentry initializer is created in
+  // api/_lib/sentry-server.js. Until then, sendTelegramAlert + writeSystemLog are
+  // the server-side alerting path. This is why the Sentry → Telegram bridge did NOT
+  // fire for the .catch()-is-not-a-function 500: no server-side SDK exists, so no
+  // events ever reach Sentry from api/, and therefore the Sentry webhook to
+  // /api/admin?action=sentry_webhook is never triggered.
+  try {
+    setCorsHeaders(req, res);
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { action } = req.query;
+    const { action } = req.query;
 
-  if (action === 'user-count') return handleUserCount(req, res);
+    if (action === 'user-count') return handleUserCount(req, res);
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (action === 'validate') return handleValidate(req, res);
-  if (action === 'lit-map')  return handleLitMap(req, res);
-  return res.status(400).json({ error: 'Unknown action. Use ?action=validate, ?action=lit-map, or ?action=user-count' });
+    if (action === 'validate') return handleValidate(req, res);
+    if (action === 'lit-map')  return handleLitMap(req, res);
+    return res.status(400).json({ error: 'Unknown action. Use ?action=validate, ?action=lit-map, or ?action=user-count' });
+  } catch (err) {
+    console.error('[api/research] unhandled error:', err);
+    sendTelegramAlert(`🔴 Unhandled error in /api/research?action=${req.query?.action || 'unknown'} — ${err.message}`).catch(() => null);
+    writeSystemLog({ severity: 'critical', feature: 'research', source: 'api', plain_message: `Unhandled error: ${err.message}`, raw_detail: { stack: err.stack, action: req.query?.action } }).catch(() => null);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
