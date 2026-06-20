@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -21,12 +22,14 @@ export default function DefenseReadyBadge({ awardedAt }) {
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
+  const containerRef = useRef(null)
   const prevUnlockedRef = useRef(unlocked)
   const touchTimerRef = useRef(null)
   const wasTouchRef = useRef(false)
   const [justUnlocked, setJustUnlocked] = useState(false)
   const [pulsing, setPulsing] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
     if (!prevUnlockedRef.current && unlocked) {
@@ -40,8 +43,22 @@ export default function DefenseReadyBadge({ awardedAt }) {
 
   useEffect(() => () => clearTimeout(touchTimerRef.current), [])
 
+  useEffect(() => {
+    if (!tooltipVisible) return
+    const hide = () => setTooltipVisible(false)
+    document.addEventListener('scroll', hide, { passive: true, capture: true })
+    return () => document.removeEventListener('scroll', hide, { capture: true })
+  }, [tooltipVisible])
+
+  function captureCoords() {
+    if (!containerRef.current) return
+    const r = containerRef.current.getBoundingClientRect()
+    setTooltipCoords({ top: r.top, left: r.left + r.width / 2 })
+  }
+
   function handleTouchStart() {
     wasTouchRef.current = true
+    captureCoords()
     if (tooltipVisible) {
       setTooltipVisible(false)
       clearTimeout(touchTimerRef.current)
@@ -54,10 +71,11 @@ export default function DefenseReadyBadge({ awardedAt }) {
 
   return (
     <div
+      ref={containerRef}
       className="relative flex flex-col items-center"
-      onMouseEnter={() => { if (wasTouchRef.current) return; setTooltipVisible(true) }}
+      onMouseEnter={() => { if (wasTouchRef.current) return; captureCoords(); setTooltipVisible(true) }}
       onMouseLeave={() => { if (wasTouchRef.current) { wasTouchRef.current = false; return } setTooltipVisible(false) }}
-      onFocus={() => setTooltipVisible(true)}
+      onFocus={() => { captureCoords(); setTooltipVisible(true) }}
       onBlur={() => setTooltipVisible(false)}
       onTouchStart={handleTouchStart}
       role="img"
@@ -194,42 +212,47 @@ export default function DefenseReadyBadge({ awardedAt }) {
         {unlocked ? 'READY' : 'LOCKED'}
       </span>
 
-      {/* Tooltip */}
-      <AnimatePresence>
-        {tooltipVisible && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'absolute',
-              bottom: '110%',
-              right: 0,
-              background: isLight ? '#FFFFFF' : '#0D1B2A',
-              border: isLight
-                ? `1px solid ${unlocked ? 'rgba(0,102,255,0.2)' : '#E2E8F0'}`
-                : `1px solid ${unlocked ? 'rgba(0,102,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
-              borderRadius: 10,
-              padding: '8px 12px',
-              width: 220,
-              zIndex: 9999,
-              pointerEvents: 'none',
-              textAlign: 'center',
-              boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : 'none',
-            }}
-          >
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: unlocked ? '#3B82F6' : isLight ? '#0F172A' : 'rgba(255,255,255,0.7)', margin: 0 }}>
-              {unlocked ? 'Defense Ready' : '🔒 Defense Ready'}
-            </p>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.62rem', color: isLight ? 'rgba(13,27,42,0.5)' : 'rgba(255,255,255,0.45)', margin: '4px 0 0', lineHeight: 1.5 }}>
-              {unlocked
-                ? `Awarded ${formatDate(awardedAt)} — all 6 steps completed + defense session run`
-                : 'Complete all 6 steps and run one Defense Simulator session to unlock.'}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Tooltip — portal to escape overflow-x:auto scroll-container clipping */}
+      {createPortal(
+        <AnimatePresence>
+          {tooltipVisible && (
+            <motion.div
+              key="defense-ready-tip"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'fixed',
+                top: tooltipCoords.top,
+                left: tooltipCoords.left,
+                transform: 'translateX(-50%) translateY(-100%) translateY(-8px)',
+                background: isLight ? '#FFFFFF' : '#0D1B2A',
+                border: isLight
+                  ? `1px solid ${unlocked ? 'rgba(0,102,255,0.2)' : '#E2E8F0'}`
+                  : `1px solid ${unlocked ? 'rgba(0,102,255,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 10,
+                padding: '8px 12px',
+                width: 220,
+                zIndex: 9999,
+                pointerEvents: 'none',
+                textAlign: 'center',
+                boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : '0 4px 24px rgba(0,0,0,0.5)',
+              }}
+            >
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', fontWeight: 600, color: unlocked ? '#3B82F6' : isLight ? '#0F172A' : 'rgba(255,255,255,0.7)', margin: 0 }}>
+                {unlocked ? 'Defense Ready' : '🔒 Defense Ready'}
+              </p>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.62rem', color: isLight ? 'rgba(13,27,42,0.5)' : 'rgba(255,255,255,0.45)', margin: '4px 0 0', lineHeight: 1.5 }}>
+                {unlocked
+                  ? `Awarded ${formatDate(awardedAt)} — all 6 steps completed + defense session run`
+                  : 'Complete all 6 steps and run one Defense Simulator session to unlock.'}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   )
 }

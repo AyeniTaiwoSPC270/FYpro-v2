@@ -1,7 +1,9 @@
 // src/components/badges/AchievementsRow.jsx
 // Compact row of earned achievement chips shown on the dashboard.
 // Locked achievements show as faint outlines. Hidden ones show as '?' until earned.
-import { motion } from 'framer-motion'
+import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useTheme } from '../../context/ThemeContext'
 import { Link } from 'react-router-dom'
@@ -28,6 +30,106 @@ const ALL_ACHIEVEMENTS = [
   { key: 'early_bird',    label: 'Early Bird',     emoji: '🌅', hidden: true  },
   { key: 'dedicated',     label: 'Dedicated',      emoji: '🔥', hidden: true  },
 ]
+
+function AchievementChip({ def, earned, isLight }) {
+  const ref = useRef(null)
+  const timerRef = useRef(null)
+  const wasTouchRef = useRef(false)
+  const [visible, setVisible] = useState(false)
+  const [coords, setCoords] = useState({ top: 0, left: 0 })
+
+  useEffect(() => () => clearTimeout(timerRef.current), [])
+
+  useEffect(() => {
+    if (!visible) return
+    const hide = () => setVisible(false)
+    document.addEventListener('scroll', hide, { passive: true, capture: true })
+    return () => document.removeEventListener('scroll', hide, { capture: true })
+  }, [visible])
+
+  function capture() {
+    if (!ref.current) return
+    const r = ref.current.getBoundingClientRect()
+    setCoords({ top: r.top, left: r.left + r.width / 2 })
+  }
+
+  function handleTouchStart() {
+    wasTouchRef.current = true
+    capture()
+    if (visible) {
+      setVisible(false)
+      clearTimeout(timerRef.current)
+    } else {
+      setVisible(true)
+      clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => setVisible(false), 2000)
+    }
+  }
+
+  const label = earned ? def.label : def.hidden ? '???' : def.label
+
+  return (
+    <>
+      <motion.div
+        ref={ref}
+        onMouseEnter={() => { if (wasTouchRef.current) return; capture(); setVisible(true) }}
+        onMouseLeave={() => { if (wasTouchRef.current) { wasTouchRef.current = false; return } setVisible(false) }}
+        onTouchStart={handleTouchStart}
+        animate={earned ? { scale: [1, 1.2, 1] } : {}}
+        transition={{ duration: 0.5 }}
+        style={{
+          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '1.1rem',
+          background: earned
+            ? isLight ? 'rgba(0,102,255,0.08)' : 'rgba(0,102,255,0.12)'
+            : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
+          border: earned
+            ? '1.5px solid rgba(0,102,255,0.3)'
+            : isLight ? '1.5px solid rgba(13,27,42,0.1)' : '1.5px solid rgba(255,255,255,0.08)',
+          opacity: earned ? 1 : 0.35,
+          filter: earned ? 'none' : 'grayscale(1)',
+          cursor: 'default',
+        }}
+      >
+        {def.hidden && !earned ? '?' : def.emoji}
+      </motion.div>
+
+      {createPortal(
+        <AnimatePresence>
+          {visible && (
+            <motion.div
+              key={`ach-tip-${def.key}`}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.12 }}
+              style={{
+                position: 'fixed',
+                top: coords.top,
+                left: coords.left,
+                transform: 'translateX(-50%) translateY(-100%) translateY(-8px)',
+                background: isLight ? '#FFFFFF' : '#0D1B2A',
+                border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 6,
+                padding: '4px 8px',
+                zIndex: 9999,
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : '0 4px 24px rgba(0,0,0,0.5)',
+              }}
+            >
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.65rem', color: isLight ? '#0F172A' : 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                {label}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
+  )
+}
 
 export default function AchievementsRow({ projectId = null, catalog = null }) {
   const { earnedKeys, loading } = useAchievements(projectId)
@@ -100,34 +202,14 @@ export default function AchievementsRow({ projectId = null, catalog = null }) {
       <div style={{ width: 1, alignSelf: 'stretch', background: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.07)', margin: '0 4px', flexShrink: 0 }} />
 
       {/* Achievement chips — show first 12, rest accessible via /account/achievements */}
-      {defs.slice(0, 12).map(a => {
-        const earned = earnedKeys.has(a.key)
-        const showHidden = a.hidden && !earned
-        return (
-          <motion.div
-            key={a.key}
-            title={earned ? a.label : a.hidden ? '???' : a.label}
-            animate={earned ? { scale: [1, 1.2, 1] } : {}}
-            transition={{ duration: 0.5 }}
-            style={{
-              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.1rem',
-              background: earned
-                ? isLight ? 'rgba(0,102,255,0.08)' : 'rgba(0,102,255,0.12)'
-                : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
-              border: earned
-                ? '1.5px solid rgba(0,102,255,0.3)'
-                : isLight ? '1.5px solid rgba(13,27,42,0.1)' : '1.5px solid rgba(255,255,255,0.08)',
-              opacity: earned ? 1 : 0.35,
-              filter: earned ? 'none' : 'grayscale(1)',
-              cursor: 'default',
-            }}
-          >
-            {showHidden ? '?' : a.emoji}
-          </motion.div>
-        )
-      })}
+      {defs.slice(0, 12).map(a => (
+        <AchievementChip
+          key={a.key}
+          def={a}
+          earned={earnedKeys.has(a.key)}
+          isLight={isLight}
+        />
+      ))}
     </motion.div>
   )
 }

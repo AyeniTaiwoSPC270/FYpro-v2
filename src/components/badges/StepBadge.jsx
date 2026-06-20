@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -96,11 +97,13 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
+  const containerRef = useRef(null)
   const prevCompletedRef = useRef(completed)
   const touchTimerRef = useRef(null)
   const wasTouchRef = useRef(false)
   const [justCompleted, setJustCompleted] = useState(false)
   const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
     if (!prevCompletedRef.current && completed) {
@@ -113,14 +116,23 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
 
   useEffect(() => () => clearTimeout(touchTimerRef.current), [])
 
-  const tooltipPositionStyle =
-    tooltipAlign === 'start' ? { left: 0 }
-    : tooltipAlign === 'end' ? { right: 0, left: 'auto' }
-    : { left: '50%', transform: 'translateX(-50%)' }
+  useEffect(() => {
+    if (!tooltipVisible) return
+    const hide = () => setTooltipVisible(false)
+    document.addEventListener('scroll', hide, { passive: true, capture: true })
+    return () => document.removeEventListener('scroll', hide, { capture: true })
+  }, [tooltipVisible])
+
+  function captureCoords() {
+    if (!containerRef.current) return
+    const r = containerRef.current.getBoundingClientRect()
+    setTooltipCoords({ top: r.top, left: r.left + r.width / 2 })
+  }
 
   function handleTouchStart() {
     if (!completed) return
     wasTouchRef.current = true
+    captureCoords()
     if (tooltipVisible) {
       setTooltipVisible(false)
       clearTimeout(touchTimerRef.current)
@@ -133,10 +145,11 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
 
   return (
     <div
+      ref={containerRef}
       className="relative flex flex-col items-center"
-      onMouseEnter={() => { if (wasTouchRef.current) return; completed && setTooltipVisible(true) }}
+      onMouseEnter={() => { if (wasTouchRef.current) return; if (!completed) return; captureCoords(); setTooltipVisible(true) }}
       onMouseLeave={() => { if (wasTouchRef.current) { wasTouchRef.current = false; return } setTooltipVisible(false) }}
-      onFocus={() => completed && setTooltipVisible(true)}
+      onFocus={() => { if (!completed) return; captureCoords(); setTooltipVisible(true) }}
       onBlur={() => setTooltipVisible(false)}
       onTouchStart={handleTouchStart}
       role="img"
@@ -215,37 +228,42 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
         {meta.abbr}
       </span>
 
-      {/* Tooltip */}
-      <AnimatePresence>
-        {tooltipVisible && completedAt && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'absolute',
-              bottom: '110%',
-              ...tooltipPositionStyle,
-              background: isLight ? '#FFFFFF' : '#0D1B2A',
-              border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              padding: '6px 10px',
-              whiteSpace: 'nowrap',
-              zIndex: 9999,
-              pointerEvents: 'none',
-              boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : 'none',
-            }}
-          >
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.68rem', color: isLight ? '#0F172A' : 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
-              {meta.label}
-            </p>
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: isLight ? 'rgba(13,27,42,0.45)' : 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
-              Completed {formatDate(completedAt)}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Tooltip — portal to escape overflow-x:auto scroll-container clipping */}
+      {createPortal(
+        <AnimatePresence>
+          {tooltipVisible && completedAt && (
+            <motion.div
+              key="step-badge-tip"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'fixed',
+                top: tooltipCoords.top,
+                left: tooltipCoords.left,
+                transform: 'translateX(-50%) translateY(-100%) translateY(-8px)',
+                background: isLight ? '#FFFFFF' : '#0D1B2A',
+                border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                padding: '6px 10px',
+                whiteSpace: 'nowrap',
+                zIndex: 9999,
+                pointerEvents: 'none',
+                boxShadow: isLight ? '0 4px 16px rgba(0,0,0,0.1)' : '0 4px 24px rgba(0,0,0,0.5)',
+              }}
+            >
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.68rem', color: isLight ? '#0F172A' : 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
+                {meta.label}
+              </p>
+              <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', color: isLight ? 'rgba(13,27,42,0.45)' : 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
+                Completed {formatDate(completedAt)}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   )
 }
