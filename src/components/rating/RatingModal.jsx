@@ -83,7 +83,7 @@ export default function RatingModal({ prompt, onClose }) {
       }}
     >
       <div style={{
-        background:   '#FFFFFF',
+        background:   'var(--bg-card)',
         borderRadius: 'var(--radius-lg)',
         width:        '100%', maxWidth: 420,
         boxShadow:    'var(--shadow-card-hover)',
@@ -116,7 +116,7 @@ export default function RatingModal({ prompt, onClose }) {
               {/* Step dots */}
               <div style={{ display: 'flex', gap: 5, margin: '14px 0 0', justifyContent: 'center' }}>
                 <div style={{ width: 18, height: 6, borderRadius: 3, background: 'var(--color-blue-primary)' }} />
-                <div style={{ width: 6,  height: 6, borderRadius: '50%', background: 'rgba(13,27,42,0.15)' }} />
+                <div style={{ width: 6,  height: 6, borderRadius: '50%', background: 'var(--border-subtle)' }} />
               </div>
 
               {/* Stars */}
@@ -134,7 +134,7 @@ export default function RatingModal({ prompt, onClose }) {
                     style={{
                       background: 'none', border: 'none', padding: 2, cursor: 'pointer',
                       fontSize: '2rem', lineHeight: 1,
-                      color: n <= fillCount ? 'var(--color-amber)' : 'rgba(13,27,42,0.15)',
+                      color: n <= fillCount ? 'var(--color-amber)' : 'var(--border-subtle)',
                       transition: 'color var(--transition-fast)',
                     }}
                   >
@@ -154,8 +154,8 @@ export default function RatingModal({ prompt, onClose }) {
             <div style={{
               display:       'flex', alignItems: 'center', justifyContent: 'space-between',
               padding:       '14px 24px',
-              borderTop:     '1px solid var(--color-border)',
-              background:    '#FAFBFC',
+              borderTop:     '1px solid var(--border-color)',
+              background:    'var(--bg-input)',
             }}>
               <button onClick={handleSkipRating} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
@@ -208,7 +208,7 @@ export default function RatingModal({ prompt, onClose }) {
 
               {/* Step dots */}
               <div style={{ display: 'flex', gap: 5, margin: '14px 0 16px', justifyContent: 'center' }}>
-                <div style={{ width: 6,  height: 6, borderRadius: '50%', background: 'rgba(13,27,42,0.15)' }} />
+                <div style={{ width: 6,  height: 6, borderRadius: '50%', background: 'var(--border-subtle)' }} />
                 <div style={{ width: 18, height: 6, borderRadius: 3,     background: 'var(--color-blue-primary)' }} />
               </div>
 
@@ -230,12 +230,12 @@ export default function RatingModal({ prompt, onClose }) {
                   rows={3}
                   style={{
                     width: '100%', resize: 'none', boxSizing: 'border-box',
-                    background: 'var(--color-bg-surface)',
-                    border: '1.5px solid var(--color-border)',
+                    background: 'var(--bg-input)',
+                    border: '1.5px solid var(--border-color)',
                     borderRadius: 'var(--radius-sm)',
                     padding: '9px 12px',
                     fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.8125rem', color: 'var(--color-text-primary)',
+                    fontSize: '0.8125rem', color: 'var(--text-primary)',
                     lineHeight: 1.5,
                   }}
                 />
@@ -259,12 +259,12 @@ export default function RatingModal({ prompt, onClose }) {
                   rows={3}
                   style={{
                     width: '100%', resize: 'none', boxSizing: 'border-box',
-                    background: 'var(--color-bg-surface)',
-                    border: '1.5px solid var(--color-border)',
+                    background: 'var(--bg-input)',
+                    border: '1.5px solid var(--border-color)',
                     borderRadius: 'var(--radius-sm)',
                     padding: '9px 12px',
                     fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.8125rem', color: 'var(--color-text-primary)',
+                    fontSize: '0.8125rem', color: 'var(--text-primary)',
                     lineHeight: 1.5,
                   }}
                 />
@@ -278,8 +278,8 @@ export default function RatingModal({ prompt, onClose }) {
             <div style={{
               display:       'flex', alignItems: 'center', justifyContent: 'space-between',
               padding:       '14px 24px',
-              borderTop:     '1px solid var(--color-border)',
-              background:    '#FAFBFC',
+              borderTop:     '1px solid var(--border-color)',
+              background:    'var(--bg-input)',
               marginTop:     16,
             }}>
               <button
