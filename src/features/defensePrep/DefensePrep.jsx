@@ -1316,6 +1316,7 @@ export default function DefensePrep() {
       }
 
       showToast('Defence session complete ✓')
+      document.dispatchEvent(new CustomEvent('fypro:defense-session-saved'))
       setHasHistory(true)
 
       // Fire achievement check after defense session completes
