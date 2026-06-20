@@ -1098,29 +1098,29 @@ async function handleSubmitReport(req, res) {
   const preview = description.trim().slice(0, 100)
   const step    = safeContext.step_name || safeContext.url
 
-  // Fire Telegram + email in parallel, non-blocking
-  Promise.all([
-    sendTelegramAlert(
-      `🚨 <b>User Report [${type}]</b>\n` +
-      `👤 ${escapeTgHtml(email)}\n` +
-      (safeContext.step_name ? `📍 Step: ${escapeTgHtml(safeContext.step_name)}\n` : '') +
-      `🔗 ${escapeTgHtml(safeContext.url)}\n` +
-      `💬 "${escapeTgHtml(preview)}"\n⏱ just now`
-    ).catch(err => console.error('[notify/submit-report] Telegram error:', err.message)),
-    (async () => {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
-          from:    'FYPro <hello@fypro.com.ng>',
-          to:      'hello@fypro.com.ng',
-          subject: `[FYPro Report] ${type} — ${step}`,
-          html:    buildReportEmail({ email, type, description: description.trim(), context: safeContext }),
-        })
-      } catch (err) {
-        console.error('[notify/submit-report] Resend error:', err.message)
-      }
-    })(),
-  ])
+  // Await Telegram so it completes before Vercel terminates the function.
+  // Email is best-effort (fire-and-forget).
+  await sendTelegramAlert(
+    `🚨 <b>User Report [${type}]</b>\n` +
+    `👤 ${escapeTgHtml(email)}\n` +
+    (safeContext.step_name ? `📍 Step: ${escapeTgHtml(safeContext.step_name)}\n` : '') +
+    `🔗 ${escapeTgHtml(safeContext.url)}\n` +
+    `💬 "${escapeTgHtml(preview)}"\n⏱ just now`
+  ).catch(err => console.error('[notify/submit-report] Telegram error:', err.message));
+
+  (async () => {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from:    'FYPro <hello@fypro.com.ng>',
+        to:      'hello@fypro.com.ng',
+        subject: `[FYPro Report] ${type} — ${step}`,
+        html:    buildReportEmail({ email, type, description: description.trim(), context: safeContext }),
+      })
+    } catch (err) {
+      console.error('[notify/submit-report] Resend error:', err.message)
+    }
+  })()
 
   return res.status(200).json({ ok: true })
 }
