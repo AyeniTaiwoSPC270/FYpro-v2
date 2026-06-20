@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const ghostBtn = {
   background: 'none',
-  border: '1px solid var(--color-border-strong)',
+  border: '1px solid var(--border-color)',
   borderRadius: 'var(--radius-md)',
   padding: '10px 20px',
   fontFamily: "'Poppins', sans-serif",
@@ -105,9 +105,9 @@ export default function ReportButton({
           onClick={e => { if (e.target === e.currentTarget) handleClose() }}
         >
           <div style={{
-            background: 'var(--color-bg-card)',
+            background: 'var(--bg-card)',
             borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border)',
+            border: '1px solid var(--border-color)',
             boxShadow: 'var(--shadow-card)',
             padding: '32px',
             width: '100%',
@@ -164,8 +164,8 @@ export default function ReportButton({
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
-                    background: 'var(--color-bg-surface)',
-                    border: '1px solid var(--color-border-strong)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-sm)',
                     padding: '12px 14px',
                     fontFamily: "'Poppins', sans-serif",
