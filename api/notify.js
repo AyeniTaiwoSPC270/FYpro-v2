@@ -83,6 +83,32 @@ function buildBroadcastHtml(body) {
 </body></html>`
 }
 
+function buildReportEmail({ email, type, description, context }) {
+  const typeColor = type === 'error' ? '#DC2626' : '#0066FF'
+  const typeLabel = type === 'error' ? 'Error Report' : 'General Report'
+  const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background-color:#F0F4F8;font-family:Arial,sans-serif;">
+<div style="max-width:560px;margin:32px auto;">
+  <div style="height:3px;background-color:${typeColor};border-radius:8px 8px 0 0;"></div>
+  <div style="background:#0D1B2A;padding:20px 22px;text-align:center;">
+    <img src="https://fypro.com.ng/fypro-logo.png" alt="FYPro" height="40" style="display:block;margin:0 auto;" />
+  </div>
+  <div style="background:#fff;padding:32px;border-radius:0 0 8px 8px;border:1px solid #E5E7EB;border-top:none;">
+    <div style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-radius:4px;padding:3px 10px;margin-bottom:16px;background:${typeColor}22;color:${typeColor};border:1px solid ${typeColor}55;">${typeLabel}</div>
+    <h1 style="font-size:18px;font-weight:700;color:#0D1B2A;margin:0 0 16px;">User Issue Report</h1>
+    <div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">From</div><div style="font-size:14px;color:#111827;">${esc(email)}</div></div>
+    <div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">URL</div><div style="font-size:14px;color:#111827;">${esc(context.url)}</div></div>
+    ${context.step_name ? `<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Step</div><div style="font-size:14px;color:#111827;">${esc(context.step_name)}</div></div>` : ''}
+    ${context.error_message ? `<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Error</div><div style="font-size:13px;color:#DC2626;font-family:monospace;background:#FFF5F5;padding:8px 10px;border-radius:4px;">${esc(context.error_message)}</div></div>` : ''}
+    <div><div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Description</div><div style="font-size:14px;color:#111827;white-space:pre-wrap;background:#F9FAFB;padding:12px;border-radius:6px;border:1px solid #E5E7EB;">${esc(description)}</div></div>
+    <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0 12px;">
+    <p style="font-size:11px;color:#9CA3AF;margin:0;">Manage in <a href="https://www.fypro.com.ng/admin/health" style="color:#0066FF;">Mission Control</a> or use /resolve-report in Telegram.</p>
+  </div>
+</div>
+</body></html>`
+}
+
 // ─── Telegram send ────────────────────────────────────────────────────────────
 
 async function sendReply(chatId, text, keyboard = null) {
@@ -637,6 +663,66 @@ async function cmdBroadcast(body, paidOnly) {
   return sentCount
 }
 
+async function cmdReports() {
+  const { data: rows } = await supabaseAdmin
+    .from('user_reports')
+    .select('id, user_id, type, description, context, created_at')
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (!rows || rows.length === 0) return '✅ <b>No open reports</b>'
+
+  const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))]
+  const emailMap = {}
+  await Promise.all(
+    userIds.map(async uid => {
+      try {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(uid)
+        if (user) emailMap[uid] = user.email
+      } catch {}
+    })
+  )
+
+  const lines = rows.map((r, i) => {
+    const email   = emailMap[r.user_id] || '—'
+    const loc     = r.context?.step_name || r.context?.url || '—'
+    const preview = (r.description || '').slice(0, 60)
+    const shortId = (r.id || '').slice(0, 8)
+    return (
+      `${i + 1}. [${r.type}] ${escapeTgHtml(email)}\n` +
+      `    ${escapeTgHtml(loc)} · ${timeAgo(r.created_at)}\n` +
+      `    "${escapeTgHtml(preview)}"\n` +
+      `    <code>/resolve-report ${shortId}</code>`
+    )
+  }).join('\n\n')
+
+  return `📋 <b>Open Reports (${rows.length})</b>\n\n${lines}`
+}
+
+async function cmdResolveReport(id) {
+  if (!id || id.length < 4) return '❌ Usage: /resolve-report &lt;id-prefix&gt; (min 4 chars)'
+
+  const safeId = id.replace(/[%_]/g, '')
+  const { data: rows } = await supabaseAdmin
+    .from('user_reports')
+    .select('id, description')
+    .ilike('id', `${safeId}%`)
+    .neq('status', 'resolved')
+    .limit(2)
+
+  if (!rows || rows.length === 0) return `❌ No open report found matching <code>${id}</code>`
+  if (rows.length > 1) return `⚠️ Multiple matches for <code>${id}</code> — use more characters`
+
+  const { error } = await supabaseAdmin
+    .from('user_reports')
+    .update({ status: 'resolved' })
+    .eq('id', rows[0].id)
+
+  if (error) return `❌ Failed to resolve report: ${error.message}`
+  return `✅ Report resolved: "${(rows[0].description || '').slice(0, 80)}"`
+}
+
 function cmdHelp() {
   return `🛡️ <b>FYPro Admin Bot</b>
 
@@ -654,12 +740,14 @@ Tap a button or type a command:
 /payments — last 5 payments
 /certs — certificate stats
 /referrals — referral stats
+/reports — open user reports
 /spend — API spend detail
 /errors — unresolved errors
 /logs — recent system logs
 
 <b>Actions</b>
 /resolve &lt;id&gt; — mark error resolved
+/resolve-report &lt;id&gt; — mark report resolved
 /maintenance on|off — toggle maintenance mode`
 }
 
@@ -689,6 +777,9 @@ const KEYBOARD = {
       { text: '🔗 Referrals', callback_data: 'referrals' },
       { text: '📜 Logs',      callback_data: 'logs'      },
     ],
+    [
+      { text: '📋 Reports',   callback_data: 'reports'   },
+    ],
   ],
 }
 
@@ -707,9 +798,11 @@ async function runCommand(key, args = []) {
   else if (key === 'certs'       ) return cmdCerts()
   else if (key === 'referrals'   ) return cmdReferrals()
   else if (key === 'logs'        ) return cmdLogs()
-  else if (key === 'resolve'     ) return cmdResolve(args[0])
-  else if (key === 'maintenance' ) return cmdMaintenance(args)
-  else if (key === 'help'        ) return cmdHelp()
+  else if (key === 'resolve'         ) return cmdResolve(args[0])
+  else if (key === 'resolve-report'  ) return cmdResolveReport(args[0])
+  else if (key === 'reports'         ) return cmdReports()
+  else if (key === 'maintenance'     ) return cmdMaintenance(args)
+  else if (key === 'help'            ) return cmdHelp()
   return null
 }
 
@@ -948,6 +1041,171 @@ async function handleContact(req, res) {
   return res.status(200).json({ ok: true })
 }
 
+// ─── Submit report (JWT required) ────────────────────────────────────────────
+
+async function handleSubmitReport(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
+
+  // Rate limiting via Upstash
+  const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()
+  if (UPSTASH_URL && UPSTASH_TOKEN) {
+    const today   = new Date().toISOString().slice(0, 10)
+    const userKey = `rl:report:user:${user.id}:${today}`
+    const ipKey   = `rl:report:ip:${ip}:${today}`
+    const [userR, ipR] = await Promise.all([
+      fetch(`${UPSTASH_URL}/incr/${userKey}`, { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } }).then(x => x.json()).catch(() => null),
+      fetch(`${UPSTASH_URL}/incr/${ipKey}`,   { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } }).then(x => x.json()).catch(() => null),
+    ])
+    if ((userR?.result ?? 0) > 5 || (ipR?.result ?? 0) > 10) {
+      return res.status(429).json({ error: 'Too many reports. Please try again tomorrow.' })
+    }
+    if (userR?.result === 1) fetch(`${UPSTASH_URL}/expire/${userKey}/90000`, { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } }).catch(() => null)
+    if (ipR?.result  === 1) fetch(`${UPSTASH_URL}/expire/${ipKey}/90000`,   { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } }).catch(() => null)
+  }
+
+  const { type, description, context } = req.body || {}
+
+  if (!['error', 'general'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid report type' })
+  }
+  if (!description || typeof description !== 'string' || !description.trim()) {
+    return res.status(400).json({ error: 'Description is required' })
+  }
+  if (description.length > 1000) {
+    return res.status(400).json({ error: 'Description must be 1000 characters or less' })
+  }
+
+  const safeContext = {
+    url: typeof context?.url === 'string' ? context.url.slice(0, 500) : '?',
+    ...(context?.step_name     && { step_name:     String(context.step_name).slice(0, 100) }),
+    ...(context?.error_message && { error_message: String(context.error_message).slice(0, 500) }),
+  }
+
+  const { error: insertError } = await supabaseAdmin
+    .from('user_reports')
+    .insert({ user_id: user.id, type, description: description.trim(), context: safeContext })
+
+  if (insertError) {
+    console.error('[notify/submit-report] insert error:', insertError.message)
+    return res.status(500).json({ error: 'Failed to save report' })
+  }
+
+  const email   = user.email || 'unknown'
+  const preview = description.trim().slice(0, 100)
+  const step    = safeContext.step_name || safeContext.url
+
+  // Fire Telegram + email in parallel, non-blocking
+  Promise.all([
+    sendTelegramAlert(
+      `🚨 <b>User Report [${type}]</b>\n` +
+      `👤 ${escapeTgHtml(email)}\n` +
+      (safeContext.step_name ? `📍 Step: ${escapeTgHtml(safeContext.step_name)}\n` : '') +
+      `🔗 ${escapeTgHtml(safeContext.url)}\n` +
+      `💬 "${escapeTgHtml(preview)}"\n⏱ just now`
+    ).catch(err => console.error('[notify/submit-report] Telegram error:', err.message)),
+    (async () => {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        await resend.emails.send({
+          from:    'FYPro <hello@fypro.com.ng>',
+          to:      'hello@fypro.com.ng',
+          subject: `[FYPro Report] ${type} — ${step}`,
+          html:    buildReportEmail({ email, type, description: description.trim(), context: safeContext }),
+        })
+      } catch (err) {
+        console.error('[notify/submit-report] Resend error:', err.message)
+      }
+    })(),
+  ])
+
+  return res.status(200).json({ ok: true })
+}
+
+// ─── Update report status (admin-only) ───────────────────────────────────────
+
+async function handleUpdateReportStatus(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
+
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  const { report_id, status } = req.body || {}
+  if (!['acknowledged', 'resolved'].includes(status)) {
+    return res.status(400).json({ error: 'status must be acknowledged or resolved' })
+  }
+  if (!report_id || typeof report_id !== 'string') {
+    return res.status(400).json({ error: 'report_id is required' })
+  }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('user_reports')
+    .update({ status })
+    .eq('id', report_id)
+
+  if (updateError) {
+    console.error('[notify/update-report-status] error:', updateError.message)
+    return res.status(500).json({ error: 'Failed to update report' })
+  }
+
+  return res.status(200).json({ ok: true })
+}
+
+// ─── Get reports (admin-only) ─────────────────────────────────────────────────
+
+async function handleGetReports(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
+
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  const statusFilter = req.body?.status
+  let query = supabaseAdmin
+    .from('user_reports')
+    .select('id, user_id, type, description, context, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (statusFilter && ['open', 'acknowledged', 'resolved'].includes(statusFilter)) {
+    query = query.eq('status', statusFilter)
+  }
+
+  const { data: reports, error: fetchError } = await query
+  if (fetchError) {
+    console.error('[notify/get-reports] error:', fetchError.message)
+    return res.status(500).json({ error: 'Failed to fetch reports' })
+  }
+
+  const userIds = [...new Set((reports || []).map(r => r.user_id).filter(Boolean))]
+  const emailMap = {}
+  await Promise.all(
+    userIds.map(async uid => {
+      try {
+        const { data: { user: u } } = await supabaseAdmin.auth.admin.getUserById(uid)
+        if (u) emailMap[uid] = u.email
+      } catch {}
+    })
+  )
+
+  const enriched = (reports || []).map(r => ({ ...r, email: emailMap[r.user_id] || '—' }))
+  return res.status(200).json({ reports: enriched })
+}
+
 // ─── Push nudge delivery (cron) ───────────────────────────────────────────────
 
 const NUDGE_PAYLOADS = {
@@ -1150,6 +1408,11 @@ export default async function handler(req, res) {
     // Push subscription management — JWT required
     if (req.body?.action === 'subscribe')   return handleSubscribe(req, res)
     if (req.body?.action === 'unsubscribe') return handleUnsubscribe(req, res)
+
+    // User report actions — JWT required
+    if (req.body?.action === 'submit-report')        return handleSubmitReport(req, res)
+    if (req.body?.action === 'update-report-status') return handleUpdateReportStatus(req, res)
+    if (req.body?.action === 'get-reports')          return handleGetReports(req, res)
 
     return handleNotify(req, res)
   } catch (err) {
