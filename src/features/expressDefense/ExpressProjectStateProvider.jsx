@@ -4,6 +4,18 @@ import { useApp } from '../../context/AppContext'
 import { useUser } from '../../hooks/useUser'
 import { getExpressProject, createExpressProject, saveStep as supabaseSaveStep, updateProject } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
+import { showToast } from '../../components/Toast'
+
+async function withRetry(fn, delays = [1000, 3000]) {
+  let lastErr
+  for (let i = 0; i <= delays.length; i++) {
+    try { return await fn() } catch (err) {
+      lastErr = err
+      if (i < delays.length) await new Promise(r => setTimeout(r, delays[i]))
+    }
+  }
+  throw lastErr
+}
 
 // Lean ProjectState provider for the Express app. Loads the single express
 // project (mode='express') and routes saveStep to it. No 6-step machinery,
@@ -85,10 +97,11 @@ export default function ExpressProjectStateProvider({ children }) {
   const saveStep = useCallback(async (stepType, resultJson, inputSummary) => {
     if (!projectId) return
     try {
-      await supabaseSaveStep(projectId, stepType, resultJson, inputSummary)
-      await updateProject(projectId, {}) // bumps updated_at for resume ordering
+      await withRetry(() => supabaseSaveStep(projectId, stepType, resultJson, inputSummary))
+      updateProject(projectId, {}).catch(() => {})
     } catch (err) {
       console.error('[ExpressProjectState] saveStep:', err)
+      showToast('Failed to save — check your connection and try again', 'error')
     }
   }, [projectId])
 

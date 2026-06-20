@@ -17,13 +17,18 @@ const STEPS = [
 
 export default function ExpressShell() {
   const [activeStep, setActiveStep] = useState(() => {
-    const saved = sessionStorage.getItem('express_active_step')
-    if (saved) { sessionStorage.removeItem('express_active_step'); return saved }
-    return 'reviewer'
+    // Read without deleting — we want this to survive refreshes within the same tab.
+    // The sessionStorage entry is also updated on every step change below.
+    return sessionStorage.getItem('express_active_step') || 'reviewer'
   })
   const navigate = useNavigate()
   const { state } = useApp()
   const expressSteps = state.expressSteps || {}
+
+  // Keep sessionStorage in sync so the active step survives page refreshes.
+  useEffect(() => {
+    sessionStorage.setItem('express_active_step', activeStep)
+  }, [activeStep])
 
   useEffect(() => {
     function onNav(e) { setActiveStep(e.detail.step) }
