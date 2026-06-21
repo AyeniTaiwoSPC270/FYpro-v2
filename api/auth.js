@@ -1,6 +1,7 @@
 // Auth proxy — adds IP rate limiting and attempt logging in front of Supabase GoTrue.
 // The frontend calls these endpoints instead of supabase.auth.* directly.
 
+import { createHash }     from 'crypto';
 import { createClient }   from '@supabase/supabase-js';
 import { Sentry }         from './_lib/sentry-server.js';
 import { Ratelimit } from '@upstash/ratelimit';
@@ -58,23 +59,35 @@ async function handleLogin(req, res) {
   const v = validate(AuthLoginSchema, req.body || {});
   if (!v.ok) return res.status(400).json({ error: v.error });
 
+  const { email, password } = req.body;
   const ip = getIp(req);
-  let rl;
+  // Hash email so plaintext never lands in Redis keys
+  const emailHash = createHash('sha256').update(email.toLowerCase()).digest('hex').slice(0, 16);
+
+  let rlIp, rlEmail;
   try {
-    rl = await makeIpLimiter(10, '15 m', 'login').limit(ip);
+    [rlIp, rlEmail] = await Promise.all([
+      makeIpLimiter(10, '15 m', 'login').limit(ip),
+      new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, '1 h'), prefix: 'rl:email:login' }).limit(emailHash),
+    ]);
   } catch (rlErr) {
     traceLog(traceId, 'error', '[auth/login] rate limiter threw (failing open):', rlErr.message);
-    rl = { success: true };
+    rlIp = rlEmail = { success: true };
   }
-  if (!rl.success) {
+  if (!rlIp.success) {
     const today = new Date().toISOString().slice(0, 10);
     sendTelegramAlertOnce(`⚠️ Brute-force detected: 10+ login attempts from IP ${ip}`, `tg:auth:bruteforce:${ip}:${today}`).catch(() => null);
     return res.status(429).json({
       error: 'Too many login attempts from your location. Please wait 15 minutes and try again.',
     });
   }
-
-  const { email, password } = req.body;
+  if (!rlEmail.success) {
+    const today = new Date().toISOString().slice(0, 10);
+    sendTelegramAlertOnce(`⚠️ Account targeted: 20+ login attempts on ${email}`, `tg:auth:acct:${emailHash}:${today}`).catch(() => null);
+    return res.status(429).json({
+      error: 'Too many login attempts on this account. Please wait 1 hour or use forgot password.',
+    });
+  }
 
   let response, data;
   try {
