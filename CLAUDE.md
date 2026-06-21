@@ -111,8 +111,8 @@ fypro-v2/
 │   │   ├── PaymentSuccess.jsx
 │   │   ├── NotFound.jsx
 │   │   ├── admin/
-│   │   │   ├── Health.jsx         # /admin/health — Mission Control tabbed dashboard
-│   │   │   └── widgets/           # FeatureFeedbackWidget
+│   │   │   ├── Health.jsx         # /admin/health — Mission Control tabbed dashboard (Overview, Users, Payments, Vitals, Logs, Reports, ⭐ Ratings, 📊 Data)
+│   │   │   └── widgets/           # FeatureFeedbackWidget, RatingsWidget
 │   │   ├── auth/
 │   │   │   └── AuthConfirm.jsx    # /auth/confirm — email confirmation redirect target
 │   │   ├── account/
@@ -181,8 +181,10 @@ fypro-v2/
 │   │   ├── momentum/              # MomentumRing — 7-day activity SVG ring
 │   │   ├── onboarding/            # OnboardingNudge, ReferralCapture
 │   │   ├── rank/                  # RankPill sidebar component
+│   │   ├── rating/                # RatingModal — 2-step star rating + suggestions modal (triggers: defense_simulator | steps_milestone)
 │   │   ├── share/                 # DefenseShareCard
 │   │   └── skeletons/             # Per-route page skeleton components
+│   │   ├── ReportButton.jsx       # User-facing issue report button (used in ApiErrorBox + DashTopBar)
 │   ├── hooks/
 │   │   ├── useProjectState.ts     # Loads project, manages workflow state + offline snapshot fallback
 │   │   ├── usePaidFeatures.js     # Reads user_entitlements from Supabase
@@ -254,10 +256,18 @@ fypro-v2/
 │   # NOTE: index.css now @imports from src/styles/ — MUST stay as CSS @imports (Tailwind v3 appends variants at stylesheet end)
 ├── api/                           # Vercel serverless functions (12 max on Hobby plan)
 │   ├── admin.js                   # Admin data + Sentry + Telegram commands + ping + error-check + maintenance toggle
+│   │                              #   + data-tab (KPIs, 8 chart datasets, 29 table counts)
+│   │                              #   + data-browse (paginated table viewer, search + sort)
+│   │                              #   + submit-rating, get-ratings, get-rating-force, set-rating-force, check-rating-force
+│   │                              #   + submit-report (user issue reports → user_reports table + Telegram alert)
 │   ├── ai.js                      # Claude proxy — workflow + defense + supervisor-prep + check-achievements
 │   ├── auth.js                    # Login/signup/forgot-password + rate limiting + ban enforcement
+│   │                              #   Per-IP (10/15min) + per-email (20/1hr, SHA-256 hashed) limiters on login
+│   │                              #   isNewUser guard: users table update + Telegram alert + welcome notification
+│   │                              #   + nurture email only fire for genuine new signups (not re-signup attempts)
 │   ├── certificate.js             # Certificate record creation/verification (score >= 7/10)
 │   ├── notify.js                  # Telegram alerts + bot webhook + push subscribe/unsubscribe + send-nudges cron
+│   │                              #   + submit-report handler + /data command (query any of 29 tables)
 │   ├── payments.js                # Paystack initiate/verify/webhook/consume-reset (CAS guard)
 │   ├── project-reviewer.js        # PDF upload + Claude review (Defense Pack only, 4 MB cap)
 │   ├── referral.js                # Referral tracking + defense credit milestones
@@ -274,6 +284,7 @@ fypro-v2/
 │   │   ├── credit-user.js         # Grant entitlements after verified payment
 │   │   ├── cache.js               # Upstash response caching
 │   │   ├── rate-limit.js          # Upstash rate limiter helpers
+│   │   ├── rating-force.js        # Redis+Supabase-backed rating modal force flag (admin toggle via app_config)
 │   │   ├── usage-tracker.js       # Daily token/cost tracking
 │   │   ├── ai-prompts.js          # SERVER-side system prompts (defense + reviewer — never trust client prompts)
 │   │   ├── anthropic-proxy.js     # Shared Anthropic call wrapper
@@ -289,11 +300,14 @@ fypro-v2/
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
 ├── migrations/                    # SQL files — run in Supabase SQL Editor
-│   └── 0002 through 0033_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
+│   └── 0002 through 0035_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
 │                                  #  0026 user_achievements, 0029 express_defense_tier,
 │                                  #  0030 project_mode, 0031 achievements_project_scope,
 │                                  #  0032 onboarding_questions,
-│                                  #  0033 defense_certificates_faculty_department)
+│                                  #  0033 defense_certificates_faculty_department,
+│                                  #  0034_add_defense_brief_step_type (adds 'defense_brief' to step_type CHECK),
+│                                  #  0034_user_ratings (star ratings table + RLS),
+│                                  #  0035_user_reports (user issue reports table + RLS))
 ├── scripts/                       # Dev/ops scripts — NOT deployed
 │   ├── verify-rls-after-refactor.js  # RLS regression test
 │   ├── flush-reviewer-rate-limits.js
@@ -534,11 +548,31 @@ Express achievements are scoped to the express project; main achievements scoped
 ### admin_users
 - Admin role table — controls admin access gate (1 row in prod)
 
-### user_reports
-- User-submitted reports/flags (3 rows in prod)
+### user_ratings (migration 0034)
+- id (uuid)
+- user_id (FK → auth.users, CASCADE)
+- stars (smallint, CHECK 1–5)
+- trigger_type (text, CHECK IN ('defense_simulator', 'steps_milestone'))
+- feature (text)
+- suggestion_feature (text, nullable)
+- suggestion_ui (text, nullable)
+- created_at
+- Users can INSERT and SELECT own rows. Admin reads via service_role in get-ratings action.
+- Rate-limited: 3/user/day, 10/IP/day. Submitted via /api/admin?action=submit-rating.
+- Admin Force Modal: `rating_modal_force` key in app_config (Redis-cached, 60s TTL) forces
+  the modal on next AppShell mount — controlled from ⭐ Ratings tab. Keep Force Modal toggle;
+  admin needs it for testing the submission flow.
 
-### user_ratings
-- In-app rating submissions from RatingModal (1 row in prod)
+### user_reports (migration 0035)
+- id (uuid)
+- user_id (FK → auth.users, CASCADE)
+- type (text, CHECK IN ('error', 'general'))
+- description (text)
+- context (jsonb, default '{}')
+- status (text, CHECK IN ('open', 'acknowledged', 'resolved'), default 'open')
+- created_at
+- Users can INSERT and SELECT own rows. NO client UPDATE/DELETE — status managed server-side.
+- Submitted via ReportButton → /api/notify?action=submit-report. Fires Telegram alert on insert.
 
 ---
 
@@ -557,6 +591,8 @@ Key policy patterns:
 - institutions: readable by all authenticated users (reference data)
 - defense_certificates: service role inserts only
 - referrals/defense_credits: service role writes only
+- user_ratings: INSERT + SELECT own rows; admin reads all via service_role
+- user_reports: INSERT + SELECT own rows; service_role manages status field
 
 The three mistakes this project has been designed to prevent:
 1. Storing subscription status on a user-writable table (leads to free premium exploit)
@@ -696,11 +732,20 @@ Outbound alerts (fire automatically):
 - 🎓 Defense completed
 - 📁 New project created
 - 🚨 Payment issue reported
+- 📝 User report submitted (via ReportButton)
+- ⚠️ Account targeted by credential stuffing (per-email rate limit hit)
 
 Inbound commands (tap buttons or type):
 - /start or /help → shows inline keyboard with all commands
 - /stats, /revenue, /users, /spend, /errors, /payments, /health
 - /broadcast <message> → email all users; /broadcast_paid <message> → email paid users only
+- /data <table> → query any of 29 tables (rows shown in HTML-escaped format, row count in footer)
+  ALLOWED tables: admin_users, app_config, auth_attempts, daily_usage, defense_certificates,
+  defense_credits, defense_sessions, defense_turns, email_log, email_preferences,
+  feature_feedback, generation_failures, institutions, notifications, payment_issues,
+  payments, project_steps, projects, push_subscriptions, referrals, response_times,
+  system_logs, user_achievements, user_entitlements, user_onboarding, user_progress,
+  user_ratings, user_reports, users
 
 Daily report: cron-job.org fires daily at 20:00 UTC (9PM WAT) hitting
 GET /api/admin?action=daily-report&secret=CRON_SECRET
@@ -836,15 +881,22 @@ Anti-patterns (NEVER do these):
 
 10. Secrets scanning: gitleaks runs in CI. npm audit kept clean.
 
+10. Auth: login rate-limited per-IP (10/15min) AND per-email (20/1hr). Email hashed with
+    SHA-256 before use as Redis key — no plaintext emails in Redis. isNewUser guard (identities
+    array check) prevents re-signup attempts from triggering false new-user side effects
+    (Telegram alert, welcome notification, nurture email, users table overwrite).
+
 Security audit completed May 2026 — 30 checks, all passed or manually verified.
 Full-stack bug hunt June 10 2026 — 9 bugs found and fixed (commits e12aa40..c549bdf):
 bans at auth level, server-side prompts, atomic run-limit reservation, consume-reset CAS,
 scoped CORS preview regex, TTS gated on defense_pack + bodyParser fix, token auto-refresh
 re-enabled, reviewer 4 MB upload cap, achievements total_score column.
+Auth hardening June 21 2026 — 3 fixes: per-email rate limit, isNewUser guard on users
+table update, isNewUser guard on signup side effects (commits be84760..1b222de).
 
 ---
 
-## 16. WHAT IS FULLY BUILT AND LIVE (as of June 17, 2026)
+## 16. WHAT IS FULLY BUILT AND LIVE (as of June 21, 2026)
 
 All features shipped and working in production (fypro.com.ng):
 - Landing page (urgency CTAs, light/dark product showcase hero image) + pricing page
@@ -896,6 +948,17 @@ All features shipped and working in production (fypro.com.ng):
   shell (/express/run), isolated state providers, achievement scope isolation
 - Defence Brief — jsPDF-generated preparation document (opening statement, model answers
   for weak spots, examiner Q&A); practice mode with AI coaching per question (db- CSS prefix)
+- Rating system — RatingModal (2-step: star rating + open suggestions), triggered post-defense
+  and at steps milestone; stores to user_ratings; admin ⭐ Ratings tab in Mission Control with
+  breakdown charts; Force Modal toggle (admin testing); localStorage dedup prevents repeat prompts
+- User reports — ReportButton inline in ApiErrorBox and DashTopBar; type: error | general;
+  status tracked server-side (open → acknowledged → resolved); fires Telegram alert on submit
+- Admin Data Tab (📊) — KPI cards with polling, 8 curated charts (signups, revenue, usage
+  trends), 29-table browser with search, sort, pagination; backed by data-tab + data-browse actions
+- Telegram /data command — query any of 29 tables directly from bot; HTML-escaped rows + row count footer
+- Auth hardening — per-email login rate limit (20/1hr, SHA-256 hashed key), isNewUser guard
+  prevents profile overwrite + false Telegram/notification/nurture triggers on re-signup attempts
+- project_steps step_type constraint updated to include 'defense_brief' (migration 0034)
 
 Deferred to v3:
 - Supervisor Dashboard
