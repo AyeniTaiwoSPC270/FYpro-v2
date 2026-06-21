@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { ProjectStateContext } from '../../hooks/useProjectState'
 import { useApp } from '../../context/AppContext'
 import { useUser } from '../../hooks/useUser'
-import { getExpressProject, createExpressProject, saveStep as supabaseSaveStep, updateProject } from '../../lib/db'
+import { getExpressProject, createExpressProject, saveStep as supabaseSaveStep, updateProject, getUserProfile } from '../../lib/db'
 import { supabase } from '../../lib/supabase'
 import { showToast } from '../../components/Toast'
 
@@ -44,6 +44,7 @@ export default function ExpressProjectStateProvider({ children }) {
         project = await createExpressProject({ title: null, faculty: null, department: null, level: null })
       }
       if (cancelled) return
+      const profile = await getUserProfile(user.id)
       if (project) {
         setProjectId(project.id)
         const hydration = {}
@@ -51,6 +52,9 @@ export default function ExpressProjectStateProvider({ children }) {
         if (project.faculty) hydration.faculty = project.faculty
         if (project.department) hydration.department = project.department
         if (project.level) hydration.level = project.level
+        if (profile?.full_name)   hydration.name       = profile.full_name
+        if (profile?.university)  hydration.university = profile.university
+        if (profile?.avatar_url)  hydration.avatarUrl  = profile.avatar_url
 
         const { data: steps } = await supabase
           .from('project_steps')

@@ -35,10 +35,12 @@ export default function ExpressDashboard() {
   const completedCount = STEPS.filter(s => s.status === 'completed').length
   const activeStepId = (STEPS.find(s => s.status === 'active')?.id) ?? STEPS.length
 
-  const fullName = state.name || ''
+  const fullName = state.name || user?.user_metadata?.full_name || ''
   const initials = fullName
     ? fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : 'ST'
+    : (user?.user_metadata?.full_name
+        ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        : '?')
 
   const STUDENT = {
     name: fullName,

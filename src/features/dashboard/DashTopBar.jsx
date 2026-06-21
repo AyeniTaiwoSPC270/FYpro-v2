@@ -22,7 +22,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
   const firstName = STUDENT.name ? STUDENT.name.split(' ')[0] : 'there'
 
   const { features } = usePaidFeatures()
-  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : features.includes('express_defense') ? 'Express Defence' : 'Free Plan'
 
   const { user } = useUser()
   const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(user?.id)
