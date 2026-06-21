@@ -139,11 +139,14 @@ async function handleSignup(req, res) {
   });
 
   const userId  = data?.user?.id;
-  const success = !error && !!userId;
+  // Supabase returns the existing user (no error) when the email is already registered,
+  // but sets identities to [] to signal it. Treat that as "not a new signup."
+  const isNewUser = !error && !!userId &&
+    Array.isArray(data?.user?.identities) && data.user.identities.length > 0;
 
-  logAttempt(email, ip, 'signup', success);
+  logAttempt(email, ip, 'signup', !!userId);
 
-  if (success) {
+  if (isNewUser) {
     await Promise.all([
       sendTelegramAlert(`👤 New signup: ${email} (free)`),
       (async () => {
