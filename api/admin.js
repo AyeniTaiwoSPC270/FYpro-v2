@@ -2347,13 +2347,7 @@ async function handleDataBrowse(req, res) {
   try {
     const offset = (page - 1) * limit
 
-    // Get total count
-    const { count: total, error: countErr } = await supabaseAdmin
-      .from(table)
-      .select('*', { count: 'exact', head: true })
-    if (countErr) throw countErr
-
-    // Get a sample row to discover text columns and validate sort column
+    // Get a sample row first to discover text columns and validate sort column
     const { data: sample } = await supabaseAdmin.from(table).select('*').limit(1)
     const sampleRow = sample?.[0] || {}
     const textColumns = Object.entries(sampleRow)
@@ -2361,13 +2355,20 @@ async function handleDataBrowse(req, res) {
       .map(([k]) => k)
     const safeSortCol = (sort in sampleRow) ? sort : 'created_at'
 
-    // Build main query
-    let query = supabaseAdmin.from(table).select('*').range(offset, offset + limit - 1)
+    // Build orFilter once — used by both count and main query
+    const orFilter = (search && textColumns.length > 0)
+      ? textColumns.map(col => `${col}.ilike.%${search}%`).join(',')
+      : null
 
-    if (search && textColumns.length > 0) {
-      const orFilter = textColumns.map(col => `${col}.ilike.%${search}%`).join(',')
-      query = query.or(orFilter)
-    }
+    // Get total count — with search filter applied when present
+    let countQuery = supabaseAdmin.from(table).select('*', { count: 'exact', head: true })
+    if (orFilter) countQuery = countQuery.or(orFilter)
+    const { count: total, error: countErr } = await countQuery
+    if (countErr) throw countErr
+
+    // Build main query — with search filter applied when present
+    let query = supabaseAdmin.from(table).select('*').range(offset, offset + limit - 1)
+    if (orFilter) query = query.or(orFilter)
 
     let { data: rows, error: rowErr }
     try {
