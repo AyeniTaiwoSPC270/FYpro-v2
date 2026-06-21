@@ -807,13 +807,11 @@ async function cmdData(args) {
     return `❓ Usage: /data &lt;table&gt;\n\nAvailable tables:\n${list}`
   }
 
-  const cols = DATA_KEY_COLS[table]
-
-  // Try ordered first; only fall back when created_at doesn't exist on the table
+  // Use select('*') and discover real columns from the row — avoids hardcoded column mismatches
   let queryData, queryError
   const ordered = await supabaseAdmin
     .from(table)
-    .select(cols.join(','))
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -821,7 +819,7 @@ async function cmdData(args) {
     // Table has no created_at column — retry without order
     const unordered = await supabaseAdmin
       .from(table)
-      .select(cols.join(','))
+      .select('*')
       .limit(5)
     queryData  = unordered.data
     queryError = unordered.error
@@ -833,13 +831,16 @@ async function cmdData(args) {
   if (queryError) return `❌ Error querying ${table}: ${escapeTgHtml(queryError.message)}`
   if (!queryData || queryData.length === 0) return `📭 No rows in <code>${table}</code>`
 
+  // Show first 5 columns to keep message compact
+  const displayCols = Object.keys(queryData[0]).slice(0, 5)
+
   const rows = queryData.map((row, i) => {
-    const fields = cols.map(c => {
+    const fields = displayCols.map(c => {
       let v = row[c]
       if (v === null || v === undefined) v = '—'
       else if (typeof v === 'object') {
         const s = JSON.stringify(v)
-        v = escapeTgHtml((s.slice(0, 40) + (s.length > 40 ? '…' : '')))
+        v = escapeTgHtml(s.slice(0, 40) + (s.length > 40 ? '…' : ''))
       } else {
         v = escapeTgHtml(String(v).slice(0, 60))
       }
