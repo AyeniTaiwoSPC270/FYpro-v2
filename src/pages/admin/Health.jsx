@@ -20,6 +20,7 @@ const RED     = '#DC2626'
 const WHITE   = '#FFFFFF'
 const DIM     = 'rgba(255,255,255,0.7)'
 const MUTED   = 'rgba(255,255,255,0.4)'
+const PIE_COLORS = ['#0066FF', '#16A34A', '#F59E0B', '#DC2626', '#8B5CF6', '#06B6D4']
 
 const FEATURE_LABELS = {
   topic_validator:     'Topic Validator',
@@ -2722,7 +2723,212 @@ function AdminHealth() {
               />
             </div>
 
-            {/* Charts and table browser render here — added in Tasks 4 and 5 */}
+            {/* ── Charts Grid ─────────────────────────────────────────────── */}
+            <div className="mc-section-divider">Charts</div>
+            {dataTabLoading && !dataTabData && (
+              <div style={{ color: MUTED, fontSize: 13, padding: '24px 0', fontFamily: "'Poppins', sans-serif" }}>Loading charts…</div>
+            )}
+            {dataTabData && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 24 }}>
+
+                {/* 1. Users — signups last 7 days */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Users — signups last 7 days
+                  </div>
+                  {(!dataTabData.charts.users_by_day || dataTabData.charts.users_by_day.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={dataTabData.charts.users_by_day} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: MUTED }} tickFormatter={d => d.slice(5)} />
+                        <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Bar dataKey="count" fill={BLUE} radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* 2. Payments — revenue by tier (pie) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Payments — revenue by tier (₦)
+                  </div>
+                  {(!dataTabData.charts.payments_by_tier || dataTabData.charts.payments_by_tier.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <ResponsiveContainer width={120} height={120}>
+                        <PieChart>
+                          <Pie data={dataTabData.charts.payments_by_tier} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50}>
+                            {dataTabData.charts.payments_by_tier.map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }}
+                            formatter={(v) => [`₦${v.toLocaleString()}`, '']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ fontSize: 11, lineHeight: 2 }}>
+                        {dataTabData.charts.payments_by_tier.map((item, i) => (
+                          <div key={item.name} style={{ fontFamily: "'Poppins', sans-serif" }}>
+                            <span style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>● </span>
+                            <span style={{ color: DIM }}>{item.name}</span>
+                            <span style={{ color: MUTED }}> ₦{item.value.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Projects — status breakdown (pie) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Projects — by status
+                  </div>
+                  {(!dataTabData.charts.projects_by_status || dataTabData.charts.projects_by_status.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <ResponsiveContainer width={120} height={120}>
+                        <PieChart>
+                          <Pie data={dataTabData.charts.projects_by_status} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50}>
+                            {dataTabData.charts.projects_by_status.map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ fontSize: 11, lineHeight: 2 }}>
+                        {dataTabData.charts.projects_by_status.map((item, i) => (
+                          <div key={item.name} style={{ fontFamily: "'Poppins', sans-serif" }}>
+                            <span style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>● </span>
+                            <span style={{ color: DIM }}>{item.name}</span>
+                            <span style={{ color: MUTED }}> {item.value}</span>
+                          </div>
+                        ))}
+                        {dataTabData.charts.projects_by_mode?.length > 0 && (
+                          <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${BORDER}`, fontSize: 10, color: MUTED, fontFamily: "'Poppins', sans-serif" }}>
+                            {dataTabData.charts.projects_by_mode.map(m => `${m.name}: ${m.value}`).join(' · ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Defense Sessions — score distribution (histogram) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Defense Sessions — score distribution
+                  </div>
+                  {(!dataTabData.charts.score_distribution || dataTabData.charts.score_distribution.every(d => d.count === 0)) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={dataTabData.charts.score_distribution} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis dataKey="score" tick={{ fontSize: 9, fill: MUTED }} />
+                        <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                          {dataTabData.charts.score_distribution.map((entry) => (
+                            <Cell key={entry.score} fill={entry.score >= 7 ? GREEN : entry.score >= 4 ? AMBER : RED} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* 5. Certificates — issued last 30 days (line) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Certificates — issued last 30 days
+                  </div>
+                  {(!dataTabData.charts.certs_by_day || dataTabData.charts.certs_by_day.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <LineChart data={dataTabData.charts.certs_by_day} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: MUTED }} tickFormatter={d => d.slice(5)} interval={6} />
+                        <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Line type="monotone" dataKey="count" stroke={GREEN} strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* 6. Achievements — top unlocked (horizontal bar) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Achievements — top unlocked
+                  </div>
+                  {(!dataTabData.charts.top_achievements || dataTabData.charts.top_achievements.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={dataTabData.charts.top_achievements} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis type="number" tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: MUTED }} width={90} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Bar dataKey="value" fill={AMBER} radius={[0, 3, 3, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* 7. Referrals — last 30 days (line) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Referrals — last 30 days
+                  </div>
+                  {(!dataTabData.charts.referrals_by_day || dataTabData.charts.referrals_by_day.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <LineChart data={dataTabData.charts.referrals_by_day} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: MUTED }} tickFormatter={d => d.slice(5)} interval={6} />
+                        <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Line type="monotone" dataKey="count" stroke="#8B5CF6" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* 8. Generation Failures — by feature (horizontal bar) */}
+                <div className="mc-card" style={{ padding: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
+                    Generation Failures — by feature (top 6)
+                  </div>
+                  {(!dataTabData.charts.failures_by_feature || dataTabData.charts.failures_by_feature.length === 0) ? (
+                    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={dataTabData.charts.failures_by_feature} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
+                        <XAxis type="number" tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: MUTED }} width={90} />
+                        <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
+                        <Bar dataKey="value" fill={RED} radius={[0, 3, 3, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+              </div>
+            )}
+
+            {/* Table browser placeholder — added in Task 5 */}
 
           </div>
         )}
