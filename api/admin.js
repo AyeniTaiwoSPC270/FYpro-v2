@@ -11,6 +11,16 @@ import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.
 import { getRatingForce, setRatingForce as setRatingForceLib } from './_lib/rating-force.js';
 import { validate, SubmitRatingSchema } from './_lib/validate.js';
 
+const ALLOWED_TABLES = new Set([
+  'admin_users','app_config','auth_attempts','daily_usage',
+  'defense_certificates','defense_credits','defense_sessions','defense_turns',
+  'email_log','email_preferences','feature_feedback','generation_failures',
+  'institutions','notifications','payment_issues','payments',
+  'project_steps','projects','push_subscriptions','referrals',
+  'response_times','system_logs','user_achievements','user_entitlements',
+  'user_onboarding','user_progress','user_ratings','user_reports','users',
+])
+
 // Redis client used exclusively by admin actions (key inspection, reset)
 let _adminRedis = null;
 function getAdminRedis() {
@@ -2309,6 +2319,73 @@ async function handleDataTab(req, res) {
   }
 }
 
+// action: "data-browse" — paginated table viewer with search + sort
+async function handleDataBrowse(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+  try {
+    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
+    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const table  = String(req.query.table  || '').toLowerCase()
+  const search = String(req.query.search || '').slice(0, 200).trim()
+  const page   = Math.max(1, parseInt(req.query.page)  || 1)
+  const limit  = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20))
+  const sort   = String(req.query.sort || 'created_at')
+  const dir    = req.query.dir === 'asc'
+
+  if (!ALLOWED_TABLES.has(table)) {
+    return res.status(400).json({ error: `Unknown table: ${table}` })
+  }
+
+  try {
+    const offset = (page - 1) * limit
+
+    // Get total count
+    const { count: total, error: countErr } = await supabaseAdmin
+      .from(table)
+      .select('*', { count: 'exact', head: true })
+    if (countErr) throw countErr
+
+    // Get a sample row to discover text columns and validate sort column
+    const { data: sample } = await supabaseAdmin.from(table).select('*').limit(1)
+    const sampleRow = sample?.[0] || {}
+    const textColumns = Object.entries(sampleRow)
+      .filter(([k, v]) => typeof v === 'string' && k !== 'id' && !k.endsWith('_id'))
+      .map(([k]) => k)
+    const safeSortCol = (sort in sampleRow) ? sort : 'created_at'
+
+    // Build main query
+    let query = supabaseAdmin.from(table).select('*').range(offset, offset + limit - 1)
+
+    if (search && textColumns.length > 0) {
+      const orFilter = textColumns.map(col => `${col}.ilike.%${search}%`).join(',')
+      query = query.or(orFilter)
+    }
+
+    let { data: rows, error: rowErr }
+    try {
+      ;({ data: rows, error: rowErr } = await query.order(safeSortCol, { ascending: dir }))
+      if (rowErr) throw rowErr
+    } catch (_orderErr) {
+      // Table has no created_at or sort column — retry without order
+      ;({ data: rows, error: rowErr } = await query)
+      if (rowErr) throw rowErr
+    }
+
+    return res.status(200).json({ rows: rows || [], total: total || 0, page, limit })
+  } catch (err) {
+    console.error('[admin/data-browse] error:', err.message)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
 export default async function handler(req, res) {
   try {
   setCorsHeaders(req, res);
@@ -2379,6 +2456,7 @@ export default async function handler(req, res) {
     return handleSyncRunCounts(req, res);
   }
   if (action === 'data-tab')    return handleDataTab(req, res);
+  if (action === 'data-browse') return handleDataBrowse(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
   } catch (err) {
