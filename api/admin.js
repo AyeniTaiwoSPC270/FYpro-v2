@@ -1484,7 +1484,7 @@ async function handleFeedbackSummary(req, res) {
 // action: "submit-rating" — authenticated users only (no admin gate)
 async function handleSubmitRating(req, res) {
   // Rate limit: 3 req/user/day, 10 req/IP/hour
-  const rl = await rateLimitCheck(req, { userDay: 3, ipHour: 10, prefix: 'rating' });
+  const rl = await rateLimitCheck(req, { userDay: 3, ipDay: 10, prefix: 'rating' });
   if (!rl.allowed) return res.status(429).json({ error: 'Too many requests. Please try again tomorrow.' });
 
   const token = req.headers.authorization?.replace('Bearer ', '');
