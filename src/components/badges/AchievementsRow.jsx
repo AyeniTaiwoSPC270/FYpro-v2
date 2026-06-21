@@ -131,7 +131,7 @@ function AchievementChip({ def, earned, isLight }) {
   )
 }
 
-export default function AchievementsRow({ projectId = null, catalog = null }) {
+export default function AchievementsRow({ projectId = null, catalog = null, viewAllHref = '/account/achievements' }) {
   const { earnedKeys, loading } = useAchievements(projectId)
   const { theme } = useTheme()
   const isLight = theme === 'light'
@@ -188,7 +188,7 @@ export default function AchievementsRow({ projectId = null, catalog = null }) {
           {earnedCount}/{defs.length} earned
         </span>
         <Link
-          to="/account/achievements"
+          to={viewAllHref}
           style={{
             fontFamily: "'Poppins', sans-serif", fontSize: '0.58rem',
             color: '#0066FF', textDecoration: 'none', marginTop: 4,

@@ -49,7 +49,8 @@ const Achievements       = lazy(() => import('./pages/account/Achievements'))
 const AppShell          = lazy(() => import('./features/shell/AppShell'))
 const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
 const ExpressOnboarding = lazy(() => import('./pages/ExpressOnboarding'))
-const ExpressShell      = lazy(() => import('./features/expressDefense/ExpressShell'))
+const ExpressShell           = lazy(() => import('./features/expressDefense/ExpressShell'))
+const ExpressAchievements    = lazy(() => import('./pages/ExpressAchievements'))
 const ExpressDashboard  = lazy(() => import('./pages/ExpressDashboard'))
 const AdminHealth       = lazy(() => import('./pages/admin/Health'))
 
@@ -138,6 +139,15 @@ function AppRoutes() {
           <RequireExpress>
             <ExpressProviders>
               <S fallback={<AppShellSkeleton />}><ExpressShell /></S>
+            </ExpressProviders>
+          </RequireExpress>
+        </ProtectedRoute>
+      } />
+      <Route path="/express/achievements" element={
+        <ProtectedRoute>
+          <RequireExpress>
+            <ExpressProviders>
+              <S fallback={<DashboardPageSkeleton />}><ExpressAchievements /></S>
             </ExpressProviders>
           </RequireExpress>
         </ProtectedRoute>

@@ -74,7 +74,7 @@ export default function ExpressDashboard() {
             </button>
           )}
 
-          <AchievementsRow projectId={projectId} catalog={EXPRESS_ACHIEVEMENTS} />
+          <AchievementsRow projectId={projectId} catalog={EXPRESS_ACHIEVEMENTS} viewAllHref="/express/achievements" />
           <DashStatCards STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" />
           <DashProgressJourney STEPS={STEPS} STUDENT={STUDENT} navTarget="/express/run" />
 
