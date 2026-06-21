@@ -289,10 +289,11 @@ fypro-v2/
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
 ├── migrations/                    # SQL files — run in Supabase SQL Editor
-│   └── 0002 through 0032_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
+│   └── 0002 through 0033_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
 │                                  #  0026 user_achievements, 0029 express_defense_tier,
 │                                  #  0030 project_mode, 0031 achievements_project_scope,
-│                                  #  0032 onboarding_questions)
+│                                  #  0032 onboarding_questions,
+│                                  #  0033 defense_certificates_faculty_department)
 ├── scripts/                       # Dev/ops scripts — NOT deployed
 │   ├── verify-rls-after-refactor.js  # RLS regression test
 │   ├── flush-reviewer-rate-limits.js
@@ -441,6 +442,8 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - session_id (FK → defense_sessions)
 - certificate_number (text, unique — format: FYP-2026-XXXXXX)
 - issued_at
+- faculty (text, nullable — added migration 0033)
+- department (text, nullable — added migration 0033)
 
 ### defense_credits
 - id (uuid)
@@ -521,6 +524,21 @@ Express achievements are scoped to the express project; main achievements scoped
 ### referrals, email_log, email_preferences, generation_failures,
 ### auth_attempts, payment_issues, feature_feedback,
 ### response_times, daily_usage (all exist — see Supabase dashboard for full schema)
+
+### system_logs
+- General server-side event log (27 rows in prod)
+
+### user_progress
+- Tracks per-user workflow progress state (6 rows in prod)
+
+### admin_users
+- Admin role table — controls admin access gate (1 row in prod)
+
+### user_reports
+- User-submitted reports/flags (3 rows in prod)
+
+### user_ratings
+- In-app rating submissions from RatingModal (1 row in prod)
 
 ---
 
