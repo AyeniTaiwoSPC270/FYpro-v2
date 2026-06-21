@@ -97,7 +97,8 @@ fypro-v2/
 │   │   ├── CookiePolicy.jsx
 │   │   ├── Dashboard.jsx          # Multi-project dashboard — project cards grid
 │   │   ├── SplashOnboarding.jsx   # First-time onboarding flow (split-canvas shell, chip questions, TourCarousel)
-│   │   ├── ExpressDashboard.jsx   # Express Defence dashboard (/express — 3-step progress view)
+│   │   ├── ExpressDashboard.jsx   # Express Defence dashboard (/express — 3-step progress view, no New Session button)
+│   │   ├── ExpressAchievements.jsx # Express achievements page (/express/achievements — 8 express-scoped achievements)
 │   │   ├── ExpressOnboarding.jsx  # Express onboarding (/express-onboarding — split-canvas shell)
 │   │   ├── Login.jsx
 │   │   ├── Signup.jsx
@@ -150,7 +151,7 @@ fypro-v2/
 │   │   │   ├── ExpressShell.jsx          # 3-step shell (/express/run) with sidebar + step nav
 │   │   │   ├── ExpressBrief.jsx          # Project context card in Express sidebar (topic/methodology)
 │   │   │   ├── DefenceBrief.jsx          # Defence Brief feature — generate/coach/download flow
-│   │   │   ├── ExpressProjectStateProvider.jsx  # Isolated project state for Express
+│   │   │   ├── ExpressProjectStateProvider.jsx  # Isolated project state for Express — also fetches getUserProfile() to hydrate name/university/avatarUrl
 │   │   │   └── ExpressProviders.jsx      # Wraps Express routes with isolated providers
 │   │   ├── supervisorPrep/
 │   │   │   └── SupervisorPrep.jsx # Supervisor Meeting Prep Agent
@@ -173,7 +174,7 @@ fypro-v2/
 │   │   ├── WhatsAppButton.jsx
 │   │   ├── AnonymousMigrationModal.tsx
 │   │   ├── OfflineBanner.tsx      # Offline + amber "cached data" variant
-│   │   ├── badges/                # BadgeRow, DefenseReadyBadge, StepBadge
+│   │   ├── badges/                # BadgeRow, DefenseReadyBadge, StepBadge; AchievementsRow accepts viewAllHref prop (default /account/achievements)
 │   │   ├── celebration/           # CelebrationModal (Tier 2 confetti), DefenseCelebration (Tier 3 full-screen)
 │   │   ├── changelog/             # AnnouncementBanner, ChangelogEntry
 │   │   ├── defense/               # CertificateUnlock, CertificateDownloadModal (style/orientation picker)
@@ -764,8 +765,9 @@ Test all alerts: GET /api/admin?action=test-all-alerts (admin only)
 
 Route: /dashboard — shows project grid (standard users)
 Route: /dashboard?project=PROJECT_ID — shows individual project dashboard
-Route: /express — Express Defence dashboard (express-only users)
+Route: /express — Express Defence dashboard (express-only users; no New Session button in top bar)
 Route: /express/run — Express Defence 3-step shell
+Route: /express/achievements — Express achievements page (8 express-scoped achievements, back → /express)
 Route: /express-onboarding — Express onboarding flow (if no express_defense entitlement)
 
 Standard dashboard flow:
@@ -783,9 +785,14 @@ selectProject(pid) in useProjectState.ts hydrates AppContext with the selected p
 Express routing:
 - ExpressDashboardRedirect (at /dashboard): detects express-only users and redirects to /express
 - RequireExpress guard: checks express_defense entitlement; redirects to /express-onboarding if missing
-- ExpressProviders wraps /express and /express/run with isolated state (ExpressProjectStateProvider)
+- ExpressProviders wraps /express, /express/run, and /express/achievements with isolated state (ExpressProjectStateProvider)
 - Express projects are scoped by project mode='express'; their achievements are isolated to the express project_id
 - Admin can grant express_defense entitlement from Mission Control (/admin/health)
+
+DashTopBar behaviour:
+- planLabel maps express_defense → 'Express Defence' (not 'Free Plan')
+- New Session button only renders when onNewSession prop is passed — ExpressDashboard omits it intentionally
+- ExpressProjectStateProvider hydrates name/university/avatarUrl from getUserProfile() so greeting + avatar + sidebar are correct
 
 ---
 
@@ -959,6 +966,10 @@ All features shipped and working in production (fypro.com.ng):
 - Auth hardening — per-email login rate limit (20/1hr, SHA-256 hashed key), isNewUser guard
   prevents profile overwrite + false Telegram/notification/nurture triggers on re-signup attempts
 - project_steps step_type constraint updated to include 'defense_brief' (migration 0034)
+- Express Dashboard UI fixes (June 21 2026) — profile hydration (name, university, avatar),
+  plan label shows 'Express Defence' not 'Free Plan', New Session button removed from Express top bar
+- Express achievements page (/express/achievements) — isolated 8-achievement view scoped to express
+  project; AchievementsRow viewAllHref prop routes express users away from main achievements page
 
 Deferred to v3:
 - Supervisor Dashboard
