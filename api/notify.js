@@ -762,6 +762,88 @@ async function cmdRatings() {
   )
 }
 
+// ─── /data command — query any of the 29 allowed tables ─────────────────────
+
+const DATA_KEY_COLS = {
+  users:                ['id','email','full_name','university','created_at'],
+  user_entitlements:    ['user_id','paid_features','total_lifetime_paid_ngn'],
+  projects:             ['id','user_id','title','status','current_step','created_at'],
+  project_steps:        ['id','project_id','step_name','completed_at'],
+  defense_sessions:     ['id','user_id','total_score','completed_at'],
+  defense_turns:        ['id','session_id','turn_number','examiner_question'],
+  defense_certificates: ['id','user_id','certificate_number','issued_at'],
+  defense_credits:      ['user_id','reason','source_referral_id'],
+  payments:             ['id','user_id','amount_kobo','tier','status','created_at'],
+  user_achievements:    ['user_id','achievement_key','earned_at'],
+  notifications:        ['id','user_id','title','read','created_at'],
+  push_subscriptions:   ['user_id','last_nudged_at','created_at'],
+  app_config:           ['key','value','updated_at'],
+  daily_usage:          ['date','total_cost_usd','request_count'],
+  institutions:         ['id','name','short_name'],
+  user_onboarding:      ['user_id','referral_source','primary_goal','expected_defence_band'],
+  referrals:            ['id','referrer_id','referred_id','created_at'],
+  email_log:            ['id','user_id','type','sent_at'],
+  email_preferences:    ['user_id','notify_email','notify_push'],
+  generation_failures:  ['id','user_id','feature','error_message','created_at'],
+  auth_attempts:        ['id','email','success','created_at'],
+  payment_issues:       ['id','user_id','description','created_at'],
+  feature_feedback:     ['id','user_id','feature','rating','created_at'],
+  response_times:       ['id','endpoint','duration_ms','created_at'],
+  system_logs:          ['id','action','user_id','created_at'],
+  user_progress:        ['user_id','current_step','updated_at'],
+  admin_users:          ['id','email','created_at'],
+  user_reports:         ['id','user_id','reason','created_at'],
+  user_ratings:         ['id','user_id','rating','feedback','created_at'],
+}
+
+async function cmdData(args) {
+  const ALLOWED = new Set(Object.keys(DATA_KEY_COLS))
+  const table   = ((args && args[0]) || '').trim().split(/\s+/)[0].toLowerCase()
+
+  if (!table || !ALLOWED.has(table)) {
+    const list = Object.keys(DATA_KEY_COLS).join(', ')
+    return `❓ Usage: /data &lt;table&gt;\n\nAvailable tables:\n${list}`
+  }
+
+  const cols = DATA_KEY_COLS[table]
+
+  let data, error
+  try {
+    ;({ data, error } = await supabaseAdmin
+      .from(table)
+      .select(cols.join(','))
+      .order('created_at', { ascending: false })
+      .limit(5))
+    if (error) throw error
+  } catch (_) {
+    ;({ data, error } = await supabaseAdmin
+      .from(table)
+      .select(cols.join(','))
+      .limit(5))
+  }
+
+  if (error) return `❌ Error querying ${table}: ${escapeTgHtml(error.message)}`
+  if (!data || data.length === 0) return `📭 No rows in <code>${table}</code>`
+
+  const rows = data.map((row, i) => {
+    const fields = cols.map(c => {
+      let v = row[c]
+      if (v === null || v === undefined) v = '—'
+      else if (typeof v === 'object') {
+        const s = JSON.stringify(v)
+        v = s.slice(0, 40) + (s.length > 40 ? '…' : '')
+      } else {
+        v = String(v).slice(0, 60)
+      }
+      return `  ${c}: ${v}`
+    }).join('\n')
+    return `[${i + 1}]\n${fields}`
+  }).join('\n\n')
+
+  const msg = `📊 <b>${table}</b> (last 5)\n<pre>${rows}</pre>`
+  return msg
+}
+
 async function cmdResolveReport(id) {
   if (!id || id.length < 4) return '❌ Usage: /resolve-report &lt;id-prefix&gt; (min 4 chars)'
 
@@ -811,7 +893,10 @@ Tap a button or type a command:
 <b>Actions</b>
 /resolve &lt;id&gt; — mark error resolved
 /resolve-report &lt;id&gt; — mark report resolved
-/maintenance on|off — toggle maintenance mode`
+/maintenance on|off — toggle maintenance mode
+
+<b>Database</b>
+/data &lt;table&gt; — browse last 5 rows of any of the 29 tables`
 }
 
 const KEYBOARD = {
@@ -867,6 +952,7 @@ async function runCommand(key, args = []) {
   else if (key === 'reports'         ) return cmdReports()
   else if (key === 'ratings'         ) return cmdRatings()
   else if (key === 'maintenance'     ) return cmdMaintenance(args)
+  else if (key === 'data'            ) return cmdData(args)
   else if (key === 'help'            ) return cmdHelp()
   return null
 }
