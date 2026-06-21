@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { useUser } from '../../hooks/useUser'
 import {
-  LineChart, Line, BarChart, Bar,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import FeatureFeedbackWidget from './widgets/FeatureFeedbackWidget'
@@ -643,6 +643,22 @@ function AdminHealth() {
   const [ratingForceBusy, setRatingForceBusy]       = useState(false)
   const [ratingForceUpdatedAt, setRatingForceUpdatedAt] = useState(null)
 
+  const [dataTabData,    setDataTabData]    = useState(null)
+  const [dataTabLoading, setDataTabLoading] = useState(false)
+  const [dataTabError,   setDataTabError]   = useState(null)
+  const dataTabTimerRef                     = useRef(null)
+
+  const [browserTable,   setBrowserTable]   = useState('users')
+  const [browserSearch,  setBrowserSearch]  = useState('')
+  const [browserPage,    setBrowserPage]    = useState(1)
+  const [browserLimit,   setBrowserLimit]   = useState(20)
+  const [browserSort,    setBrowserSort]    = useState('created_at')
+  const [browserDir,     setBrowserDir]     = useState('desc')
+  const [browserData,    setBrowserData]    = useState(null)
+  const [browserLoading, setBrowserLoading] = useState(false)
+  const [browserError,   setBrowserError]   = useState(null)
+  const browserSearchTimerRef               = useRef(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
@@ -785,6 +801,23 @@ function AdminHealth() {
     } catch {
       // ignore — force stays null (loading state)
     }
+  }, [session?.access_token])
+
+  const loadDataTab = useCallback(() => {
+    if (!session?.access_token) return
+    setDataTabLoading(true)
+    setDataTabError(null)
+    return fetch('/api/admin?action=data-tab', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error)
+        setDataTabData(d)
+        setDataTabError(null)
+      })
+      .catch(e => setDataTabError(e.message || 'Failed to load'))
+      .finally(() => setDataTabLoading(false))
   }, [session?.access_token])
 
   async function toggleRatingForce() {
@@ -952,7 +985,7 @@ function AdminHealth() {
     }
   }, [isAdmin])
 
-  // Fire all 8 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
+  // Fire all 9 loaders simultaneously; owns the refreshing flag and lastUpdated stamp.
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await Promise.allSettled([
@@ -965,12 +998,13 @@ function AdminHealth() {
       loadFeedbackSummary(),
       loadMaintenanceMode(),
       fetchRtMetrics(),
+      loadDataTab(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics, loadDataTab])
 
-  // Initial parallel fetch — all 8 widgets at once; one failure never blocks the rest
+  // Initial parallel fetch — all 9 widgets at once; one failure never blocks the rest
   // Guard uses === false (not !isAdmin) so the null loading state still triggers the fetch
   // that establishes isAdmin. Once isAdmin is true, polling effects take over.
   useEffect(() => {
@@ -986,8 +1020,9 @@ function AdminHealth() {
       loadFeedbackSummary(),
       loadMaintenanceMode(),
       fetchRtMetrics(),
+      loadDataTab(),
     ]).finally(() => setInitialLoading(false))
-  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics])
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics, loadDataTab])
 
   // Polling — each loader uses a tab-specific rate.
   // Callbacks are no-ops when document is hidden; the visibilitychange handler
@@ -1078,6 +1113,14 @@ function AdminHealth() {
     loadRatings()
     loadRatingForce()
   }, [isAdmin, session, loadRatings, loadRatingForce])
+
+  useEffect(() => {
+    if (!isAdmin || !session) return
+    dataTabTimerRef.current = setInterval(() => {
+      if (activeTab === 'data' && document.visibilityState === 'visible') loadDataTab()
+    }, 60 * 1000)
+    return () => clearInterval(dataTabTimerRef.current)
+  }, [isAdmin, session, loadDataTab, activeTab])
 
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
@@ -1682,6 +1725,7 @@ function AdminHealth() {
     { id: 'logs',      label: 'Logs' },
     { id: 'reports',   label: openReportCount > 0 ? `Reports (${openReportCount})` : 'Reports' },
     { id: 'ratings',   label: '⭐ Ratings' },
+    { id: 'data',      label: '📊 Data' },
   ]
 
   async function updateReportStatus(reportId, status) {
@@ -1732,6 +1776,7 @@ function AdminHealth() {
     else if (id === 'logs') { loadSystemLogs(); loadFailures() }
     else if (id === 'reports') loadReports()
     else if (id === 'ratings') { loadRatings(); loadRatingForce() }
+    else if (id === 'data') loadDataTab()
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
@@ -2627,6 +2672,59 @@ function AdminHealth() {
               error={ratingsError}
             />
           </>
+        )}
+
+        {/* ═══════════ DATA TAB ═══════════ */}
+        {activeTab === 'data' && (
+          <div className="mc-tab-content">
+
+            {dataTabError && (
+              <div style={{ color: RED, padding: '16px 0', fontSize: 13, fontFamily: "'Poppins', sans-serif" }}>
+                ⚠ {dataTabError}
+              </div>
+            )}
+
+            {dataTabLoading && !dataTabData && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '24px 0', color: MUTED, fontFamily: "'Poppins', sans-serif", fontSize: 13 }}>
+                <svg style={{ animation: 'adminSpin 0.8s linear infinite' }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Loading data…
+              </div>
+            )}
+
+            {/* ── KPI Row ───────────────────────────────────────────────────── */}
+            <div className="mc-section-divider">Key Metrics</div>
+            <div className="mc-kpi-grid" style={{ marginBottom: 20 }}>
+              <OverviewCard
+                label="Total Users"
+                value={dataTabData?.kpis?.total_users ?? '—'}
+                sub={dataTabData ? `+${dataTabData.kpis.users_today} today` : ''}
+                accent={BLUE}
+              />
+              <OverviewCard
+                label="Total Revenue"
+                value={dataTabData ? `₦${dataTabData.kpis.revenue_ngn.toLocaleString()}` : '—'}
+                sub={dataTabData ? `+₦${dataTabData.kpis.revenue_today_ngn.toLocaleString()} today` : ''}
+                accent={GREEN}
+              />
+              <OverviewCard
+                label="Defense Sessions"
+                value={dataTabData?.kpis?.defense_sessions ?? '—'}
+                sub={dataTabData ? `avg ${dataTabData.kpis.avg_score}/10` : ''}
+                accent={BLUE}
+              />
+              <OverviewCard
+                label="Certificates"
+                value={dataTabData?.kpis?.certificates ?? '—'}
+                sub={dataTabData ? `pass rate ${dataTabData.kpis.pass_rate}%` : ''}
+                accent={GREEN}
+              />
+            </div>
+
+            {/* Charts and table browser render here — added in Tasks 4 and 5 */}
+
+          </div>
         )}
 
       </div>
