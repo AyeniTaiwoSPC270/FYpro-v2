@@ -59,7 +59,7 @@ export default function ExpressDashboard() {
       <DashSidebar STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" onNewSession={() => navigate('/express/run')} isOpen={false} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashTopBar STUDENT={STUDENT} onNewSession={() => navigate('/express/run')} onToggleSidebar={() => {}} />
+        <DashTopBar STUDENT={STUDENT} onToggleSidebar={() => {}} />
 
         <main
           className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"

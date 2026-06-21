@@ -84,16 +84,18 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
         transition={{ delay: 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0"
       >
-        <motion.button
-          whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
-          whileTap={{ scale: 0.96 }}
-          aria-label="Start a new project"
-          onClick={onNewSession}
-          className="hidden sm:flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
+        {onNewSession && (
+          <motion.button
+            whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
+            whileTap={{ scale: 0.96 }}
+            aria-label="Start a new project"
+            onClick={onNewSession}
+            className="hidden sm:flex items-center gap-1.5 px-[18px] py-[9px] bg-blue-600 hover:bg-blue-500 border-0 rounded-xl font-sans text-[0.8rem] font-semibold cursor-pointer transition-all duration-200"
             style={{ color: '#fff' }}
-        >
-          <PlusIcon /> New Session
-        </motion.button>
+          >
+            <PlusIcon /> New Session
+          </motion.button>
+        )}
 
         <div style={{ position: 'relative' }}>
           <motion.button
