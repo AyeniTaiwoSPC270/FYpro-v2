@@ -1120,7 +1120,7 @@ function AdminHealth() {
       if (activeTab === 'data' && document.visibilityState === 'visible') loadDataTab()
     }, 60 * 1000)
     return () => clearInterval(dataTabTimerRef.current)
-  }, [isAdmin, session, loadDataTab, activeTab])
+  }, [isAdmin, session, loadDataTab])
 
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
@@ -2704,20 +2704,20 @@ function AdminHealth() {
               />
               <OverviewCard
                 label="Total Revenue"
-                value={dataTabData ? `₦${dataTabData.kpis.revenue_ngn.toLocaleString()}` : '—'}
-                sub={dataTabData ? `+₦${dataTabData.kpis.revenue_today_ngn.toLocaleString()} today` : ''}
+                value={dataTabData ? `₦${(dataTabData?.kpis?.revenue_ngn ?? 0).toLocaleString()}` : '—'}
+                sub={dataTabData ? `+₦${(dataTabData?.kpis?.revenue_today_ngn ?? 0).toLocaleString()} today` : ''}
                 accent={GREEN}
               />
               <OverviewCard
                 label="Defense Sessions"
                 value={dataTabData?.kpis?.defense_sessions ?? '—'}
-                sub={dataTabData ? `avg ${dataTabData.kpis.avg_score}/10` : ''}
+                sub={dataTabData ? `avg ${Number(dataTabData?.kpis?.avg_score ?? 0).toFixed(1)}/10` : ''}
                 accent={BLUE}
               />
               <OverviewCard
                 label="Certificates"
                 value={dataTabData?.kpis?.certificates ?? '—'}
-                sub={dataTabData ? `pass rate ${dataTabData.kpis.pass_rate}%` : ''}
+                sub={dataTabData ? `pass rate ${Number(dataTabData?.kpis?.pass_rate ?? 0).toFixed(1)}%` : ''}
                 accent={GREEN}
               />
             </div>
