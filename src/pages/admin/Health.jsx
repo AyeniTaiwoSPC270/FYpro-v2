@@ -1165,7 +1165,7 @@ function AdminHealth() {
     if (browserSearchTimerRef.current) clearTimeout(browserSearchTimerRef.current)
     browserSearchTimerRef.current = setTimeout(() => {
       loadTableBrowser(browserTable, browserSearch, browserPage, browserLimit, browserSort, browserDir)
-    }, 400)
+    }, 300)
     return () => clearTimeout(browserSearchTimerRef.current)
   }, [activeTab, isAdmin, session, browserTable, browserSearch, browserPage, browserLimit, browserSort, browserDir, loadTableBrowser])
 
@@ -1287,18 +1287,11 @@ function AdminHealth() {
   // ── Table browser cell formatter ─────────────────────────────────────
   function fmtCell(value) {
     if (value === null || value === undefined) return <span style={{ color: MUTED }}>—</span>
-    if (typeof value === 'boolean') {
-      return (
-        <span style={{
-          background: value ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
-          color: value ? GREEN : RED,
-          padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 600,
-        }}>
-          {value ? 'true' : 'false'}
-        </span>
-      )
+    if (typeof value === 'boolean') return value ? '✓' : '✗'
+    if (typeof value === 'object') {
+      const s = JSON.stringify(value)
+      return <span style={{fontFamily:'monospace',fontSize:11}}>{s.length > 60 ? s.slice(0,60) + '…' : s}</span>
     }
-    if (typeof value === 'object') return <span style={{ color: MUTED, fontSize: 10 }}>[object]</span>
     const str = String(value)
     // UUID pattern: 8-4-4-4-12
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
@@ -3163,7 +3156,10 @@ function AdminHealth() {
                         >
                           Next →
                         </button>
-                        <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: "'Poppins', sans-serif" }}>
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: "'Poppins', sans-serif", display: 'flex', gap: 12, alignItems: 'center' }}>
+                          <span style={{color:'rgba(255,255,255,0.5)',fontSize:12}}>
+                            Page {browserPage} of {Math.ceil((browserData?.total || 0) / browserLimit) || 1}
+                          </span>
                           {(browserData.total || 0) > 0 ? `Showing ${start}–${end} of ${browserData.total}` : 'No results'}
                         </span>
                       </div>
