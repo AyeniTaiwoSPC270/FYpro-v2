@@ -2148,6 +2148,167 @@ async function handlePing(req, res) {
   return res.status(200).json({ ok: true, service: 'fypro', ts: Date.now() });
 }
 
+// ── Data Tab helpers ────────────────────────────────────────────────────────
+
+// Groups rows by date bucket for the last `days` days, returns [{date,count}]
+function groupByDay(rows, dateField, days) {
+  const result = {}
+  const now = new Date()
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    result[d.toISOString().slice(0, 10)] = 0
+  }
+  for (const row of rows) {
+    const key = (row[dateField] || '').slice(0, 10)
+    if (key in result) result[key]++
+  }
+  return Object.entries(result).map(([date, count]) => ({ date, count }))
+}
+
+// Groups rows by a string field, returns [{name,value}] sorted desc by value
+function groupByField(rows, field) {
+  const result = {}
+  for (const row of rows) {
+    const key = String(row[field] || 'unknown')
+    result[key] = (result[key] || 0) + 1
+  }
+  return Object.entries(result)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value]) => ({ name, value }))
+}
+
+// Buckets defense session scores into 10 slots (score 1–10), returns [{score,count}]
+function scoreHistogram(rows) {
+  const buckets = Array.from({ length: 10 }, (_, i) => ({ score: i + 1, count: 0 }))
+  for (const row of rows) {
+    const s = Math.round(row.total_score || 0)
+    if (s >= 1 && s <= 10) buckets[s - 1].count++
+  }
+  return buckets
+}
+
+// action: "data-tab" — curated KPIs + 8 chart datasets + 29 table row counts
+async function handleDataTab(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+  try {
+    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
+    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+      return res.status(403).json({ error: 'Forbidden' })
+    }
+  } catch (err) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  try {
+    const today        = new Date().toISOString().slice(0, 10)
+    const todayStart   = `${today}T00:00:00.000Z`
+    const sevenDaysAgo = new Date(Date.now() - 7  * 86400000).toISOString()
+    const thirtyDaysAgo= new Date(Date.now() - 30 * 86400000).toISOString()
+
+    // ── Parallel data fetches ────────────────────────────────────────────────
+    const [
+      { count: totalUsers },
+      { count: usersToday },
+      { data: successPayments },
+      { data: todayPayments },
+      { count: totalSessions },
+      { data: sessionScores },
+      { count: totalCerts },
+      { data: usersByDayRows },
+      { data: paymentTierRows },
+      { data: projectRows },
+      { data: certRows },
+      { data: achievementRows },
+      { data: referralRows },
+      { data: failureRows },
+    ] = await Promise.all([
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success'),
+      supabaseAdmin.from('payments').select('amount_kobo').eq('status', 'success').gte('created_at', todayStart),
+      supabaseAdmin.from('defense_sessions').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('defense_sessions').select('total_score').not('total_score', 'is', null),
+      supabaseAdmin.from('defense_certificates').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('users').select('created_at').gte('created_at', sevenDaysAgo),
+      supabaseAdmin.from('payments').select('tier, amount_kobo').eq('status', 'success'),
+      supabaseAdmin.from('projects').select('status, mode'),
+      supabaseAdmin.from('defense_certificates').select('issued_at').gte('issued_at', thirtyDaysAgo),
+      supabaseAdmin.from('user_achievements').select('achievement_key'),
+      supabaseAdmin.from('referrals').select('created_at').gte('created_at', thirtyDaysAgo),
+      supabaseAdmin.from('generation_failures').select('feature'),
+    ])
+
+    // ── KPIs ────────────────────────────────────────────────────────────────
+    const revenueNgn      = Math.round((successPayments || []).reduce((s, r) => s + (r.amount_kobo || 0), 0) / 100)
+    const revenueTodayNgn = Math.round((todayPayments  || []).reduce((s, r) => s + (r.amount_kobo || 0), 0) / 100)
+    const avgScore        = sessionScores?.length
+      ? parseFloat((sessionScores.reduce((s, r) => s + (r.total_score || 0), 0) / sessionScores.length).toFixed(1))
+      : 0
+    const passRate        = totalSessions > 0
+      ? parseFloat(((totalCerts / totalSessions) * 100).toFixed(1))
+      : 0
+
+    // ── Payment tier revenue (in ₦) ─────────────────────────────────────────
+    const tierMap = {}
+    for (const r of paymentTierRows || []) {
+      const t = r.tier || 'unknown'
+      tierMap[t] = (tierMap[t] || 0) + (r.amount_kobo || 0)
+    }
+    const paymentsByTier = Object.entries(tierMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, kobo]) => ({ name, value: Math.round(kobo / 100) }))
+
+    // ── Table row counts (all 29 tables in parallel) ─────────────────────────
+    const ALL_TABLES = [
+      'admin_users','app_config','auth_attempts','daily_usage',
+      'defense_certificates','defense_credits','defense_sessions','defense_turns',
+      'email_log','email_preferences','feature_feedback','generation_failures',
+      'institutions','notifications','payment_issues','payments',
+      'project_steps','projects','push_subscriptions','referrals',
+      'response_times','system_logs','user_achievements','user_entitlements',
+      'user_onboarding','user_progress','user_ratings','user_reports','users',
+    ]
+    const countResults = await Promise.all(
+      ALL_TABLES.map(t =>
+        supabaseAdmin.from(t).select('*', { count: 'exact', head: true })
+          .then(({ count, error }) => [t, error ? 0 : (count || 0)])
+      )
+    )
+    const tableCounts = Object.fromEntries(countResults)
+
+    return res.status(200).json({
+      kpis: {
+        total_users:       totalUsers    || 0,
+        users_today:       usersToday    || 0,
+        revenue_ngn:       revenueNgn,
+        revenue_today_ngn: revenueTodayNgn,
+        defense_sessions:  totalSessions || 0,
+        avg_score:         avgScore,
+        certificates:      totalCerts    || 0,
+        pass_rate:         passRate,
+      },
+      charts: {
+        users_by_day:       groupByDay(usersByDayRows   || [], 'created_at', 7),
+        payments_by_tier:   paymentsByTier,
+        projects_by_status: groupByField(projectRows    || [], 'status'),
+        projects_by_mode:   groupByField(projectRows    || [], 'mode'),
+        score_distribution: scoreHistogram(sessionScores || []),
+        certs_by_day:       groupByDay(certRows          || [], 'issued_at', 30),
+        top_achievements:   groupByField(achievementRows || [], 'achievement_key').slice(0, 8),
+        referrals_by_day:   groupByDay(referralRows      || [], 'created_at', 30),
+        failures_by_feature: groupByField(failureRows   || [], 'feature').slice(0, 6),
+      },
+      table_counts: tableCounts,
+    })
+  } catch (err) {
+    console.error('[admin/data-tab] error:', err.message)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
 export default async function handler(req, res) {
   try {
   setCorsHeaders(req, res);
@@ -2217,6 +2378,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     return handleSyncRunCounts(req, res);
   }
+  if (action === 'data-tab')    return handleDataTab(req, res);
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
   } catch (err) {
