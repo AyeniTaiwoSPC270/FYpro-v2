@@ -47,6 +47,25 @@ export function useRatingTrigger(
     setRatingPrompt({ show: true, triggerType, feature })
   }, [setRatingPrompt])
 
+  // Trigger 0 — Admin force flag
+  // Fires once on mount. Calls the public check-rating-force endpoint (no auth needed).
+  // When ON, shows the modal regardless of step or prior localStorage dismissal.
+  useEffect(() => {
+    async function checkForce() {
+      try {
+        const res = await fetch('/api/admin?action=check-rating-force')
+        if (!res.ok) return
+        const { force } = await res.json()
+        if (force) {
+          setRatingPrompt({ show: true, triggerType: 'steps_milestone', feature: 'FYPro Workflow' })
+        }
+      } catch {
+        // fail open — don't show modal if check fails
+      }
+    }
+    checkForce()
+  }, [setRatingPrompt])
+
   // Trigger 1 — Defense Simulator (primary)
   // Fires on the fypro:defense-session-saved DOM event dispatched by DefensePrep.jsx.
   // Does NOT fire on initial mount — only when the event is received during this session.

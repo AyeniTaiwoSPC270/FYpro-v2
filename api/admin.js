@@ -8,6 +8,7 @@ import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
+import { getRatingForce, setRatingForce as setRatingForceLib } from './_lib/rating-force.js';
 import { validate, SubmitRatingSchema } from './_lib/validate.js';
 
 // Redis client used exclusively by admin actions (key inspection, reset)
@@ -1966,6 +1967,61 @@ async function handleMaintenanceInfo(req, res) {
   }
 }
 
+// action: "check-rating-force" — public, no auth required
+// Called by AppShell on mount to decide whether to force-show the rating modal.
+async function handleCheckRatingForce(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const force = await getRatingForce();
+    return res.status(200).json({ force });
+  } catch {
+    return res.status(200).json({ force: false });
+  }
+}
+
+// action: "get-rating-force" — admin only
+async function handleGetRatingForce(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data } = await supabaseAdmin
+      .from('app_config')
+      .select('value, updated_at')
+      .eq('key', 'rating_modal_force')
+      .maybeSingle();
+    return res.status(200).json({
+      enabled:    data?.value === 'true',
+      updated_at: data?.updated_at || null,
+    });
+  } catch (err) {
+    console.error('[admin/get-rating-force] error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// action: "set-rating-force" — admin only
+async function handleSetRatingForce(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { enabled } = req.body;
+
+  try {
+    await setRatingForceLib(!!enabled);
+
+    await sendTelegramAlert(
+      `⭐ <b>Rating Modal Force: ${enabled ? 'ON' : 'OFF'}</b>\n` +
+      `👤 ${caller.email}`
+    ).catch(() => {});
+
+    return res.status(200).json({ ok: true, enabled: !!enabled });
+  } catch (err) {
+    console.error('[admin/set-rating-force] error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 // ─── action: sync-run-counts ──────────────────────────────────────────────────
 // Moved from api/ai.js — belongs in admin/entitlements surface, not the AI proxy.
 
@@ -2154,6 +2210,9 @@ export default async function handler(req, res) {
   if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
   if (action === 'set-maintenance-mode')    return handleSetMaintenanceMode(req, res);
   if (action === 'maintenance-info')        return handleMaintenanceInfo(req, res);
+  if (action === 'check-rating-force')     return handleCheckRatingForce(req, res);
+  if (action === 'get-rating-force')       return handleGetRatingForce(req, res);
+  if (action === 'set-rating-force')       return handleSetRatingForce(req, res);
   if (action === 'sync-run-counts') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     return handleSyncRunCounts(req, res);

@@ -639,6 +639,10 @@ function AdminHealth() {
   const [ratingsLoading, setRatingsLoading] = useState(false)
   const [ratingsError, setRatingsError]     = useState(null)
 
+  const [ratingForce, setRatingForce]               = useState(null)
+  const [ratingForceBusy, setRatingForceBusy]       = useState(false)
+  const [ratingForceUpdatedAt, setRatingForceUpdatedAt] = useState(null)
+
   // isAdmin is determined by the server response (403 = not admin), not by comparing
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
@@ -768,6 +772,44 @@ function AdminHealth() {
       setRatingsLoading(false)
     }
   }, [session?.access_token])
+
+  const loadRatingForce = useCallback(async () => {
+    if (!session?.access_token) return
+    try {
+      const res = await fetch('/api/admin?action=get-rating-force', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const d = await res.json()
+      setRatingForce(d.enabled ?? false)
+      setRatingForceUpdatedAt(d.updated_at || null)
+    } catch {
+      // ignore — force stays null (loading state)
+    }
+  }, [session?.access_token])
+
+  async function toggleRatingForce() {
+    if (ratingForceBusy || ratingForce === null || !session?.access_token) return
+    setRatingForceBusy(true)
+    try {
+      const res = await fetch('/api/admin?action=set-rating-force', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ enabled: !ratingForce }),
+      })
+      const d = await res.json()
+      if (d.ok) {
+        setRatingForce(!ratingForce)
+        setRatingForceUpdatedAt(new Date().toISOString())
+      }
+    } catch {
+      // ignore
+    } finally {
+      setRatingForceBusy(false)
+    }
+  }
 
   const loadMaintenanceMode = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
@@ -1034,7 +1076,8 @@ function AdminHealth() {
   useEffect(() => {
     if (!isAdmin || !session) return
     loadRatings()
-  }, [isAdmin, session, loadRatings])
+    loadRatingForce()
+  }, [isAdmin, session, loadRatings, loadRatingForce])
 
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
@@ -1688,7 +1731,7 @@ function AdminHealth() {
     else if (id === 'payments') { loadPaymentIssues(); loadFeedbackSummary() }
     else if (id === 'logs') { loadSystemLogs(); loadFailures() }
     else if (id === 'reports') loadReports()
-    else if (id === 'ratings') loadRatings()
+    else if (id === 'ratings') { loadRatings(); loadRatingForce() }
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
@@ -2529,12 +2572,61 @@ function AdminHealth() {
         )}
 
         {activeTab === 'ratings' && (
-          <RatingsWidget
-            stats={ratingsData?.stats}
-            recent={ratingsData?.recent}
-            loading={ratingsLoading}
-            error={ratingsError}
-          />
+          <>
+            {/* Force Rating Modal toggle */}
+            <div style={{
+              background: CARD,
+              border: `1px solid ${ratingForce ? 'rgba(245,158,11,0.35)' : BORDER}`,
+              borderRadius: 12, padding: '16px 20px', marginBottom: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: WHITE, marginBottom: 4 }}>
+                  Force Rating Modal
+                </div>
+                <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
+                  When ON, every user sees the rating modal on their next AppShell load — regardless of step or prior dismissal. Turn OFF when done testing.
+                </div>
+                {ratingForceUpdatedAt && (
+                  <div style={{
+                    fontSize: 10, color: MUTED, marginTop: 5,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    Last toggled: {timeAgo(ratingForceUpdatedAt)}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={toggleRatingForce}
+                disabled={ratingForceBusy || ratingForce === null}
+                style={{
+                  background:   ratingForce ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.07)',
+                  border:       `1.5px solid ${ratingForce ? 'rgba(245,158,11,0.5)' : BORDER}`,
+                  borderRadius: 8,
+                  padding:      '9px 18px',
+                  color:        ratingForceBusy || ratingForce === null ? MUTED
+                                : ratingForce ? AMBER : DIM,
+                  fontFamily:   "'JetBrains Mono', monospace",
+                  fontSize:     11, fontWeight: 600,
+                  cursor:       ratingForceBusy || ratingForce === null ? 'not-allowed' : 'pointer',
+                  whiteSpace:   'nowrap', flexShrink: 0,
+                  transition:   'all 0.2s ease',
+                }}
+              >
+                {ratingForceBusy    ? 'Saving…'
+                  : ratingForce === null ? 'Loading…'
+                  : ratingForce          ? '● ON — Click to Disable'
+                  :                        '○ OFF — Click to Enable'}
+              </button>
+            </div>
+
+            <RatingsWidget
+              stats={ratingsData?.stats}
+              recent={ratingsData?.recent}
+              loading={ratingsLoading}
+              error={ratingsError}
+            />
+          </>
         )}
 
       </div>
