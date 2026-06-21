@@ -2353,7 +2353,10 @@ async function handleDataBrowse(req, res) {
     const textColumns = Object.entries(sampleRow)
       .filter(([k, v]) => typeof v === 'string' && k !== 'id' && !k.endsWith('_id'))
       .map(([k]) => k)
-    const safeSortCol = (sort in sampleRow) ? sort : 'created_at'
+    // Only sort by a column that actually exists in this table
+    const safeSortCol = (sort in sampleRow) ? sort
+      : ('created_at' in sampleRow) ? 'created_at'
+      : null
 
     // Build orFilter once — used by both count and main query
     const orFilter = (search && textColumns.length > 0)
@@ -2370,15 +2373,10 @@ async function handleDataBrowse(req, res) {
     let query = supabaseAdmin.from(table).select('*').range(offset, offset + limit - 1)
     if (orFilter) query = query.or(orFilter)
 
-    let rows, rowErr
-    try {
-      ;({ data: rows, error: rowErr } = await query.order(safeSortCol, { ascending: dir }))
-      if (rowErr) throw rowErr
-    } catch (_orderErr) {
-      // Table has no created_at or sort column — retry without order
-      ;({ data: rows, error: rowErr } = await query)
-      if (rowErr) throw rowErr
-    }
+    const { data: rows, error: rowErr } = safeSortCol
+      ? await query.order(safeSortCol, { ascending: dir })
+      : await query
+    if (rowErr) throw rowErr
 
     const allRows = rows || []
     return res.status(200).json({
