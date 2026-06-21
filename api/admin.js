@@ -2370,7 +2370,7 @@ async function handleDataBrowse(req, res) {
     let query = supabaseAdmin.from(table).select('*').range(offset, offset + limit - 1)
     if (orFilter) query = query.or(orFilter)
 
-    let { data: rows, error: rowErr }
+    let rows, rowErr
     try {
       ;({ data: rows, error: rowErr } = await query.order(safeSortCol, { ascending: dir }))
       if (rowErr) throw rowErr
