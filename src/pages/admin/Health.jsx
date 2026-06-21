@@ -2740,13 +2740,13 @@ function AdminHealth() {
                     <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
                   ) : (
                     <ResponsiveContainer width="100%" height={140}>
-                      <BarChart data={dataTabData.charts.users_by_day} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                      <LineChart data={dataTabData.charts.users_by_day} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: MUTED }} tickFormatter={d => d.slice(5)} />
                         <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
-                        <Bar dataKey="count" fill={BLUE} radius={[3, 3, 0, 0]} />
-                      </BarChart>
+                        <Line type="monotone" dataKey="count" stroke={BLUE} strokeWidth={2} dot={false} />
+                      </LineChart>
                     </ResponsiveContainer>
                   )}
                 </div>
@@ -2826,18 +2826,18 @@ function AdminHealth() {
                   <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
                     Defense Sessions — score distribution
                   </div>
-                  {(!dataTabData.charts.score_distribution || dataTabData.charts.score_distribution.every(d => d.count === 0)) ? (
+                  {(!dataTabData.charts.defense_score_histogram || dataTabData.charts.defense_score_histogram.every(d => d.count === 0)) ? (
                     <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
                   ) : (
                     <ResponsiveContainer width="100%" height={140}>
-                      <BarChart data={dataTabData.charts.score_distribution} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                      <BarChart data={dataTabData.charts.defense_score_histogram} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
-                        <XAxis dataKey="score" tick={{ fontSize: 9, fill: MUTED }} />
+                        <XAxis dataKey="bucket" tick={{ fontSize: 9, fill: MUTED }} />
                         <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
                         <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                          {dataTabData.charts.score_distribution.map((entry) => (
-                            <Cell key={entry.score} fill={entry.score >= 7 ? GREEN : entry.score >= 4 ? AMBER : RED} />
+                          {dataTabData.charts.defense_score_histogram.map((entry) => (
+                            <Cell key={entry.bucket} fill={entry.bucket >= 7 ? GREEN : entry.bucket >= 4 ? AMBER : RED} />
                           ))}
                         </Bar>
                       </BarChart>
@@ -2870,11 +2870,11 @@ function AdminHealth() {
                   <div style={{ fontSize: 12, fontWeight: 600, color: DIM, marginBottom: 12, fontFamily: "'Poppins', sans-serif" }}>
                     Achievements — top unlocked
                   </div>
-                  {(!dataTabData.charts.top_achievements || dataTabData.charts.top_achievements.length === 0) ? (
+                  {(!dataTabData.charts.achievements_by_key || dataTabData.charts.achievements_by_key.length === 0) ? (
                     <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: 13 }}>No data yet</div>
                   ) : (
                     <ResponsiveContainer width="100%" height={140}>
-                      <BarChart data={dataTabData.charts.top_achievements} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                      <BarChart data={dataTabData.charts.achievements_by_key} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={BORDER} />
                         <XAxis type="number" tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
                         <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: MUTED }} width={90} />
@@ -2899,7 +2899,7 @@ function AdminHealth() {
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: MUTED }} tickFormatter={d => d.slice(5)} interval={6} />
                         <YAxis tick={{ fontSize: 9, fill: MUTED }} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: SURFACE, border: `1px solid ${BORDER}`, fontSize: 11, color: WHITE }} />
-                        <Line type="monotone" dataKey="count" stroke="#8B5CF6" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="count" stroke={PIE_COLORS[4]} strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   )}
