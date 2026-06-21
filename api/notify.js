@@ -796,51 +796,64 @@ const DATA_KEY_COLS = {
   user_ratings:         ['id','user_id','rating','feedback','created_at'],
 }
 
-async function cmdData(args) {
-  const ALLOWED = new Set(Object.keys(DATA_KEY_COLS))
-  const table   = ((args && args[0]) || '').trim().split(/\s+/)[0].toLowerCase()
+// Precomputed set of allowed table names — avoids rebuilding on every /data call
+const ALLOWED_DATA_TABLES = new Set(Object.keys(DATA_KEY_COLS))
 
-  if (!table || !ALLOWED.has(table)) {
+async function cmdData(args) {
+  const table = ((args && args[0]) || '').trim().split(/\s+/)[0].toLowerCase()
+
+  if (!table || !ALLOWED_DATA_TABLES.has(table)) {
     const list = Object.keys(DATA_KEY_COLS).join(', ')
     return `❓ Usage: /data &lt;table&gt;\n\nAvailable tables:\n${list}`
   }
 
   const cols = DATA_KEY_COLS[table]
 
-  let data, error
-  try {
-    ;({ data, error } = await supabaseAdmin
+  // Try ordered first; only fall back when created_at doesn't exist on the table
+  let queryData, queryError
+  const ordered = await supabaseAdmin
+    .from(table)
+    .select(cols.join(','))
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (ordered.error && (ordered.error.code === 'PGRST116' || ordered.error.message?.includes('created_at'))) {
+    // Table has no created_at column — retry without order
+    const unordered = await supabaseAdmin
       .from(table)
       .select(cols.join(','))
-      .order('created_at', { ascending: false })
-      .limit(5))
-    if (error) throw error
-  } catch (_) {
-    ;({ data, error } = await supabaseAdmin
-      .from(table)
-      .select(cols.join(','))
-      .limit(5))
+      .limit(5)
+    queryData  = unordered.data
+    queryError = unordered.error
+  } else {
+    queryData  = ordered.data
+    queryError = ordered.error
   }
 
-  if (error) return `❌ Error querying ${table}: ${escapeTgHtml(error.message)}`
-  if (!data || data.length === 0) return `📭 No rows in <code>${table}</code>`
+  if (queryError) return `❌ Error querying ${table}: ${escapeTgHtml(queryError.message)}`
+  if (!queryData || queryData.length === 0) return `📭 No rows in <code>${table}</code>`
 
-  const rows = data.map((row, i) => {
+  const rows = queryData.map((row, i) => {
     const fields = cols.map(c => {
       let v = row[c]
       if (v === null || v === undefined) v = '—'
       else if (typeof v === 'object') {
         const s = JSON.stringify(v)
-        v = s.slice(0, 40) + (s.length > 40 ? '…' : '')
+        v = escapeTgHtml((s.slice(0, 40) + (s.length > 40 ? '…' : '')))
       } else {
-        v = String(v).slice(0, 60)
+        v = escapeTgHtml(String(v).slice(0, 60))
       }
       return `  ${c}: ${v}`
     }).join('\n')
     return `[${i + 1}]\n${fields}`
   }).join('\n\n')
 
-  const msg = `📊 <b>${table}</b> (last 5)\n<pre>${rows}</pre>`
+  const { count } = await supabaseAdmin
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+
+  const footer = count !== null ? `\nTotal rows: ${count}` : ''
+  const msg = `📊 <b>${table}</b> (last 5)${footer}\n<pre>${rows}</pre>`
   return msg
 }
 
