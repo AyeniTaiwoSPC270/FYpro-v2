@@ -22,6 +22,16 @@ const DIM     = 'rgba(255,255,255,0.7)'
 const MUTED   = 'rgba(255,255,255,0.4)'
 const PIE_COLORS = ['#0066FF', '#16A34A', '#F59E0B', '#DC2626', '#8B5CF6', '#06B6D4']
 
+const BROWSER_TABLES = [
+  'admin_users', 'app_config', 'auth_attempts', 'daily_usage',
+  'defense_certificates', 'defense_credits', 'defense_sessions', 'defense_turns',
+  'email_log', 'email_preferences', 'feature_feedback', 'generation_failures',
+  'institutions', 'notifications', 'payment_issues', 'payments',
+  'project_steps', 'projects', 'push_subscriptions', 'referrals',
+  'response_times', 'system_logs', 'user_achievements', 'user_entitlements',
+  'user_onboarding', 'user_progress', 'user_ratings', 'user_reports', 'users',
+]
+
 const FEATURE_LABELS = {
   topic_validator:     'Topic Validator',
   chapter_architect:   'Chapter Architect',
@@ -821,6 +831,32 @@ function AdminHealth() {
       .finally(() => setDataTabLoading(false))
   }, [session?.access_token])
 
+  const loadTableBrowser = useCallback((table, search, page, limit, sort, dir) => {
+    if (!session?.access_token) return
+    setBrowserLoading(true)
+    setBrowserError(null)
+    const params = new URLSearchParams({
+      action: 'data-browse',
+      table,
+      search: search || '',
+      page:   String(page),
+      limit:  String(limit),
+      sort,
+      dir,
+    })
+    return fetch(`/api/admin?${params}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error)
+        setBrowserData(d)
+        setBrowserError(null)
+      })
+      .catch(e => setBrowserError(e.message || 'Failed to load'))
+      .finally(() => setBrowserLoading(false))
+  }, [session?.access_token])
+
   async function toggleRatingForce() {
     if (ratingForceBusy || ratingForce === null || !session?.access_token) return
     setRatingForceBusy(true)
@@ -1123,6 +1159,16 @@ function AdminHealth() {
     return () => clearInterval(dataTabTimerRef.current)
   }, [isAdmin, session, loadDataTab])
 
+  // Table browser — loads whenever browser state changes (debounced for search)
+  useEffect(() => {
+    if (activeTab !== 'data' || !isAdmin || !session?.access_token) return
+    if (browserSearchTimerRef.current) clearTimeout(browserSearchTimerRef.current)
+    browserSearchTimerRef.current = setTimeout(() => {
+      loadTableBrowser(browserTable, browserSearch, browserPage, browserLimit, browserSort, browserDir)
+    }, 400)
+    return () => clearTimeout(browserSearchTimerRef.current)
+  }, [activeTab, isAdmin, session, browserTable, browserSearch, browserPage, browserLimit, browserSort, browserDir, loadTableBrowser])
+
   // Guaranteed 15s fallback for daily_usage-derived metrics (requests today,
   // API spend today, active sessions). Fires even when Realtime misses RPC updates.
   // Uses the stable ref so this effect never needs to re-run on fetchRtMetrics changes.
@@ -1237,6 +1283,35 @@ function AdminHealth() {
     }
     return evts.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 20)
   }, [rtMetrics, data, failures])
+
+  // ── Table browser cell formatter ─────────────────────────────────────
+  function fmtCell(value) {
+    if (value === null || value === undefined) return <span style={{ color: MUTED }}>—</span>
+    if (typeof value === 'boolean') {
+      return (
+        <span style={{
+          background: value ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)',
+          color: value ? GREEN : RED,
+          padding: '2px 7px', borderRadius: 4, fontSize: 10, fontWeight: 600,
+        }}>
+          {value ? 'true' : 'false'}
+        </span>
+      )
+    }
+    if (typeof value === 'object') return <span style={{ color: MUTED, fontSize: 10 }}>[object]</span>
+    const str = String(value)
+    // UUID pattern: 8-4-4-4-12
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+      return <span style={{ color: MUTED, fontFamily: 'JetBrains Mono, monospace', fontSize: 10 }}>{str.slice(0, 8)}…</span>
+    }
+    // ISO timestamp pattern
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
+      return <span style={{ color: MUTED, fontSize: 11 }}>{fmtDate(str)} {new Date(str).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+    }
+    // Long strings
+    if (str.length > 60) return <span title={str}>{str.slice(0, 60)}…</span>
+    return str
+  }
 
   // Filtered + sorted user rows
   const filteredUsers = useMemo(() => {
@@ -2928,7 +3003,175 @@ function AdminHealth() {
               </div>
             )}
 
-            {/* Table browser placeholder — added in Task 5 */}
+            {/* ── Table Browser ─────────────────────────────────────────────── */}
+            <div className="mc-section-divider" style={{ marginTop: 8 }}>Table Browser</div>
+            <div className="mc-card" style={{ padding: 20, marginBottom: 32 }}>
+
+              {/* Controls row */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
+                <select
+                  value={browserTable}
+                  onChange={e => { setBrowserTable(e.target.value); setBrowserPage(1); setBrowserSearch('') }}
+                  style={{ background: CARD, border: `1px solid ${BORDER}`, color: WHITE, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontFamily: "'Poppins', sans-serif", cursor: 'pointer' }}
+                >
+                  {BROWSER_TABLES.map(t => (
+                    <option key={t} value={t}>
+                      {t}{dataTabData?.table_counts?.[t] != null ? ` (${dataTabData.table_counts[t]})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={browserSearch}
+                  onChange={e => { setBrowserSearch(e.target.value); setBrowserPage(1) }}
+                  placeholder="🔍 Search rows…"
+                  style={{ flex: 1, minWidth: 160, background: CARD, border: `1px solid ${BORDER}`, color: WHITE, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontFamily: "'Poppins', sans-serif" }}
+                />
+                <select
+                  value={browserLimit}
+                  onChange={e => { setBrowserLimit(Number(e.target.value)); setBrowserPage(1) }}
+                  style={{ background: CARD, border: `1px solid ${BORDER}`, color: WHITE, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontFamily: "'Poppins', sans-serif", cursor: 'pointer' }}
+                >
+                  <option value={10}>10 rows</option>
+                  <option value={20}>20 rows</option>
+                  <option value={50}>50 rows</option>
+                  <option value={100}>100 rows</option>
+                </select>
+                <button
+                  onClick={() => loadTableBrowser(browserTable, browserSearch, browserPage, browserLimit, browserSort, browserDir)}
+                  className="mc-action-btn"
+                  style={{ padding: '6px 14px', fontSize: 12 }}
+                >
+                  ↻ Refresh
+                </button>
+              </div>
+
+              {browserError && (
+                <div style={{ color: RED, fontSize: 12, marginBottom: 12, padding: '8px 12px', background: 'rgba(220,38,38,0.08)', borderRadius: 8, border: '1px solid rgba(220,38,38,0.2)' }}>
+                  ⚠ {browserError}
+                </div>
+              )}
+
+              {browserLoading && !browserData && (
+                <div style={{ color: MUTED, fontSize: 12, padding: '24px 0', textAlign: 'center', fontFamily: "'Poppins', sans-serif" }}>
+                  Loading…
+                </div>
+              )}
+
+              {!browserData && !browserLoading && (
+                <div style={{ color: MUTED, fontSize: 12, padding: '24px 0', textAlign: 'center', fontFamily: "'Poppins', sans-serif" }}>
+                  Select a table and click Refresh
+                </div>
+              )}
+
+              {/* Table */}
+              {browserData && (
+                <>
+                  {browserLoading && (
+                    <div style={{ color: MUTED, fontSize: 11, marginBottom: 8, fontFamily: "'Poppins', sans-serif" }}>Refreshing…</div>
+                  )}
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                          {browserData.columns && browserData.columns.length > 0
+                            ? browserData.columns.map(col => (
+                              <th
+                                key={col}
+                                onClick={() => {
+                                  const newDir = browserSort === col && browserDir === 'desc' ? 'asc' : 'desc'
+                                  setBrowserSort(col)
+                                  setBrowserDir(newDir)
+                                  setBrowserPage(1)
+                                  loadTableBrowser(browserTable, browserSearch, 1, browserLimit, col, newDir)
+                                }}
+                                style={{
+                                  padding: '6px 10px', textAlign: 'left',
+                                  color: browserSort === col ? WHITE : MUTED,
+                                  fontWeight: 600, cursor: 'pointer', userSelect: 'none',
+                                  whiteSpace: 'nowrap', fontFamily: "'Poppins', sans-serif",
+                                  fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                  background: SURFACE,
+                                }}
+                              >
+                                {col}
+                                {browserSort === col
+                                  ? <span style={{ marginLeft: 4 }}>{browserDir === 'asc' ? '↑' : '↓'}</span>
+                                  : <span style={{ marginLeft: 4, color: 'rgba(255,255,255,0.15)' }}>↕</span>
+                                }
+                              </th>
+                            ))
+                            : <th style={{ color: MUTED, padding: '6px 10px' }}>No columns</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {browserData.rows.length === 0 ? (
+                          <tr>
+                            <td colSpan={99} style={{ padding: '16px 10px', color: MUTED, textAlign: 'center', fontFamily: "'Poppins', sans-serif" }}>
+                              No rows found
+                            </td>
+                          </tr>
+                        ) : browserData.rows.map((row, ri) => (
+                          <tr key={ri} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                            {(browserData.columns || Object.keys(row)).map((col, ci) => (
+                              <td key={ci} style={{ padding: '5px 10px', color: DIM, verticalAlign: 'top', fontFamily: "'Poppins', sans-serif" }}>
+                                {fmtCell(row[col])}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {(() => {
+                    const totalPages = Math.ceil((browserData.total || 0) / browserLimit) || 1
+                    const start = (browserPage - 1) * browserLimit + 1
+                    const end   = Math.min(browserPage * browserLimit, browserData.total || 0)
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
+                        <button
+                          disabled={browserPage <= 1}
+                          onClick={() => setBrowserPage(p => p - 1)}
+                          className="mc-action-btn"
+                          style={{ opacity: browserPage <= 1 ? 0.4 : 1 }}
+                        >
+                          ← Prev
+                        </button>
+                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                          const p = browserPage <= 4 ? i + 1
+                            : browserPage >= totalPages - 3 ? totalPages - 6 + i
+                            : browserPage - 3 + i
+                          if (p < 1 || p > totalPages) return null
+                          return (
+                            <button
+                              key={p}
+                              onClick={() => setBrowserPage(p)}
+                              className="mc-action-btn"
+                              style={{ background: p === browserPage ? BLUE : 'transparent', color: p === browserPage ? WHITE : MUTED, minWidth: 32 }}
+                            >
+                              {p}
+                            </button>
+                          )
+                        })}
+                        <button
+                          disabled={browserPage >= totalPages}
+                          onClick={() => setBrowserPage(p => p + 1)}
+                          className="mc-action-btn"
+                          style={{ opacity: browserPage >= totalPages ? 0.4 : 1 }}
+                        >
+                          Next →
+                        </button>
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, fontFamily: "'Poppins', sans-serif" }}>
+                          {(browserData.total || 0) > 0 ? `Showing ${start}–${end} of ${browserData.total}` : 'No results'}
+                        </span>
+                      </div>
+                    )
+                  })()}
+                </>
+              )}
+            </div>
 
           </div>
         )}
