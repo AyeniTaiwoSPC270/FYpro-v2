@@ -2188,9 +2188,9 @@ function groupByField(rows, field) {
     .map(([name, value]) => ({ name, value }))
 }
 
-// Buckets defense session scores into 10 slots (score 1–10), returns [{score,count}]
+// Buckets defense session scores into 10 slots (score 1–10), returns [{bucket,count}]
 function scoreHistogram(rows) {
-  const buckets = Array.from({ length: 10 }, (_, i) => ({ score: i + 1, count: 0 }))
+  const buckets = Array.from({ length: 10 }, (_, i) => ({ bucket: i + 1, count: 0 }))
   for (const row of rows) {
     const s = Math.round(row.total_score || 0)
     if (s >= 1 && s <= 10) buckets[s - 1].count++
@@ -2305,9 +2305,9 @@ async function handleDataTab(req, res) {
         payments_by_tier:   paymentsByTier,
         projects_by_status: groupByField(projectRows    || [], 'status'),
         projects_by_mode:   groupByField(projectRows    || [], 'mode'),
-        score_distribution: scoreHistogram(sessionScores || []),
-        certs_by_day:       groupByDay(certRows          || [], 'issued_at', 30),
-        top_achievements:   groupByField(achievementRows || [], 'achievement_key').slice(0, 8),
+        defense_score_histogram: scoreHistogram(sessionScores || []),
+        certs_by_day:            groupByDay(certRows          || [], 'issued_at', 30),
+        achievements_by_key:     groupByField(achievementRows || [], 'achievement_key').slice(0, 8),
         referrals_by_day:   groupByDay(referralRows      || [], 'created_at', 30),
         failures_by_feature: groupByField(failureRows   || [], 'feature').slice(0, 6),
       },
@@ -2380,7 +2380,14 @@ async function handleDataBrowse(req, res) {
       if (rowErr) throw rowErr
     }
 
-    return res.status(200).json({ rows: rows || [], total: total || 0, page, limit })
+    const allRows = rows || []
+    return res.status(200).json({
+      rows:    allRows,
+      total:   total || 0,
+      columns: allRows.length > 0 ? Object.keys(allRows[0]) : Object.keys(sampleRow),
+      page,
+      limit,
+    })
   } catch (err) {
     console.error('[admin/data-browse] error:', err.message)
     return res.status(500).json({ error: 'Internal server error' })
