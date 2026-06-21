@@ -9,8 +9,98 @@ const MARGIN    = 20;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const LINE_H    = 7;   // mm between lines
 
+// jsPDF's built-in fonts (Helvetica etc.) only support WinAnsiEncoding — a
+// subset of Latin-1. Characters outside that range (Greek letters, Unicode
+// minus, subscript digits, ṁ, etc.) render as garbage or cause silent
+// truncation. We substitute them with readable ASCII equivalents before any
+// text reaches jsPDF. Applied to all variable content; constant strings that
+// are already ASCII are unaffected.
+function sanitizeForPdf(text) {
+  if (text === null || text === undefined) return '';
+  const s = String(text);
+
+  return s
+    // ── Dashes and minus variants → hyphen-minus ─────────────────────────
+    .replace(/[‐‑‒–—―−]/g, '-')
+    // ── Smart / typographic quotes → straight ASCII ───────────────────────
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    // ── Ellipsis ──────────────────────────────────────────────────────────
+    .replace(/…/g, '...')
+    // ── Non-breaking and thin spaces → regular space ──────────────────────
+    .replace(/[     ]/g, ' ')
+    // ── Subscript digits 0-9 → plain digit (e.g. SO₂ → SO2) ─────────────
+    .replace(/[₀-₉]/g, (c) => String(c.codePointAt(0) - 0x2080))
+    // ── Superscript digits → ^digit ───────────────────────────────────────
+    .replace(/²/g, '^2')
+    .replace(/³/g, '^3')
+    .replace(/¹/g, '^1')
+    .replace(/[⁰⁴-⁹]/g, (c) =>
+      ({ '⁰': '0', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' }[c] ?? c)
+    )
+    // ── Common Greek lowercase letters ────────────────────────────────────
+    .replace(/α/g, 'alpha')
+    .replace(/β/g, 'beta')
+    .replace(/γ/g, 'gamma')
+    .replace(/δ/g, 'delta')
+    .replace(/ε/g, 'epsilon')
+    .replace(/ζ/g, 'zeta')
+    .replace(/η/g, 'eta')
+    .replace(/θ/g, 'theta')
+    .replace(/κ/g, 'kappa')
+    .replace(/λ/g, 'lambda')
+    .replace(/μ/g, 'mu')
+    .replace(/ν/g, 'nu')
+    .replace(/ξ/g, 'xi')
+    .replace(/π/g, 'pi')
+    .replace(/ρ/g, 'rho')
+    .replace(/σ/g, 'sigma')
+    .replace(/τ/g, 'tau')
+    .replace(/φ/g, 'phi')
+    .replace(/χ/g, 'chi')
+    .replace(/ψ/g, 'psi')
+    .replace(/ω/g, 'omega')
+    // ── Common Greek uppercase letters ────────────────────────────────────
+    .replace(/Α/g, 'Alpha')
+    .replace(/Γ/g, 'Gamma')
+    .replace(/Δ/g, 'Delta')
+    .replace(/Θ/g, 'Theta')
+    .replace(/Λ/g, 'Lambda')
+    .replace(/Π/g, 'Pi')
+    .replace(/Σ/g, 'Sigma')
+    .replace(/Ω/g, 'Omega')
+    // ── Micro sign (U+00B5) — distinct code point from Greek mu ───────────
+    .replace(/µ/g, 'mu')
+    // ── Latin letters with combining dots (ṁ, ṡ, ṫ, etc.) → base letter ──
+    .replace(/ṁ/g, 'm')   // ṁ  m-dot (mass flow rate)
+    .replace(/ṗ/g, 'p')   // ṗ
+    .replace(/ṡ/g, 's')   // ṡ
+    .replace(/ṣ/g, 's')   // ṣ
+    .replace(/ṫ/g, 't')   // ṫ
+    .replace(/ẇ/g, 'w')   // ẇ
+    // ── Mathematical operators ────────────────────────────────────────────
+    .replace(/±/g, '+/-')
+    .replace(/×/g, 'x')
+    .replace(/÷/g, '/')
+    .replace(/∞/g, 'infinity')
+    .replace(/≈/g, '~=')
+    .replace(/≠/g, '!=')
+    .replace(/≤/g, '<=')
+    .replace(/≥/g, '>=')
+    .replace(/⁄/g, '/')    // fraction slash
+    .replace(/∂/g, 'd')    // partial derivative ∂
+    .replace(/∫/g, 'integral')
+    .replace(/√/g, 'sqrt')
+    // ── Degree and temperature ────────────────────────────────────────────
+    .replace(/°/g, ' deg')
+    // ── Bullet and dingbats → hyphen ─────────────────────────────────────
+    .replace(/[•‣․‥⁃⁌⁍]/g, '-')
+    // ── Any remaining non-ASCII → stripped (last resort) ─────────────────
+    .replace(/[^\x20-\x7E\n\r\t]/g, '');
+}
+
 function addWrappedText(doc, text, x, y, maxWidth, lineHeight = LINE_H) {
-  const lines = doc.splitTextToSize(String(text || ''), maxWidth);
+  const lines = doc.splitTextToSize(sanitizeForPdf(text), maxWidth);
   doc.text(lines, x, y);
   return y + lines.length * lineHeight;
 }
@@ -46,7 +136,7 @@ export function generateDefenceBrief(brief, topic) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(80, 100, 120);
-  const topicLine  = topic || 'Your Project';
+  const topicLine  = sanitizeForPdf(topic || 'Your Project');
   const topicLines = doc.splitTextToSize(topicLine, CONTENT_W);
   doc.text(topicLines, MARGIN, 36);
 
@@ -86,11 +176,11 @@ export function generateDefenceBrief(brief, topic) {
       : ws.severity === 'Serious' ? [217, 119, 6]
       : [99, 102, 241];
     doc.setTextColor(...severityColor);
-    doc.text(`[${(ws.severity || '').toUpperCase()}]`, MARGIN, y);
+    doc.text(`[${sanitizeForPdf(ws.severity || '').toUpperCase()}]`, MARGIN, y);
 
     doc.setTextColor(13, 27, 42);
     doc.setFontSize(10);
-    doc.text(ws.title || '', MARGIN + 22, y);
+    doc.text(sanitizeForPdf(ws.title || ''), MARGIN + 22, y);
     y += 5;
 
     doc.setFont('helvetica', 'italic');
