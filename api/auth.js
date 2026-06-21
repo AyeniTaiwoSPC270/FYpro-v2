@@ -183,7 +183,7 @@ async function handleSignup(req, res) {
     return res.status(400).json({ error: msg });
   }
 
-  if (userId && full_name) {
+  if (isNewUser && userId && full_name) {
     supabaseAdmin
       .from('users')
       .update({ full_name, university_name: university })
