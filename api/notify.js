@@ -1416,9 +1416,15 @@ async function handleSendNudges(req, res) {
   const now = Date.now()
   const DAY_MS = 86_400_000
   const results = { sent: 0, skipped: 0, cleaned: 0, errors: 0 }
+  const forceTest = req.query?.force === 'true'
 
   for (const sub of subs) {
     try {
+      let nudgeKey = null
+
+      if (forceTest) {
+        nudgeKey = 'inactive_3'
+      } else {
       // Last activity = most recent project_steps.updated_at for this user
       const { data: lastStepRows } = await supabaseAdmin
         .from('project_steps')
@@ -1434,8 +1440,6 @@ async function handleSendNudges(req, res) {
       const daysSinceNudged = sub.last_nudged_at
         ? (now - new Date(sub.last_nudged_at).getTime()) / DAY_MS
         : Infinity
-
-      let nudgeKey = null
 
       // Inactivity nudges — 7-day check takes priority
       if (daysInactive >= 7 && daysSinceNudged > 7) {
@@ -1463,6 +1467,7 @@ async function handleSendNudges(req, res) {
           if ((defenseCount ?? 0) === 0) nudgeKey = 'defense_reminder'
         }
       }
+      } // end !forceTest
 
       if (!nudgeKey) { results.skipped++; continue }
 
