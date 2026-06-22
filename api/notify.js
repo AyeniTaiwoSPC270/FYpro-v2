@@ -1468,7 +1468,6 @@ async function handleSendNudges(req, res) {
         }
       }
       } // end !forceTest
-      }
 
       if (!nudgeKey) { results.skipped++; continue }
 
