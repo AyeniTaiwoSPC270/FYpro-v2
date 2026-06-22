@@ -1502,7 +1502,7 @@ async function handleSendNudges(req, res) {
   }
 
   console.log('[nudges] run complete:', results)
-  return res.status(200).json({ ok: true, ...results })
+  return res.status(200).json({ ok: true, forceTest, ...results })
 }
 
 // ─── Push subscription management ────────────────────────────────────────────
