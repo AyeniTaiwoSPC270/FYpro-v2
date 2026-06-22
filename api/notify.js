@@ -1419,15 +1419,15 @@ async function handleSendNudges(req, res) {
 
   for (const sub of subs) {
     try {
-      // Last activity = most recent project_steps.completed_at for this user
+      // Last activity = most recent project_steps.updated_at for this user
       const { data: lastStepRows } = await supabaseAdmin
         .from('project_steps')
-        .select('completed_at')
+        .select('updated_at')
         .eq('user_id', sub.user_id)
-        .order('completed_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
 
-      const lastStepAt = lastStepRows?.[0]?.completed_at
+      const lastStepAt = lastStepRows?.[0]?.updated_at
       if (!lastStepAt) { results.skipped++; continue } // no activity yet
 
       const daysInactive    = (now - new Date(lastStepAt).getTime()) / DAY_MS
@@ -1448,10 +1448,10 @@ async function handleSendNudges(req, res) {
       if (!nudgeKey && daysSinceNudged > 7 && daysInactive >= 2) {
         const { data: steps } = await supabaseAdmin
           .from('project_steps')
-          .select('step_name')
+          .select('step_type')
           .eq('user_id', sub.user_id)
 
-        const completedNames = steps?.map((s) => s.step_name) ?? []
+        const completedNames = steps?.map((s) => s.step_type) ?? []
         const hasAllSteps = REQUIRED_STEPS_FOR_DEFENSE.every((s) => completedNames.includes(s))
 
         if (hasAllSteps) {
