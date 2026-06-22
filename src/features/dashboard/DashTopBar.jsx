@@ -70,7 +70,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
         </div>
         <div className="font-sans text-[0.72rem] text-slate-500 mt-0.5 truncate">
           {STUDENT.stepsCompleted === STUDENT.totalSteps
-            ? 'All 6 steps complete — you\'re defense ready.'
+            ? `All ${STUDENT.totalSteps} steps complete — you're defense ready.`
             : STUDENT.stepsCompleted > 0
             ? `${STUDENT.stepsCompleted} step${STUDENT.stepsCompleted === 1 ? '' : 's'} done — Step ${STUDENT.currentStepId} is waiting.`
             : 'Your research journey is ready to begin.'}
