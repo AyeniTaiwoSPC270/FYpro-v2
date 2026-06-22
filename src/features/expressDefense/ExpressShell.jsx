@@ -49,6 +49,14 @@ export default function ExpressShell() {
           <FyproLogo style={{ height: 36, width: 'auto' }} />
         </div>
 
+        <button
+          className="es-sidebar__mobile-back"
+          onClick={() => navigate('/express')}
+          aria-label="Back to Express Dashboard"
+        >
+          ←
+        </button>
+
         <ExpressBrief />
 
         <ul className="es-step-list" role="list">

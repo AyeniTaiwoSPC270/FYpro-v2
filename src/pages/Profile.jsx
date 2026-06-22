@@ -75,7 +75,7 @@ function ProfileNavbar({ initials, name, avatarUrl }) {
   const navigate = useNavigate()
   const { clearState } = useApp()
   const { features } = usePaidFeatures()
-  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : features.includes('express_defense') ? 'Express Defence' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const [avatarImgError, setAvatarImgError] = useState(false)
@@ -407,7 +407,7 @@ export default function Profile() {
   const { features } = usePaidFeatures()
   const { resetProject } = useProjectState()
   const { user } = useUser()
-  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
+  const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : features.includes('express_defense') ? 'Express Defence' : 'Free Plan'
   const isGoogleUser = user?.identities?.some(i => i.provider === 'google') ?? false
 
   const completedCount = state.stepsCompleted.filter(Boolean).length

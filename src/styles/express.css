@@ -224,6 +224,7 @@
   text-align: left;
   transition: background var(--transition-fast);
   color: rgba(255,255,255,0.5);
+  touch-action: manipulation;
 }
 .es-step-btn:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.8); }
 .es-step-btn--active { background: rgba(0,102,255,0.15); color: var(--color-text-white); }
@@ -258,6 +259,7 @@
   padding: 1px 6px;
 }
 .es-sidebar__footer { margin-top: auto; padding-top: var(--space-md); border-top: 1px solid rgba(255,255,255,0.06); }
+.es-sidebar__mobile-back { display: none; }
 .es-sidebar__footer-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: var(--text-xs);
@@ -515,6 +517,8 @@
 
 [data-theme="light"] .es-sidebar__footer,
 .light .es-sidebar__footer { border-top-color: rgba(13,27,42,0.1); }
+[data-theme="light"] .es-sidebar__mobile-back,
+.light .es-sidebar__mobile-back { border-color: rgba(13,27,42,0.15); color: rgba(13,27,42,0.5); }
 [data-theme="light"] .es-sidebar__footer-text,
 .light .es-sidebar__footer-text { color: rgba(13,27,42,0.4); }
 
@@ -617,6 +621,22 @@
   .es-sidebar__logo,
   .eb-brief,
   .es-sidebar__footer { display: none; }
+
+  .es-sidebar__mobile-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-sm);
+    color: rgba(255,255,255,0.5);
+    font-size: 1rem;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
 
   .es-step-list {
     flex-direction: row;
