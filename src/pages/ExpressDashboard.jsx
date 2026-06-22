@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useUser } from '../hooks/useUser'
@@ -15,6 +16,7 @@ import { EXPRESS_ACHIEVEMENTS } from '../lib/expressAchievements'
 
 export default function ExpressDashboard() {
   const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const { state } = useApp()
   const { user } = useUser()
   const { features } = usePaidFeatures()
@@ -56,10 +58,17 @@ export default function ExpressDashboard() {
 
   return (
     <div className="flex h-dvh-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" onNewSession={() => navigate('/express/run')} isOpen={false} />
+      {/* Mobile sidebar backdrop */}
+      <div
+        className={`db-sidebar-backdrop${sidebarOpen ? ' db-sidebar-backdrop--visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      <DashSidebar STUDENT={STUDENT} STEPS={STEPS} navTarget="/express/run" onNewSession={() => navigate('/express/run')} isOpen={sidebarOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashTopBar STUDENT={STUDENT} onToggleSidebar={() => {}} />
+        <DashTopBar STUDENT={STUDENT} onToggleSidebar={() => setSidebarOpen(v => !v)} />
 
         <main
           className="flex-1 overflow-y-auto p-4 pb-12 sm:px-6 sm:py-7 lg:px-10 lg:pt-9 lg:pb-14"
