@@ -2392,6 +2392,55 @@ async function handleDataBrowse(req, res) {
   }
 }
 
+async function handleGetFounderPhotoUploadUrl(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
+  if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  const { data, error } = await supabaseAdmin.storage
+    .from('admin-assets')
+    .createSignedUploadUrl('founder/profile.jpg')
+
+  if (error) {
+    console.error('[admin/get-founder-photo-upload-url]', error.message)
+    return res.status(500).json({ error: 'Failed to create upload URL' })
+  }
+
+  return res.status(200).json({ signedUrl: data.signedUrl, token: data.token, path: data.path })
+}
+
+async function handleUpdateFounderPhoto(req, res) {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
+  if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
+  if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  const { url } = req.body || {}
+  if (!url || typeof url !== 'string' || !url.startsWith('https://')) {
+    return res.status(400).json({ error: 'Invalid url' })
+  }
+
+  const { error } = await supabaseAdmin
+    .from('app_config')
+    .upsert({ key: 'founder_photo', value: url, updated_at: new Date().toISOString() })
+
+  if (error) {
+    console.error('[admin/update-founder-photo]', error.message)
+    return res.status(500).json({ error: 'Failed to save photo URL' })
+  }
+
+  return res.status(200).json({ ok: true })
+}
+
 export default async function handler(req, res) {
   try {
   setCorsHeaders(req, res);
@@ -2463,6 +2512,8 @@ export default async function handler(req, res) {
   }
   if (action === 'data-tab')    return handleDataTab(req, res);
   if (action === 'data-browse') return handleDataBrowse(req, res);
+  if (action === 'get-founder-photo-upload-url') return handleGetFounderPhotoUploadUrl(req, res)
+  if (action === 'update-founder-photo')         return handleUpdateFounderPhoto(req, res)
 
   return res.status(400).json({ error: `Unknown action: ${action}` });
   } catch (err) {
