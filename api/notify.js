@@ -881,6 +881,97 @@ async function cmdResolveReport(id) {
   return `✅ Report resolved: "${(rows[0].description || '').slice(0, 80)}"`
 }
 
+async function cmdSetPhoto(chatId) {
+  const url   = UPSTASH_URL
+  const token = UPSTASH_TOKEN
+  if (!url || !token) return '❌ Redis not configured — cannot set pending flag.'
+
+  await fetch(`${url}/set/telegram_setphoto_pending/1/ex/300`, {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  return '📷 Send your photo now. You have 5 minutes.'
+}
+
+async function handleIncomingPhoto(chatId, photoArray) {
+  const url   = UPSTASH_URL
+  const token = UPSTASH_TOKEN
+  if (!url || !token) {
+    return '❌ Redis not configured.'
+  }
+
+  // Check pending flag
+  const flagRes = await fetch(`${url}/get/telegram_setphoto_pending`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(r => r.json()).catch(() => null)
+
+  if (!flagRes?.result) return null // no pending flag — ignore silently
+
+  const botToken = process.env.TELEGRAM_BOT_TOKEN
+  if (!botToken) return '❌ Bot token not configured.'
+
+  // Largest photo is last element
+  const largest = photoArray[photoArray.length - 1]
+  const fileId  = largest?.file_id
+  if (!fileId) return '❌ Could not read photo file ID.'
+
+  try {
+    // 1. Get file path from Telegram
+    const fileRes = await fetch(
+      `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`,
+      { signal: AbortSignal.timeout(8000) }
+    )
+    const fileData = await fileRes.json()
+    const filePath = fileData.result?.file_path
+    if (!filePath) throw new Error('no file_path in getFile response')
+
+    // 2. Download binary
+    const photoRes = await fetch(
+      `https://api.telegram.org/file/bot${botToken}/${filePath}`,
+      { signal: AbortSignal.timeout(15000) }
+    )
+    if (!photoRes.ok) throw new Error(`photo download failed: ${photoRes.status}`)
+    const photoBuffer = await photoRes.arrayBuffer()
+
+    // 3. Upload to Supabase Storage (upsert — always overwrites founder/profile.jpg)
+    const { error: uploadErr } = await supabaseAdmin.storage
+      .from('admin-assets')
+      .upload('founder/profile.jpg', photoBuffer, {
+        contentType: 'image/jpeg',
+        upsert:      true,
+      })
+    if (uploadErr) throw uploadErr
+
+    // 4. Get public URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('admin-assets')
+      .getPublicUrl('founder/profile.jpg')
+
+    // 5. Persist URL in app_config
+    const { error: dbErr } = await supabaseAdmin
+      .from('app_config')
+      .upsert({ key: 'founder_photo', value: publicUrl, updated_at: new Date().toISOString() })
+    if (dbErr) throw dbErr
+
+    // 6. Clear pending flag
+    await fetch(`${url}/del/telegram_setphoto_pending`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    return '✅ Founder photo updated!'
+  } catch (err) {
+    console.error('[notify/setphoto]', err.message)
+    // Clear flag on error so admin can retry immediately
+    await fetch(`${url}/del/telegram_setphoto_pending`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {})
+    return `❌ Upload failed: ${err.message}. Try again.`
+  }
+}
+
 function cmdHelp() {
   return `🛡️ <b>FYPro Admin Bot</b>
 
@@ -1014,13 +1105,24 @@ async function handleTelegramBot(req, res) {
     return res.status(200).end()
   }
 
-  // ── Typed command (message) ──────────────────────────────────────────────
+  // ── Typed command or photo message ──────────────────────────────────────
   const message = body?.message
+  if (!message) return res.status(200).end()
+
+  const isFromAdmin = String(message.chat?.id) === String(process.env.TELEGRAM_CHAT_ID)
+  if (!isFromAdmin) return res.status(200).end()
+
+  const chatId = message.chat.id
+
+  // ── Photo message (only process when /setphoto pending flag is set) ──────
+  if (message.photo) {
+    const reply = await handleIncomingPhoto(chatId, message.photo)
+    if (reply) await sendReply(chatId, reply)
+    return res.status(200).end()
+  }
+
   if (!message?.text) return res.status(200).end()
 
-  if (String(message.chat.id) !== String(process.env.TELEGRAM_CHAT_ID)) return res.status(200).end()
-
-  const chatId  = message.chat.id
   const msgText = (message.text || '').trim()
 
   // ── Broadcast commands — handled before generic command parser ───────────
@@ -1054,6 +1156,13 @@ async function handleTelegramBot(req, res) {
     return res.status(200).end()
   }
   // ─────────────────────────────────────────────────────────────────────────
+
+  // ── /setphoto — must be handled before runCommand since it needs chatId ──
+  if (msgText === '/setphoto') {
+    const reply = await cmdSetPhoto(chatId)
+    await sendReply(chatId, reply)
+    return res.status(200).end()
+  }
 
   const raw    = msgText.toLowerCase().split('@')[0]
 
