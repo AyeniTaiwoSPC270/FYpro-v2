@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -80,12 +80,29 @@ function ExpressDashboardRedirect() {
   )
 }
 
+function CanonicalTag() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const BASE = 'https://www.fypro.com.ng'
+    let el = document.querySelector('link[rel="canonical"]')
+    if (!el) {
+      el = document.createElement('link')
+      el.setAttribute('rel', 'canonical')
+      document.head.appendChild(el)
+    }
+    el.setAttribute('href', BASE + pathname)
+  }, [pathname])
+  return null
+}
+
 // Route transitions — lives inside BrowserRouter so useLocation() works.
 // ToastProvider, CookieBanner, and RouteProgressBar sit outside so they
 // persist across navigations and are never caught by the AnimatePresence.
 function AppRoutes() {
   const location = useLocation()
   return (
+    <>
+    <CanonicalTag />
     <Routes location={location}>
       {/* Auth pages */}
       <Route path="/login"           element={<S fallback={<AuthPageSkeleton />}><Login /></S>} />
@@ -156,6 +173,7 @@ function AppRoutes() {
       {/* 404 */}
       <Route path="*" element={<S fallback={<PublicPageSkeleton />}><NotFound /></S>} />
     </Routes>
+    </>
   )
 }
 
