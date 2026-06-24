@@ -674,6 +674,31 @@ function AdminHealth() {
   // against a client-side email value that would be visible in the JS bundle.
   const [isAdmin, setIsAdmin] = useState(null) // null = loading; server response sets true/false
 
+  const [founderPhotoUrl,    setFounderPhotoUrl]    = useState(null)
+  const [showPhotoModal,     setShowPhotoModal]      = useState(false)
+  const [photoFile,          setPhotoFile]           = useState(null)
+  const [photoUploading,     setPhotoUploading]      = useState(false)
+  const [photoError,         setPhotoError]          = useState(null)
+  const [photoSuccess,       setPhotoSuccess]        = useState(false)
+  const photoSuccessTimerRef                         = useRef(null)
+
+  // Load founder photo from app_config
+  useEffect(() => {
+    supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'founder_photo')
+      .single()
+      .then(({ data }) => {
+        if (data?.value) setFounderPhotoUrl(data.value)
+      })
+  }, [])
+
+  // Cleanup success timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(photoSuccessTimerRef.current)
+  }, [])
+
   const loadData = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
     if (isFetchingRef.current) return Promise.resolve()
@@ -1849,31 +1874,6 @@ function AdminHealth() {
   }
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
-
-  const [founderPhotoUrl,    setFounderPhotoUrl]    = useState(null)
-  const [showPhotoModal,     setShowPhotoModal]      = useState(false)
-  const [photoFile,          setPhotoFile]           = useState(null)
-  const [photoUploading,     setPhotoUploading]      = useState(false)
-  const [photoError,         setPhotoError]          = useState(null)
-  const [photoSuccess,       setPhotoSuccess]        = useState(false)
-  const photoSuccessTimerRef                         = useRef(null)
-
-  // Load founder photo from app_config
-  useEffect(() => {
-    supabase
-      .from('app_config')
-      .select('value')
-      .eq('key', 'founder_photo')
-      .single()
-      .then(({ data }) => {
-        if (data?.value) setFounderPhotoUrl(data.value)
-      })
-  }, [])
-
-  // Cleanup success timer on unmount
-  useEffect(() => {
-    return () => clearTimeout(photoSuccessTimerRef.current)
-  }, [])
 
   async function handlePhotoUpload() {
     if (!photoFile || !session?.access_token) return
