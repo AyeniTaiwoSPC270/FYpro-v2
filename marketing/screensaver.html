@@ -63,7 +63,75 @@
   <div class="version">FYPRO v2</div>
 
   <script>
-    // particle and phrase code added in later tasks
+    // ── Particles ──────────────────────────────────────────────────────────────
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const CENTER_X = canvas.width / 2;
+    const CENTER_Y = canvas.height / 2;
+    const PARTICLE_COUNT = 100;
+    const PROXIMITY_RADIUS = 200;
+    const PROXIMITY_BOOST = 1.3;
+
+    function randomBetween(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createParticle() {
+      const isBlue = Math.random() < 0.7;
+      return {
+        x: randomBetween(0, canvas.width),
+        y: randomBetween(0, canvas.height),
+        vx: randomBetween(-0.4, 0.4),
+        vy: randomBetween(-0.4, 0.4),
+        radius: randomBetween(1, 5),
+        opacity: randomBetween(0.10, 0.60),
+        r: isBlue ? 0   : 255,
+        g: isBlue ? 102 : 255,
+        b: isBlue ? 255 : 255,
+      };
+    }
+
+    const particles = Array.from({ length: PARTICLE_COUNT }, createParticle);
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Edge wrap
+        if (p.x < 0)             p.x = canvas.width;
+        if (p.x > canvas.width)  p.x = 0;
+        if (p.y < 0)             p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        // Proximity boost — particles near screen center glow brighter
+        const dx = p.x - CENTER_X;
+        const dy = p.y - CENTER_Y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const opacity = dist < PROXIMITY_RADIUS
+          ? Math.min(p.opacity * PROXIMITY_BOOST, 1)
+          : p.opacity;
+
+        // Draw dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${opacity})`;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(drawParticles);
+    }
+
+    drawParticles();
+
+    // phrase code added in later task
   </script>
 </body>
 </html>
