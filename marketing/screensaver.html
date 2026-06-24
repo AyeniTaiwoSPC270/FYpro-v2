@@ -41,6 +41,17 @@
       pointer-events: none;
     }
 
+    .logo {
+      width: 220px;
+      height: auto;
+      animation: logo-pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes logo-pulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 102, 255, 0.3)); }
+      50%       { filter: drop-shadow(0 0 28px rgba(0, 102, 255, 0.7)); }
+    }
+
     .version {
       position: fixed;
       bottom: 24px;
@@ -58,7 +69,8 @@
 <body>
   <canvas id="particles"></canvas>
   <div class="overlay">
-    <!-- logo and phrase added in later tasks -->
+    <img class="logo" src="../public/fypro-logo.png" alt="FYPro">
+    <!-- phrase added in next task -->
   </div>
   <div class="version">FYPRO v2</div>
 
