@@ -1850,6 +1850,89 @@ function AdminHealth() {
 
   const userInitials = (user?.email || 'AD').slice(0, 2).toUpperCase()
 
+  const [founderPhotoUrl,    setFounderPhotoUrl]    = useState(null)
+  const [showPhotoModal,     setShowPhotoModal]      = useState(false)
+  const [photoFile,          setPhotoFile]           = useState(null)
+  const [photoUploading,     setPhotoUploading]      = useState(false)
+  const [photoError,         setPhotoError]          = useState(null)
+  const [photoSuccess,       setPhotoSuccess]        = useState(false)
+  const photoSuccessTimerRef                         = useRef(null)
+
+  // Load founder photo from app_config
+  useEffect(() => {
+    supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'founder_photo')
+      .single()
+      .then(({ data }) => {
+        if (data?.value) setFounderPhotoUrl(data.value)
+      })
+  }, [])
+
+  // Cleanup success timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(photoSuccessTimerRef.current)
+  }, [])
+
+  async function handlePhotoUpload() {
+    if (!photoFile || !session?.access_token) return
+    setPhotoUploading(true)
+    setPhotoError(null)
+
+    try {
+      // 1. Get signed upload URL from server
+      const urlRes = await fetch('/api/admin?action=get-founder-photo-upload-url', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!urlRes.ok) {
+        const e = await urlRes.json().catch(() => ({}))
+        throw new Error(e.error || `HTTP ${urlRes.status}`)
+      }
+      const { path, token: uploadToken } = await urlRes.json()
+
+      // 2. Upload file directly to Supabase Storage
+      const { error: uploadErr } = await supabase.storage
+        .from('admin-assets')
+        .uploadToSignedUrl(path, uploadToken, photoFile)
+      if (uploadErr) throw uploadErr
+
+      // 3. Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('admin-assets')
+        .getPublicUrl('founder/profile.jpg')
+
+      // 4. Persist URL
+      const saveRes = await fetch('/api/admin?action=update-founder-photo', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          Authorization:   `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ url: publicUrl }),
+      })
+      if (!saveRes.ok) {
+        const e = await saveRes.json().catch(() => ({}))
+        throw new Error(e.error || `HTTP ${saveRes.status}`)
+      }
+
+      // 5. Update local state
+      setFounderPhotoUrl(publicUrl)
+      setPhotoSuccess(true)
+      setPhotoFile(null)
+      photoSuccessTimerRef.current = setTimeout(() => {
+        setPhotoSuccess(false)
+        setShowPhotoModal(false)
+      }, 1500)
+    } catch (err) {
+      console.error('[admin/photo-upload]', err.message)
+      setPhotoError(err.message || 'Upload failed')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: "'Poppins', sans-serif", color: WHITE }}>
       <style>{`
@@ -1930,9 +2013,19 @@ function AdminHealth() {
             <button className="mc-topbar-utility" onClick={handleSentryTest} disabled={sentrySending} style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, fontWeight:600, color:sentrySending?MUTED:WHITE, background:sentrySending?'rgba(255,255,255,0.05)':sentryResult==='ok'?'rgba(22,163,74,0.25)':sentryResult==='fail'?'rgba(220,38,38,0.25)':'rgba(124,58,237,0.2)', border:`1px solid ${sentryResult==='ok'?'rgba(22,163,74,0.5)':sentryResult==='fail'?'rgba(220,38,38,0.5)':'rgba(124,58,237,0.3)'}`, borderRadius:8, padding:'7px 12px', cursor:sentrySending?'not-allowed':'pointer', transition:'background 0.2s, border-color 0.2s' }}>
               {sentrySending ? 'Sending…' : sentryResult === 'ok' ? '✓ Sent' : sentryResult === 'fail' ? '⚠ Failed' : 'Sentry'}
             </button>
-            <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:WHITE }}>{userInitials}</span>
-            </div>
+            <button
+              onClick={() => { setShowPhotoModal(true); setPhotoFile(null); setPhotoError(null); setPhotoSuccess(false) }}
+              title="Update founder photo"
+              style={{ position:'relative', width:32, height:32, borderRadius:'50%', overflow:'hidden', border:`2px solid ${founderPhotoUrl ? GREEN : BLUE}`, background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, cursor:'pointer', padding:0 }}
+            >
+              {founderPhotoUrl
+                ? <img src={founderPhotoUrl} alt="Founder" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                : <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:WHITE }}>{userInitials}</span>
+              }
+              {founderPhotoUrl && (
+                <div style={{ position:'absolute', bottom:0, right:0, width:9, height:9, background:GREEN, borderRadius:'50%', border:`1px solid ${BG}` }} />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -3210,6 +3303,67 @@ function AdminHealth() {
               <DiagnoseResult result={diagnoseModal.result} />
             ) : null}
             <button onClick={() => setDiagnoseModal(null)} className="mc-action-btn" style={{ marginTop:20 }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Founder photo upload modal ── */}
+      {showPhotoModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setShowPhotoModal(false) }}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}
+        >
+          <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:16, padding:28, width:'100%', maxWidth:360 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, color:WHITE }}>Update Founder Photo</span>
+              <button onClick={() => setShowPhotoModal(false)} style={{ background:'none', border:'none', color:MUTED, fontSize:20, cursor:'pointer', lineHeight:1 }}>×</button>
+            </div>
+
+            {/* Current photo preview */}
+            <div style={{ width:80, height:80, borderRadius:'50%', overflow:'hidden', border:`2px solid ${BLUE}`, background:'linear-gradient(135deg,#0066FF,#3B82F6)', margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              {(photoFile ? URL.createObjectURL(photoFile) : founderPhotoUrl)
+                ? <img src={photoFile ? URL.createObjectURL(photoFile) : founderPhotoUrl} alt="Preview" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                : <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:22, fontWeight:700, color:WHITE }}>{userInitials}</span>
+              }
+            </div>
+
+            {/* File input */}
+            <label style={{ display:'block', background:CARD, border:`1px dashed rgba(255,255,255,0.2)`, borderRadius:10, padding:'12px 16px', cursor:'pointer', textAlign:'center', marginBottom:12 }}>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display:'none' }}
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  if (f.size > 2 * 1024 * 1024) {
+                    setPhotoError('Image must be under 2 MB')
+                    return
+                  }
+                  setPhotoError(null)
+                  setPhotoFile(f)
+                }}
+              />
+              <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:photoFile ? WHITE : MUTED }}>
+                {photoFile ? photoFile.name : '📁 Choose an image (max 2 MB)'}
+              </span>
+            </label>
+
+            {photoError && (
+              <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:12, color:RED, marginBottom:10 }}>{photoError}</div>
+            )}
+
+            {photoSuccess && (
+              <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:GREEN, textAlign:'center', marginBottom:10 }}>✓ Photo updated!</div>
+            )}
+
+            <button
+              onClick={handlePhotoUpload}
+              disabled={!photoFile || photoUploading}
+              style={{ width:'100%', background:!photoFile||photoUploading?'rgba(0,102,255,0.3)':BLUE, color:WHITE, border:'none', borderRadius:8, padding:'10px 0', fontFamily:"'Poppins',sans-serif", fontSize:13, fontWeight:600, cursor:!photoFile||photoUploading?'not-allowed':'pointer', transition:'background 0.15s' }}
+            >
+              {photoUploading ? 'Uploading…' : 'Update Photo'}
+            </button>
           </div>
         </div>
       )}
