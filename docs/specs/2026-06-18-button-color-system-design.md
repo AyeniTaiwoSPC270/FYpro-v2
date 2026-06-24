@@ -2,7 +2,7 @@
 **Date:** 2026-06-18  
 **Status:** Approved  
 **Scope:** All interactive buttons across fypro-v2 (src/ + admin panel)  
-**Fixes:** 5 CSS changes across 3 files
+**Fixes:** 8 CSS changes across 5 files
 
 ---
 
@@ -63,15 +63,18 @@ The Defense Simulator previously used `#2563EB` for Send Answer and Close Sessio
 
 ---
 
-## Required CSS Changes (4 fixes)
+## Required CSS Changes (8 fixes)
 
 | Button | File | Change |
 |---|---|---|
-| `dp-send-btn` | `src/styles/defense-premium.css` | `background: #2563EB` → `#0066FF`, update glow from `rgba(37,99,235,...)` → `rgba(0,102,255,...)` |
+| `dp-send-btn` | `src/styles/defense-premium.css` | `background: #2563EB` → `#0066FF`, update glow `rgba(37,99,235,...)` → `rgba(0,102,255,...)` |
 | `dp-summary-done-btn` | `src/styles/defense-premium.css` | `background: #2563EB` → `#0066FF`, update glow |
-| `dp-circuit-complete__btn-download` | `src/styles/defense-premium.css` | `background: #0066FF` → `#16A34A` (download = Commit category, same as db-btn-download) |
+| `dp-circuit-complete__btn-download` | `src/styles/defense-premium.css` | `background: #0066FF` → `#16A34A`, update glow to green |
 | `ma-btn-confirm` | `src/styles/steps-core.css` + `src/styles/touch-targets.css` | Set base to `#16A34A`; remove `.app-content .ma-btn-confirm` override in touch-targets.css |
+| `ca-btn-confirm` | `src/styles/steps-core.css` | `background: #0066FF` → `#16A34A`, update hover glow to green |
 | `wp-btn-confirm` | `src/styles/writing-planner-email.css` + `src/styles/touch-targets.css` | Set base to `#16A34A`; remove `.app-content .wp-btn-confirm` override in touch-targets.css |
+| `pr-btn-confirm` | `src/styles/abstract-generator.css` | `background: var(--color-blue-primary)` → `#16A34A`, update hover glow to green |
+| `di-btn-continue` | `src/styles/instrument-builder.css` | `background: #0066FF` → `#16A34A`, update hover glow to green |
 
 ---
 
@@ -80,7 +83,7 @@ The Defense Simulator previously used `#2563EB` for Send Answer and Close Sessio
 All of the following already follow the system correctly and require no edits:
 
 - All 23 solid blue AI trigger buttons
-- `tv-btn-use`, `ca-btn-confirm`, `db-btn-download`, `db-btn-confirm`, `cs-btn-enter`, `pr-btn-confirm`, `di-btn-continue` (all green ✓)
+- `tv-btn-use`, `db-btn-download`, `db-btn-confirm`, `cs-btn-enter` (already green ✓)
 - All `fy-back-btn` instances (ghost ✓)
 - `dp-defense-end-btn`, `dp-exit-modal-leave` (red ghost ✓)
 - All admin `mc-action-btn` instances (dim ghost with contextual accents ✓)

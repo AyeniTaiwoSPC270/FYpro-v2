@@ -948,10 +948,13 @@ async function handleIncomingPhoto(chatId, photoArray) {
       .from('admin-assets')
       .getPublicUrl('founder/profile.jpg')
 
+    // Cache-bust URL to prevent stale images on browser update
+    const bustUrl = `${publicUrl}?v=${Date.now()}`
+
     // 5. Persist URL in app_config
     const { error: dbErr } = await supabaseAdmin
       .from('app_config')
-      .upsert({ key: 'founder_photo', value: publicUrl, updated_at: new Date().toISOString() })
+      .upsert({ key: 'founder_photo', value: bustUrl, updated_at: new Date().toISOString() })
     if (dbErr) throw dbErr
 
     // 6. Clear pending flag

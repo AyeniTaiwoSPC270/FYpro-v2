@@ -1895,13 +1895,16 @@ function AdminHealth() {
       // 2. Upload file directly to Supabase Storage
       const { error: uploadErr } = await supabase.storage
         .from('admin-assets')
-        .uploadToSignedUrl(path, uploadToken, photoFile)
+        .uploadToSignedUrl(path, uploadToken, photoFile, { contentType: photoFile.type })
       if (uploadErr) throw uploadErr
 
       // 3. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('admin-assets')
         .getPublicUrl('founder/profile.jpg')
+
+      // Cache-bust URL to prevent stale images on browser update
+      const bustUrl = `${publicUrl}?v=${Date.now()}`
 
       // 4. Persist URL
       const saveRes = await fetch('/api/admin?action=update-founder-photo', {
@@ -1910,7 +1913,7 @@ function AdminHealth() {
           'Content-Type':  'application/json',
           Authorization:   `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ url: publicUrl }),
+        body: JSON.stringify({ url: bustUrl }),
       })
       if (!saveRes.ok) {
         const e = await saveRes.json().catch(() => ({}))
@@ -1918,7 +1921,7 @@ function AdminHealth() {
       }
 
       // 5. Update local state
-      setFounderPhotoUrl(publicUrl)
+      setFounderPhotoUrl(bustUrl)
       setPhotoSuccess(true)
       setPhotoFile(null)
       photoSuccessTimerRef.current = setTimeout(() => {

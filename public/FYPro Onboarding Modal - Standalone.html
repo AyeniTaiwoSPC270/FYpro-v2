@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FYPro — Quick Look?</title>
+<style>
+
+/* ============================================================
+   FYPro Design System — Embedded Fonts & Tokens
+   Self-contained for offline use — no external dependencies
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Surface & background ─────────────────────────────── */
+  --color-bg-deep:        #060E18;
+  --color-bg-dark:        #0D1B2A;
+  --color-bg-mid:         #0F2235;
+  --color-bg-surface:     #F0F4F8;
+  --color-bg-card:        #FFFFFF;
+
+  /* ── Brand blue ───────────────────────────────────────── */
+  --color-blue-primary:   #0066FF;
+  --color-blue-light:     #3B82F6;
+  --color-blue-glow:      rgba(0, 102, 255, 0.15);
+  --color-blue-subtle:    #EFF6FF;
+
+  /* ── Semantic accents ─────────────────────────────────── */
+  --color-green:          #16A34A;
+  --color-green-dark:     #15803D;
+  --color-green-light:    #F0FFF4;
+  --color-red:            #DC2626;
+  --color-red-light:      #FFF5F5;
+  --color-amber:          #F59E0B;
+  --color-amber-light:    #FFFBEB;
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --color-text-primary:   #0D1B2A;
+  --color-text-secondary: rgba(13, 27, 42, 0.6);
+  --color-text-muted:     rgba(13, 27, 42, 0.4);
+  --color-text-white:     #FFFFFF;
+  --color-text-white-dim: rgba(255, 255, 255, 0.7);
+
+  /* ── Borders ──────────────────────────────────────────── */
+  --color-border:         rgba(13, 27, 42, 0.1);
+  --color-border-white:   rgba(255, 255, 255, 0.08);
+  --color-border-white-strong: rgba(255, 255, 255, 0.15);
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-card:          0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover:    0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-blue-glow:     0 0 24px rgba(0, 102, 255, 0.4);
+  --shadow-shield:        0 8px 32px rgba(0, 102, 255, 0.45);
+
+  /* ── Typography ───────────────────────────────────────── */
+  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-body:    'Poppins', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Menlo', 'Courier New', monospace;
+
+  /* ── Type scale ───────────────────────────────────────── */
+  --text-xs:     0.65rem;
+  --text-sm:     0.75rem;
+  --text-base:   0.875rem;
+  --text-md:     1rem;
+  --text-lg:     1.125rem;
+
+  /* ── Letter spacing ───────────────────────────────────── */
+  --tracking-tight: 0.01em;
+  --tracking-caps:  0.1em;
+
+  /* ── Line height ──────────────────────────────────────── */
+  --leading-snug:   1.5;
+
+  /* ── Spacing ──────────────────────────────────────────── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+
+  /* ── Border radius ────────────────────────────────────── */
+  --radius-md:  10px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-pill:999px;
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --transition-base:   0.2s ease;
+  --transition-fast:   0.15s ease;
+}
+
+/* ── Base reset ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Page shell ─────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  background: var(--color-bg-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* Full-page radial dot grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 102, 255, 0.055) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Soft ambient glow behind card */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 62% 52% at 50% 50%,
+    rgba(0, 102, 255, 0.09) 0%,
+    transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Card ───────────────────────────────────────────────── */
+.modal {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 492px;
+  margin: 0 auto;
+  padding: 40px 40px 36px;
+
+  /* Layered depth gradient */
+  background: linear-gradient(160deg,
+    #0F2340 0%,
+    #091828 45%,
+    #060E18 100%);
+
+  /* Left-border blue accent glow */
+  border-left: 2px solid rgba(0, 102, 255, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-xl);
+
+  /* Multi-layer shadows */
+  box-shadow:
+    0 0 0 1px rgba(0, 102, 255, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 48px rgba(0, 102, 255, 0.09),
+    inset 0 0 32px rgba(0, 102, 255, 0.04);
+
+  /* Entry animation */
+  animation: cardEntry 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cardEntry {
+  from { transform: translateY(20px) scale(0.97); }
+  to   { transform: translateY(0)     scale(1); }
+}
+
+/* Card dot texture overlay */
+.modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  background-image: radial-gradient(rgba(0, 102, 255, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+/* "FYPro" watermark */
+.modal::after {
+  content: 'FYPro';
+  position: absolute;
+  bottom: 22px;
+  right: 28px;
+  font-family: var(--font-display);
+  font-size: 88px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.038);
+  line-height: 1;
+  letter-spacing: -2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ── Card inner content ──────────────────────────────────── */
+.card-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Shield icon block ──────────────────────────────────── */
+.icon-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shield-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: iconDrop 0.55s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes iconDrop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Outer glow ring */
+.shield-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(0, 102, 255, 0.22) 0%,
+    rgba(0, 102, 255, 0.08) 50%,
+    transparent 72%);
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Inner ring halo */
+.shield-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  box-shadow:
+    0 0 12px rgba(0, 102, 255, 0.35),
+    inset 0 0 8px rgba(0, 102, 255, 0.12);
+  background: rgba(0, 102, 255, 0.07);
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.08); }
+}
+
+.shield-icon {
+  position: relative;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 0 10px rgba(0, 102, 255, 0.65)) drop-shadow(0 0 24px rgba(0, 102, 255, 0.35));
+}
+
+/* ── Heading block ──────────────────────────────────────── */
+.heading-block {
+  text-align: center;
+  animation: fadeUp 0.5s 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-blue-primary);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--color-text-white);
+  letter-spacing: -0.5px;
+}
+
+/* ── Feature bullets ────────────────────────────────────── */
+.bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeUp 0.5s 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-left: 2px solid rgba(0, 102, 255, 0.35);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+.bullet:hover {
+  background: rgba(0, 102, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.09);
+  border-left-color: rgba(0, 102, 255, 0.6);
+}
+
+.check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 102, 255, 0.14);
+  border: 1px solid rgba(0, 102, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  box-shadow: 0 0 8px rgba(0, 102, 255, 0.25);
+}
+
+.check svg {
+  width: 11px;
+  height: 11px;
+  stroke: var(--color-blue-primary);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bullet-text {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: var(--leading-snug);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp 0.5s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 15px 28px;
+  background: var(--color-blue-primary);
+  color: var(--color-text-white);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px rgba(0, 102, 255, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: background var(--transition-base),
+              box-shadow var(--transition-base),
+              transform var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background: #1a75ff;
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 28px rgba(0, 102, 255, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 8px rgba(0, 102, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary .arrow {
+  font-size: 16px;
+  transition: transform var(--transition-base);
+}
+
+.btn-primary:hover .arrow {
+  transform: translateX(3px);
+}
+
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px 28px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color var(--transition-base),
+              border-color var(--transition-base),
+              background var(--transition-base);
+}
+
+.btn-ghost:hover {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Shared fade-up animation ───────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal, .shield-wrap, .heading-block, .bullets, .btn-group {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .shield-wrap::before {
+    animation: none;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+  <div class="card-inner">
+
+    <!-- Shield icon -->
+    <div class="icon-block">
+      <div class="shield-wrap">
+        <svg class="shield-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#0066FF">
+          <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Heading -->
+    <div class="heading-block">
+      <div class="eyebrow">Your research companion awaits</div>
+      <h1 class="heading" id="modal-heading">Quick look at FYPro?</h1>
+    </div>
+
+    <!-- Feature bullets -->
+    <div class="bullets" role="list">
+
+      <div class="bullet" role="listitem">
+        <div class="check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <span class="bullet-text">Validate your topic with real research</span>
+      </div>
+
+      <div class="bullet" role="listitem">
+        <div class="check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <span class="bullet-text">Build chapters, methodology, and a writing schedule</span>
+      </div>
+
+      <div class="bullet" role="listitem">
+        <div class="check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <span class="bullet-text">Face 3 AI examiners before your real panel</span>
+      </div>
+
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-group">
+      <button class="btn-primary" onclick="takeTour()">
+        Take the tour
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
+      <button class="btn-ghost" onclick="skipToProject()">
+        Skip to my project
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function takeTour() {
+    const modal = document.querySelector('.modal');
+    modal.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+    modal.style.opacity = '0';
+    modal.style.transform = 'scale(0.97) translateY(-8px)';
+    setTimeout(() => {
+      modal.style.opacity = '';
+      modal.style.transform = '';
+      modal.style.animation = 'none';
+      requestAnimationFrame(() => {
+        modal.style.animation = '';
+      });
+    }, 320);
+  }
+
+  function skipToProject() {
+    const modal = document.querySelector('.modal');
+    modal.style.transition = 'opacity 0.22s ease';
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      modal.style.opacity = '';
+      modal.style.animation = 'none';
+      requestAnimationFrame(() => {
+        modal.style.animation = '';
+      });
+    }, 250);
+  }
+</script>
+
+</body>
+</html>
