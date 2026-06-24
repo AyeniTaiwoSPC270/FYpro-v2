@@ -45,6 +45,7 @@ export default function DefenceBrief() {
   const [visibleQas, setVisibleQas]     = useState([])
 
   const loadingTimerRef = useRef(null)
+  const timedOutRef     = useRef(false)
   const chatEndRef      = useRef(null)
 
   // Hydration race guard: ExpressProjectStateProvider loads asynchronously.
@@ -62,7 +63,9 @@ export default function DefenceBrief() {
 
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setGenerating(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -104,6 +107,7 @@ export default function DefenceBrief() {
         reviewData.examiner_questions || []
       )
 
+      if (timedOutRef.current) return
       if (!data || !data.opening_statement || !data.weak_spots || !data.examiner_qas) {
         setSection('input')
         setGenerating(false)
@@ -135,6 +139,7 @@ export default function DefenceBrief() {
         examinerQas:      normalized.examinerQas,
       })
     } catch (err) {
+      if (timedOutRef.current) return
       setGenerating(false)
       setSection('input')
       handleApiError(err, msg => setError(msg || 'Something went wrong. Please try again.'))

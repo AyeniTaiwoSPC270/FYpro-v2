@@ -150,6 +150,7 @@ export default function WritingPlanner() {
 
     buildWritingPlan(studentContext, dateValue, currentDate, previousSteps, features)
       .then(result => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         setData(result)
         setSection('result')
@@ -161,6 +162,7 @@ export default function WritingPlanner() {
         }, 80)
       })
       .catch(err => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         logFailure('Writing Planner', err, dateValue)
         setSection('input')
@@ -203,11 +205,14 @@ export default function WritingPlanner() {
 
   const loadingTimerRef = useRef(null)
   const inflightRef     = useRef(false)
+  const timedOutRef     = useRef(false)
 
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')

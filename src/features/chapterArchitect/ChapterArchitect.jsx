@@ -249,6 +249,8 @@ export default function ChapterArchitect() {
   const caInflightRef     = useRef(false)
   const agInflightRef     = useRef(false)
   const regenInflightRef  = useRef(false)
+  const caTimedOutRef     = useRef(false)
+  const agTimedOutRef     = useRef(false)
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -258,7 +260,9 @@ export default function ChapterArchitect() {
   // Safety timeout: force-stop main loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      caTimedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        caTimedOutRef.current = true
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -272,7 +276,9 @@ export default function ChapterArchitect() {
   // Safety timeout: force-stop abstract generator loading after 30s
   useEffect(() => {
     if (agSection === 'loading') {
+      agTimedOutRef.current = false
       agLoadingTimerRef.current = setTimeout(() => {
+        agTimedOutRef.current = true
         setAgSection('input')
         setAgBtnDisabled(false)
         setAgError('Request timed out. Please check your connection and try again.')
@@ -404,6 +410,7 @@ export default function ChapterArchitect() {
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc, features)
       .then(result => {
+        if (caTimedOutRef.current) return
         caInflightRef.current = false
         setData(result)
         setChapters(result.chapters || [])
@@ -421,6 +428,7 @@ export default function ChapterArchitect() {
         }, 80)
       })
       .catch(err => {
+        if (caTimedOutRef.current) return
         caInflightRef.current = false
         logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('input')
@@ -444,6 +452,7 @@ export default function ChapterArchitect() {
 
     buildChapters(studentContext, state.validatedTopic, structureType, wc)
       .then(result => {
+        if (caTimedOutRef.current) return
         regenInflightRef.current = false
         setData(result)
         setChapters(result.chapters || [])
@@ -459,6 +468,7 @@ export default function ChapterArchitect() {
         }, 80)
       })
       .catch(err => {
+        if (caTimedOutRef.current) return
         regenInflightRef.current = false
         logFailure('Chapter Architect', err, state.validatedTopic || '')
         setSection('result')
@@ -513,6 +523,7 @@ export default function ChapterArchitect() {
 
     generateAbstract(studentContext, state.validatedTopic, chaps)
       .then(result => {
+        if (agTimedOutRef.current) return
         agInflightRef.current = false
         // Normalize: Claude sometimes wraps the response under a key like "abstract"
         let agResult = result
@@ -534,6 +545,7 @@ export default function ChapterArchitect() {
         saveStep('abstract_generator', agResult)
       })
       .catch(err => {
+        if (agTimedOutRef.current) return
         agInflightRef.current = false
         logFailure('Abstract Generator', err, state.validatedTopic || '')
         setAgSection('input')

@@ -81,6 +81,7 @@ export default function TopicValidator() {
   const animateRef      = useRef(false)  // true only after a fresh API response
   const loadingTimerRef = useRef(null)
   const inflightRef     = useRef(false)
+  const timedOutRef     = useRef(false)
 
   // Restore autosaved input on mount if form is empty
   useEffect(() => {
@@ -98,7 +99,9 @@ export default function TopicValidator() {
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -178,6 +181,7 @@ export default function TopicValidator() {
 
     validateTopic(studentContext, trimmed)
       .then(result => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         set({ topicValidation: result })
         animateRef.current = true
@@ -191,6 +195,7 @@ export default function TopicValidator() {
         }, 80)
       })
       .catch(err => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         logFailure('Topic Validator', err, topic.trim())
         setSection('input')

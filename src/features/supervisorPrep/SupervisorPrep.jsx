@@ -47,6 +47,7 @@ export default function SupervisorPrep() {
 
   const loadingTimerRef = useRef(null)
   const inflightRef     = useRef(false)
+  const timedOutRef     = useRef(false)
 
   // Restore autosaved inputs on mount if form is empty
   useEffect(() => {
@@ -66,7 +67,9 @@ export default function SupervisorPrep() {
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -106,6 +109,7 @@ export default function SupervisorPrep() {
 
     prepareSupervisorMeeting(stage, lastFeedback.trim(), stuckOn.trim())
       .then(data => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         const questions = data.questions || []
         setQuestions(questions)
@@ -114,6 +118,7 @@ export default function SupervisorPrep() {
         saveStep('meeting_prep', { questions, stage })
       })
       .catch(err => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         logFailure('Meeting Prep', err, `${stage} | ${stuckOn.trim()}`)
         setSection('input')

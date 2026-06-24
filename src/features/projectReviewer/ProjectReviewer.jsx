@@ -289,11 +289,14 @@ export default function ProjectReviewer() {
   const fileInputRef    = useRef(null)
   const loadingTimerRef = useRef(null)
   const inflightRef     = useRef(false)
+  const timedOutRef     = useRef(false)
 
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setIsProcessing(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -452,6 +455,7 @@ export default function ProjectReviewer() {
         ? await reviewProjectPDF(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps)
         : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
 
+      if (timedOutRef.current) return
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
         inflightRef.current = false
         setSection('input')
@@ -481,6 +485,7 @@ export default function ProjectReviewer() {
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 80)
     } catch (err) {
+      if (timedOutRef.current) return
       inflightRef.current = false
       logFailure('Project Reviewer', err, selectedFile?.name || '')
       setIsProcessing(false)

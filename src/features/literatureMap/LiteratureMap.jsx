@@ -40,6 +40,7 @@ export default function LiteratureMap({ chapters }) {
   const chipTimers      = useRef({})
   const loadingTimerRef = useRef(null)
   const inflightRef     = useRef(false)
+  const timedOutRef     = useRef(false)
 
   useEffect(() => {
     return () => { Object.values(chipTimers.current).forEach(clearTimeout) }
@@ -48,7 +49,9 @@ export default function LiteratureMap({ chapters }) {
   // Safety timeout: force-stop loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      timedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        timedOutRef.current = true
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
@@ -85,6 +88,7 @@ export default function LiteratureMap({ chapters }) {
 
     generateLiteratureMap(studentContext, state.validatedTopic, chaps)
       .then(result => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         let lmResult = result
         if (!Array.isArray(lmResult?.thematic_areas)) {
@@ -99,6 +103,7 @@ export default function LiteratureMap({ chapters }) {
         saveStep('literature_map', lmResult)
       })
       .catch(err => {
+        if (timedOutRef.current) return
         inflightRef.current = false
         logFailure('Literature Map', err, state.validatedTopic || '')
         setSection('input')

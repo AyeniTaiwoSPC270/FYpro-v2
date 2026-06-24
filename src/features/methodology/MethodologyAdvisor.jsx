@@ -80,11 +80,15 @@ export default function MethodologyAdvisor() {
   const diLoadingTimerRef = useRef(null)
   const maInflightRef     = useRef(false)
   const diInflightRef     = useRef(false)
+  const maTimedOutRef     = useRef(false)
+  const diTimedOutRef     = useRef(false)
 
-  // Safety timeout: force-stop MA loading after 30s
+  // Safety timeout: force-stop MA loading after 55s
   useEffect(() => {
     if (maSection === 'loading') {
+      maTimedOutRef.current = false
       maLoadingTimerRef.current = setTimeout(() => {
+        maTimedOutRef.current = true
         setMaSection('input')
         setMaBtnDisabled(false)
         setMaError('Request timed out. Please check your connection and try again.')
@@ -95,10 +99,12 @@ export default function MethodologyAdvisor() {
     return () => clearTimeout(maLoadingTimerRef.current)
   }, [maSection])
 
-  // Safety timeout: force-stop DI loading after 30s
+  // Safety timeout: force-stop DI loading after 55s
   useEffect(() => {
     if (diSection === 'loading') {
+      diTimedOutRef.current = false
       diLoadingTimerRef.current = setTimeout(() => {
+        diTimedOutRef.current = true
         setDiSection('input')
         setDiGenBtnDisabled(false)
         setDiError('Request timed out. Please check your connection and try again.')
@@ -137,6 +143,7 @@ export default function MethodologyAdvisor() {
 
     adviseMethodology(studentContext, state.validatedTopic, state.chapterStructure, features)
       .then(data => {
+        if (maTimedOutRef.current) return
         maInflightRef.current = false
         setMaData(data)
         setMaSection('result')
@@ -144,6 +151,7 @@ export default function MethodologyAdvisor() {
         saveStep('methodology_advisor', data)
       })
       .catch(err => {
+        if (maTimedOutRef.current) return
         maInflightRef.current = false
         logFailure('Methodology Advisor', err, state.validatedTopic || '')
         setMaSection('input')
@@ -233,6 +241,7 @@ export default function MethodologyAdvisor() {
 
     buildInstrument(studentContext, state.validatedTopic, selectedMethodology, state.chapterStructure)
       .then(data => {
+        if (diTimedOutRef.current) return
         diInflightRef.current = false
         buildPlainText(data)
         setDiData(data)
@@ -241,6 +250,7 @@ export default function MethodologyAdvisor() {
         saveStep('instrument_builder', data)
       })
       .catch(err => {
+        if (diTimedOutRef.current) return
         diInflightRef.current = false
         logFailure('Instrument Builder', err, selectedMethodology)
         setDiSection('input')

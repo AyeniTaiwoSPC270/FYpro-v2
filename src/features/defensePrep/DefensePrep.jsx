@@ -592,6 +592,7 @@ export default function DefensePrep() {
 
   const voiceSupported    = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   const loadingTimerRef   = useRef(null)
+  const dpTimedOutRef     = useRef(false)
 
   // When the persisted summary screen is shown (remount after page reload),
   // look up the most recent completed defense session so CertificateUnlock has an ID
@@ -649,7 +650,9 @@ export default function DefensePrep() {
   // Safety timeout: force-stop red-flag scan loading after 30s
   useEffect(() => {
     if (section === 'loading') {
+      dpTimedOutRef.current = false
       loadingTimerRef.current = setTimeout(() => {
+        dpTimedOutRef.current = true
         setSection('input')
         setIsScanning(false)
         setScanError('Request timed out. Please check your connection and try again.')
@@ -906,6 +909,7 @@ export default function DefensePrep() {
         methodology,
         chapters
       )
+      if (dpTimedOutRef.current) return
       set(isExpress
         ? { redFlags: data.flags, expressSteps: { ...(state.expressSteps || {}), red_flag: true } }
         : { redFlags: data.flags })
@@ -916,6 +920,7 @@ export default function DefensePrep() {
       setSection('flags')
       setIsScanning(false)
     } catch (err) {
+      if (dpTimedOutRef.current) return
       logFailure('Defense Simulator', err, state.validatedTopic || '')
       setIsScanning(false)
       setSection('input')
