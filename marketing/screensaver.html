@@ -52,6 +52,18 @@
       50%       { filter: drop-shadow(0 0 28px rgba(0, 102, 255, 0.7)); }
     }
 
+    .phrase {
+      margin-top: 40px;
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-size: 22px;
+      color: #FFFFFF;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      text-align: center;
+      max-width: 600px;
+    }
+
     .version {
       position: fixed;
       bottom: 24px;
@@ -70,7 +82,7 @@
   <canvas id="particles"></canvas>
   <div class="overlay">
     <img class="logo" src="../public/fypro-logo.png" alt="FYPro">
-    <!-- phrase added in next task -->
+    <p class="phrase" id="phrase"></p>
   </div>
   <div class="version">FYPRO v2</div>
 
@@ -143,7 +155,39 @@
 
     drawParticles();
 
-    // phrase code added in later task
+    // ── Rotating Phrases ────────────────────────────────────────────────────────
+    const PHRASES = [
+      'Your Final Year Companion.',
+      'From rough idea to defense day.',
+      'Topic Validated.',
+      'Research. Write. Defend.',
+      'Defense Ready.',
+      '500,000 students. One companion.',
+      'Built for Nigerian final year students.',
+    ];
+
+    const phraseEl = document.getElementById('phrase');
+    let phraseIndex = 0;
+
+    function showPhrase() {
+      // Swap text and fade in
+      phraseEl.textContent = PHRASES[phraseIndex];
+      phraseEl.style.opacity = '1';
+
+      // After 3s visible, fade out
+      setTimeout(() => {
+        phraseEl.style.opacity = '0';
+
+        // After 0.8s fade-out transition completes, advance to next phrase
+        setTimeout(() => {
+          phraseIndex = (phraseIndex + 1) % PHRASES.length;
+          showPhrase();
+        }, 800);
+      }, 3000);
+    }
+
+    // Small initial delay so logo animation starts first
+    setTimeout(showPhrase, 800);
   </script>
 </body>
 </html>
