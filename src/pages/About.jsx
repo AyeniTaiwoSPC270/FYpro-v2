@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import FyproLogo from '../components/FyproLogo'
+import { supabase } from '../lib/supabase'
 
 // ─── Shield Icon ──────────────────────────────────────────────────────────────
 
@@ -250,6 +251,18 @@ function Footer() {
 export default function About() {
   const navigate = useNavigate()
   const { handleClick: rippleClick, rippleEls } = useRipple()
+  const [founderPhotoUrl, setFounderPhotoUrl] = useState(null)
+
+  useEffect(() => {
+    supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'founder_photo')
+      .single()
+      .then(({ data }) => {
+        if (data?.value) setFounderPhotoUrl(data.value)
+      })
+  }, [])
 
   return (
     <motion.div
@@ -313,10 +326,13 @@ export default function About() {
               <div className="flex flex-row gap-6 items-start">
                 {/* Avatar */}
                 <div
-                  className="flex-shrink-0 w-[72px] h-[72px] rounded-full flex items-center justify-center border-2 border-blue-500"
+                  className="flex-shrink-0 w-[72px] h-[72px] rounded-full overflow-hidden border-2 border-blue-500 flex items-center justify-center"
                   style={{ background: 'rgba(37,99,235,0.2)' }}
                 >
-                  <span className="font-serif text-2xl text-blue-400">TA</span>
+                  {founderPhotoUrl
+                    ? <img src={founderPhotoUrl} alt="Taiwo Ayeni" className="w-full h-full object-cover" />
+                    : <span className="font-serif text-2xl text-blue-400">TA</span>
+                  }
                 </div>
 
                 {/* Content */}
