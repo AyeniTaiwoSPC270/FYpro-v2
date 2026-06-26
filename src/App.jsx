@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
@@ -95,6 +95,21 @@ function CanonicalTag() {
   return null
 }
 
+// Intercepts Supabase auth hash fragments that land on the wrong page.
+// Supabase ignores redirect_to when the URL isn't in its allowlist and
+// falls back to the Site URL (homepage) with tokens in the hash.
+// This catches that case globally and routes to /auth/confirm.
+function RecoveryHashInterceptor() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1))
+    if (hash.get('type') === 'recovery' && hash.get('access_token')) {
+      navigate('/auth/confirm' + window.location.hash, { replace: true })
+    }
+  }, [navigate])
+  return null
+}
+
 // Route transitions — lives inside BrowserRouter so useLocation() works.
 // ToastProvider, CookieBanner, and RouteProgressBar sit outside so they
 // persist across navigations and are never caught by the AnimatePresence.
@@ -103,6 +118,7 @@ function AppRoutes() {
   return (
     <>
     <CanonicalTag />
+    <RecoveryHashInterceptor />
     <Routes location={location}>
       {/* Auth pages */}
       <Route path="/login"           element={<S fallback={<AuthPageSkeleton />}><Login /></S>} />
