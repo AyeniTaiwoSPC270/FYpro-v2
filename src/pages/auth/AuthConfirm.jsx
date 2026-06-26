@@ -111,6 +111,14 @@ export default function AuthConfirm() {
         return
       }
 
+      if (token_hash && type === 'recovery') {
+        // Let ResetPassword.jsx own the full recovery flow — it reads the
+        // token_hash itself and calls verifyOtp. Navigating here would consume
+        // the token before ResetPassword mounts, leaving it with no session.
+        navigate(`/reset-password${window.location.search}`, { replace: true })
+        return
+      }
+
       if (token_hash && type) {
         ;({ error } = await supabase.auth.verifyOtp({ token_hash, type }))
       } else if (code) {

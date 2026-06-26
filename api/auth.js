@@ -236,7 +236,7 @@ async function handleForgotPassword(req, res) {
   fetch(`${SUPABASE_URL}/auth/v1/recover`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON },
-    body:    JSON.stringify({ email }),
+    body:    JSON.stringify({ email, redirect_to: `${APP_URL}/reset-password` }),
   }).catch(e => traceLog(traceId, 'error', '[auth/forgot] recover error:', e.message));
 
   logAttempt(email, ip, 'forgot_password', true);
