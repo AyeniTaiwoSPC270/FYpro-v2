@@ -104,6 +104,10 @@ export default function AuthConfirm() {
         if (error) {
           setErrorMsg(error.message || 'Confirmation failed. The link may have expired.')
           setPhase('error')
+        } else if (hashType === 'recovery') {
+          // Recovery session established — hand off to ResetPassword with a flag
+          // so it shows the form immediately without needing a token in the URL.
+          navigate('/reset-password', { replace: true, state: { fromRecovery: true } })
         } else {
           const pending = consumeOAuthReturn()
           navigate(pending || (hashType === 'signup' ? '/start' : '/dashboard'), { replace: true })

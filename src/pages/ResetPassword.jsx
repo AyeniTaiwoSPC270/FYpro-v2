@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -48,6 +48,7 @@ const formStagger = {
 
 export default function ResetPassword() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   // loading | form | updating | success | invalid
   const [phase, setPhase] = useState('loading')
@@ -60,6 +61,13 @@ export default function ResetPassword() {
   // On mount: read token_hash + type=recovery from URL and verify OTP.
   // Supabase password reset emails use this PKCE-style token approach.
   useEffect(() => {
+    // Implicit flow: AuthConfirm already set the session and navigated here
+    // with state.fromRecovery — skip token verification, show the form.
+    if (location.state?.fromRecovery) {
+      setPhase('form')
+      return
+    }
+
     const params = new URLSearchParams(window.location.search)
     const token_hash = params.get('token_hash')
     const type = params.get('type')
