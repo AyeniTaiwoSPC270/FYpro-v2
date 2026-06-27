@@ -2127,3 +2127,33 @@
   color: #0D1B2A !important;
 }
 
+/* ── Light mode: restore white text on solid-colored backgrounds ──────────────
+   The broad .text-white:not(button):not(a) rule in theme-responsive.css turns
+   text dark on all non-button/anchor elements. But badge divs, pill labels,
+   and other non-interactive elements that sit ON a solid blue or green
+   background must keep white text. These rules have specificity (0,3,0) which
+   beats the theme rule's (0,2,2), so they win even when both have !important.
+   ──────────────────────────────────────────────────────────────────────────── */
+.light .bg-blue-500.text-white,
+.light .bg-blue-600.text-white,
+.light .bg-blue-700.text-white,
+.light .bg-blue-brand.text-white,
+.light .bg-green-500.text-white,
+.light .bg-green-600.text-white,
+.light .bg-green-700.text-white,
+.light .bg-green-brand.text-white,
+.light .bg-\[\#0066FF\].text-white,
+.light .bg-\[\#16A34A\].text-white,
+[data-theme="light"] .bg-blue-500.text-white,
+[data-theme="light"] .bg-blue-600.text-white,
+[data-theme="light"] .bg-blue-700.text-white,
+[data-theme="light"] .bg-blue-brand.text-white,
+[data-theme="light"] .bg-green-500.text-white,
+[data-theme="light"] .bg-green-600.text-white,
+[data-theme="light"] .bg-green-700.text-white,
+[data-theme="light"] .bg-green-brand.text-white,
+[data-theme="light"] .bg-\[\#0066FF\].text-white,
+[data-theme="light"] .bg-\[\#16A34A\].text-white {
+  color: #ffffff !important;
+}
+
