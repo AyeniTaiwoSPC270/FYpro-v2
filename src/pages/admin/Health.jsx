@@ -1989,9 +1989,7 @@ function AdminHealth() {
       <div className="mc-topbar">
         <div className="mc-topbar-inner" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', height:56, maxWidth:1400, margin:'0 auto' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#0066FF,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, fontWeight:700, color:'#fff' }}>F</span>
-            </div>
+            <img src="/fypro-logo.png" alt="FYPro" style={{ height:28, width:'auto', flexShrink:0 }} />
             <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, fontWeight:400, color:WHITE }}>FYPro</span>
             <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'1.5px', textTransform:'uppercase', marginLeft:2 }}>Admin</span>
           </div>
