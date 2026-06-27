@@ -291,7 +291,7 @@ export default function ProjectReviewer() {
   const inflightRef     = useRef(false)
   const timedOutRef     = useRef(false)
 
-  // Safety timeout: force-stop loading after 30s
+  // Safety timeout: force-stop loading after 58s (server Anthropic timeout is 50s + ~8s overhead)
   useEffect(() => {
     if (section === 'loading') {
       timedOutRef.current = false
@@ -300,7 +300,7 @@ export default function ProjectReviewer() {
         setSection('input')
         setIsProcessing(false)
         setError('Request timed out. Please check your connection and try again.')
-      }, 30000)
+      }, 58000)
     } else {
       clearTimeout(loadingTimerRef.current)
     }
