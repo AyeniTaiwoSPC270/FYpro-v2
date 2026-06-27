@@ -7,6 +7,7 @@ import { ToastProvider } from './components/Toast'
 import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import { usePaidFeatures } from './hooks/usePaidFeatures'
+import { useUser } from './hooks/useUser'
 import ExpressProviders from './features/expressDefense/ExpressProviders'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
@@ -66,12 +67,25 @@ function RequireExpress({ children }) {
 }
 
 function ExpressDashboardRedirect() {
+  const { user } = useUser()
   const { features, loading } = usePaidFeatures()
-  if (loading) return <DashboardPageSkeleton />
+
+  if (loading) {
+    // While entitlements load, use cached value to skip the skeleton flash on return visits.
+    // Only used as a fast-path during loading — fresh data always wins once resolved.
+    const cached = user?.id ? localStorage.getItem(`fypro_eo_${user.id}`) : null
+    if (cached === '1') return <Navigate to="/express" replace />
+    return <DashboardPageSkeleton />
+  }
+
   const isExpressOnly =
     features.includes('express_defense') &&
     !features.includes('defense_pack') &&
     !features.includes('student_pack')
+
+  // Update cache so next session can skip the skeleton
+  if (user?.id) localStorage.setItem(`fypro_eo_${user.id}`, isExpressOnly ? '1' : '0')
+
   if (isExpressOnly) return <Navigate to="/express" replace />
   return (
     <S fallback={<DashboardPageSkeleton />}>

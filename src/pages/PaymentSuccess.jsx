@@ -75,6 +75,9 @@ export default function PaymentSuccess() {
           setTier(data.tier)
           // Invalidate entitlement cache so usePaidFeatures re-fetches on next mount.
           window.dispatchEvent(new Event('fypro_entitlements_updated'))
+          // Clear the express-only redirect cache so an upgrade (e.g. express → defense_pack)
+          // isn't incorrectly bounced to /express on the next /dashboard visit.
+          if (session?.user?.id) localStorage.removeItem(`fypro_eo_${session.user.id}`)
         }
       } catch {
         if (!cancelled) navigate('/pricing?error=payment_failed', { replace: true })
