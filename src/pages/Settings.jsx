@@ -108,13 +108,14 @@ const MoonIcon = () => (
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-function SettingsNavbar({ initials, name }) {
+function SettingsNavbar({ initials, name, avatarUrl }) {
   const navigate = useNavigate()
   const { clearState } = useApp()
   const { features } = usePaidFeatures()
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : 'Free Plan'
   const [open, setOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [avatarImgError, setAvatarImgError] = useState(false)
   const dropdownRef = useRef(null)
   const { user: navUser } = useUser()
   const { notifications, unreadCount, loading, error, refetch, markAllRead } = useNotifications(navUser?.id)
@@ -198,14 +199,16 @@ function SettingsNavbar({ initials, name }) {
             }}
           >
             <div
-              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold flex-shrink-0"
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center font-mono text-[0.65rem] font-bold flex-shrink-0 overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #0066FF 0%, #3B82F6 100%)',
                 border: '2px solid rgba(0,102,255,0.35)',
                 color: '#fff',
               }}
             >
-              {initials}
+              {avatarUrl && !avatarImgError
+                ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" onError={() => setAvatarImgError(true)} />
+                : initials}
             </div>
             <span className="font-sans text-[0.8rem] font-medium text-slate-300 max-w-[120px] truncate hidden sm:block">
               {name}
@@ -316,7 +319,7 @@ function ToggleSwitch({ checked, onChange, ariaLabel, disabled = false }) {
       aria-label={ariaLabel}
       onClick={disabled ? undefined : onChange}
       disabled={disabled}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 overflow-hidden ${
         disabled ? 'cursor-not-allowed' : 'cursor-pointer'
       }`}
       style={{
@@ -324,7 +327,7 @@ function ToggleSwitch({ checked, onChange, ariaLabel, disabled = false }) {
       }}
     >
       <span
-        className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        className={`absolute top-[3px] left-0 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
           checked ? 'translate-x-[22px]' : 'translate-x-[3px]'
         }`}
       />
@@ -463,6 +466,7 @@ export default function Settings() {
   const initials = name
     ? name.split(' ').map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase()
     : user?.email?.[0]?.toUpperCase() ?? '?'
+  const avatarUrl = user?.user_metadata?.avatar_url || state.avatarUrl || null
 
   const isGoogleUser = user?.app_metadata?.provider === 'google' ||
     (user?.identities?.length > 0 && user.identities.every(id => id.provider !== 'email'))
@@ -631,7 +635,7 @@ export default function Settings() {
         backgroundSize: '28px 28px',
       }}
     >
-      <SettingsNavbar initials={initials} name={name} />
+      <SettingsNavbar initials={initials} name={name} avatarUrl={avatarUrl} />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
