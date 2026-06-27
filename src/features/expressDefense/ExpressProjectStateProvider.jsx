@@ -55,6 +55,10 @@ export default function ExpressProjectStateProvider({ children }) {
         if (profile?.full_name)   hydration.name       = profile.full_name
         if (profile?.university)  hydration.university = profile.university
         if (profile?.avatar_url)  hydration.avatarUrl  = profile.avatar_url
+        // Profile fields override project row — users update these via /profile, not project settings
+        if (profile?.faculty)     hydration.faculty    = profile.faculty
+        if (profile?.department)  hydration.department = profile.department
+        if (profile?.level)       hydration.level      = profile.level
 
         const { data: steps } = await supabase
           .from('project_steps')
