@@ -69,7 +69,7 @@ export default function DefenceBrief() {
         setSection('input')
         setGenerating(false)
         setError('Request timed out. Please check your connection and try again.')
-      }, 30000)
+      }, 58000)
     } else {
       clearTimeout(loadingTimerRef.current)
     }
