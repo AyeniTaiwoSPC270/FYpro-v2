@@ -9,6 +9,7 @@ import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
 import Spinner from '../components/Spinner'
+import TourCarousel from '../features/onboarding/TourCarousel'
 import { saveOnboardingAnswers } from '../lib/onboarding'
 import { supabase } from '../lib/supabase'
 
@@ -162,7 +163,8 @@ export default function ExpressOnboarding() {
   const [methodology, setMethodology] = useState('')
   const [chapterCount, setChapterCount] = useState(5)
   const [useCustomChapters, setUseCustomChapters] = useState(false)
-  const [formStep, setFormStep] = useState('form') // 'form' | 'attribution' | 'defence-date' | 'notifications' | 'payment'
+  const [formStep, setFormStep] = useState('form') // 'form' | 'attribution' | 'defence-date' | 'notifications' | 'walkthrough' | 'payment'
+  const [showTour, setShowTour] = useState(false)
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [trustIdx, setTrustIdx] = useState(0)
@@ -291,9 +293,9 @@ export default function ExpressOnboarding() {
         }
       }
     }
-    // Already paid or beta bypass active → skip paywall.
+    // Already paid or beta bypass active → show tour instead of paywall.
     if (features.includes('express_defense') || betaFree) {
-      navigate('/express', { replace: true })
+      setFormStep('walkthrough')
       return
     }
     setFormStep('payment')
@@ -516,6 +518,67 @@ export default function ExpressOnboarding() {
             />
           )}
         </AnimatePresence>
+
+        {formStep === 'walkthrough' && !showTour && (
+          <div className="wt2-screen">
+            <div className="wt2-modal" role="dialog" aria-modal="true" aria-labelledby="wt2-express-heading">
+              <div className="wt2-inner">
+                <div className="wt2-icon-block">
+                  <div className="wt2-shield-wrap" aria-hidden="true">
+                    <svg className="wt2-shield-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#0066FF" aria-hidden="true">
+                      <path d={SHIELD_D} />
+                    </svg>
+                  </div>
+                </div>
+                <div className="wt2-heading-block">
+                  <div className="wt2-eyebrow">Express Defence awaits</div>
+                  <h2 className="wt2-heading" id="wt2-express-heading">Quick look at how it works?</h2>
+                </div>
+                <div className="wt2-bullets" role="list">
+                  {[
+                    'Upload your project document for a full AI review',
+                    'Get your personalised Defence Brief with model answers',
+                    'Face 3 AI examiners in the Defence Simulator',
+                  ].map((b) => (
+                    <div key={b} className="wt2-bullet" role="listitem">
+                      <div className="wt2-check" aria-hidden="true">
+                        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" /></svg>
+                      </div>
+                      <span className="wt2-bullet-text">{b}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="wt2-btn-group">
+                  <button
+                    className="wt2-btn-primary"
+                    onClick={() => setShowTour(true)}
+                  >
+                    Take the tour <span className="wt2-arrow" aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    className="wt2-btn-ghost"
+                    onClick={() => {
+                      localStorage.setItem('fypro_express_tour_seen', '1')
+                      navigate('/express', { replace: true })
+                    }}
+                  >
+                    Skip to my dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {formStep === 'walkthrough' && showTour && (
+          <TourCarousel
+            variant="express"
+            onClose={() => {
+              localStorage.setItem('fypro_express_tour_seen', '1')
+              navigate('/express', { replace: true })
+            }}
+          />
+        )}
 
         {formStep === 'payment' && (
           <div className="eo-payment">
