@@ -28,11 +28,18 @@ const REFERRAL_OPTIONS = [
 ]
 
 const DEFENCE_OPTIONS = [
-  { label: 'This week',        value: '<1m' },
-  { label: 'Within 2 weeks',   value: '<1m' },
-  { label: '1 month away',     value: '<1m' },
+  { label: 'This week',         value: 'this_week' },
+  { label: 'Within 2 weeks',    value: 'within_2w' },
+  { label: '1 month away',      value: '1m_away' },
   { label: 'More than a month', value: '1-3m' },
 ]
+
+const DEFENCE_BAND_DB_MAP = {
+  this_week: '<1m',
+  within_2w: '<1m',
+  '1m_away':  '<1m',
+  '1-3m':     '1-3m',
+}
 
 const EXPRESS_SURVEY_PHASES = ['attribution', 'defence-date', 'notifications']
 
@@ -257,7 +264,7 @@ export default function ExpressOnboarding() {
     if (userId) {
       saveOnboardingAnswers(userId, {
         referral_source:       referralSource,
-        expected_defence_band: defenceBand,
+        expected_defence_band: DEFENCE_BAND_DB_MAP[defenceBand] ?? defenceBand,
         primary_goal:          'defence_practice',
         notify_email:          notifyEmail || null,
         notify_push:           notifyPush  || null,
