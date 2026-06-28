@@ -9,6 +9,7 @@ import { Sentry }         from './_lib/sentry-server.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
+import { getExpressBetaFree } from './_lib/express-beta.js';
 
 // Body parser config — must be a named `config` export to take effect
 // (a `handler.config` property is silently ignored by Vercel).
@@ -116,7 +117,8 @@ const handler = async (req, res) => {
     return res.status(500).json({ error: 'Failed to verify entitlements. Please try again.' });
   }
   const paidFeatures = Array.isArray(entResult.data?.paid_features) ? entResult.data.paid_features : [];
-  if (!paidFeatures.includes('defense_pack') && !paidFeatures.includes('express_defense')) {
+  const betaFree = await getExpressBetaFree();
+  if (!paidFeatures.includes('defense_pack') && !paidFeatures.includes('express_defense') && !betaFree) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 

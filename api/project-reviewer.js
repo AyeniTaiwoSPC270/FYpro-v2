@@ -12,6 +12,7 @@ import mammoth from 'mammoth';
 import { getReviewerSystemPrompt, buildDocxReviewerUserMessage } from './_lib/ai-prompts.js';
 import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
+import { getExpressBetaFree } from './_lib/express-beta.js';
 
 export const config = { maxDuration: 60 };
 
@@ -79,7 +80,8 @@ const handler = async (req, res) => {
     ? entResult.data.paid_features
     : [];
 
-  if (!paidFeatures.includes('defense_pack') && !paidFeatures.includes('express_defense')) {
+  const betaFree = await getExpressBetaFree();
+  if (!paidFeatures.includes('defense_pack') && !paidFeatures.includes('express_defense') && !betaFree) {
     return res.status(403).json({ error: 'Feature not unlocked. Please purchase the Defense Pack.' });
   }
 
