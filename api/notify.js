@@ -10,6 +10,7 @@ import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
+import { setExpressBetaFree, getExpressBetaFree } from './_lib/express-beta.js'
 import webpush from 'web-push'
 
 function getWebPush() {
@@ -579,6 +580,26 @@ async function cmdResolve(id) {
   return `✅ Resolved: ${(rows[0].plain_message || '—').slice(0, 80)}`
 }
 
+async function cmdBeta(args) {
+  const onOff = args[0]?.toLowerCase()
+  if (onOff !== 'on' && onOff !== 'off') {
+    return '❌ Usage: /beta on | /beta off'
+  }
+
+  const enabled = onOff === 'on'
+
+  try {
+    await setExpressBetaFree(enabled)
+    if (enabled) {
+      return '🎓 Express beta mode ON — Express Defence is now free for all users.'
+    } else {
+      return '🔒 Express beta mode OFF — ₦2,000 paywall restored.'
+    }
+  } catch (err) {
+    return `❌ Failed to toggle express beta: ${err.message}`
+  }
+}
+
 async function cmdMaintenance(args) {
   const onOff = args[0]?.toLowerCase()
   if (onOff !== 'on' && onOff !== 'off') {
@@ -976,35 +997,36 @@ async function handleIncomingPhoto(chatId, photoArray) {
 }
 
 function cmdHelp() {
-  return `🛡️ <b>FYPro Admin Bot</b>
-
-Tap a button or type a command:
-
-<b>Quick view</b>
-/today — combined daily snapshot
-/stats — users, conversion, spend
-/revenue — revenue by tier
-/health — system status
-
-<b>Data</b>
-/users — last 5 signups
-/projects — last 5 projects
-/payments — last 5 payments
-/certs — certificate stats
+  return `<b>📊 Analytics</b>
+/stats — signup + active user counts
+/revenue — total payments, revenue by tier
+/users — recent signups
+/spend — today's Claude token spend vs daily cap
+/errors — recent Sentry errors
+/payments — recent payment records
+/projects — active project count
+/certs — certificates issued
 /referrals — referral stats
-/reports — open user reports
-/ratings — star rating summary
-/spend — API spend detail
-/errors — unresolved errors
-/logs — recent system logs
+/ratings — star rating breakdown
+/reports — open user issue reports
+/logs — recent system log entries
 
-<b>Actions</b>
+<b>📣 Broadcast</b>
+/broadcast &lt;message&gt; — email all users
+/broadcast_paid &lt;message&gt; — email paid users only
+
+<b>🔧 Controls</b>
+/maintenance on|off — toggle maintenance mode (blocks all AI generation)
+/beta on|off — toggle Express Defence beta (makes Express free for all users)
+
+<b>⚙️ Admin</b>
 /resolve &lt;id&gt; — mark error resolved
 /resolve-report &lt;id&gt; — mark report resolved
-/maintenance on|off — toggle maintenance mode
 
-<b>Database</b>
-/data &lt;table&gt; — browse last 5 rows of any of the 29 tables`
+<b>🗄️ Database</b>
+/data &lt;table&gt; — browse last 5 rows of any of the 29 tables
+
+Use the buttons below for quick access:`
 }
 
 const KEYBOARD = {
@@ -1037,6 +1059,10 @@ const KEYBOARD = {
       { text: '📋 Reports',   callback_data: 'reports'   },
       { text: '⭐ Ratings',   callback_data: 'ratings'   },
     ],
+    [
+      { text: '🔧 Maintenance', callback_data: 'maintenance' },
+      { text: '🎓 Express Beta', callback_data: 'beta'       },
+    ],
   ],
 }
 
@@ -1060,6 +1086,7 @@ async function runCommand(key, args = []) {
   else if (key === 'reports'         ) return cmdReports()
   else if (key === 'ratings'         ) return cmdRatings()
   else if (key === 'maintenance'     ) return cmdMaintenance(args)
+  else if (key === 'beta'            ) return cmdBeta(args)
   else if (key === 'data'            ) return cmdData(args)
   else if (key === 'help'            ) return cmdHelp()
   return null
