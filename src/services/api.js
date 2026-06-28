@@ -459,7 +459,7 @@ export async function reviewProject(studentCtx, validatedTopic, extractedText, p
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
     [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }],
-    2000,
+    3000,
     { promptType: 'review', previousSteps }
   );
 }
@@ -471,7 +471,7 @@ export async function reviewProjectDOCX(studentCtx, base64Data, previousSteps = 
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
     [],
-    2000,
+    3000,
     { promptType: 'review', previousSteps, docx_base64: base64Data, student_context: studentCtx }
   );
 }
@@ -485,7 +485,7 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
     [{ role: 'user', content: userContent }],
-    2000,
+    3000,
     { promptType: 'review', previousSteps }
   );
 }

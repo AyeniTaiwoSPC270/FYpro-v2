@@ -228,6 +228,14 @@ const handler = async (req, res) => {
     }
 
     if (response.ok) {
+      // Guard against truncated responses — if Claude hit the token limit the JSON
+      // will be incomplete and the client will show "unexpected response" despite 200.
+      if (data?.stop_reason === 'max_tokens') {
+        refundRun();
+        console.warn('[project-reviewer] Claude hit max_tokens — response truncated');
+        return res.status(500).json({ error: 'The review was too long to complete. Please try again or upload a shorter document.' });
+      }
+
       // Persist the reserved lifetime count (display/fallback only — Redis is the
       // enforcement source). Fire before responding; Vercel freezes after.
       if (expressOnly && reservedCount !== null) {
