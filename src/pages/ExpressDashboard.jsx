@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { useUser } from '../hooks/useUser'
@@ -13,14 +13,28 @@ import DashStatCards from '../features/dashboard/DashStatCards'
 import DashProgressJourney from '../features/dashboard/DashProgressJourney'
 import AchievementsRow from '../components/badges/AchievementsRow'
 import { EXPRESS_ACHIEVEMENTS } from '../lib/expressAchievements'
+import TourCarousel from '../features/onboarding/TourCarousel'
+import { markWalkthroughSeen, fetchOrCreateOnboardingRow } from '../lib/onboarding'
+import { supabase } from '../lib/supabase'
 
 export default function ExpressDashboard() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showTour, setShowTour] = useState(false)
   const { state } = useApp()
   const { user } = useUser()
   const { features } = usePaidFeatures()
   const { projectId, isLoading } = useProjectState()
+
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    fetchOrCreateOnboardingRow(user.id).then(row => {
+      if (cancelled) return
+      if (row !== null && !row.walkthrough_seen_at) setShowTour(true)
+    })
+    return () => { cancelled = true }
+  }, [user?.id])
 
   if (isLoading) return <DashboardPageSkeleton />
 
@@ -57,6 +71,7 @@ export default function ExpressDashboard() {
   }
 
   return (
+    <>
     <div className="flex h-dvh-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Mobile sidebar backdrop */}
       <div
@@ -100,5 +115,17 @@ export default function ExpressDashboard() {
         <Footer />
       </div>
     </div>
+
+    {showTour && (
+      <TourCarousel
+        startAt={3}
+        onClose={async () => {
+          setShowTour(false)
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user?.id) markWalkthroughSeen(session.user.id)
+        }}
+      />
+    )}
+    </>
   )
 }

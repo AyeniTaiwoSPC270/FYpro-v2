@@ -5,8 +5,8 @@ const TOTAL = 4
 // Glow X-position as % of viewport width: slides 0,2 phone right (72%), slides 1,3 phone left (28%)
 const GLOW_X_PCT = [72, 28, 72, 28]
 
-export default function TourCarousel({ onClose }) {
-  const [current, setCurrent] = useState(0)
+export default function TourCarousel({ onClose, startAt = 0 }) {
+  const [current, setCurrent] = useState(startAt)
   const [ready, setReady] = useState(false)
   const [exiting, setExiting] = useState(false)
 

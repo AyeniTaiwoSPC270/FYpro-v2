@@ -8,6 +8,8 @@ import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
 import Spinner from '../components/Spinner'
+import { saveOnboardingAnswers } from '../lib/onboarding'
+import { supabase } from '../lib/supabase'
 
 const SHIELD_D = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
 
@@ -20,11 +22,116 @@ const EXPRESS_TRUST_LINES = [
   { icon: '★', text: 'Certificate when you score 7+' },
 ]
 
+const REFERRAL_OPTIONS = [
+  'Friend or colleague', 'Twitter / X', 'TikTok', 'Instagram',
+  'WhatsApp', 'Lecturer', 'Google Search', 'Other',
+]
+
+const DEFENCE_OPTIONS = [
+  { label: 'Within 1 month', value: '<1m' },
+  { label: '1–3 months',     value: '1-3m' },
+  { label: '3–6 months',     value: '3-6m' },
+  { label: 'Not sure yet',   value: 'unsure' },
+]
+
+const EXPRESS_SURVEY_PHASES = ['attribution', 'defence-date', 'notifications']
+
 function prefersReducedMotion() {
   return (
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+function SurveyProgressBar({ stepNum, progressPct }) {
+  if (stepNum === 0) return null
+  return (
+    <div className="oq-progress-wrap">
+      <div className="oq-progress">
+        <div className="oq-progress__fill" style={{ width: `${progressPct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function ChipScreen({ eyebrow, heading, options, selected, onSelect, onSkip, onContinue, stepNum, progressPct }) {
+  return (
+    <motion.div
+      className="oq-question"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <SurveyProgressBar stepNum={stepNum} progressPct={progressPct} />
+      <div className="oq-question__eyebrow">{eyebrow}</div>
+      <h1 className="oq-question__heading">{heading}</h1>
+      <div className="oq-chips">
+        {options.map((opt) => {
+          const value = typeof opt === 'string' ? opt : opt.value
+          const label = typeof opt === 'string' ? opt : opt.label
+          return (
+            <button
+              key={value}
+              type="button"
+              className={`oq-chip${selected === value ? ' oq-chip--selected' : ''}`}
+              onClick={() => onSelect(value)}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="oq-actions">
+        <button type="button" className="oq-skip" onClick={onSkip}>Skip</button>
+        <button type="button" className="oq-continue" disabled={!selected} onClick={onContinue}>
+          Continue
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+function NotificationsScreen({ notifyEmail, setNotifyEmail, notifyPush, setNotifyPush, onContinue, stepNum, progressPct }) {
+  return (
+    <motion.div
+      className="oq-question"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <SurveyProgressBar stepNum={stepNum} progressPct={progressPct} />
+      <div className="oq-question__eyebrow">STAY ON TRACK</div>
+      <h1 className="oq-question__heading">Want reminders?</h1>
+      <div className="oq-toggles">
+        <label className={`oq-toggle-row${notifyEmail ? ' oq-toggle-row--on' : ''}`}>
+          <div className="oq-toggle-info">
+            <div className="oq-toggle-label">Email nudges</div>
+            <div className="oq-toggle-desc">Defence tips and reminders by email</div>
+          </div>
+          <div className="oq-toggle-switch">
+            <input type="checkbox" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
+            <div className="oq-toggle-track" />
+          </div>
+        </label>
+        <label className={`oq-toggle-row${notifyPush ? ' oq-toggle-row--on' : ''}`}>
+          <div className="oq-toggle-info">
+            <div className="oq-toggle-label">Push reminders</div>
+            <div className="oq-toggle-desc">Get nudges on this device</div>
+          </div>
+          <div className="oq-toggle-switch">
+            <input type="checkbox" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.checked)} />
+            <div className="oq-toggle-track" />
+          </div>
+        </label>
+      </div>
+      <div className="oq-actions">
+        <button type="button" className="oq-skip" onClick={onContinue}>Skip</button>
+        <button type="button" className="oq-continue" onClick={onContinue}>Continue</button>
+      </div>
+    </motion.div>
   )
 }
 
@@ -46,12 +153,22 @@ export default function ExpressOnboarding() {
   const [methodology, setMethodology] = useState('')
   const [chapterCount, setChapterCount] = useState(5)
   const [useCustomChapters, setUseCustomChapters] = useState(false)
-  const [formStep, setFormStep] = useState('form') // 'form' | 'payment'
+  const [formStep, setFormStep] = useState('form') // 'form' | 'attribution' | 'defence-date' | 'notifications' | 'payment'
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [trustIdx, setTrustIdx] = useState(0)
 
+  // Survey answers
+  const [referralSource, setReferralSource] = useState(null)
+  const [defenceBand, setDefenceBand]       = useState(null)
+  const [notifyEmail, setNotifyEmail]       = useState(false)
+  const [notifyPush, setNotifyPush]         = useState(false)
+
   const faculties = university ? getFaculties(university) : []
+
+  // Survey progress — active only during the 3 survey phases
+  const surveyStepNum     = EXPRESS_SURVEY_PHASES.indexOf(formStep) + 1
+  const surveyProgressPct = surveyStepNum > 0 ? (surveyStepNum / EXPRESS_SURVEY_PHASES.length) * 100 : 0
 
   // Rotating trust line in the rail (paused when reduced motion)
   useEffect(() => {
@@ -129,6 +246,41 @@ export default function ExpressOnboarding() {
     if (features.includes('express_defense')) {
       navigate('/express', { replace: true })
       return
+    }
+    setFormStep('attribution')
+  }
+
+  async function handleSaveAndPay() {
+    // Fire-and-forget — network failure must not block the payment flow
+    const { data: { session } } = await supabase.auth.getSession()
+    const userId = session?.user?.id
+    if (userId) {
+      saveOnboardingAnswers(userId, {
+        referral_source:       referralSource,
+        expected_defence_band: defenceBand,
+        primary_goal:          'defence_practice',
+        notify_email:          notifyEmail || null,
+        notify_push:           notifyPush  || null,
+      })
+      if (notifyPush && 'serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready
+          const existing = await reg.pushManager.getSubscription()
+          if (!existing) {
+            const sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
+            })
+            fetch('/api/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'subscribe', subscription: sub }),
+            }).catch(() => {})
+          }
+        } catch (err) {
+          console.warn('[express-onboarding] push subscribe failed (non-fatal):', err)
+        }
+      }
     }
     setFormStep('payment')
   }
@@ -302,10 +454,54 @@ export default function ExpressOnboarding() {
             {formError && <p className="eo-form__error">{formError}</p>}
 
             <button type="submit" className="eo-form__submit" disabled={submitting}>
-              {submitting ? <Spinner /> : 'Continue to Payment →'}
+              {submitting ? <Spinner /> : 'Continue →'}
             </button>
           </form>
         )}
+
+        {/* Survey screens — shown after form, before payment */}
+        <AnimatePresence mode="wait">
+          {formStep === 'attribution' && (
+            <ChipScreen
+              key="attribution"
+              eyebrow="HOW DID YOU HEAR ABOUT US?"
+              heading="How did you find FYPro?"
+              options={REFERRAL_OPTIONS}
+              selected={referralSource}
+              onSelect={setReferralSource}
+              onSkip={() => setFormStep('defence-date')}
+              onContinue={() => setFormStep('defence-date')}
+              stepNum={surveyStepNum}
+              progressPct={surveyProgressPct}
+            />
+          )}
+          {formStep === 'defence-date' && (
+            <ChipScreen
+              key="defence-date"
+              eyebrow="WHEN'S YOUR DEFENCE?"
+              heading="When are you defending?"
+              options={DEFENCE_OPTIONS}
+              selected={defenceBand}
+              onSelect={setDefenceBand}
+              onSkip={() => setFormStep('notifications')}
+              onContinue={() => setFormStep('notifications')}
+              stepNum={surveyStepNum}
+              progressPct={surveyProgressPct}
+            />
+          )}
+          {formStep === 'notifications' && (
+            <NotificationsScreen
+              key="notifications"
+              notifyEmail={notifyEmail}
+              setNotifyEmail={setNotifyEmail}
+              notifyPush={notifyPush}
+              setNotifyPush={setNotifyPush}
+              onContinue={handleSaveAndPay}
+              stepNum={surveyStepNum}
+              progressPct={surveyProgressPct}
+            />
+          )}
+        </AnimatePresence>
 
         {formStep === 'payment' && (
           <div className="eo-payment">
@@ -330,10 +526,10 @@ export default function ExpressOnboarding() {
             </button>
             <button
               className="eo-payment__back"
-              onClick={() => setFormStep('form')}
+              onClick={() => setFormStep('notifications')}
               disabled={isProcessing}
             >
-              ← Edit project details
+              ← Back
             </button>
           </div>
         )}
