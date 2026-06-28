@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
+import { useExpressBeta } from '../hooks/useExpressBeta'
 import { createExpressProject, getExpressProject, updateProject, getUserProfile } from '../lib/db'
 import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
@@ -148,6 +149,7 @@ export default function ExpressOnboarding() {
   const navigate = useNavigate()
   const { handlePay, paying, verifying, payError, blockInfo } = usePaystackCheckout({ loginReturnUrl: '/express-onboarding' })
   const { features } = usePaidFeatures()
+  const { betaFree } = useExpressBeta()
   const { user } = useUser()
 
   const universities = Object.keys(UNIVERSITIES)
@@ -249,8 +251,8 @@ export default function ExpressOnboarding() {
     }
     setSubmitting(false)
 
-    // Already paid (resume / re-onboard) → straight into the express app.
-    if (features.includes('express_defense')) {
+    // Already paid or beta bypass active → straight into the express app.
+    if (features.includes('express_defense') || betaFree) {
       navigate('/express', { replace: true })
       return
     }
@@ -288,6 +290,11 @@ export default function ExpressOnboarding() {
           console.warn('[express-onboarding] push subscribe failed (non-fatal):', err)
         }
       }
+    }
+    // Already paid or beta bypass active → skip paywall.
+    if (features.includes('express_defense') || betaFree) {
+      navigate('/express', { replace: true })
+      return
     }
     setFormStep('payment')
   }
