@@ -251,8 +251,8 @@ export default function ExpressOnboarding() {
     }
     setSubmitting(false)
 
-    // Already paid or beta bypass active → straight into the express app.
-    if (features.includes('express_defense') || betaFree) {
+    // Already paid (resume / re-onboard) → straight into the express app.
+    if (features.includes('express_defense')) {
       navigate('/express', { replace: true })
       return
     }
