@@ -491,10 +491,10 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
 }
 
 // ── Step 6: Red Flag Detector ────────────────────────────────────────────────
-export async function detectRedFlags(studentCtx, validatedTopic, methodology, chapterStructure) {
+export async function detectRedFlags(studentCtx, validatedTopic, methodology, chapterStructure, uploadedReview) {
   return callClaudeAuth(
     DEFENSE_ENDPOINT,
-    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology) }],
+    [{ role: 'user', content: buildRedFlagPrompt(studentCtx, chapterStructure, methodology, uploadedReview) }],
     2000,
     { promptType: 'red-flag' }
   );

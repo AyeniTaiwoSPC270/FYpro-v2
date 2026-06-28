@@ -144,6 +144,8 @@ Your job is to identify the 3 most dangerous weaknesses in this specific project
 These must be specific to this topic, methodology, and chapter structure. No generic academic weaknesses.
 Rank them: Critical, Serious, Minor.
 
+ANTI-FABRICATION — ABSOLUTE RULE: If UPLOADED PROJECT REVIEW RESULTS are included in the user message, you MUST ground every flag in that content. Never report a weakness that is directly contradicted by what is stated in those results. For example: if the review confirms a comparison table exists, do NOT flag "no comparison table." If the review confirms a methodology is defined, do NOT flag "methodology undefined." Only flag something as absent if the review results confirm it is missing — or if no review results were provided. Flags must target real, confirmed gaps — not things the document already addresses.
+
 CRITICAL: Return ONLY valid JSON. No prose. No markdown.
 `.trim();
 

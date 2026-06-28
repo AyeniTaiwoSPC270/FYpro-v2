@@ -341,11 +341,37 @@ Return only the JSON. Nothing else.
 // ── Red Flag Detector ────────────────────────────────────────────────────────
 // System prompt resolved server-side (api/_lib/ai-prompts.js, promptType 'red-flag')
 
-export function buildRedFlagPrompt(student, chapters, methodologyJustification) {
+export function buildRedFlagPrompt(student, chapters, methodologyJustification, uploadedReview) {
+  let reviewBlock = '';
+  if (uploadedReview && typeof uploadedReview === 'object') {
+    const weaknesses = Array.isArray(uploadedReview.weaknesses)
+      ? uploadedReview.weaknesses.slice(0, 5).map(w => `- ${(w?.title || '').slice(0, 120)}: ${(w?.detail || '').slice(0, 400)}`).join('\n')
+      : '- None identified';
+    const questions = Array.isArray(uploadedReview.examiner_questions)
+      ? uploadedReview.examiner_questions.slice(0, 5).map(q => `- ${(q?.question || String(q || '')).slice(0, 300)}`).join('\n')
+      : '- None identified';
+    const strengths = Array.isArray(uploadedReview.strengths)
+      ? uploadedReview.strengths.slice(0, 3).map(s => `- ${(s?.title || '').slice(0, 120)}: ${(s?.detail || '').slice(0, 300)}`).join('\n')
+      : '- None identified';
+    reviewBlock = `
+
+UPLOADED PROJECT REVIEW RESULTS (based on the student's actual submitted document — treat this as the authoritative ground truth about what the document contains):
+Pre-assessed grade: ${(uploadedReview.grade || 'Not available').slice(0, 40)}
+Document strengths confirmed in the document:
+${strengths}
+Document weaknesses already confirmed in the document:
+${weaknesses}
+Examiner questions already identified from the document content:
+${questions}
+
+Ground your 3 flags in the above review findings. Do NOT flag any weakness that contradicts these results (e.g. do not say "no methodology defined" if the review confirms one exists). Build on the confirmed weaknesses above — reframe them as specific defense vulnerabilities with likely examiner questions and preparation advice.`;
+  }
+
   return `
 ${buildStudentContext(student)}
 Chapter Titles: ${chapters.map(c => c.title).join(', ')}
 Methodology Justification: ${methodologyJustification}
+${reviewBlock}
 
 Identify exactly 3 weaknesses in this specific project. No generic flags.
 Order: Critical first, then Serious, then Minor.

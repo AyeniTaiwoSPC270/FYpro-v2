@@ -899,15 +899,17 @@ export default function DefensePrep() {
     setHasSubmitted(true)
     setSection('loading')
 
-    const chapters    = state.chapterStructure?.chapters || []
-    const methodology = state.methodology?.defense_answer_template || ''
+    const chapters       = state.chapterStructure?.chapters || []
+    const methodology    = state.methodology?.defense_answer_template || ''
+    const uploadedReview = state.uploadedProject?.reviewData || null
 
     try {
       const data = await detectRedFlags(
         studentContext,
         state.validatedTopic || '',
         methodology,
-        chapters
+        chapters,
+        uploadedReview
       )
       if (dpTimedOutRef.current) return
       set(isExpress
