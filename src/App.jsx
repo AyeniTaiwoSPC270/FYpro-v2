@@ -7,6 +7,8 @@ import { ToastProvider } from './components/Toast'
 import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import { usePaidFeatures } from './hooks/usePaidFeatures'
+import { useExpressBeta } from './hooks/useExpressBeta'
+import Spinner from './components/Spinner'
 import { useUser } from './hooks/useUser'
 import ExpressProviders from './features/expressDefense/ExpressProviders'
 import RouteProgressBar from './components/RouteProgressBar'
@@ -60,9 +62,13 @@ function S({ fallback, children }) {
 }
 
 function RequireExpress({ children }) {
-  const { features, loading } = usePaidFeatures()
-  if (loading) return <DashboardPageSkeleton />
-  if (!features.includes('express_defense')) return <Navigate to="/express-onboarding" replace />
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { betaFree, loading: betaLoading }     = useExpressBeta()
+
+  if (featuresLoading || betaLoading) return <Spinner />
+  if (!features.includes('express_defense') && !betaFree) {
+    return <Navigate to="/express-onboarding" replace />
+  }
   return children
 }
 
