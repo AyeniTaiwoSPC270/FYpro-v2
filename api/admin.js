@@ -8,6 +8,7 @@ import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
+import { getExpressBetaFree, setExpressBetaFree } from './_lib/express-beta.js';
 import { getRatingForce, setRatingForce as setRatingForceLib } from './_lib/rating-force.js';
 import { validate, SubmitRatingSchema } from './_lib/validate.js';
 
@@ -1902,6 +1903,65 @@ async function handleResolveSentryIssues(req, res) {
   }
 }
 
+// action: "get-express-beta" — admin only
+async function handleGetExpressBeta(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('app_config')
+      .select('key, value, updated_at')
+      .eq('key', 'express_beta_free')
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      express_beta_free: data?.value === 'true',
+      updated_at:        data?.updated_at || null,
+    });
+  } catch (err) {
+    console.error('[admin/get-express-beta] error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// action: "set-express-beta" — admin only
+async function handleSetExpressBeta(req, res) {
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
+
+  const { enabled } = req.body || {};
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled (boolean) required' });
+  }
+
+  try {
+    await setExpressBetaFree(enabled);
+
+    sendTelegramAlert(
+      `🎓 Express beta mode ${enabled ? 'ENABLED 🟢 — Express Defence is now free for all users' : 'DISABLED 🔒 — ₦2,000 paywall restored'}`
+    ).catch(() => {});
+
+    return res.status(200).json({ ok: true, express_beta_free: enabled });
+  } catch (err) {
+    console.error('[admin/set-express-beta] error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// action: "express-beta-info" — public, no auth
+async function handleExpressBetaInfo(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const active = await getExpressBetaFree();
+    return res.status(200).json({ express_beta_free: active });
+  } catch {
+    return res.status(200).json({ express_beta_free: false });
+  }
+}
+
 // action: "get-maintenance-mode" — admin only
 async function handleGetMaintenanceMode(req, res) {
   const caller = await verifyAdmin(req, res);
@@ -2503,6 +2563,9 @@ export default async function handler(req, res) {
   if (action === 'get-maintenance-mode')    return handleGetMaintenanceMode(req, res);
   if (action === 'set-maintenance-mode')    return handleSetMaintenanceMode(req, res);
   if (action === 'maintenance-info')        return handleMaintenanceInfo(req, res);
+  if (action === 'get-express-beta')        return handleGetExpressBeta(req, res);
+  if (action === 'set-express-beta')        return handleSetExpressBeta(req, res);
+  if (action === 'express-beta-info')       return handleExpressBetaInfo(req, res);
   if (action === 'check-rating-force')     return handleCheckRatingForce(req, res);
   if (action === 'get-rating-force')       return handleGetRatingForce(req, res);
   if (action === 'set-rating-force')       return handleSetRatingForce(req, res);
