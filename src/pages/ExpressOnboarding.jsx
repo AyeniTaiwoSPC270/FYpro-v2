@@ -28,10 +28,10 @@ const REFERRAL_OPTIONS = [
 ]
 
 const DEFENCE_OPTIONS = [
-  { label: 'Within 1 month', value: '<1m' },
-  { label: '1–3 months',     value: '1-3m' },
-  { label: '3–6 months',     value: '3-6m' },
-  { label: 'Not sure yet',   value: 'unsure' },
+  { label: 'This week',        value: '<1m' },
+  { label: 'Within 2 weeks',   value: '<1m' },
+  { label: '1 month away',     value: '<1m' },
+  { label: 'More than a month', value: '1-3m' },
 ]
 
 const EXPRESS_SURVEY_PHASES = ['attribution', 'defence-date', 'notifications']
@@ -109,7 +109,7 @@ function NotificationsScreen({ notifyEmail, setNotifyEmail, notifyPush, setNotif
         <label className={`oq-toggle-row${notifyEmail ? ' oq-toggle-row--on' : ''}`}>
           <div className="oq-toggle-info">
             <div className="oq-toggle-label">Email nudges</div>
-            <div className="oq-toggle-desc">Defence tips and reminders by email</div>
+            <div className="oq-toggle-desc">Defence prep tips and countdown reminders by email</div>
           </div>
           <div className="oq-toggle-switch">
             <input type="checkbox" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
@@ -119,7 +119,7 @@ function NotificationsScreen({ notifyEmail, setNotifyEmail, notifyPush, setNotif
         <label className={`oq-toggle-row${notifyPush ? ' oq-toggle-row--on' : ''}`}>
           <div className="oq-toggle-info">
             <div className="oq-toggle-label">Push reminders</div>
-            <div className="oq-toggle-desc">Get nudges on this device</div>
+            <div className="oq-toggle-desc">Get nudges on this device as your defence approaches</div>
           </div>
           <div className="oq-toggle-switch">
             <input type="checkbox" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.checked)} />
@@ -464,8 +464,8 @@ export default function ExpressOnboarding() {
           {formStep === 'attribution' && (
             <ChipScreen
               key="attribution"
-              eyebrow="HOW DID YOU HEAR ABOUT US?"
-              heading="How did you find FYPro?"
+              eyebrow="HOW DID YOU FIND EXPRESS DEFENCE?"
+              heading="How did you hear about Express Defence?"
               options={REFERRAL_OPTIONS}
               selected={referralSource}
               onSelect={setReferralSource}
@@ -478,8 +478,8 @@ export default function ExpressOnboarding() {
           {formStep === 'defence-date' && (
             <ChipScreen
               key="defence-date"
-              eyebrow="WHEN'S YOUR DEFENCE?"
-              heading="When are you defending?"
+              eyebrow="HOW SOON IS YOUR DEFENCE?"
+              heading="When are you walking in?"
               options={DEFENCE_OPTIONS}
               selected={defenceBand}
               onSelect={setDefenceBand}
