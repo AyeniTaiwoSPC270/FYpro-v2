@@ -14,13 +14,12 @@ import DashProgressJourney from '../features/dashboard/DashProgressJourney'
 import AchievementsRow from '../components/badges/AchievementsRow'
 import { EXPRESS_ACHIEVEMENTS } from '../lib/expressAchievements'
 import TourCarousel from '../features/onboarding/TourCarousel'
-import { markWalkthroughSeen, fetchOrCreateOnboardingRow } from '../lib/onboarding'
-import { supabase } from '../lib/supabase'
 
 export default function ExpressDashboard() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showTour, setShowTour] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
   const { state } = useApp()
   const { user } = useUser()
   const { features } = usePaidFeatures()
@@ -28,12 +27,8 @@ export default function ExpressDashboard() {
 
   useEffect(() => {
     if (!user?.id) return
-    let cancelled = false
-    fetchOrCreateOnboardingRow(user.id).then(row => {
-      if (cancelled) return
-      if (row !== null && !row.walkthrough_seen_at) setShowTour(true)
-    })
-    return () => { cancelled = true }
+    const seen = localStorage.getItem('fypro_express_tour_seen')
+    if (!seen) setShowPrompt(true)
   }, [user?.id])
 
   if (isLoading) return <DashboardPageSkeleton />
@@ -118,13 +113,67 @@ export default function ExpressDashboard() {
 
     {showTour && (
       <TourCarousel
-        startAt={3}
-        onClose={async () => {
+        variant="express"
+        onClose={() => {
           setShowTour(false)
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.user?.id) markWalkthroughSeen(session.user.id)
+          localStorage.setItem('fypro_express_tour_seen', '1')
         }}
       />
+    )}
+
+    {showPrompt && !showTour && (
+      <div className="wt2-screen">
+        <div className="wt2-modal" role="dialog" aria-modal="true" aria-labelledby="wt2-express-heading">
+          <div className="wt2-inner">
+            <div className="wt2-icon-block">
+              <div className="wt2-shield-wrap" aria-hidden="true">
+                <svg className="wt2-shield-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="#0066FF" aria-hidden="true">
+                  <path d="M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z" />
+                </svg>
+              </div>
+            </div>
+            <div className="wt2-heading-block">
+              <div className="wt2-eyebrow">Express Defence awaits</div>
+              <h2 className="wt2-heading" id="wt2-express-heading">Quick look at how it works?</h2>
+            </div>
+            <div className="wt2-bullets" role="list">
+              {[
+                'Upload your project document for a full AI review',
+                'Get your personalised Defence Brief with model answers',
+                'Face 3 AI examiners in the Defence Simulator',
+              ].map((b) => (
+                <div key={b} className="wt2-bullet" role="listitem">
+                  <div className="wt2-check" aria-hidden="true">
+                    <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" /></svg>
+                  </div>
+                  <span className="wt2-bullet-text">{b}</span>
+                </div>
+              ))}
+            </div>
+            <div className="wt2-btn-group">
+              <button
+                className="wt2-btn-primary"
+                onClick={() => {
+                  localStorage.setItem('fypro_express_tour_seen', '1')
+                  setShowPrompt(false)
+                  setShowTour(true)
+                }}
+              >
+                Take the tour <span className="wt2-arrow" aria-hidden="true">→</span>
+              </button>
+              <button
+                className="wt2-btn-ghost"
+                onClick={() => {
+                  localStorage.setItem('fypro_express_tour_seen', '1')
+                  setShowPrompt(false)
+                }}
+              >
+                Skip to my dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     )}
     </>
   )
