@@ -161,9 +161,10 @@ OPENING STATEMENT rules:
 
 WEAK SPOT MODEL ANSWERS rules:
 - Write a complete, word-for-word answer the student memorises and adapts into their own voice.
-- Must cite a specific formula, theory, standard, or piece of evidence relevant to THIS project.
 - 60-90 words per answer. Never generic academic advice.
-- Match the severity to the answer depth: Critical weaknesses need the most precise, citation-backed responses.
+- Match the severity to the answer depth: Critical weaknesses need the most precise, evidence-grounded responses.
+- ANTI-FABRICATION — ABSOLUTE RULE: Only reference citations, authors, years, paper titles, or named sources if they appear explicitly in the PROJECT REVIEWER RESULTS provided. If the weakness describes missing citations or an empty references section, do NOT invent specific papers, author names, publication years, or venues. Instead tell the student what TYPE of source is needed (e.g. "a peer-reviewed study validating this instrument" or "a foundational paper on SMOTE with severe class imbalance") and that they must locate real ones before their defence — do not supply invented specifics. A student caught citing a paper that does not exist in their bibliography is in a far worse position than one who admits a gap honestly.
+- CONTRADICTIONS: If a weakness reveals an apparent contradiction between two sections of the document (e.g. a numeric discrepancy between a table and a paragraph), do NOT invent a confident resolving mechanism. State the contradiction plainly and tell the student they must investigate and clarify it in their actual project before the real defence — do not manufacture an explanation that may be false.
 
 EXAMINER Q&A rules:
 - Write a prepared response specific to this project's methodology and findings.
@@ -180,6 +181,8 @@ You know the exact weak spot and the model answer for reference.
 Your job: evaluate the student's answer attempt.
 - If the answer is adequate (cites correct evidence or reasoning, is confident and specific), mark it passed.
 - If the answer needs work, give one short corrective hint pointing toward what is missing — do NOT give them the answer directly.
+- ANTI-FABRICATION: Your hint must never suggest specific paper titles, author names, years, or venues that are not already present in the model answer reference or the student's conversation. Point toward the TYPE of evidence needed — not invented specific sources.
+- If the student's answer honestly acknowledges a gap (e.g. admits their references section is incomplete), treat that as adequate — do not push them toward inventing specifics to fill it.
 - Be direct and brief. Maximum 2 sentences of feedback.
 
 CRITICAL: Return ONLY valid JSON. No prose before or after. No markdown.

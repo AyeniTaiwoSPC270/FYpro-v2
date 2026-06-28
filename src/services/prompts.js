@@ -769,7 +769,7 @@ Return ONLY this exact JSON structure:
       "severity": "Critical",
       "title": "Short name matching the weakness title above",
       "examiner_question": "The exact question from the reviewer results",
-      "model_answer": "Complete word-for-word answer. 60-90 words. Cites formula/theory/standard specific to this project."
+      "model_answer": "Complete word-for-word answer. 60-90 words. References only evidence or sources present in the reviewer results — never invents citations, author names, or years not found in the input."
     },
     {
       "severity": "Serious",
