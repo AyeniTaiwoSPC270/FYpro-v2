@@ -912,7 +912,10 @@ All features shipped and working in production (fypro.com.ng):
 - Complete 6-step workflow (Topic Validator → Defense Prep)
 - Literature Map, Abstract Generator, Instrument Builder (embedded in steps)
 - Supervisor Meeting Prep Agent
-- Project Reviewer (PDF upload, Defense Pack gated, 4 MB cap)
+- Project Reviewer (PDF / DOCX / TXT upload, Defense Pack gated, 4 MB cap)
+  — PDF: base64 to Claude natively via pdfs-2024-09-25 beta, no truncation
+  — DOCX: raw base64 sent to server, mammoth extracts full text server-side, no truncation
+  — TXT: text extracted client-side via FileReader, no truncation
 - Defense Simulator (3 AI examiners, ElevenLabs voices, scoring, certificates,
   academic tribunal UI)
 - Defense Simulator free trial (3 questions)
