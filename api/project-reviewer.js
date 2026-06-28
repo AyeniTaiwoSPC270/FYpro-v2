@@ -8,7 +8,8 @@ import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
-import { getReviewerSystemPrompt } from './_lib/ai-prompts.js';
+import mammoth from 'mammoth';
+import { getReviewerSystemPrompt, buildDocxReviewerUserMessage } from './_lib/ai-prompts.js';
 import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
 
@@ -108,10 +109,14 @@ const handler = async (req, res) => {
     const {
       promptType,
       previousSteps,
-      messages,
+      messages: clientMessages,
       max_tokens: rawMaxTokens = 2000,
       model: rawModel = 'claude-sonnet-4-6',
+      docx_base64,
+      student_context,
     } = req.body || {};
+
+    let messages = clientMessages;
 
     // System prompt resolved server-side from promptType + structured context.
     // The client can no longer send a raw system string — closes the loophole
@@ -152,7 +157,40 @@ const handler = async (req, res) => {
       }
     }
 
-    // Reserve a lifetime slot for express-only users now that the PDF is valid.
+    // For DOCX uploads: extract full text server-side with mammoth, then build the
+    // user message here instead of trusting the client-side extracted text (which was
+    // capped at 12,000 characters — roughly the first 3-4 pages of a full project).
+    if (docx_base64) {
+      if (typeof docx_base64 !== 'string' || docx_base64.length === 0) {
+        return res.status(400).json({ error: 'Invalid DOCX data.' });
+      }
+      // Size cap: same 4 MB decoded ceiling as PDFs (~5.6 MB as base64).
+      if (docx_base64.length > 5_600_000) {
+        return res.status(400).json({ error: 'File too large. Maximum size is 4 MB.' });
+      }
+      let extractedText;
+      try {
+        const buffer = Buffer.from(docx_base64, 'base64');
+        const { value, messages: warnings } = await mammoth.extractRawText({ buffer });
+        extractedText = value;
+        if (warnings && warnings.length) {
+          console.warn('[project-reviewer] mammoth warnings:', warnings.map(w => w.message).join('; '));
+        }
+      } catch (mammothErr) {
+        console.error('[project-reviewer] mammoth extraction failed:', mammothErr.message);
+        return res.status(400).json({
+          error: 'Could not extract text from this Word file — it may be encrypted or image-only. Please convert it to PDF and upload again.',
+        });
+      }
+      if (!extractedText || extractedText.trim().length < 20) {
+        return res.status(400).json({
+          error: 'No text content found in this Word file — it may contain only images. Please convert it to PDF and upload again.',
+        });
+      }
+      messages = [{ role: 'user', content: buildDocxReviewerUserMessage(student_context, extractedText) }];
+    }
+
+    // Reserve a lifetime slot for express-only users now that the file is valid.
     if (expressOnly) {
       const r = await reserveRun({
         dbKey: 'express_reviewer',

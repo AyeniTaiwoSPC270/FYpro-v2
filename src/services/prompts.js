@@ -605,14 +605,11 @@ Return only the JSON. Nothing else.
 // System prompt resolved server-side (api/_lib/ai-prompts.js, promptType 'review')
 
 export function buildProjectReviewerPrompt(student, extractedText) {
-  const content = extractedText.length > 12000
-    ? extractedText.slice(0, 12000) + '\n\n[Document truncated — first 12 000 characters reviewed]'
-    : extractedText;
   return `
 ${buildStudentContext(student)}
 
 UPLOADED PROJECT CONTENT:
-${wrapUserInput('UPLOADED DOCUMENT CONTENT', content)}
+${wrapUserInput('UPLOADED DOCUMENT CONTENT', extractedText)}
 
 Review the above content carefully. Every strength, weakness, and examiner question MUST reference specific content, arguments, or claims from the text above — not generic academic advice.
 

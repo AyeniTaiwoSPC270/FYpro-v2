@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProject, reviewProjectPDF, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
+import { reviewProject, reviewProjectPDF, reviewProjectDOCX, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -72,174 +72,29 @@ function extractPDF(file) {
   })
 }
 
-// Parses the ZIP Central Directory to locate and decompress word/document.xml.
-// Using the Central Directory (at the end of the file) instead of walking local
-// file headers fixes compatibility with ZIP generators that set the data-descriptor
-// flag (bit 3 of the general purpose bit flag), including the docx npm library and
-// JSZip. When bit 3 is set, the compressed size in the local header is zero/garbage,
-// but the Central Directory entry always has the correct compressed size.
-async function extractDocumentXmlFromZip(buffer) {
-  const bytes = new Uint8Array(buffer)
-  const view  = new DataView(buffer)
-
-  // Locate End of Central Directory (EOCD). Signature = PK\x05\x06 = 0x06054b50 (LE).
-  // Scan backwards; the comment field can push EOCD up to 65535 bytes from the end.
-  let eocdOffset = -1
-  const searchStart = Math.max(0, bytes.length - 22 - 65535)
-  for (let i = bytes.length - 22; i >= searchStart; i--) {
-    if (view.getUint32(i, true) === 0x06054b50) { eocdOffset = i; break }
-  }
-  if (eocdOffset === -1) return null
-
-  const cdOffset = view.getUint32(eocdOffset + 16, true)
-  if (cdOffset === 0xFFFFFFFF) return null  // Zip64 — not handled
-
-  // Walk Central Directory entries. Signature = PK\x01\x02 = 0x02014b50 (LE).
-  let pos = cdOffset
-  while (pos + 46 <= bytes.length) {
-    if (view.getUint32(pos, true) !== 0x02014b50) break
-
-    const compression = view.getUint16(pos + 10, true)
-    const cmpSize     = view.getUint32(pos + 20, true)  // reliable regardless of bit 3
-    const fileNameLen = view.getUint16(pos + 28, true)
-    const extraLen    = view.getUint16(pos + 30, true)
-    const commentLen  = view.getUint16(pos + 32, true)
-    const lhOffset    = view.getUint32(pos + 42, true)  // offset of local file header
-    const fileName    = new TextDecoder().decode(bytes.slice(pos + 46, pos + 46 + fileNameLen))
-
-    if (fileName === 'word/document.xml') {
-      // Jump to local file header only to find where the data actually starts.
-      // The local extra field can differ in length from the CD extra — read it fresh.
-      if (lhOffset + 30 > bytes.length) return null
-      if (view.getUint32(lhOffset, true) !== 0x04034b50) return null  // PK\x03\x04
-
-      const lhFileNameLen = view.getUint16(lhOffset + 26, true)
-      const lhExtraLen    = view.getUint16(lhOffset + 28, true)
-      const dataStart     = lhOffset + 30 + lhFileNameLen + lhExtraLen
-
-      const data = bytes.slice(dataStart, dataStart + cmpSize)
-
-      if (compression === 0) {
-        return new TextDecoder('utf-8', { fatal: false }).decode(data)
-      }
-
-      if (compression === 8 && typeof DecompressionStream !== 'undefined') {
-        try {
-          const ds     = new DecompressionStream('deflate-raw')
-          const writer = ds.writable.getWriter()
-          writer.write(data)
-          writer.close()
-          const chunks = []
-          const rdr    = ds.readable.getReader()
-          for (;;) {
-            const { done, value } = await rdr.read()
-            if (done) break
-            chunks.push(value)
-          }
-          const total = chunks.reduce((s, c) => s + c.length, 0)
-          const out   = new Uint8Array(total)
-          let p = 0
-          for (const c of chunks) { out.set(c, p); p += c.length }
-          return new TextDecoder('utf-8', { fatal: false }).decode(out)
-        } catch (e) {
-          console.warn('[FYPro] DEFLATE decompress error:', e.message)
-          return null
-        }
-      }
-
-      console.warn('[FYPro] Unsupported ZIP compression method:', compression)
-      return null
-    }
-
-    pos += 46 + fileNameLen + extraLen + commentLen
-  }
-
-  return null
-}
-
-function extractDOCX(file) {
+// DOCX files are sent as raw base64 to the server where mammoth extracts the
+// full text — no client-side truncation. extractPDF and extractTXT remain
+// client-side; only DOCX moves server-side.
+function encodeDOCX(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const buffer = e.target.result
-
-        // Primary: parse ZIP and decompress word/document.xml
-        let xmlText = null
-        try {
-          xmlText = await extractDocumentXmlFromZip(buffer)
-        } catch (zipErr) {
-          console.warn('[FYPro] ZIP parse error:', zipErr.message)
-        }
-
-        if (xmlText) {
-          const wTMatches = xmlText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
-          const extracted = wTMatches
-            .map(m => { const inner = m.match(/<w:t[^>]*>([^<]*)<\/w:t>/); return inner ? inner[1] : '' })
-            .filter(s => s.trim().length > 0)
-            .join(' ')
-
-          if (extracted.length >= 100) {
-            resolve({ text: extracted })
-            return
-          }
-
-          // w:t extraction too short — strip all XML tags from the parsed XML
-          const strippedXml = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-          if (strippedXml.length >= 100) {
-            resolve({ text: strippedXml })
-            return
-          }
-        }
-
-        // Fallback: raw byte decode + w:t search + XML strip
-        const bytes = new Uint8Array(buffer)
-        let rawText = ''
-        try {
-          rawText = new TextDecoder('utf-8', { fatal: false }).decode(bytes)
-        } catch {
-          for (let i = 0; i < Math.min(bytes.length, 200000); i++) {
-            rawText += String.fromCharCode(bytes[i])
-          }
-        }
-
-        const wTMatches2 = rawText.match(/<w:t[^>]*>[^<]*<\/w:t>/g) || []
-        const extracted2 = wTMatches2
-          .map(m => { const inner = m.match(/<w:t[^>]*>([^<]*)<\/w:t>/); return inner ? inner[1] : '' })
-          .filter(s => s.trim().length > 0)
-          .join(' ')
-
-        if (extracted2.length >= 100) {
-          resolve({ text: extracted2 })
-          return
-        }
-
-        // eslint-disable-next-line no-control-regex
-        const printable = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-          .replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s+/g, ' ').trim()
-
-        if (printable.length >= 100) {
-          resolve({ text: '[Extracted from Word file — some formatting may be missing]\n\n' + printable })
-          return
-        }
-
-        reject(new Error(
-          'Could not extract text from this Word file (it may be encrypted or compressed). ' +
-          'Please save it as a PDF or .txt file and upload again.'
-        ))
-      } catch (err) {
-        reject(err)
-      }
+    reader.onload = (e) => {
+      const dataUrl = e.target.result || ''
+      const commaIdx = dataUrl.indexOf(',')
+      if (commaIdx === -1) { reject(new Error('Could not encode the Word file. Please try again.')); return }
+      const base64 = dataUrl.slice(commaIdx + 1)
+      if (!base64) { reject(new Error('Word file appears to be empty. Please try a different file.')); return }
+      resolve({ docx: base64 })
     }
     reader.onerror = () => reject(new Error('Could not read the Word file. Please try again.'))
-    reader.readAsArrayBuffer(file)
+    reader.readAsDataURL(file)
   })
 }
 
 function extractTextFromFile(file) {
   const ext = (file.name || '').split('.').pop().toLowerCase()
   if (ext === 'pdf') return extractPDF(file)
-  if (ext === 'docx') return extractDOCX(file)
+  if (ext === 'docx') return encodeDOCX(file)
   return extractTXT(file)
 }
 
@@ -422,11 +277,15 @@ export default function ProjectReviewer() {
       return
     }
 
-    // Relevance pre-check before committing to the full review
+    // Relevance pre-check before committing to the full review.
+    // DOCX skips this — text is only available after server-side mammoth extraction,
+    // which happens during the full review call itself.
     try {
       const relevanceCheck = result.pdf
         ? await checkDocumentRelevancePDF(studentContext, result.pdf)
-        : await checkDocumentRelevance(studentContext, result.text)
+        : result.docx
+          ? null
+          : await checkDocumentRelevance(studentContext, result.text)
 
       if (relevanceCheck && relevanceCheck.relevant === false) {
         inflightRef.current = false
@@ -453,7 +312,9 @@ export default function ProjectReviewer() {
       }
       const data = result.pdf
         ? await reviewProjectPDF(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps)
-        : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
+        : result.docx
+          ? await reviewProjectDOCX(studentContext, result.docx, previousSteps)
+          : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
 
       if (timedOutRef.current) return
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {

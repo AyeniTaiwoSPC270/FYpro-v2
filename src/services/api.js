@@ -456,12 +456,23 @@ export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaTyp
 
 // ── Step 5: Project Reviewer (text) ─────────────────────────────────────────
 export async function reviewProject(studentCtx, validatedTopic, extractedText, previousSteps = {}) {
-  // System prompt + previous-steps context block are built server-side
   return callClaudeAuth(
     REVIEWER_ENDPOINT,
     [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }],
     2000,
     { promptType: 'review', previousSteps }
+  );
+}
+
+// ── Step 5: Project Reviewer (DOCX base64) ────────────────────────────────────
+// Raw DOCX bytes are sent to the server; mammoth extracts the full text there.
+// This avoids the 12k-character client-side truncation that affected the old path.
+export async function reviewProjectDOCX(studentCtx, base64Data, previousSteps = {}) {
+  return callClaudeAuth(
+    REVIEWER_ENDPOINT,
+    [],
+    2000,
+    { promptType: 'review', previousSteps, docx_base64: base64Data, student_context: studentCtx }
   );
 }
 
