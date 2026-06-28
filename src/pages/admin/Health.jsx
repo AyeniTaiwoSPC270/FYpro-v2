@@ -636,6 +636,13 @@ function AdminHealth() {
   const [maintenanceToast,     setMaintenanceToast]     = useState(null)
   const maintenanceToastTimer                           = useRef(null)
 
+  const [expressBeta,          setExpressBeta]          = useState(false)
+  const [expressBetaLoading,   setExpressBetaLoading]   = useState(true)
+  const [expressBetaBusy,      setExpressBetaBusy]      = useState(false)
+  const [expressBetaUpdatedAt, setExpressBetaUpdatedAt] = useState(null)
+  const [expressBetaToast,     setExpressBetaToast]     = useState(null)
+  const expressBetaToastTimer                           = useRef(null)
+
   const [confirmModal, setConfirmModal] = useState(null) // { title, body, onConfirm, danger }
 
   const [activeTab, setActiveTab] = useState('overview')
@@ -906,6 +913,21 @@ function AdminHealth() {
     }
   }
 
+  const loadExpressBeta = useCallback(() => {
+    if (!session?.access_token) return Promise.resolve()
+    return fetch('/api/admin?action=get-express-beta', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) throw new Error(d.error)
+        setExpressBeta(d.express_beta_free)
+        setExpressBetaUpdatedAt(d.updated_at)
+        setExpressBetaLoading(false)
+      })
+      .catch(() => { setExpressBetaLoading(false) })
+  }, [session?.access_token])
+
   const loadMaintenanceMode = useCallback(() => {
     if (!session?.access_token) return Promise.resolve()
     return fetch('/api/admin?action=get-maintenance-mode', {
@@ -1059,12 +1081,13 @@ function AdminHealth() {
       loadSystemLogs(),
       loadFeedbackSummary(),
       loadMaintenanceMode(),
+      loadExpressBeta(),
       fetchRtMetrics(),
       loadDataTab(),
     ])
     setLastUpdated(new Date())
     setRefreshing(false)
-  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics, loadDataTab])
+  }, [loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, loadExpressBeta, fetchRtMetrics, loadDataTab])
 
   // Initial parallel fetch — all 9 widgets at once; one failure never blocks the rest
   // Guard uses === false (not !isAdmin) so the null loading state still triggers the fetch
@@ -1081,10 +1104,11 @@ function AdminHealth() {
       loadSystemLogs(),
       loadFeedbackSummary(),
       loadMaintenanceMode(),
+      loadExpressBeta(),
       fetchRtMetrics(),
       loadDataTab(),
     ]).finally(() => setInitialLoading(false))
-  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, fetchRtMetrics, loadDataTab])
+  }, [isAdmin, session, loadData, loadVitals, loadFailures, loadAuthAttempts, loadPaymentIssues, loadSystemLogs, loadFeedbackSummary, loadMaintenanceMode, loadExpressBeta, fetchRtMetrics, loadDataTab])
 
   // Polling — each loader uses a tab-specific rate.
   // Callbacks are no-ops when document is hidden; the visibilitychange handler
@@ -1677,6 +1701,30 @@ function AdminHealth() {
     }
   }
 
+  // ── Express Beta handlers ───────────────────────────────────────
+  async function handleToggleExpressBeta() {
+    if (expressBetaBusy) return
+    const next = !expressBeta
+    setExpressBetaBusy(true)
+    clearTimeout(expressBetaToastTimer.current)
+    try {
+      const res  = await fetch('/api/admin?action=set-express-beta', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body:    JSON.stringify({ enabled: next }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setExpressBeta(next)
+      setExpressBetaToast({ type: 'success', message: next ? 'Express beta ON — Express Defence is now free' : 'Express beta OFF — paywall restored' })
+    } catch (err) {
+      setExpressBetaToast({ type: 'error', message: err.message })
+    } finally {
+      setExpressBetaBusy(false)
+      expressBetaToastTimer.current = setTimeout(() => setExpressBetaToast(null), 4000)
+    }
+  }
+
   // ── Maintenance mode handlers ───────────────────────────────────
   async function handleToggleMaintenance() {
     const next = !maintenanceMode
@@ -2212,6 +2260,39 @@ function AdminHealth() {
               </div>
               {maintenanceToast && (
                 <div style={{ marginTop:10, fontFamily:"'Poppins',sans-serif", fontSize:12, color:maintenanceToast.type==='success'?'#4ade80':RED }}>{maintenanceToast.message}</div>
+              )}
+            </div>
+
+            {/* Express Beta toggle */}
+            <div className="mc-card mc-card-enter" style={{ padding:'20px 24px', animationDelay:'0.5s', marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12, marginBottom:8 }}>
+                <div>
+                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Express Beta Mode</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:10, height:10, borderRadius:'50%', flexShrink:0, background:expressBetaLoading?MUTED:expressBeta?GREEN:'rgba(255,255,255,0.12)', animation:!expressBetaLoading&&expressBeta?'vitalPulse 1.5s ease-in-out infinite':'none' }} />
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:14, fontWeight:700, color:expressBetaLoading?MUTED:expressBeta?GREEN:DIM }}>
+                      {expressBetaLoading?'…':expressBeta?'BETA — FREE':'PAID'}
+                    </span>
+                    {expressBetaUpdatedAt && <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED }}>· Updated {timeAgo(expressBetaUpdatedAt)}</span>}
+                  </div>
+                  <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:11, color:MUTED, marginTop:4 }}>
+                    {expressBeta ? 'Express Defence is free for all users — no payment required.' : 'Normal ₦2,000 paid flow active.'}
+                  </div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:DIM }}>Toggle</span>
+                  <button
+                    onClick={handleToggleExpressBeta}
+                    disabled={expressBetaBusy||expressBetaLoading}
+                    aria-label={expressBeta?'Disable express beta mode':'Enable express beta mode'}
+                    style={{ width:48, height:26, borderRadius:13, border:'none', background:expressBeta?GREEN:'rgba(255,255,255,0.12)', cursor:expressBetaBusy||expressBetaLoading?'not-allowed':'pointer', position:'relative', transition:'background 0.2s ease', opacity:expressBetaBusy?0.6:1, flexShrink:0 }}
+                  >
+                    <div style={{ width:20, height:20, borderRadius:'50%', background:WHITE, position:'absolute', top:3, left:expressBeta?25:3, transition:'left 0.2s ease', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }} />
+                  </button>
+                </div>
+              </div>
+              {expressBetaToast && (
+                <div style={{ marginTop:10, fontFamily:"'Poppins',sans-serif", fontSize:12, color:expressBetaToast.type==='success'?'#4ade80':RED }}>{expressBetaToast.message}</div>
               )}
             </div>
           </>
