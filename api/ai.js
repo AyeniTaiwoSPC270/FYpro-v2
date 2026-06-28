@@ -17,6 +17,7 @@ import { validate, AiMessagesSchema } from './_lib/validate.js';
 import { FREE_STEP_LIMITS as SERVER_FREE_LIMITS } from './_lib/free-limits.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
 import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
+import { getExpressBetaFree } from './_lib/express-beta.js';
 
 export const config = { maxDuration: 60 };
 
@@ -303,8 +304,9 @@ async function handleDefense(req, res) {
 
   const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements?.paid_features : [];
   const hasPaidAccess = paidFeatures.includes('defense_pack') || paidFeatures.includes('express_defense');
+  const betaFree = await getExpressBetaFree();
 
-  if (!hasPaidAccess) {
+  if (!hasPaidAccess && !betaFree) {
     const { promptType } = req.body || {};
 
     // Red flag scan: no free trial — paid access required
@@ -790,7 +792,8 @@ async function handleDefenceBrief(req, res) {
 
   const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
   const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
-  if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked. Please purchase Express Defence or the Defense Pack.' });
+  const betaFree = await getExpressBetaFree();
+  if (!hasAccess && !betaFree) return res.status(403).json({ error: 'Feature not unlocked. Please purchase Express Defence or the Defense Pack.' });
 
   const userCap = await checkUserCap(user.id, true);
   if (!userCap.allowed) {
@@ -894,7 +897,8 @@ async function handleDefenceBriefCoach(req, res) {
 
   const paidFeatures = Array.isArray(entitlements?.paid_features) ? entitlements.paid_features : [];
   const hasAccess = paidFeatures.includes('express_defense') || paidFeatures.includes('defense_pack');
-  if (!hasAccess) return res.status(403).json({ error: 'Feature not unlocked.' });
+  const betaFree = await getExpressBetaFree();
+  if (!hasAccess && !betaFree) return res.status(403).json({ error: 'Feature not unlocked.' });
 
   const userCap = await checkUserCap(user.id, true);
   if (!userCap.allowed) {
