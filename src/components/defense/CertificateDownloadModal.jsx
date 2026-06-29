@@ -3,6 +3,8 @@ import { downloadCertificate } from '../../lib/certificate'
 import { supabase } from '../../lib/supabase'
 import Sentry from '../../lib/sentry'
 import { useTheme } from '../../context/ThemeContext'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { showToast } from '../Toast'
 
 const STYLES = [
   {
@@ -63,7 +65,7 @@ const ORIENTATIONS = [
   { id: 'landscape', label: 'Landscape', sub: '297 × 210 mm' },
 ]
 
-export default function CertificateDownloadModal({ isOpen, onClose, defenseSessionId, topic }) {
+export default function CertificateDownloadModal({ isOpen, onClose, defenseSessionId, topic, isExpress = false, projectId = null }) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -81,6 +83,9 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
     localStorage.setItem('cert_orientation', orientation)
     try {
       await downloadCertificate(defenseSessionId, style, orientation)
+      checkAchievements({ projectId: isExpress ? projectId : null })
+        .then(newKeys => { if (newKeys.length > 0) showToast('Achievement unlocked 🏅', 'success') })
+        .catch(() => {})
       onClose()
     } catch (err) {
       if (err.message === 'NAME_REQUIRED') {

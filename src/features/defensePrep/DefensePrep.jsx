@@ -277,7 +277,7 @@ function ExitModal({ questionCount, onContinue, onLeave }) {
   )
 }
 
-const SummaryCard = memo(function SummaryCard({ data, onClose, projectId, topic, defenseSessionId }) {
+const SummaryCard = memo(function SummaryCard({ data, onClose, projectId, topic, defenseSessionId, isExpress = false }) {
   const panelLabel = (data.panel_score_label || '').toLowerCase()
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError]     = useState(null)
@@ -358,6 +358,7 @@ const SummaryCard = memo(function SummaryCard({ data, onClose, projectId, topic,
             defenseSessionId={defenseSessionId}
             projectId={projectId}
             topic={topic}
+            isExpress={isExpress}
           />
 
           {/* ── Celebratory share prompt ────────────────────────────────────── */}
@@ -1819,6 +1820,7 @@ export default function DefensePrep() {
                   projectId={projectId}
                   topic={state.validatedTopic || ''}
                   defenseSessionId={defenseSessionId}
+                  isExpress={isExpress}
                 />
               )}
             </div>
@@ -2030,6 +2032,7 @@ export default function DefensePrep() {
                 projectId={projectId}
                 topic={state.validatedTopic || ''}
                 defenseSessionId={defenseSessionId}
+                isExpress={isExpress}
               />
             )
           )}

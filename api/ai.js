@@ -652,16 +652,21 @@ async function handleCheckAchievements(req, res) {
     }
 
     const stepNames = (steps ?? []).map(s => s.step_type);
+    const stepNameSet = new Set(stepNames);
+    // Core steps a free user can complete. project_reviewer (step 5) is paywalled,
+    // so we don't require it — defense_prep implies a session ran.
+    const CORE_STEPS = ['topic_validator', 'chapter_architect', 'methodology_advisor', 'writing_planner', 'defense_prep'];
+    const completedCoreCount = CORE_STEPS.filter(s => stepNameSet.has(s)).length;
     const scores = (defSessions ?? []).map(s => s.total_score).filter(n => typeof n === 'number');
     const maxScore = scores.length > 0 ? Math.max(...scores) : -1;
     const WAT_OFFSET_MS = 60 * 60 * 1000; // UTC+1
 
     // ── MILESTONE ──────────────────────────────────────────────────────────────
-    check('first_step',    stepNames.includes('topic_validator'));
+    check('first_step',    stepNameSet.has('topic_validator'));
     check('halfway',       stepNames.length >= 3);
     check('defense_ready', isExpressScope
       ? (defSessions ?? []).length > 0
-      : stepNames.length >= 6 && (defSessions ?? []).length > 0);
+      : completedCoreCount === CORE_STEPS.length);
     check('certified',     (certs ?? []).length > 0);
 
     // ── SPEED ──────────────────────────────────────────────────────────────────
@@ -681,8 +686,8 @@ async function handleCheckAchievements(req, res) {
     }
     check('sprint', Object.values(stepsByWatDay).some(n => n >= 3));
 
-    // Speed run: all 6 steps within 7 days of signup
-    if (stepNames.length >= 6) {
+    // Speed run: all core steps within 7 days of signup
+    if (completedCoreCount === CORE_STEPS.length) {
       const latestStepMs = Math.max(...(steps ?? []).map(s => new Date(s.created_at).getTime()));
       check('speed_run', latestStepMs - userCreatedAt.getTime() <= 7 * 24 * 60 * 60 * 1000);
     }

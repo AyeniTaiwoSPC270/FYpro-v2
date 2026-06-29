@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../context/ThemeContext'
 import CertificateDownloadModal from './CertificateDownloadModal'
+import { checkAchievements } from '../../lib/checkAchievements'
+import { showToast } from '../Toast'
 
 const SCORE_THRESHOLD = 7
 
-export default function CertificateUnlock({ score, defenseSessionId, projectId, topic }) {
+export default function CertificateUnlock({ score, defenseSessionId, projectId, topic, isExpress = false }) {
   const navigate = useNavigate()
   const { theme } = useTheme()
   const isLight = theme === 'light'
@@ -54,6 +56,9 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
             title: 'FYPro Defense Certificate',
             text:  shareText,
           })
+          checkAchievements({ shared: true, projectId: isExpress ? projectId : null })
+            .then(newKeys => { if (newKeys.length > 0) showToast('Achievement unlocked 🏅', 'success') })
+            .catch(() => {})
           return
         } catch (err) {
           if (err instanceof Error && err.name === 'AbortError') return
@@ -64,6 +69,9 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
       // Fallback: WhatsApp text-only (no file — Web Share not supported or failed)
       const encoded = encodeURIComponent(shareText)
       window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener,noreferrer')
+      checkAchievements({ shared: true, projectId: isExpress ? projectId : null })
+        .then(newKeys => { if (newKeys.length > 0) showToast('Achievement unlocked 🏅', 'success') })
+        .catch(() => {})
     } catch (err) {
       setShareError(err.message || 'Failed to share certificate.')
     } finally {
@@ -197,6 +205,8 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         onClose={() => setIsCertModalOpen(false)}
         defenseSessionId={defenseSessionId}
         topic={topic}
+        isExpress={isExpress}
+        projectId={projectId}
       />
     </div>
   )
