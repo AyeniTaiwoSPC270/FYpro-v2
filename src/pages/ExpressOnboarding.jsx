@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useExpressBeta } from '../hooks/useExpressBeta'
-import { createExpressProject, getExpressProject, updateProject, getUserProfile } from '../lib/db'
+import { createExpressProject, getExpressProject, updateProject, getUserProfile, saveStep, updateUserProfile } from '../lib/db'
 import { useUser } from '../hooks/useUser'
 import { UNIVERSITIES, getFaculties } from '../data/universities'
 import FyproLogo from '../components/FyproLogo'
@@ -233,6 +233,7 @@ export default function ExpressOnboarding() {
     // invisible and harmless — the payment popup redirects to /payment-success,
     // so we cannot create it "after" payment on this page.
     const existing = user?.id ? await getExpressProject(user.id) : null
+    let projectId = null
     if (existing) {
       // A blank project may already exist (auto-created on a prior /express
       // visit). Update it with the details from this form rather than leaving
@@ -243,14 +244,27 @@ export default function ExpressOnboarding() {
         department,
         level,
       })
+      projectId = existing.id
     } else {
-      await createExpressProject({
+      const created = await createExpressProject({
         title: topic.trim(),
         faculty,
         department,
         level,
       })
+      projectId = created?.id ?? null
     }
+
+    // university, methodology, chapterCount have no column on the projects table.
+    // Save university to the users profile; the other two go to an express_context step.
+    if (user?.id) {
+      updateUserProfile({ university, faculty, department, level }).catch(() => {})
+    }
+    if (projectId) {
+      const finalChapterCount = useCustomChapters ? chapterCount : 5
+      saveStep(projectId, 'express_context', { methodology, chapterCount: finalChapterCount }).catch(() => {})
+    }
+
     setSubmitting(false)
 
     // Already paid (resume / re-onboard) → straight into the express app.

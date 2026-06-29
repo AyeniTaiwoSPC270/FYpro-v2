@@ -68,6 +68,10 @@ export default function ExpressProjectStateProvider({ children }) {
 
         const expressSteps = { red_flag: false, project_reviewer: false, defense_brief: false, defense: false }
         for (const s of steps ?? []) {
+          if (s.step_type === 'express_context') {
+            if (s.result_json?.methodology) hydration.chosenMethodology = s.result_json.methodology
+            if (s.result_json?.chapterCount) hydration.chapterStructure = { total_chapters: s.result_json.chapterCount }
+          }
           if (s.step_type === 'red_flag_detector') {
             expressSteps.red_flag = true
             hydration.redFlags = Array.isArray(s.result_json?.flags) ? s.result_json.flags : null
