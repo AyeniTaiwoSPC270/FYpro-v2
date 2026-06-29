@@ -16,17 +16,18 @@ export default function PWAInstallPrompt() {
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return
+      const doUpdate = () => { if (navigator.onLine) registration.update().catch(() => {}) }
       // Poll every 60 s so the toast appears while the user is already in the app.
-      // Without this the browser only checks on page load.
-      const id = setInterval(() => {
-        if (!navigator.onLine) return
-        registration.update().catch(() => {})
-      }, 60_000)
-      // Also check immediately when the user switches back to this tab.
-      const onVisible = () => { if (document.visibilityState === 'visible') registration.update().catch(() => {}) }
+      const id = setInterval(doUpdate, 60_000)
+      // Check immediately when the tab becomes visible (mobile app-switch) or focused (desktop tab-switch).
+      const onVisible = () => { if (document.visibilityState === 'visible') doUpdate() }
       document.addEventListener('visibilitychange', onVisible)
-      // Clean up if the component ever unmounts (rare but correct).
-      registration._cleanup = () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible) }
+      window.addEventListener('focus', doUpdate)
+      registration._cleanup = () => {
+        clearInterval(id)
+        document.removeEventListener('visibilitychange', onVisible)
+        window.removeEventListener('focus', doUpdate)
+      }
     },
     onRegisterError(error) {
       console.error('SW registration error', error)
@@ -113,7 +114,17 @@ export default function PWAInstallPrompt() {
           <span>New version available</span>
           <button
             className="pwa-update-toast__reload"
-            onClick={() => updateServiceWorker(true)}
+            onClick={() => {
+              setShowUpdate(false)
+              // Wait for the new SW to take control before reloading, so we don't
+              // reload before skipWaiting() resolves and end up on the old version.
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                  window.location.reload()
+                }, { once: true })
+              }
+              updateServiceWorker(false)
+            }}
           >
             Reload
           </button>
