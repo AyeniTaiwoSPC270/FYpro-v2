@@ -41,7 +41,7 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
       .single(),
     supabase
       .from('projects')
-      .select('id')
+      .select('id, mode')
       .eq('user_id', userId)
       .neq('status', 'archived')
       .order('updated_at', { ascending: false })
@@ -64,10 +64,17 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
   const isOnboarded = Boolean(
     profileRes.data?.faculty && profileRes.data?.department,
   )
-  const rows = projectRes.data as Array<{ id: string }> | null
-  const activeProjectId = rows?.[0]?.id ?? null
+  const rows = projectRes.data as Array<{ id: string; mode: string | null }> | null
+  const topProject = rows?.[0] ?? null
+  const activeProjectId = topProject?.id ?? null
+  const isExpressProject = topProject?.mode === 'express'
 
   setRoutingCache({ onboarded: isOnboarded, activeProjectId })
+
+  // Express-only users (no standard onboarding) whose top project is mode='express':
+  // route directly to /express without touching isOnboarded — their faculty/department
+  // live on the project row, not the users row, so isOnboarded is always false for them.
+  if (!isOnboarded && isExpressProject) return '/express'
 
   // Keep legacy isOnboarded flag in sync so AppContext reads correctly immediately.
   // Only clear it when Supabase CONFIRMS the user hasn't set faculty/department —

@@ -74,7 +74,10 @@ function RequireExpress({ children }) {
 
 function ExpressDashboardRedirect() {
   const { user } = useUser()
-  const { features, loading } = usePaidFeatures()
+  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { betaFree, loading: betaLoading } = useExpressBeta()
+
+  const loading = featuresLoading || betaLoading
 
   if (loading) {
     // While entitlements load, use cached value to skip the skeleton flash on return visits.
@@ -85,7 +88,7 @@ function ExpressDashboardRedirect() {
   }
 
   const isExpressOnly =
-    features.includes('express_defense') &&
+    (features.includes('express_defense') || betaFree) &&
     !features.includes('defense_pack') &&
     !features.includes('student_pack')
 
