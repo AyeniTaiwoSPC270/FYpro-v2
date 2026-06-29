@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProject, reviewProjectPDF, reviewProjectDOCX, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
+import { reviewProjectStream, reviewProjectPDFStream, reviewProjectDOCXStream, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -135,6 +135,7 @@ export default function ProjectReviewer() {
   const [truncationWarning, setTruncationWarning] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isDragging, setIsDragging]   = useState(false)
+  const [chunkCount, setChunkCount]   = useState(0)
 
   // Staggered visibility for result items
   const [visibleStrengths, setVisibleStrengths]   = useState([])
@@ -264,6 +265,7 @@ export default function ProjectReviewer() {
     }
     trackEvent('workflow_step_started', { step: 'project_reviewer' })
     setHasSubmitted(true)
+    setChunkCount(0)
     setSection('loading')
 
     let result
@@ -310,11 +312,12 @@ export default function ProjectReviewer() {
         methodology:       state.methodology,
         writingPlan:       state.writingPlan,
       }
+      const onChunk = (n) => setChunkCount(n)
       const data = result.pdf
-        ? await reviewProjectPDF(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps)
+        ? await reviewProjectPDFStream(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps, onChunk)
         : result.docx
-          ? await reviewProjectDOCX(studentContext, result.docx, previousSteps)
-          : await reviewProject(studentContext, validatedTopic, result.text, previousSteps)
+          ? await reviewProjectDOCXStream(studentContext, result.docx, previousSteps, onChunk)
+          : await reviewProjectStream(studentContext, validatedTopic, result.text, previousSteps, onChunk)
 
       if (timedOutRef.current) return
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
@@ -485,6 +488,9 @@ export default function ProjectReviewer() {
             Drop your file here or <span className="pr-upload-link">click to browse</span>
           </p>
           <p className="pr-upload-formats">PDF &middot; Word (.docx) &middot; Plain text (.txt) &middot; Max 4 MB</p>
+          <p className="pr-upload-formats" style={{ marginTop: 4, color: 'var(--color-blue-primary)', opacity: 0.85 }}>
+            Tip: For projects 80+ pages, upload as Word (.docx) for best results.
+          </p>
           <input
             id="pr-file-input"
             ref={fileInputRef}
@@ -515,6 +521,18 @@ export default function ProjectReviewer() {
 
         <ApiErrorBox error={error} onRetry={handleReview} />
 
+        {selectedFile && (
+          <p style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.75rem',
+            color: 'var(--color-text-muted)',
+            textAlign: 'center',
+            marginBottom: 8,
+          }}>
+            Review takes 30–60 s — keep this tab open while it runs.
+          </p>
+        )}
+
         <button
           id="pr-btn-review"
           className="pr-btn-review"
@@ -541,6 +559,22 @@ export default function ProjectReviewer() {
       {/* ── Loading Section ─────────────────────────────────────── */}
       {section === 'loading' && hasSubmitted && (
         <div id="pr-loading-section" className="pr-loading-section tv-section--visible">
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'var(--color-amber-light)',
+            border: '1px solid var(--color-amber)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 14px',
+            marginBottom: 20,
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.8rem',
+            color: '#92400e',
+          }}>
+            <span style={{ fontSize: '1rem' }}>⏱</span>
+            <span>This takes 30–60 seconds for large files. Keep this tab open — your review is on the way.</span>
+          </div>
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />
             <div className="skeleton-bar" style={{ width: '75%' }} />
@@ -548,6 +582,17 @@ export default function ProjectReviewer() {
             <div className="skeleton-bar" style={{ width: '60%' }} />
           </div>
           <LoadingMessages messages={LOADING_MESSAGES} />
+          {chunkCount > 0 && (
+            <p style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.7rem',
+              color: 'var(--color-text-muted)',
+              textAlign: 'center',
+              marginTop: 8,
+            }}>
+              receiving analysis… {chunkCount} chunks
+            </p>
+          )}
         </div>
       )}
 

@@ -351,6 +351,65 @@ async function callClaudeAuthRaw(endpoint, messages, maxTokens = 2000, extra = {
   return { parsed, rawText: text };
 }
 
+// ── Streaming helper (SSE reader for project-reviewer) ───────────────────────
+async function callClaudeAuthStream(endpoint, messages, maxTokens = 2000, extra = {}, onChunk) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e }
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ messages, max_tokens: maxTokens, ...extra }),
+  });
+
+  if (res.status === 401) { const e = new Error('Not authenticated'); e.code = 'UNAUTHORIZED'; throw e; }
+  if (res.status === 403) {
+    const body = await res.json().catch(() => ({}));
+    const e = new Error(body?.error || 'Feature not unlocked');
+    e.code = body?.error === 'FREE_TRIAL_USED' ? 'FREE_TRIAL_USED' : 'FORBIDDEN';
+    throw e;
+  }
+  if (res.status === 429) { const e = new Error('Rate limited'); e.code = 'RATE_LIMIT'; throw e; }
+  if (res.status === 504) { const e = new Error('Gateway timeout'); e.code = 'GATEWAY_TIMEOUT'; throw e; }
+  if (!res.ok) { const e = new Error(`HTTP ${res.status}`); e.code = 'HTTP_ERROR'; e.status = res.status; throw e; }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let chunkCount = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6).trim();
+      if (!raw) continue;
+      let event;
+      try { event = JSON.parse(raw); } catch { continue; }
+      if (event.type === 'delta') {
+        chunkCount++;
+        onChunk?.(chunkCount);
+      } else if (event.type === 'done') {
+        return event.result;
+      } else if (event.type === 'error') {
+        const e = new Error(event.message || 'Stream error');
+        e.code = 'HTTP_ERROR';
+        throw e;
+      }
+    }
+  }
+
+  const e = new Error('Stream ended without a result. Please try again.');
+  e.code = 'HTTP_ERROR';
+  throw e;
+}
+
 // ── Step 1: Topic Validator ──────────────────────────────────────────────────
 export async function validateTopic(studentCtx, roughTopic) {
   return callTopicValidator(
@@ -487,6 +546,40 @@ export async function reviewProjectPDF(studentCtx, validatedTopic, base64Data, m
     [{ role: 'user', content: userContent }],
     3000,
     { promptType: 'review', previousSteps }
+  );
+}
+
+// ── Step 5: Project Reviewer (streaming variants) ────────────────────────────
+export async function reviewProjectStream(studentCtx, validatedTopic, extractedText, previousSteps = {}, onChunk) {
+  return callClaudeAuthStream(
+    REVIEWER_ENDPOINT + '?stream=1',
+    [{ role: 'user', content: buildProjectReviewerPrompt(studentCtx, extractedText) }],
+    3000,
+    { promptType: 'review', previousSteps },
+    onChunk
+  );
+}
+
+export async function reviewProjectDOCXStream(studentCtx, base64Data, previousSteps = {}, onChunk) {
+  return callClaudeAuthStream(
+    REVIEWER_ENDPOINT + '?stream=1',
+    [],
+    3000,
+    { promptType: 'review', previousSteps, docx_base64: base64Data, student_context: studentCtx },
+    onChunk
+  );
+}
+
+export async function reviewProjectPDFStream(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf', previousSteps = {}, onChunk) {
+  return callClaudeAuthStream(
+    REVIEWER_ENDPOINT + '?stream=1',
+    [{ role: 'user', content: [
+      { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
+      { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
+    ]}],
+    3000,
+    { promptType: 'review', previousSteps },
+    onChunk
   );
 }
 

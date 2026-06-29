@@ -209,7 +209,124 @@ const handler = async (req, res) => {
       reservedCount = r.reservedCount;
     }
 
-    const start    = Date.now();
+    const start = Date.now();
+
+    // ── Streaming path (?stream=1) ────────────────────────────────────────────
+    // Pipes Anthropic SSE chunks to the client so the browser connection stays
+    // alive on slow/Nigerian networks that drop idle 30+ second requests.
+    if (req.query?.stream === '1') {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const send = (data) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`); };
+
+      let anthropicRes;
+      try {
+        anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'pdfs-2024-09-25',
+          },
+          body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0, stream: true }),
+          signal: AbortSignal.timeout(50000),
+        });
+      } catch (err) {
+        refundRun();
+        send({ type: 'error', message: err.name === 'TimeoutError' || err.name === 'AbortError'
+          ? 'Request timed out. Please try again.'
+          : 'An unexpected error occurred. Please try again.' });
+        res.end();
+        return;
+      }
+
+      if (!anthropicRes.ok) {
+        refundRun();
+        const errData = await anthropicRes.json().catch(() => ({}));
+        send({ type: 'error', message: errData.error?.message || 'API error. Please try again.' });
+        res.end();
+        return;
+      }
+
+      const reader = anthropicRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let fullText = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let stopReason = null;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const raw = line.slice(6).trim();
+            if (!raw || raw === '[DONE]') continue;
+            let ev;
+            try { ev = JSON.parse(raw); } catch { continue; }
+            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+              fullText += ev.delta.text;
+              send({ type: 'delta', text: ev.delta.text });
+            } else if (ev.type === 'message_start') {
+              inputTokens = ev.message?.usage?.input_tokens || 0;
+            } else if (ev.type === 'message_delta') {
+              stopReason = ev.delta?.stop_reason;
+              outputTokens = ev.usage?.output_tokens || 0;
+            }
+          }
+        }
+      } catch (err) {
+        refundRun();
+        send({ type: 'error', message: 'Stream interrupted. Please try again.' });
+        res.end();
+        return;
+      }
+
+      if (inputTokens || outputTokens) {
+        await trackUsage(inputTokens, outputTokens, model).catch(() => {});
+        await trackUserUsage(user.id, inputTokens, outputTokens).catch(() => {});
+      }
+
+      if (stopReason === 'max_tokens') {
+        refundRun();
+        send({ type: 'error', message: 'The review was too long to complete. Please try again or upload a shorter document.' });
+        res.end();
+        return;
+      }
+
+      let parsed;
+      try {
+        const stripped = fullText.replace(/```json|```/g, '').trim();
+        const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+      } catch {
+        refundRun();
+        send({ type: 'error', message: 'Received an unexpected response. Please try again.' });
+        res.end();
+        return;
+      }
+
+      if (expressOnly && reservedCount !== null) {
+        await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts }).catch(() => {});
+      }
+
+      const streamDuration = Date.now() - start;
+      supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: streamDuration, user_id: user.id }).catch(() => {});
+
+      send({ type: 'done', result: parsed });
+      res.end();
+      return;
+    }
+    // ── End streaming path ────────────────────────────────────────────────────
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
