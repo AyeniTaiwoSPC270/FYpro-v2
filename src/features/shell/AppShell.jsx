@@ -1,4 +1,25 @@
 import { useEffect, useState, Fragment, useRef, lazy, Suspense } from 'react'
+
+function safeLazy(factory) {
+  return lazy(() =>
+    factory().then(mod => {
+      if (!mod?.default) {
+        if (!sessionStorage.getItem('chunk-reload')) {
+          sessionStorage.setItem('chunk-reload', '1')
+          window.location.reload()
+        }
+        return { default: () => null }
+      }
+      return mod
+    }).catch(() => {
+      if (!sessionStorage.getItem('chunk-reload')) {
+        sessionStorage.setItem('chunk-reload', '1')
+        window.location.reload()
+      }
+      throw new Error('Chunk failed to load')
+    })
+  )
+}
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
@@ -8,13 +29,13 @@ import AnonymousMigrationModal from '../../components/AnonymousMigrationModal'
 import PaidFeatureGate from '../../components/PaidFeatureGate'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useRunLimit } from '../../hooks/useRunLimit'
-const TopicValidator     = lazy(() => import('../topicValidator/TopicValidator'))
-const ChapterArchitect   = lazy(() => import('../chapterArchitect/ChapterArchitect'))
-const MethodologyAdvisor = lazy(() => import('../methodology/MethodologyAdvisor'))
-const WritingPlanner     = lazy(() => import('../writingPlanner/WritingPlanner'))
-const ProjectReviewer    = lazy(() => import('../projectReviewer/ProjectReviewer'))
-const DefensePrep        = lazy(() => import('../defensePrep/DefensePrep'))
-const SupervisorEmail    = lazy(() => import('../supervisorEmail/SupervisorEmail'))
+const TopicValidator     = safeLazy(() => import('../topicValidator/TopicValidator'))
+const ChapterArchitect   = safeLazy(() => import('../chapterArchitect/ChapterArchitect'))
+const MethodologyAdvisor = safeLazy(() => import('../methodology/MethodologyAdvisor'))
+const WritingPlanner     = safeLazy(() => import('../writingPlanner/WritingPlanner'))
+const ProjectReviewer    = safeLazy(() => import('../projectReviewer/ProjectReviewer'))
+const DefensePrep        = safeLazy(() => import('../defensePrep/DefensePrep'))
+const SupervisorEmail    = safeLazy(() => import('../supervisorEmail/SupervisorEmail'))
 import FyproLogo from '../../components/FyproLogo'
 import { AppShellSkeleton } from '../../components/skeletons/PageSkeletons'
 import RankPill from '../../components/rank/RankPill'

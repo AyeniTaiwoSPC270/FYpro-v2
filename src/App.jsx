@@ -1,4 +1,28 @@
 import { lazy, Suspense, useEffect } from 'react'
+
+// iOS Safari resolves dynamic imports with undefined (instead of rejecting) when a module
+// script fails silently through a service worker mid-transition. The existing vite:preloadError
+// handler in main.jsx covers Chrome-style rejections; this covers the Safari undefined case.
+function safeLazy(factory) {
+  return lazy(() =>
+    factory().then(mod => {
+      if (!mod?.default) {
+        if (!sessionStorage.getItem('chunk-reload')) {
+          sessionStorage.setItem('chunk-reload', '1')
+          window.location.reload()
+        }
+        return { default: () => null }
+      }
+      return mod
+    }).catch(() => {
+      if (!sessionStorage.getItem('chunk-reload')) {
+        sessionStorage.setItem('chunk-reload', '1')
+        window.location.reload()
+      }
+      throw new Error('Chunk failed to load')
+    })
+  )
+}
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { AppProvider } from './context/AppContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -22,40 +46,40 @@ import {
 } from './components/skeletons/PageSkeletons'
 
 // Lazy-loaded route components
-const LandingPage       = lazy(() => import('./pages/LandingPage'))
-const Pricing           = lazy(() => import('./pages/Pricing'))
-const About             = lazy(() => import('./pages/About'))
-const Contact           = lazy(() => import('./pages/Contact'))
-const Privacy           = lazy(() => import('./pages/Privacy'))
-const Terms             = lazy(() => import('./pages/Terms'))
-const CookiePolicy      = lazy(() => import('./pages/CookiePolicy'))
-const Login             = lazy(() => import('./pages/Login'))
-const Signup            = lazy(() => import('./pages/Signup'))
-const ForgotPassword    = lazy(() => import('./pages/ForgotPassword'))
-const ResetPassword     = lazy(() => import('./pages/ResetPassword'))
-const VerifyEmail       = lazy(() => import('./pages/VerifyEmail'))
-const PaymentSuccess    = lazy(() => import('./pages/PaymentSuccess'))
-const MaintenancePage   = lazy(() => import('./pages/MaintenancePage'))
-const AuthConfirm       = lazy(() => import('./pages/auth/AuthConfirm'))
-const ChangelogPage     = lazy(() => import('./pages/changelog/ChangelogPage'))
-const RoadmapPage       = lazy(() => import('./pages/roadmap/RoadmapPage'))
-const NotFound          = lazy(() => import('./pages/NotFound'))
-const VerifyCertificate = lazy(() => import('./pages/VerifyCertificate'))
-const SplashOnboarding  = lazy(() => import('./pages/SplashOnboarding'))
-const Dashboard         = lazy(() => import('./pages/Dashboard'))
-const Profile           = lazy(() => import('./pages/Profile'))
-const Settings          = lazy(() => import('./pages/Settings'))
-const EmailPreferences  = lazy(() => import('./pages/account/EmailPreferences'))
-const MyCertificates    = lazy(() => import('./pages/account/MyCertificates'))
-const MyReferrals       = lazy(() => import('./pages/account/MyReferrals'))
-const Achievements       = lazy(() => import('./pages/account/Achievements'))
-const AppShell          = lazy(() => import('./features/shell/AppShell'))
-const SupervisorPrep    = lazy(() => import('./features/supervisorPrep/SupervisorPrep'))
-const ExpressOnboarding = lazy(() => import('./pages/ExpressOnboarding'))
-const ExpressShell           = lazy(() => import('./features/expressDefense/ExpressShell'))
-const ExpressAchievements    = lazy(() => import('./pages/ExpressAchievements'))
-const ExpressDashboard  = lazy(() => import('./pages/ExpressDashboard'))
-const AdminHealth       = lazy(() => import('./pages/admin/Health'))
+const LandingPage       = safeLazy(() => import('./pages/LandingPage'))
+const Pricing           = safeLazy(() => import('./pages/Pricing'))
+const About             = safeLazy(() => import('./pages/About'))
+const Contact           = safeLazy(() => import('./pages/Contact'))
+const Privacy           = safeLazy(() => import('./pages/Privacy'))
+const Terms             = safeLazy(() => import('./pages/Terms'))
+const CookiePolicy      = safeLazy(() => import('./pages/CookiePolicy'))
+const Login             = safeLazy(() => import('./pages/Login'))
+const Signup            = safeLazy(() => import('./pages/Signup'))
+const ForgotPassword    = safeLazy(() => import('./pages/ForgotPassword'))
+const ResetPassword     = safeLazy(() => import('./pages/ResetPassword'))
+const VerifyEmail       = safeLazy(() => import('./pages/VerifyEmail'))
+const PaymentSuccess    = safeLazy(() => import('./pages/PaymentSuccess'))
+const MaintenancePage   = safeLazy(() => import('./pages/MaintenancePage'))
+const AuthConfirm       = safeLazy(() => import('./pages/auth/AuthConfirm'))
+const ChangelogPage     = safeLazy(() => import('./pages/changelog/ChangelogPage'))
+const RoadmapPage       = safeLazy(() => import('./pages/roadmap/RoadmapPage'))
+const NotFound          = safeLazy(() => import('./pages/NotFound'))
+const VerifyCertificate = safeLazy(() => import('./pages/VerifyCertificate'))
+const SplashOnboarding  = safeLazy(() => import('./pages/SplashOnboarding'))
+const Dashboard         = safeLazy(() => import('./pages/Dashboard'))
+const Profile           = safeLazy(() => import('./pages/Profile'))
+const Settings          = safeLazy(() => import('./pages/Settings'))
+const EmailPreferences  = safeLazy(() => import('./pages/account/EmailPreferences'))
+const MyCertificates    = safeLazy(() => import('./pages/account/MyCertificates'))
+const MyReferrals       = safeLazy(() => import('./pages/account/MyReferrals'))
+const Achievements      = safeLazy(() => import('./pages/account/Achievements'))
+const AppShell          = safeLazy(() => import('./features/shell/AppShell'))
+const SupervisorPrep    = safeLazy(() => import('./features/supervisorPrep/SupervisorPrep'))
+const ExpressOnboarding = safeLazy(() => import('./pages/ExpressOnboarding'))
+const ExpressShell      = safeLazy(() => import('./features/expressDefense/ExpressShell'))
+const ExpressAchievements = safeLazy(() => import('./pages/ExpressAchievements'))
+const ExpressDashboard  = safeLazy(() => import('./pages/ExpressDashboard'))
+const AdminHealth       = safeLazy(() => import('./pages/admin/Health'))
 
 function S({ fallback, children }) {
   return <Suspense fallback={fallback}>{children}</Suspense>
