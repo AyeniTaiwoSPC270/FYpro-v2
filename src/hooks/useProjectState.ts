@@ -217,7 +217,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
             ?? (userRef.current?.user_metadata?.full_name as string | undefined)
             ?? null
           if (name) hydration.name = name
-          if (userState.profile.avatar_url) hydration.avatarUrl  = userState.profile.avatar_url
+          hydration.avatarUrl = userState.profile.avatar_url ?? null
           if (userState.profile.university) hydration.university = userState.profile.university
           if (userState.profile.faculty)    hydration.faculty    = userState.profile.faculty
           if (userState.profile.department) hydration.department = userState.profile.department

@@ -54,7 +54,7 @@ export default function ExpressProjectStateProvider({ children }) {
         if (project.level) hydration.level = project.level
         if (profile?.full_name)   hydration.name       = profile.full_name
         if (profile?.university)  hydration.university = profile.university
-        if (profile?.avatar_url)  hydration.avatarUrl  = profile.avatar_url
+        hydration.avatarUrl = profile?.avatar_url ?? null
         // Profile fields override project row — users update these via /profile, not project settings
         if (profile?.faculty)     hydration.faculty    = profile.faculty
         if (profile?.department)  hydration.department = profile.department

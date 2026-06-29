@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
 import { AuthContext } from './AuthContext'
 import { USER_STORAGE_KEYS, clearUserLocalStorage } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 
 export const AppContext = createContext(null)
 
@@ -123,6 +124,19 @@ export function AppProvider({ children, storageKey = 'fypro_session', isExpress 
       try { localStorage.setItem(`${storageKey}_owner`, session.user.id) } catch {}
     }
   }, [session?.user?.id, storageKey])
+
+  // Belt-and-suspenders: reset all app state on sign-out regardless of which
+  // logout handler fired it, so stale avatarUrl/profile data never bleeds into
+  // the next user's session in the same browser tab.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        clearUserLocalStorage()
+        setState(DEFAULT_STATE)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Partial merge — used by SplashOnboarding and any component needing a field update
   const set = useCallback((partial) => {
