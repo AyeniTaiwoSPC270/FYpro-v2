@@ -274,6 +274,26 @@
   background-size: 28px 28px;
 }
 
+/* ── Main loading state (hydration gate) ─────────────────────────────────── */
+.es-main__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+}
+.es-main__loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0,102,255,0.2);
+  border-top-color: #0066FF;
+  border-radius: 50%;
+  animation: es-spin 0.7s linear infinite;
+}
+@keyframes es-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Express Brief card ───────────────────────────────────────────────────── */
 .eb-brief {
   background: rgba(255,255,255,0.04);

@@ -5,6 +5,7 @@ import FyproLogo from '../../components/FyproLogo'
 import ExpressBrief from './ExpressBrief'
 import DefenceBrief from './DefenceBrief'
 import { useApp } from '../../context/AppContext'
+import { useProjectState } from '../../hooks/useProjectState'
 
 const DefensePrep    = lazy(() => import('../defensePrep/DefensePrep'))
 const ProjectReviewer = lazy(() => import('../projectReviewer/ProjectReviewer'))
@@ -23,6 +24,7 @@ export default function ExpressShell() {
   })
   const navigate = useNavigate()
   const { state } = useApp()
+  const { isLoading } = useProjectState()
   const expressSteps = state.expressSteps || {}
 
   // Keep sessionStorage in sync so the active step survives page refreshes.
@@ -97,11 +99,17 @@ export default function ExpressShell() {
       </aside>
 
       <main className="es-main">
-        <Suspense fallback={null}>
-          {activeStep === 'reviewer' && <ProjectReviewer />}
-          {activeStep === 'brief'    && <DefenceBrief />}
-          {activeStep === 'defense'  && <DefensePrep />}
-        </Suspense>
+        {isLoading ? (
+          <div className="es-main__loading" aria-label="Loading…">
+            <div className="es-main__loading-spinner" />
+          </div>
+        ) : (
+          <Suspense fallback={null}>
+            {activeStep === 'reviewer' && <ProjectReviewer />}
+            {activeStep === 'brief'    && <DefenceBrief />}
+            {activeStep === 'defense'  && <DefensePrep />}
+          </Suspense>
+        )}
       </main>
     </div>
   )

@@ -183,6 +183,20 @@ export default function ProjectReviewer() {
     return () => timers.forEach(clearTimeout)
   }, [section, reviewData])
 
+  // Hydration race guard: mirrors the same pattern in DefenceBrief.
+  // If this component mounted before ExpressProjectStateProvider finished loading,
+  // savedData was null at init time so section='input'/reviewData=null got frozen in.
+  // This effect fires when hydration arrives and restores the result view.
+  useEffect(() => {
+    const restored = state.uploadedProject?.reviewData ??
+      (state.uploadedProject?.grade ? state.uploadedProject : null)
+    if (restored && !reviewData && !isProcessing) {
+      setReviewData(restored)
+      setSection('result')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.uploadedProject])
+
   // ── File selection helpers ─────────────────────────────────────────────────
 
   function handleFileSelect(file) {
