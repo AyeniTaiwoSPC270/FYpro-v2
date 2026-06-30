@@ -665,6 +665,29 @@ export default function DefensePrep() {
   }, [section])
   const ttsSupported   = !!window.speechSynthesis
 
+  // Hydration race guard: context may arrive after this component mounts.
+  // useState captures values once at mount; these effects correct local state
+  // when defenseSummary or redFlags arrive late from ExpressProjectStateProvider.
+  useEffect(() => {
+    const restored = state.defenseSummary
+    if (restored && !summaryData && !overlayOpen) {
+      setSummaryData(restored)
+      setSection('summary')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.defenseSummary])
+
+  useEffect(() => {
+    const flags = state.redFlags
+    if (flags && !redFlags && !isScanning) {
+      setRedFlags(flags)
+      setVisibleFlags(flags.map((_, i) => i))
+      setButtonsVisible(true)
+      if (!state.defenseSummary) setSection('flags')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.redFlags])
+
   // ── effects ───────────────────────────────────────────────────────────────
 
   // Keep submit handler ref current so speech recognition can call latest version
