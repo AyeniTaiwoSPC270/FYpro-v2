@@ -1127,6 +1127,44 @@ html {
   border-radius: 6px;
 }
 
+/* ── Skeleton bars — used in feature loading sections ───────────────────── */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.skeleton-bar {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #1E293B) 25%,
+    var(--skeleton-shimmer, #2D3F5A) 50%,
+    var(--skeleton-base, #1E293B) 75%
+  );
+  background-size: 400px 100%;
+  animation: fypro-shimmer 1.4s ease-in-out infinite;
+}
+
+[data-theme="light"] .skeleton-bar,
+.light .skeleton-bar {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #E2E8F0) 25%,
+    var(--skeleton-shimmer, #CBD5E1) 50%,
+    var(--skeleton-base, #E2E8F0) 75%
+  );
+  background-size: 400px 100%;
+}
+
+/* ── Loading pulse — used by .fy-loading-status rotating text ───────────── */
+@keyframes fx-loading-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 1;    }
+}
+
 [data-theme="light"] .skeleton-shimmer {
   background: linear-gradient(
     90deg,
