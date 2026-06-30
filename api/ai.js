@@ -230,7 +230,15 @@ async function handleGeneral(req, res) {
     }
 
     res.setHeader('X-Cache', 'MISS');
-    return res.status(response.status).json(data);
+    if (!response.ok) {
+      // Sanitise Anthropic error responses — never expose raw API messages (org IDs, URLs) to the client
+      const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
+      const clientErr = response.status === 429
+        ? 'FYPro is in high demand right now. Please try again in a moment.'
+        : 'AI service error. Please try again.';
+      return res.status(status).json({ error: clientErr });
+    }
+    return res.status(200).json(data);
   } catch (err) {
     refundRun(); // request never produced a result — don't charge the run
     const userId = extractUserId(req) || 'anonymous';

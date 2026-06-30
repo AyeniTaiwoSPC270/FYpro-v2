@@ -246,7 +246,16 @@ const handler = async (req, res) => {
       if (!anthropicRes.ok) {
         refundRun();
         const errData = await anthropicRes.json().catch(() => ({}));
-        send({ type: 'error', message: errData.error?.message || 'API error. Please try again.' });
+        const rawMsg = errData.error?.message || '';
+        let userMsg;
+        if (anthropicRes.status === 429 || rawMsg.includes('rate limit') || rawMsg.includes('tokens per minute')) {
+          userMsg = 'Your document is too large to process right now. Try uploading a shorter excerpt (10–15 pages) or a .txt version of your key chapters.';
+        } else if (anthropicRes.status === 402 || rawMsg.includes('credit') || rawMsg.includes('billing')) {
+          userMsg = 'Service temporarily unavailable. Please try again later.';
+        } else {
+          userMsg = 'AI service error. Please try again.';
+        }
+        send({ type: 'error', message: userMsg });
         res.end();
         return;
       }
