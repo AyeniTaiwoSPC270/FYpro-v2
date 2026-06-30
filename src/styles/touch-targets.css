@@ -1118,9 +1118,9 @@ html {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.04) 25%,
-    rgba(255,255,255,0.09) 50%,
-    rgba(255,255,255,0.04) 75%
+    var(--skeleton-base, #1E293B) 25%,
+    var(--skeleton-shimmer, #2D3F5A) 50%,
+    var(--skeleton-base, #1E293B) 75%
   );
   background-size: 400px 100%;
   animation: fypro-shimmer 1.4s infinite;
@@ -1165,12 +1165,13 @@ html {
   50%       { opacity: 1;    }
 }
 
-[data-theme="light"] .skeleton-shimmer {
+[data-theme="light"] .skeleton-shimmer,
+.light .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(0,0,0,0.06) 25%,
-    rgba(0,0,0,0.12) 50%,
-    rgba(0,0,0,0.06) 75%
+    var(--skeleton-base, #E2E8F0) 25%,
+    var(--skeleton-shimmer, #CBD5E1) 50%,
+    var(--skeleton-base, #E2E8F0) 75%
   );
   background-size: 400px 100%;
 }
