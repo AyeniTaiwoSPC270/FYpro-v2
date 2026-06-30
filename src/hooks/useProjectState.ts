@@ -203,7 +203,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(true)
       try {
-        const userState = await withTimeout(loadUserState(userId), 5000)
+        const userState = await withTimeout(loadUserState(userId), 12000)
         if (cancelled) return
 
         // Persist snapshot for offline fallback before hydrating

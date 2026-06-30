@@ -285,8 +285,13 @@ const handler = async (req, res) => {
         }
       } catch (err) {
         refundRun();
-        send({ type: 'error', message: 'Stream interrupted. Please try again.' });
-        res.end();
+        if (res.headersSent) {
+          const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
+          send({ type: 'error', message: isTimeout
+            ? 'This is taking too long — your document may be too large. Try uploading a shorter document or a .txt version.'
+            : 'Connection dropped mid-review. Please try again.' });
+          if (!res.writableEnded) res.end();
+        }
         return;
       }
 
