@@ -230,7 +230,7 @@ export default function ProjectReviewer() {
     const isPdf = ext === 'pdf'
     const sizeMB = (file.size / 1024 / 1024).toFixed(1)
     setLargeFileWarning(isPdf && file.size > 2 * 1024 * 1024
-      ? `Large PDF (${sizeMB} MB). On a slow connection this can take up to 2 minutes. For faster results, copy your project text into a .txt file and upload that instead.`
+      ? `Large PDF (${sizeMB} MB). For best results, upload key chapters only (10–20 pages). Full documents may take up to 2 minutes or fail on slow connections — a .txt copy of your main chapters works faster.`
       : null
     )
     setSelectedFile(file)
