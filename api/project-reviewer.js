@@ -319,7 +319,7 @@ const handler = async (req, res) => {
       }
 
       const streamDuration = Date.now() - start;
-      supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: streamDuration, user_id: user.id }).catch(() => {});
+      supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: streamDuration, user_id: user.id }).then(() => {}, () => {});
 
       send({ type: 'done', result: parsed });
       res.end();
@@ -374,8 +374,15 @@ const handler = async (req, res) => {
     return res.status(response.status).json(data);
   } catch (err) {
     refundRun(); // request never produced a result — don't charge the run
+    // If SSE has already started (streaming path), we cannot write another HTTP response.
+    // Alert on Telegram for visibility and close the stream cleanly.
+    if (res.headersSent) {
+      sendTelegramAlert(`🔴 Project Reviewer failed mid-stream for user:${user.id.slice(0, 8)} — ${err.message}`).catch(() => null);
+      if (!res.writableEnded) res.end();
+      return;
+    }
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[project-reviewer] Anthropic request timed out after 50s');
+      console.error('[project-reviewer] Anthropic request timed out after 55s');
       sendTelegramAlert(`⏱️ Project Reviewer timed out for user:${user.id.slice(0, 8)} (Defense Pack)`).catch(() => null);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
