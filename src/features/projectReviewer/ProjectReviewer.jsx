@@ -131,6 +131,7 @@ export default function ProjectReviewer() {
   const [section, setSection]         = useState(savedData ? 'result' : 'input')
   const [reviewData, setReviewData]   = useState(savedData || null)
   const [selectedFile, setSelectedFile] = useState(null)
+  const [largeFileWarning, setLargeFileWarning] = useState(null)
   const [error, setError]             = useState(null)
   const [truncationWarning, setTruncationWarning] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -226,6 +227,12 @@ export default function ProjectReviewer() {
       setError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Please upload a file under 4 MB, or paste your content as a .txt file.`)
       return
     }
+    const isPdf = ext === 'pdf'
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+    setLargeFileWarning(isPdf && file.size > 2 * 1024 * 1024
+      ? `Large PDF (${sizeMB} MB). On a slow connection this can take up to 2 minutes. For faster results, copy your project text into a .txt file and upload that instead.`
+      : null
+    )
     setSelectedFile(file)
   }
 
@@ -233,6 +240,7 @@ export default function ProjectReviewer() {
     if (e) e.stopPropagation()
     setSelectedFile(null)
     setError(null)
+    setLargeFileWarning(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -550,6 +558,26 @@ export default function ProjectReviewer() {
             >
               &times;
             </button>
+          </div>
+        )}
+
+        {largeFileWarning && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            background: 'var(--color-amber-light)',
+            border: '1px solid var(--color-amber)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 14px',
+            marginBottom: 12,
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.78rem',
+            color: '#92400e',
+            lineHeight: 1.5,
+          }}>
+            <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+            <span>{largeFileWarning}</span>
           </div>
         )}
 

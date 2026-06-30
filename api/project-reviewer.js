@@ -232,7 +232,7 @@ const handler = async (req, res) => {
             'anthropic-beta': 'pdfs-2024-09-25',
           },
           body: JSON.stringify({ model, max_tokens, system, messages, temperature: 0, stream: true }),
-          signal: AbortSignal.timeout(50000),
+          signal: AbortSignal.timeout(55000),
         });
       } catch (err) {
         refundRun();
