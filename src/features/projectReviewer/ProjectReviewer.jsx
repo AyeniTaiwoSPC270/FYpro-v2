@@ -142,25 +142,40 @@ export default function ProjectReviewer() {
   const [visibleWeaknesses, setVisibleWeaknesses] = useState([])
   const [visibleQuestions, setVisibleQuestions]   = useState([])
 
-  const fileInputRef    = useRef(null)
-  const loadingTimerRef = useRef(null)
-  const inflightRef     = useRef(false)
-  const timedOutRef     = useRef(false)
+  const fileInputRef          = useRef(null)
+  const loadingTimerRef       = useRef(null)
+  const slowTimerRef          = useRef(null)
+  const inflightRef           = useRef(false)
+  const timedOutRef           = useRef(false)
+  const processingFileNameRef = useRef('')
 
-  // Safety timeout: force-stop loading after 58s (server Anthropic timeout is 50s + ~8s overhead)
+  const [slowNetworkMessage, setSlowNetworkMessage] = useState(false)
+
+  // Safety timeout — extended to 120s for poor network conditions.
+  // On slow connections, uploading a 4MB PDF as base64 alone can take 40-60s before
+  // Anthropic even starts. A 35s slow-network reassurance fires first.
   useEffect(() => {
     if (section === 'loading') {
       timedOutRef.current = false
+      setSlowNetworkMessage(false)
+      slowTimerRef.current = setTimeout(() => setSlowNetworkMessage(true), 35000)
       loadingTimerRef.current = setTimeout(() => {
         timedOutRef.current = true
         setSection('input')
+        setSlowNetworkMessage(false)
         setIsProcessing(false)
-        setError('Request timed out. Please check your connection and try again.')
-      }, 58000)
+        setError('This is taking too long on your connection. Try uploading a smaller file or a .txt version of your project.')
+        logFailure('Project Reviewer', { message: 'Client timeout (120s)', code: 'GATEWAY_TIMEOUT' }, processingFileNameRef.current)
+      }, 120000)
     } else {
       clearTimeout(loadingTimerRef.current)
+      clearTimeout(slowTimerRef.current)
+      setSlowNetworkMessage(false)
     }
-    return () => clearTimeout(loadingTimerRef.current)
+    return () => {
+      clearTimeout(loadingTimerRef.current)
+      clearTimeout(slowTimerRef.current)
+    }
   }, [section])
 
   // Trigger stagger-in whenever the result section becomes visible
@@ -278,6 +293,7 @@ export default function ProjectReviewer() {
       return
     }
     trackEvent('workflow_step_started', { step: 'project_reviewer' })
+    processingFileNameRef.current = selectedFile?.name || ''
     setHasSubmitted(true)
     setChunkCount(0)
     setSection('loading')
@@ -363,9 +379,13 @@ export default function ProjectReviewer() {
           ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 80)
     } catch (err) {
-      if (timedOutRef.current) return
       inflightRef.current = false
-      logFailure('Project Reviewer', err, selectedFile?.name || '')
+      // If the 120s timer already fired it called logFailure itself — don't double-log.
+      // If we get here first, log now so the failure record is always written.
+      if (!timedOutRef.current) {
+        logFailure('Project Reviewer', err, processingFileNameRef.current)
+      }
+      if (timedOutRef.current) return
       setIsProcessing(false)
       setSection('input')
       handleApiError(err, msg => setError(msg || 'Something went wrong during the review. Please try again.'))
@@ -587,7 +607,10 @@ export default function ProjectReviewer() {
             color: '#92400e',
           }}>
             <span style={{ fontSize: '1rem' }}>⏱</span>
-            <span>This takes 30–60 seconds for large files. Keep this tab open — your review is on the way.</span>
+            <span>{slowNetworkMessage
+              ? 'Still uploading on your connection — please keep this tab open. This may take up to 2 minutes on a slow network.'
+              : 'This takes 30–60 seconds for large files. Keep this tab open — your review is on the way.'
+            }</span>
           </div>
           <div className="skeleton-loader">
             <div className="skeleton-bar" style={{ width: '100%' }} />
