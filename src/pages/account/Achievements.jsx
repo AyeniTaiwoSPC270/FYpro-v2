@@ -2,38 +2,41 @@
 import { Link } from 'react-router-dom'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useTheme } from '../../context/ThemeContext'
+import AchievementBadge from '../../components/icons/AchievementBadge'
+import { getAchievementIcon } from '../../components/icons/achievementIcons'
 
 const ACHIEVEMENT_DEFS = [
   // Milestone
-  { key: 'first_step',    name: 'First Step',          emoji: '🌱', desc: 'Completed Topic Validator for the first time',                    cat: 'Milestone', hidden: false },
-  { key: 'halfway',       name: 'Halfway There',        emoji: '⚡', desc: 'Completed 3 of the 6 steps',                                    cat: 'Milestone', hidden: false },
-  { key: 'defense_ready', name: 'Defense Ready',        emoji: '🛡️', desc: 'Completed all 6 steps and ran a defense session',                cat: 'Milestone', hidden: false },
-  { key: 'certified',     name: 'Certified',            emoji: '🎓', desc: 'Earned a Defense Certificate (score 7 or higher)',               cat: 'Milestone', hidden: false },
+  { key: 'first_step',    name: 'First Step',          desc: 'Completed Topic Validator for the first time',                    cat: 'Milestone', hidden: false },
+  { key: 'halfway',       name: 'Halfway There',        desc: 'Completed 3 of the 6 steps',                                    cat: 'Milestone', hidden: false },
+  { key: 'defense_ready', name: 'Defense Ready',        desc: 'Completed all 6 steps and ran a defense session',                cat: 'Milestone', hidden: false },
+  { key: 'certified',     name: 'Certified',            desc: 'Earned a Defense Certificate (score 7 or higher)',               cat: 'Milestone', hidden: false },
   // Speed
-  { key: 'fast_starter',  name: 'Fast Starter',         emoji: '🚀', desc: 'Completed Step 1 within 1 hour of signing up',                  cat: 'Speed',     hidden: false },
-  { key: 'sprint',        name: 'Sprint',               emoji: '🏃', desc: 'Completed 3 steps in a single day',                             cat: 'Speed',     hidden: false },
-  { key: 'speed_run',     name: 'Speed Run',            emoji: '💨', desc: 'Completed all 6 steps within 7 days of signup',                 cat: 'Speed',     hidden: false },
+  { key: 'fast_starter',  name: 'Fast Starter',         desc: 'Completed Step 1 within 1 hour of signing up',                  cat: 'Speed',     hidden: false },
+  { key: 'sprint',        name: 'Sprint',               desc: 'Completed 3 steps in a single day',                             cat: 'Speed',     hidden: false },
+  { key: 'speed_run',     name: 'Speed Run',            desc: 'Completed all 6 steps within 7 days of signup',                 cat: 'Speed',     hidden: false },
   // Effort
-  { key: 'sharp_mind',    name: 'Sharp Mind',           emoji: '🎯', desc: 'Scored 8 or higher in the Defense Simulator',                   cat: 'Effort',    hidden: false },
-  { key: 'excellence',    name: 'Excellence',           emoji: '⭐', desc: 'Scored 9 or higher in the Defense Simulator',                   cat: 'Effort',    hidden: false },
-  { key: 'perfectionist', name: 'Perfectionist',        emoji: '💎', desc: 'Scored a perfect 10/10 in the Defense Simulator',               cat: 'Effort',    hidden: false },
-  { key: 'persistent',    name: 'Persistent',           emoji: '🔄', desc: 'Ran the Defense Simulator 3 times',                             cat: 'Effort',    hidden: false },
-  { key: 'never_give_up', name: 'Never Give Up',        emoji: '💪', desc: 'Ran defense again after scoring below 7',                       cat: 'Effort',    hidden: false },
+  { key: 'sharp_mind',    name: 'Sharp Mind',           desc: 'Scored 8 or higher in the Defense Simulator',                   cat: 'Effort',    hidden: false },
+  { key: 'excellence',    name: 'Excellence',           desc: 'Scored 9 or higher in the Defense Simulator',                   cat: 'Effort',    hidden: false },
+  { key: 'perfectionist', name: 'Perfectionist',        desc: 'Scored a perfect 10/10 in the Defense Simulator',               cat: 'Effort',    hidden: false },
+  { key: 'persistent',    name: 'Persistent',           desc: 'Ran the Defense Simulator 3 times',                             cat: 'Effort',    hidden: false },
+  { key: 'never_give_up', name: 'Never Give Up',        desc: 'Ran defense again after scoring below 7',                       cat: 'Effort',    hidden: false },
   // Social
-  { key: 'ambassador',    name: 'Ambassador',           emoji: '📣', desc: 'Made your first referral',                                     cat: 'Social',    hidden: false },
-  { key: 'connector',     name: 'Connector',            emoji: '🌐', desc: '3 qualified referrals — friends who validated a topic',         cat: 'Social',    hidden: false },
-  { key: 'earned_it',     name: 'Earned It',            emoji: '🏆', desc: 'Earned your first free Defense session via referrals',          cat: 'Social',    hidden: false },
-  { key: 'shared',        name: 'Shared',               emoji: '📤', desc: 'Shared your Defense certificate',                              cat: 'Social',    hidden: false },
+  { key: 'ambassador',    name: 'Ambassador',           desc: 'Made your first referral',                                     cat: 'Social',    hidden: false },
+  { key: 'connector',     name: 'Connector',            desc: '3 qualified referrals — friends who validated a topic',         cat: 'Social',    hidden: false },
+  { key: 'earned_it',     name: 'Earned It',            desc: 'Earned your first free Defense session via referrals',          cat: 'Social',    hidden: false },
+  { key: 'shared',        name: 'Shared',               desc: 'Shared your Defense certificate',                              cat: 'Social',    hidden: false },
   // Hidden
-  { key: 'night_owl',     name: 'Night Owl',            emoji: '🦉', desc: 'Completed a step between midnight and 4 AM',                   cat: 'Hidden',    hidden: true  },
-  { key: 'early_bird',    name: 'Early Bird',           emoji: '🌅', desc: 'Completed a step before 7 AM',                                 cat: 'Hidden',    hidden: true  },
-  { key: 'dedicated',     name: 'Dedicated',            emoji: '🔥', desc: 'Took meaningful action on 5 different days',                   cat: 'Hidden',    hidden: true  },
+  { key: 'night_owl',     name: 'Night Owl',            desc: 'Completed a step between midnight and 4 AM',                   cat: 'Hidden',    hidden: true  },
+  { key: 'early_bird',    name: 'Early Bird',           desc: 'Completed a step before 7 AM',                                 cat: 'Hidden',    hidden: true  },
+  { key: 'dedicated',     name: 'Dedicated',            desc: 'Took meaningful action on 5 different days',                   cat: 'Hidden',    hidden: true  },
 ]
 
 const CATEGORIES = ['Milestone', 'Speed', 'Effort', 'Social', 'Hidden']
 
 function AchCard({ def, earned, isDark }) {
   const showLabel = !def.hidden || earned
+  const ICON = getAchievementIcon(def.key)
   return (
     <div style={{
       background: earned
@@ -50,14 +53,16 @@ function AchCard({ def, earned, isDark }) {
         : 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
-          background: earned ? 'rgba(0,102,255,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-          filter: earned ? 'none' : 'grayscale(1)',
-        }}>
-          {!earned && def.hidden ? '?' : def.emoji}
-        </div>
+        {(!earned && def.hidden) ? (
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
+            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+            color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(13,27,42,0.4)',
+          }}>?</div>
+        ) : (
+          <AchievementBadge glyph={ICON.glyph} tier={ICON.tier} earned={earned} size={44} title={def.name} />
+        )}
         <p style={{
           fontFamily: "'Poppins', sans-serif", fontSize: '0.85rem', fontWeight: 700,
           color: earned ? (isDark ? '#fff' : '#0D1B2A') : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(13,27,42,0.5)',
