@@ -126,4 +126,10 @@ export const GLYPHS: Record<GlyphName, ReactElement> = {
       <path d="M12 5v2.5M5.5 9l1.4 1.4M18.5 9l-1.4 1.4" style={{ fill: 'none', stroke: 'var(--gl-stroke)' }} strokeWidth="1.4" strokeLinecap="round" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M12 3a5 5 0 0 0-5 5c0 5.2-2 6.7-2 6.7h14s-2-1.5-2-6.7a5 5 0 0 0-5-5z" style={{ fill: 'var(--gl-fill)', stroke: 'var(--gl-stroke)' }} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M9.5 17.5a2.5 2.5 0 0 0 5 0" style={{ fill: 'none', stroke: 'var(--gl-stroke)' }} strokeWidth="1.5" strokeLinecap="round" />
+    </>
+  ),
 }

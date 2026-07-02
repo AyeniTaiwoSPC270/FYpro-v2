@@ -5,7 +5,7 @@ export type GlyphName =
   | 'shield' | 'cap' | 'target' | 'flame' | 'seedling' | 'halfRing'
   | 'rocket' | 'stopwatch' | 'flag' | 'star' | 'diamond' | 'loop'
   | 'comeback' | 'megaphone' | 'network' | 'trophy' | 'share'
-  | 'moon' | 'sunrise'
+  | 'moon' | 'sunrise' | 'bell'
 
 export type AchievementKey =
   | 'first_step' | 'halfway' | 'defense_ready' | 'certified'
