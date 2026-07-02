@@ -1,23 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const TYPE_ICONS = {
-  welcome:               '👋',
-  step_completed:        '✅',
-  payment_confirmed:     '💳',
-  certificate_unlocked:  '🏆',
-  referral_join:         '🔗',
-  referral_credit:       '👥',
-}
-
-const TYPE_ICON_BG = {
-  welcome:               'rgba(59,130,246,0.15)',
-  step_completed:        'rgba(6,182,212,0.15)',
-  payment_confirmed:     'rgba(22,163,74,0.15)',
-  certificate_unlocked:  'rgba(245,158,11,0.15)',
-  referral_join:         'rgba(139,92,246,0.15)',
-  referral_credit:       'rgba(139,92,246,0.15)',
-}
+import { GLYPHS, getNotificationIcon } from './icons'
 
 function relativeTime(dateStr) {
   try {
@@ -255,7 +238,15 @@ export default function NotificationPanel({
 
         {!loading && !error && notifications.length === 0 && (
           <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>🔔</div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '8px',
+              '--gl-stroke': 'var(--text-muted)',
+              '--gl-fill': 'rgba(148,163,184,0.25)',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">{GLYPHS.bell}</svg>
+            </div>
             <div style={{
               fontSize: '0.82rem', fontWeight: 600,
               color: 'var(--text-secondary)',
@@ -274,68 +265,72 @@ export default function NotificationPanel({
           </div>
         )}
 
-        {!loading && !error && notifications.map(n => (
-          <div
-            key={n.id}
-            style={{
-              padding: '12px 16px',
-              display: 'flex',
-              gap: '12px',
-              alignItems: 'flex-start',
-              borderBottom: '1px solid var(--border-subtle)',
-              background: n.read ? 'transparent' : 'rgba(0,102,255,0.04)',
-            }}
-          >
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: TYPE_ICON_BG[n.type] ?? 'var(--bg-input)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.9rem',
-              flexShrink: 0,
-            }}>
-              {TYPE_ICONS[n.type] ?? '🔔'}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+        {!loading && !error && notifications.map(n => {
+          const icon = getNotificationIcon(n.type)
+          return (
+            <div
+              key={n.id}
+              style={{
+                padding: '12px 16px',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+                borderBottom: '1px solid var(--border-subtle)',
+                background: n.read ? 'transparent' : 'rgba(0,102,255,0.04)',
+              }}
+            >
               <div style={{
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                lineHeight: 1.3,
-                marginBottom: '2px',
-                fontFamily: "'Poppins', sans-serif",
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: icon.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                '--gl-stroke': icon.stroke,
+                '--gl-fill': icon.fill,
               }}>
-                {n.title}
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">{GLYPHS[icon.glyph]}</svg>
               </div>
-              <div style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.4,
-                fontFamily: "'Poppins', sans-serif",
-              }}>
-                {n.message}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                {!n.read && (
-                  <div style={{
-                    width: '6px', height: '6px', borderRadius: '50%',
-                    background: 'var(--color-blue-primary)', flexShrink: 0,
-                  }} />
-                )}
-                <span style={{
-                  fontSize: isMobile ? '0.75rem' : '0.62rem',
-                  color: 'var(--text-muted)',
-                  fontFamily: "'JetBrains Mono', monospace",
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.3,
+                  marginBottom: '2px',
+                  fontFamily: "'Poppins', sans-serif",
                 }}>
-                  {relativeTime(n.created_at)}
-                </span>
+                  {n.title}
+                </div>
+                <div style={{
+                  fontSize: '0.7rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.4,
+                  fontFamily: "'Poppins', sans-serif",
+                }}>
+                  {n.message}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  {!n.read && (
+                    <div style={{
+                      width: '6px', height: '6px', borderRadius: '50%',
+                      background: 'var(--color-blue-primary)', flexShrink: 0,
+                    }} />
+                  )}
+                  <span style={{
+                    fontSize: isMobile ? '0.75rem' : '0.62rem',
+                    color: 'var(--text-muted)',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {relativeTime(n.created_at)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Footer */}
