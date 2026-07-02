@@ -29,8 +29,7 @@ export default function AchievementBadge({
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      role="img"
-      aria-label={title || glyph}
+      {...(title ? { role: 'img', 'aria-label': title } : { 'aria-hidden': true })}
       style={{
         filter: !earned
           ? 'grayscale(1)'
