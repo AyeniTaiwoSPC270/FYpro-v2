@@ -7,28 +7,30 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAchievements } from '../../hooks/useAchievements'
 import { useTheme } from '../../context/ThemeContext'
 import { Link } from 'react-router-dom'
+import AchievementBadge from '../icons/AchievementBadge'
+import { getAchievementIcon } from '../icons/achievementIcons'
 
 // All 19 achievements in display order
 const ALL_ACHIEVEMENTS = [
-  { key: 'first_step',    label: 'First Step',    emoji: '🌱', hidden: false },
-  { key: 'halfway',       label: 'Halfway There', emoji: '⚡', hidden: false },
-  { key: 'defense_ready', label: 'Defense Ready', emoji: '🛡️', hidden: false },
-  { key: 'certified',     label: 'Certified',     emoji: '🎓', hidden: false },
-  { key: 'fast_starter',  label: 'Fast Starter',  emoji: '🚀', hidden: false },
-  { key: 'sprint',        label: 'Sprint',         emoji: '🏃', hidden: false },
-  { key: 'speed_run',     label: 'Speed Run',      emoji: '💨', hidden: false },
-  { key: 'sharp_mind',    label: 'Sharp Mind',     emoji: '🎯', hidden: false },
-  { key: 'excellence',    label: 'Excellence',     emoji: '⭐', hidden: false },
-  { key: 'perfectionist', label: 'Perfectionist',  emoji: '💎', hidden: false },
-  { key: 'persistent',    label: 'Persistent',     emoji: '🔄', hidden: false },
-  { key: 'never_give_up', label: 'Never Give Up',  emoji: '💪', hidden: false },
-  { key: 'ambassador',    label: 'Ambassador',     emoji: '📣', hidden: false },
-  { key: 'connector',     label: 'Connector',      emoji: '🌐', hidden: false },
-  { key: 'earned_it',     label: 'Earned It',      emoji: '🏆', hidden: false },
-  { key: 'shared',        label: 'Shared',         emoji: '📤', hidden: false },
-  { key: 'night_owl',     label: 'Night Owl',      emoji: '🦉', hidden: true  },
-  { key: 'early_bird',    label: 'Early Bird',     emoji: '🌅', hidden: true  },
-  { key: 'dedicated',     label: 'Dedicated',      emoji: '🔥', hidden: true  },
+  { key: 'first_step',    label: 'First Step',    hidden: false },
+  { key: 'halfway',       label: 'Halfway There', hidden: false },
+  { key: 'defense_ready', label: 'Defense Ready', hidden: false },
+  { key: 'certified',     label: 'Certified',     hidden: false },
+  { key: 'fast_starter',  label: 'Fast Starter',  hidden: false },
+  { key: 'sprint',        label: 'Sprint',         hidden: false },
+  { key: 'speed_run',     label: 'Speed Run',      hidden: false },
+  { key: 'sharp_mind',    label: 'Sharp Mind',     hidden: false },
+  { key: 'excellence',    label: 'Excellence',     hidden: false },
+  { key: 'perfectionist', label: 'Perfectionist',  hidden: false },
+  { key: 'persistent',    label: 'Persistent',     hidden: false },
+  { key: 'never_give_up', label: 'Never Give Up',  hidden: false },
+  { key: 'ambassador',    label: 'Ambassador',     hidden: false },
+  { key: 'connector',     label: 'Connector',      hidden: false },
+  { key: 'earned_it',     label: 'Earned It',      hidden: false },
+  { key: 'shared',        label: 'Shared',         hidden: false },
+  { key: 'night_owl',     label: 'Night Owl',      hidden: true  },
+  { key: 'early_bird',    label: 'Early Bird',     hidden: true  },
+  { key: 'dedicated',     label: 'Dedicated',      hidden: true  },
 ]
 
 function AchievementChip({ def, earned, isLight }) {
@@ -67,6 +69,8 @@ function AchievementChip({ def, earned, isLight }) {
   }
 
   const label = earned ? def.label : def.hidden ? '???' : def.label
+  const ICON = getAchievementIcon(def.key)
+  const showMystery = def.hidden && !earned
 
   return (
     <>
@@ -78,21 +82,18 @@ function AchievementChip({ def, earned, isLight }) {
         animate={earned ? { scale: [1, 1.2, 1] } : {}}
         transition={{ duration: 0.5 }}
         style={{
-          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+          width: 36, height: 36, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.1rem',
-          background: earned
-            ? isLight ? 'rgba(0,102,255,0.08)' : 'rgba(0,102,255,0.12)'
-            : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
-          border: earned
-            ? '1.5px solid rgba(0,102,255,0.3)'
-            : isLight ? '1.5px solid rgba(13,27,42,0.1)' : '1.5px solid rgba(255,255,255,0.08)',
-          opacity: earned ? 1 : 0.35,
-          filter: earned ? 'none' : 'grayscale(1)',
           cursor: 'default',
+          borderRadius: showMystery ? '50%' : 0,
+          background: showMystery ? (isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)') : 'transparent',
+          border: showMystery ? (isLight ? '1.5px solid rgba(13,27,42,0.1)' : '1.5px solid rgba(255,255,255,0.08)') : 'none',
+          opacity: showMystery ? 0.35 : 1,
         }}
       >
-        {def.hidden && !earned ? '?' : def.emoji}
+        {showMystery
+          ? <span style={{ fontSize: '1rem', color: isLight ? 'rgba(13,27,42,0.4)' : 'rgba(255,255,255,0.4)' }}>?</span>
+          : <AchievementBadge glyph={ICON.glyph} tier={ICON.tier} earned={earned} size={36} title={def.label} />}
       </motion.div>
 
       {createPortal(
@@ -138,13 +139,13 @@ export default function AchievementsRow({ projectId = null, catalog = null, view
 
   if (loading) return null
 
-  // Express passes its own 8-item catalog ({ key, name, emoji, desc }); the
-  // default dashboard uses ALL_ACHIEVEMENTS ({ key, label, emoji, hidden }).
+  // Express passes its own 8-item catalog ({ key, name, desc }); the default
+  // dashboard uses ALL_ACHIEVEMENTS ({ key, label, hidden }). The glyph + tier
+  // for each key come from getAchievementIcon() inside AchievementChip.
   // Normalize both shapes here.
   const defs = (catalog ?? ALL_ACHIEVEMENTS).map(a => ({
     key: a.key,
     label: a.label ?? a.name,
-    emoji: a.emoji,
     hidden: a.hidden ?? false,
   }))
 
