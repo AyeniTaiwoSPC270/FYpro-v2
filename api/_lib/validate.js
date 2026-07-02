@@ -21,15 +21,20 @@ export const PaymentInitiateSchema = z.object({
   tier: z.enum(['student_pack', 'defense_pack', 'defense_pack_upgrade', 'express_defense', 'project_reset']),
 });
 
+// Bounds are defence-in-depth against token/cost abuse. They are generous enough
+// for a full multi-turn defense transcript (history is resent every turn) while
+// capping a single request well under Vercel's ~4.5 MB body limit.
+// 100k chars ≈ 25k tokens per message; 100 messages covers the longest session.
 export const AiMessagesSchema = z.object({
   messages: z
     .array(
       z.object({
         role:    z.enum(['user', 'assistant']),
-        content: z.string(),
+        content: z.string().max(100000, 'Message content is too long.'),
       })
     )
-    .min(1, 'At least one message is required.'),
+    .min(1, 'At least one message is required.')
+    .max(100, 'Too many messages in one request.'),
 });
 
 export const SubmitRatingSchema = z.object({

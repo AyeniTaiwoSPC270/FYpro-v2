@@ -186,7 +186,10 @@ const handler = async (req, res) => {
       });
       const today = new Date().toISOString().slice(0, 10);
       sendTelegramAlertOnce(`🔴 ElevenLabs TTS error ${ttsResponse.status} — examiner voices down in Defense Simulator`, `tg:speak:err:${ttsResponse.status}:${today}`).catch(() => null);
-      return res.status(ttsResponse.status).json({ error: 'ElevenLabs error', detail: errBody });
+      // Never forward the raw ElevenLabs error body to the client. The frontend only
+      // needs a non-2xx status to fall back to browser TTS; detail is logged above.
+      const status = ttsResponse.status >= 500 ? 503 : ttsResponse.status;
+      return res.status(status).json({ error: 'Voice generation is unavailable right now.' });
     }
 
     // Read the binary audio response and send it back as audio/mpeg.
@@ -202,7 +205,7 @@ const handler = async (req, res) => {
     // Returns 500 so the frontend .catch() triggers browser TTS fallback.
     console.error('[speak] error:', err.message);
     sendTelegramAlert(`🔴 TTS failed for user:${user?.id?.slice(0, 8) || 'unknown'} — ${err.message}`).catch(() => null);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Voice generation is unavailable right now.' });
   }
   } catch (err) {
     Sentry.captureException(err);

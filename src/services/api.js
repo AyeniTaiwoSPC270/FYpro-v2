@@ -608,17 +608,23 @@ export async function panelFirstQuestion(studentCtx, redFlags, uploadedReview) {
 }
 
 // ── Step 6: Three-Examiner Panel — follow-up ─────────────────────────────────
-export async function panelFollowUp(defenseContext, apiMessages, studentAnswer) {
+// `persistTurn` (optional) carries the transcript metadata for THIS answered turn.
+// When present, the server parses the examiner scores from its own copy of the AI
+// response and persists the defense_turns row — the browser never writes the scores
+// that later drive the certificate (see api/ai.js finalize-defense).
+export async function panelFollowUp(defenseContext, apiMessages, studentAnswer, persistTurn) {
   const messages = [
     ...apiMessages,
     { role: 'user', content: buildThreeExaminerFollowUpPrompt(studentAnswer) },
   ];
   const answerWordCount = studentAnswer.trim() === '' ? 0 : studentAnswer.trim().split(/\s+/).length;
+  const extra = { answerWordCount, promptType: 'panel', defenseContext };
+  if (persistTurn) extra.persistTurn = persistTurn;
   const { parsed, rawText } = await callClaudeAuthRaw(
     DEFENSE_ENDPOINT,
     messages,
     2000,
-    { answerWordCount, promptType: 'panel', defenseContext }
+    extra
   );
   return { parsed, rawText };
 }
@@ -630,6 +636,31 @@ export async function panelSummary(defenseContext, apiMessages) {
     { role: 'user', content: THREE_EXAMINER_SUMMARY_PROMPT },
   ];
   return callClaudeAuth(DEFENSE_ENDPOINT, messages, 2000, { promptType: 'panel', defenseContext });
+}
+
+// ── Step 6: finalize the defense session (server-authoritative score) ────────
+// The certificate score is computed SERVER-side from stored turn scores. This must
+// be called to mark the session completed — the browser can no longer write
+// defense_sessions.total_score / status (blocked by DB trigger, migration 0037).
+// Returns { score, status }.
+export async function finalizeDefense(defenseSessionId) {
+  if (!navigator.onLine) { const e = new Error('offline'); e.code = 'OFFLINE'; throw e; }
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch('/api/ai?action=finalize-defense', {
+    method:  'POST',
+    headers,
+    body:    JSON.stringify({ defense_session_id: defenseSessionId }),
+  });
+
+  if (!res.ok) {
+    const err = new Error(`finalize-defense failed (HTTP ${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
 }
 
 // ── Bonus: Supervisor Meeting Prep ───────────────────────────────────────────

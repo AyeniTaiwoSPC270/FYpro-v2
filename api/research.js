@@ -17,6 +17,7 @@ import { Sentry }                         from './_lib/sentry-server.js';
 export const config = { maxDuration: 60 };
 
 const CLAUDE_TTL = 86400; // 24h
+const MAX_TOKENS_LIMIT = 4096; // hard cap on client-requested output tokens (matches ai.js)
 
 /**
  * Per-user daily spend gate for the research endpoints. Topic Validator and
@@ -75,7 +76,8 @@ async function handleValidate(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
-  const { messages, max_tokens = 2000, topic } = req.body || {};
+  const { messages, max_tokens: rawMaxTokens = 2000, topic } = req.body || {};
+  const max_tokens = Math.min(Number(rawMaxTokens) || 2000, MAX_TOKENS_LIMIT);
 
   if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
     return res.status(400).json({ error: 'Topic must be at least 5 characters.' });
@@ -290,7 +292,8 @@ async function handleLitMap(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured on server.' });
 
-  const { messages, max_tokens = 3000, topic } = req.body || {};
+  const { messages, max_tokens: rawMaxTokens = 3000, topic } = req.body || {};
+  const max_tokens = Math.min(Number(rawMaxTokens) || 3000, MAX_TOKENS_LIMIT);
 
   if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
     return res.status(400).json({ error: 'Topic must be at least 5 characters.' });

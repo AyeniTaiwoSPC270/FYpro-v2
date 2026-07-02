@@ -381,11 +381,23 @@ const handler = async (req, res) => {
       await Promise.race([insertPromise, timeoutPromise]).catch(err => {
         console.error('[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
-    } else {
-      refundRun(); // Anthropic returned an error status — don't charge the run
+
+      return res.status(200).json(data);
     }
 
-    return res.status(response.status).json(data);
+    // Non-ok Anthropic response — refund the run and return a sanitised error.
+    // Never forward the raw Anthropic error body (it can carry org IDs / URLs).
+    refundRun();
+    const rawMsg = String(data?.error?.message || '');
+    console.error('[project-reviewer] Anthropic error', response.status, rawMsg.slice(0, 200));
+    let userMsg;
+    if (response.status === 429 || rawMsg.includes('rate limit') || rawMsg.includes('tokens per minute')) {
+      userMsg = 'Your document is too large to process right now. Try uploading a shorter excerpt (10–15 pages) or a .txt version of your key chapters.';
+    } else {
+      userMsg = 'AI service error. Please try again.';
+    }
+    const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
+    return res.status(status).json({ error: userMsg });
   } catch (err) {
     refundRun(); // request never produced a result — don't charge the run
     // If SSE has already started (streaming path), we cannot write another HTTP response.

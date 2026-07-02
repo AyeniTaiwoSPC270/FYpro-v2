@@ -11,6 +11,8 @@ import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.
 import { getExpressBetaFree, setExpressBetaFree } from './_lib/express-beta.js';
 import { getRatingForce, setRatingForce as setRatingForceLib } from './_lib/rating-force.js';
 import { validate, SubmitRatingSchema } from './_lib/validate.js';
+import { verifyCronSecret } from './_lib/cron-auth.js';
+import { verifyAdmin } from './_lib/admin-auth.js';
 
 const ALLOWED_TABLES = new Set([
   'admin_users','app_config','auth_attempts','daily_usage',
@@ -45,29 +47,6 @@ function readRawBody(req) {
     req.on('end',  () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
-}
-
-// Timing-safe cron secret verification.
-// Accepts x-cron-secret header OR Authorization: Bearer <secret>.
-// Returns true if authorized, false (and sends 401) if not.
-function verifyCronSecret(req, res) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) { res.status(401).json({ error: 'Unauthorized' }); return false; }
-  const xSecret    = req.headers['x-cron-secret']   || '';
-  const authHeader = req.headers['authorization']    || '';
-  const expected   = Buffer.from(cronSecret);
-  const bearer     = `Bearer ${cronSecret}`;
-
-  const xMatch = xSecret.length === cronSecret.length &&
-    crypto.timingSafeEqual(Buffer.from(xSecret), expected);
-  const bearerMatch = authHeader.length === bearer.length &&
-    crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(bearer));
-
-  if (!xMatch && !bearerMatch) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return false;
-  }
-  return true;
 }
 
 function mapSentryLevel(level) {
@@ -243,19 +222,9 @@ async function listAllAuthUsers() {
  */
 // action: "dashboard" — comprehensive admin analytics
 async function handleDashboard(req, res) {
-  // Server-side admin gate: verify JWT and check email
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-
-  try {
-    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token);
-    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' });
-    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-  } catch {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  // Server-side admin gate (timing-safe, fails closed if ADMIN_EMAIL unset).
+  const caller = await verifyAdmin(req, res);
+  if (!caller) return;
 
   try {
     const now  = Date.now();
@@ -543,27 +512,6 @@ async function handleDashboard(req, res) {
   } catch (err) {
     console.error('[admin/dashboard] error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-// Shared admin JWT gate — returns the caller user or sends a 401/403 response.
-// Returns null when it has already sent a response (caller must return immediately).
-async function verifyAdmin(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) { res.status(401).json({ error: 'Unauthorized' }); return null; }
-  try {
-    const { data: { user: caller }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !caller) { res.status(401).json({ error: 'Unauthorized' }); return null; }
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const callerBuf  = Buffer.from(caller.email  || '');
-    const adminBuf   = Buffer.from(adminEmail     || '');
-    if (!adminEmail || callerBuf.length !== adminBuf.length ||
-        !crypto.timingSafeEqual(callerBuf, adminBuf)) {
-      res.status(403).json({ error: 'Forbidden' }); return null;
-    }
-    return caller;
-  } catch {
-    res.status(401).json({ error: 'Unauthorized' }); return null;
   }
 }
 
@@ -2260,17 +2208,8 @@ function scoreHistogram(rows) {
 
 // action: "data-tab" — curated KPIs + 8 chart datasets + 29 table row counts
 async function handleDataTab(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-  try {
-    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
-    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
-    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
-  } catch (err) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   try {
     const today        = new Date().toISOString().slice(0, 10)
@@ -2381,17 +2320,8 @@ async function handleDataTab(req, res) {
 
 // action: "data-browse" — paginated table viewer with search + sort
 async function handleDataBrowse(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-  try {
-    const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
-    if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
-    if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
-  } catch (err) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   const table  = String(req.query.table  || '').toLowerCase()
   const search = String(req.query.search || '').slice(0, 200).trim()
@@ -2453,14 +2383,8 @@ async function handleDataBrowse(req, res) {
 }
 
 async function handleGetFounderPhotoUploadUrl(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-
-  const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
-  if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
-  if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   const { data, error } = await supabaseAdmin.storage
     .from('admin-assets')
@@ -2475,14 +2399,8 @@ async function handleGetFounderPhotoUploadUrl(req, res) {
 }
 
 async function handleUpdateFounderPhoto(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-
-  const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
-  if (authErr || !caller) return res.status(401).json({ error: 'Unauthorized' })
-  if (!process.env.ADMIN_EMAIL || caller.email !== process.env.ADMIN_EMAIL) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   const { url } = req.body || {}
   if (!url || typeof url !== 'string' || !url.startsWith('https://')) {

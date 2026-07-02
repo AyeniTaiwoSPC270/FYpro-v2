@@ -373,26 +373,30 @@ function buildPreviousStepsContext(previousSteps = {}) {
   const { validatedTopic, chapterStructure, chosenMethodology, methodology, writingPlan } = previousSteps;
   const lines = [];
 
+  // All fields are untrusted client data interpolated into the system prompt — clip
+  // each one (same guard used by the defense/reviewer builders) to bound the
+  // prompt-stuffing surface without rejecting legitimately long project titles.
   if (validatedTopic) {
-    lines.push(`- Topic: ${validatedTopic}`);
+    lines.push(`- Topic: ${clip(validatedTopic, 600)}`);
   }
 
   if (chapterStructure && Array.isArray(chapterStructure.chapters) && chapterStructure.chapters.length) {
     const titles = chapterStructure.chapters
-      .map(c => `Chapter ${c.number}: ${c.title}`)
+      .slice(0, 20)
+      .map(c => `Chapter ${clip(String(c?.number ?? ''), 10)}: ${clip(c?.title, 200)}`)
       .join(', ');
-    lines.push(`- Chapter Structure (${chapterStructure.total_chapters || chapterStructure.chapters.length} chapters): ${titles}`);
+    lines.push(`- Chapter Structure (${clip(String(chapterStructure.total_chapters || chapterStructure.chapters.length), 10)} chapters): ${titles}`);
   }
 
   if (chosenMethodology || (methodology && methodology.recommended)) {
-    const meth = chosenMethodology || methodology.recommended;
-    const reason = methodology?.recommended_reason || '';
+    const meth = clip(chosenMethodology || methodology.recommended, 300);
+    const reason = clip(methodology?.recommended_reason || '', 600);
     lines.push(`- Chosen Methodology: ${meth}${reason ? ' — ' + reason : ''}`);
   }
 
   if (writingPlan) {
-    const weeks = writingPlan.total_weeks ? `${writingPlan.total_weeks} weeks` : '';
-    const words = writingPlan.total_words ? `${writingPlan.total_words} total words` : '';
+    const weeks = writingPlan.total_weeks ? `${clip(String(writingPlan.total_weeks), 10)} weeks` : '';
+    const words = writingPlan.total_words ? `${clip(String(writingPlan.total_words), 15)} total words` : '';
     const summary = [weeks, words].filter(Boolean).join(', ');
     lines.push(`- Writing Plan: ${summary || 'Generated'}`);
   }

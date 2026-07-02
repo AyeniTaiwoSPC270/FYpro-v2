@@ -257,6 +257,182 @@ async function handleGeneral(req, res) {
   }
 }
 
+// Never forward a raw Anthropic error body to the client — provider error
+// messages can leak org IDs / internal URLs. Log the detail server-side, return
+// a generic message. Mirrors the sanitiser already used in handleGeneral.
+function sendSanitizedAiError(res, response, data, traceId, feature) {
+  traceLog(traceId, 'error', `[ai/${feature}] Anthropic ${response.status}:`,
+    String(data?.error?.message || data?.type || '').slice(0, 200));
+  const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
+  const clientErr = response.status === 429
+    ? 'FYPro is in high demand right now. Please try again in a moment.'
+    : 'AI service error. Please try again.';
+  return res.status(status).json({ error: clientErr });
+}
+
+// Clamp an examiner score to an integer in [0, 10]. Non-numeric → 0.
+function clampTurnScore(n) {
+  const x = Math.round(Number(n));
+  return Number.isFinite(x) ? Math.min(10, Math.max(0, x)) : 0;
+}
+
+// Parse the per-turn examiner scores out of a panel follow-up response. The scores
+// that feed total_score are extracted from Claude's output SERVER-side here — never
+// trusted from the client — then persisted so finalize-defense can average them.
+function parsePanelTurnScores(data) {
+  const text = data?.content?.[0]?.text ?? '';
+  try {
+    const stripped = String(text).replace(/```json|```/g, '').trim();
+    const match = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    const parsed = JSON.parse(match ? match[0] : stripped);
+    const arr = Array.isArray(parsed?.scores) ? parsed.scores : [];
+    return arr
+      .filter(s => s && typeof s === 'object')
+      .slice(0, 5)
+      .map(s => ({
+        examiner:  typeof s.examiner === 'string'  ? s.examiner.slice(0, 60)   : '',
+        score:     clampTurnScore(s.score),
+        reasoning: typeof s.reasoning === 'string' ? s.reasoning.slice(0, 500) : '',
+      }));
+  } catch {
+    return [];
+  }
+}
+
+// Persist one answered panel turn (with server-parsed scores) via service role.
+// The DB trigger (migration 0037) blocks clients from writing defense_turns.scores,
+// so this is the only path that records the scores finalize-defense will average.
+// Verifies session ownership first — never writes into another user's session.
+async function persistDefenseTurn({ persistTurn, userId, data, traceId }) {
+  if (!persistTurn || typeof persistTurn !== 'object') return;
+  const sessionId  = typeof persistTurn.sessionId === 'string' ? persistTurn.sessionId : null;
+  const turnNumber = Number(persistTurn.turnNumber);
+  if (!sessionId || !Number.isFinite(turnNumber)) return;
+
+  try {
+    const { data: sess } = await supabaseAdmin
+      .from('defense_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!sess) return; // not the caller's session — refuse
+
+    const scores = parsePanelTurnScores(data);
+    const { error } = await supabaseAdmin.from('defense_turns').insert({
+      session_id:        sessionId,
+      user_id:           userId,
+      turn_number:       Math.trunc(turnNumber),
+      examiner_question: typeof persistTurn.examinerQuestion === 'string' ? persistTurn.examinerQuestion.slice(0, 2000) : '',
+      student_answer:    typeof persistTurn.studentAnswer === 'string'   ? persistTurn.studentAnswer.slice(0, 4000)   : '',
+      scores,
+    });
+    if (error) traceLog(traceId, 'error', '[ai/defense] turn persist failed:', error.message);
+  } catch (err) {
+    traceLog(traceId, 'error', '[ai/defense] turn persist threw:', err?.message);
+  }
+}
+
+/**
+ * Finalizes a defense session server-side. The authoritative total_score is computed
+ * ONLY from server-written defense_turns.scores (clients cannot write those columns —
+ * migration 0037). Sets status='completed' + total_score via service role so the
+ * certificate endpoint reads a score the user could not forge. Idempotent.
+ * @param {object} req - Vercel request; expects Authorization header and { defense_session_id }
+ * @param {object} res - Vercel response
+ * @returns {Promise<void>}
+ */
+async function handleFinalizeDefense(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required.' });
+
+  let authResult, rl;
+  try {
+    [authResult, rl] = await Promise.all([
+      supabaseAdmin.auth.getUser(token),
+      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'finalize-defense' }).catch(() => ({ allowed: true, reason: '' })),
+    ]);
+  } catch (authErr) {
+    traceLog(traceId, 'error', '[ai/finalize-defense] auth threw:', authErr.message);
+    return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
+  }
+  const { data: { user } = {}, error: authError } = authResult;
+  if (authError || !user) return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+  if (!rl.allowed) return res.status(429).json({ error: rl.reason });
+
+  const { defense_session_id } = req.body || {};
+  if (!defense_session_id || typeof defense_session_id !== 'string') {
+    return res.status(400).json({ error: 'defense_session_id is required.' });
+  }
+
+  try {
+    // Ownership check — service role bypasses RLS, so filter by user_id explicitly.
+    const { data: session, error: sessErr } = await supabaseAdmin
+      .from('defense_sessions')
+      .select('id, user_id, status, total_score')
+      .eq('id', defense_session_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (sessErr) {
+      traceLog(traceId, 'error', '[ai/finalize-defense] session lookup failed:', sessErr.message);
+      return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+    }
+    if (!session) return res.status(404).json({ error: 'Defense session not found.' });
+
+    // Idempotent: a session finalized already returns its stored server score.
+    if (session.status === 'completed' && typeof session.total_score === 'number') {
+      return res.status(200).json({ score: session.total_score, status: 'completed' });
+    }
+
+    // total_score is derived ONLY from server-written turn scores.
+    const { data: turns, error: turnsErr } = await supabaseAdmin
+      .from('defense_turns')
+      .select('scores')
+      .eq('session_id', defense_session_id)
+      .eq('user_id', user.id);
+    if (turnsErr) {
+      traceLog(traceId, 'error', '[ai/finalize-defense] turns lookup failed:', turnsErr.message);
+      return res.status(503).json({ error: 'Service unavailable. Please try again.' });
+    }
+
+    const allScores = [];
+    for (const t of (turns || [])) {
+      const arr = Array.isArray(t.scores) ? t.scores : [];
+      for (const s of arr) {
+        const v = Number(s?.score);
+        if (Number.isFinite(v)) allScores.push(v);
+      }
+    }
+    const totalScore = allScores.length
+      ? Math.min(10, Math.max(0, Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)))
+      : 0;
+
+    const { error: updErr } = await supabaseAdmin
+      .from('defense_sessions')
+      .update({
+        status:       'completed',
+        total_score:  totalScore,
+        turns_count:  (turns || []).length,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', defense_session_id)
+      .eq('user_id', user.id);
+    if (updErr) {
+      traceLog(traceId, 'error', '[ai/finalize-defense] update failed:', updErr.message);
+      return res.status(500).json({ error: 'Failed to finalize defense session.' });
+    }
+
+    return res.status(200).json({ score: totalScore, status: 'completed' });
+  } catch (err) {
+    traceLog(traceId, 'error', '[ai/finalize-defense] error:', err.message);
+    return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+  }
+}
+
 /**
  * Defense Simulator proxy. Requires defense_pack entitlement — enforced server-side.
  * Not cached (each turn is unique). Enforces a 300-word answer limit to prevent token abuse.
@@ -392,6 +568,7 @@ async function handleDefense(req, res) {
     max_tokens: rawMaxTokens = 2000,
     model: rawModel = 'claude-sonnet-4-6',
     answerWordCount,
+    persistTurn,
   } = req.body || {};
 
   const v = validate(AiMessagesSchema, { messages });
@@ -421,8 +598,14 @@ async function handleDefense(req, res) {
       system,
       messages,
     });
-    console.log('[ai/defense] Anthropic status:', response.status);
-    return res.status(response.status).json(data);
+    if (!response.ok) return sendSanitizedAiError(res, response, data, traceId, 'defense');
+
+    // Persist the answered turn with server-parsed scores (best-effort). The client
+    // sends only transcript metadata; the scores that drive total_score are extracted
+    // from Claude's output here, never trusted from the browser.
+    await persistDefenseTurn({ persistTurn, userId: user.id, data, traceId });
+
+    return res.status(200).json(data);
   } catch (err) {
     traceLog(traceId, 'error', '[ai/defense] error:', err.message);
     await Promise.all([
@@ -533,7 +716,14 @@ async function handleSupervisorPrep(req, res) {
     }
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'Anthropic error' });
+      // Never forward the raw Anthropic error body — it can carry org IDs / URLs.
+      console.error('[ai/supervisor-prep] Anthropic', response.status, String(data?.error?.message || '').slice(0, 200));
+      const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
+      return res.status(status).json({
+        error: response.status === 429
+          ? 'FYPro is in high demand right now. Please try again in a moment.'
+          : 'AI service error. Please try again.',
+      });
     }
 
     const duration       = Date.now() - start;
@@ -856,10 +1046,10 @@ async function handleDefenceBrief(req, res) {
       if (expressOnly && reservedCount !== null) {
         await syncRunCount({ userId: user.id, dbKey: 'express_defence_brief', newCount: reservedCount, dbRunCounts });
       }
-    } else {
-      refundRun(); // Anthropic returned an error status — don't charge the run
+      return res.status(200).json(data);
     }
-    return res.status(response.status).json(data);
+    refundRun(); // Anthropic returned an error status — don't charge the run
+    return sendSanitizedAiError(res, response, data, traceId, 'defence-brief');
   } catch (err) {
     refundRun(); // request never produced a result — don't charge the run
     traceLog(traceId, 'error', '[ai/defence-brief] error:', err.message);
@@ -932,7 +1122,8 @@ async function handleDefenceBriefCoach(req, res) {
 
   try {
     const { response, data } = await callAnthropic({ feature: 'defence-brief-coach', userId: user.id, model, max_tokens, system, messages });
-    return res.status(response.status).json(data);
+    if (!response.ok) return sendSanitizedAiError(res, response, data, traceId, 'defence-brief-coach');
+    return res.status(200).json(data);
   } catch (err) {
     traceLog(traceId, 'error', '[ai/defence-brief-coach] error:', err.message);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
@@ -947,6 +1138,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     if (req.query.action === 'defense')             return handleDefense(req, res);
+    if (req.query.action === 'finalize-defense')    return handleFinalizeDefense(req, res);
     if (req.query.action === 'supervisor-prep')     return handleSupervisorPrep(req, res);
     if (req.query.action === 'sync-run-counts')     return handleSyncRunCounts(req, res);
     if (req.query.action === 'check-achievements')  return handleCheckAchievements(req, res);

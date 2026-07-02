@@ -11,6 +11,8 @@ import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
 import { setExpressBetaFree, getExpressBetaFree } from './_lib/express-beta.js'
+import { verifyCronSecret } from './_lib/cron-auth.js'
+import { verifyAdmin } from './_lib/admin-auth.js'
 import webpush from 'web-push'
 
 function getWebPush() {
@@ -1432,16 +1434,8 @@ async function handleSubmitReport(req, res) {
 // ─── Update report status (admin-only) ───────────────────────────────────────
 
 async function handleUpdateReportStatus(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
-
-  const adminEmail = process.env.ADMIN_EMAIL
-  if (!adminEmail || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   const { report_id, status } = req.body || {}
   if (!['acknowledged', 'resolved'].includes(status)) {
@@ -1467,16 +1461,8 @@ async function handleUpdateReportStatus(req, res) {
 // ─── Get reports (admin-only) ─────────────────────────────────────────────────
 
 async function handleGetReports(req, res) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'Unauthorized' })
-
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
-
-  const adminEmail = process.env.ADMIN_EMAIL
-  if (!adminEmail || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
-    return res.status(403).json({ error: 'Forbidden' })
-  }
+  const caller = await verifyAdmin(req, res)
+  if (!caller) return
 
   const statusFilter = req.body?.status
   let query = supabaseAdmin
@@ -1538,9 +1524,10 @@ const REQUIRED_STEPS_FOR_DEFENSE = [
 ]
 
 async function handleSendNudges(req, res) {
-  if (req.query?.secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
+  // Timing-safe + fail-closed cron auth via header (x-cron-secret or Bearer).
+  // NOTE: the cron-job.org "send-nudges" job must send the secret as the
+  // `x-cron-secret` header (matching the other crons) — not the old ?secret= query param.
+  if (!verifyCronSecret(req, res)) return
 
   // Fetch all current subscriptions
   const { data: subs, error: subErr } = await supabaseAdmin

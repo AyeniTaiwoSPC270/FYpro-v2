@@ -5,11 +5,21 @@ import {
   panelFirstQuestion,
   panelFollowUp,
   panelSummary,
+  finalizeDefense,
   handleApiError,
   logFailure,
 } from '../../services/api'
 import LoadingMessages from '../../components/LoadingMessages'
 import Spinner from '../../components/Spinner'
+
+// Derive the verdict band from the server-authoritative score so the results
+// screen, share card, and certificate all agree (bands match PastSessions).
+function panelLabelFromScore(score) {
+  if (score >= 9) return 'Distinction'
+  if (score >= 7) return 'Merit'
+  if (score >= 5) return 'Pass'
+  return 'Fail'
+}
 
 const GENERIC_LOADING_MESSAGES = [
   'Generating your analysis...',
@@ -1133,8 +1143,20 @@ export default function DefensePrep() {
     set({ defenseQuestionCount: qCount, defenseApiMessages: historySnapshot })
     setTypingVisible(true)
 
+    // Transcript metadata for this answered turn. The server persists the turn row
+    // (including the examiner scores it parses from its own copy of the AI response)
+    // via service role — the browser no longer writes defense_turns.scores.
+    const persistTurn = (defenseSessionIdRef.current && authUserRef.current?.id)
+      ? {
+          sessionId:        defenseSessionIdRef.current,
+          turnNumber:       qCount,
+          examinerQuestion: currentQuestionRef.current,
+          studentAnswer:    answer,
+        }
+      : null
+
     try {
-      const result = await panelFollowUp(defenseContext, historySnapshot, answer)
+      const result = await panelFollowUp(defenseContext, historySnapshot, answer, persistTurn)
       const data   = result.parsed
 
       defenseMessagesRef.current = [
@@ -1144,26 +1166,9 @@ export default function DefensePrep() {
       ]
       set({ defenseApiMessages: defenseMessagesRef.current })
 
-      // Inject scores into the student bubble we just rendered
+      // Inject scores into the student bubble we just rendered (display only)
       if (data.scores?.length) {
         patchMsg(studentMsgId, { scores: data.scores })
-      }
-
-      // Persist Q&A turn for session history — fire-and-forget
-      if (defenseSessionIdRef.current && authUserRef.current?.id) {
-        supabase
-          .from('defense_turns')
-          .insert({
-            session_id:        defenseSessionIdRef.current,
-            user_id:           authUserRef.current.id,
-            turn_number:       qCount,
-            examiner_question: currentQuestionRef.current,
-            student_answer:    answer,
-            scores:            data.scores ?? [],
-          })
-          .then(({ error: err }) => {
-            if (err) console.warn('[defense_turns] insert failed:', err.message)
-          })
       }
 
       // Layer 2 — low score tracking
@@ -1242,8 +1247,25 @@ export default function DefensePrep() {
 
     try {
       const data = await panelSummary(panelSystemRef.current, defenseMessagesRef.current)
-      const panelScore = Number.isFinite(Number(data.panel_score)) ? Math.round(Number(data.panel_score)) : 0
+
+      // The certificate score is server-authoritative: finalize-defense computes it
+      // from server-written turn scores and marks the session completed. The AI
+      // summary's panel_score is narrative only. Use the server score for display,
+      // celebration, and the certificate so all three agree. Fall back to the summary
+      // score for display only if finalize fails (no certificate in that case).
+      let panelScore = Number.isFinite(Number(data.panel_score)) ? Math.round(Number(data.panel_score)) : 0
+      if (defenseSessionIdRef.current) {
+        try {
+          const fin = await finalizeDefense(defenseSessionIdRef.current)
+          if (fin && Number.isFinite(Number(fin.score))) {
+            panelScore = Math.round(Number(fin.score))
+          }
+        } catch (finErr) {
+          console.warn('[defense] finalize-defense failed:', finErr.message)
+        }
+      }
       data.panel_score = panelScore
+      data.panel_score_label = panelLabelFromScore(panelScore)
 
       trackEvent('defense_simulator_completed', {
         score:    panelScore,
@@ -1295,56 +1317,9 @@ export default function DefensePrep() {
         if (isFirstDefenseCompletion) notifyStepCompleted(authUser?.id, 'defense_prep', 5).catch(() => {})
       }
 
-      // Update defense_sessions row with the final score and completion time.
-      // Awaited so the certificate endpoint always finds a complete row.
-      let sessionWriteOk = false
-      if (defenseSessionIdRef.current) {
-        const { error: updateErr } = await supabase
-          .from('defense_sessions')
-          .update({
-            status:       'completed',
-            total_score:  panelScore,
-            turns_count:  questionCountRef.current,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', defenseSessionIdRef.current)
-        if (updateErr) {
-          console.warn('[defense] session update failed, running fallback:', updateErr.message)
-          defenseSessionIdRef.current = null  // clear so fallback insert runs below
-        } else {
-          sessionWriteOk = true
-        }
-      }
-
-      if (!sessionWriteOk) {
-        // Fallback: session row was never created, or the update failed above.
-        // Create it directly as completed so the certificate endpoint can verify the score.
-        const pid = projectId || await ensureProject()
-        if (pid) {
-          const fallbackUser = authUserRef.current
-          if (fallbackUser) {
-            const { data: row, error: rowErr } = await supabase
-              .from('defense_sessions')
-              .insert({
-                project_id:       pid,
-                user_id:          fallbackUser.id,
-                examiner_persona: 'external_examiner',
-                status:           'completed',
-                total_score:      Math.round(data.panel_score ?? 0),
-                turns_count:      questionCountRef.current,
-                completed_at:     new Date().toISOString(),
-              })
-              .select('id')
-              .single()
-            if (rowErr) {
-              console.warn('[defense] fallback session insert failed:', rowErr.message)
-            } else if (row?.id) {
-              defenseSessionIdRef.current = row.id
-              setDefenseSessionId(row.id)
-            }
-          }
-        }
-      }
+      // The defense_sessions row was marked completed with its server-computed
+      // total_score by finalizeDefense() above (the browser can no longer write
+      // those columns — DB trigger, migration 0037). No client-side session write here.
 
       showToast('Defence session complete ✓')
       document.dispatchEvent(new CustomEvent('fypro:defense-session-saved'))
