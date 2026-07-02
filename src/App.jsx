@@ -1,25 +1,23 @@
 import { lazy, Suspense, useEffect } from 'react'
+import { tryChunkReload } from './lib/chunkReload'
 
 // iOS Safari resolves dynamic imports with undefined (instead of rejecting) when a module
 // script fails silently through a service worker mid-transition. The existing vite:preloadError
 // handler in main.jsx covers Chrome-style rejections; this covers the Safari undefined case.
+// tryChunkReload() reloads once (shared, attempt-limited budget); if it gives up we surface the
+// error so the boundary's fallback shows instead of looping or rendering a silent blank.
 function safeLazy(factory) {
   return lazy(() =>
     factory().then(mod => {
       if (!mod?.default) {
-        if (!sessionStorage.getItem('chunk-reload')) {
-          sessionStorage.setItem('chunk-reload', '1')
-          window.location.reload()
-        }
-        return { default: () => null }
+        // While a reload is in flight, render nothing to avoid an error-boundary flash.
+        if (tryChunkReload()) return { default: () => null }
+        throw new Error('Chunk resolved without a default export')
       }
       return mod
-    }).catch(() => {
-      if (!sessionStorage.getItem('chunk-reload')) {
-        sessionStorage.setItem('chunk-reload', '1')
-        window.location.reload()
-      }
-      throw new Error('Chunk failed to load')
+    }).catch(err => {
+      tryChunkReload()
+      throw err instanceof Error ? err : new Error('Chunk failed to load')
     })
   )
 }

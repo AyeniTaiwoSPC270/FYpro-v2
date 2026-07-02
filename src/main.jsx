@@ -14,18 +14,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { tryChunkReload } from './lib/chunkReload'
 
 // A failed lazy-route chunk (stale index.html after a redeploy, or a network
-// blip mid-session) is recoverable by reloading — do it once automatically
-// instead of stranding the user on the error boundary.
+// blip mid-session) is recoverable by reloading — do it automatically instead
+// of stranding the user on the error boundary. tryChunkReload() is attempt-
+// limited, so if the reload doesn't fix it we fall through to Vite's default
+// (which surfaces the error boundary) rather than looping forever.
 window.addEventListener('vite:preloadError', (event) => {
-  if (!sessionStorage.getItem('chunk-reload')) {
-    sessionStorage.setItem('chunk-reload', '1')
-    event.preventDefault()
-    window.location.reload()
-  }
+  if (tryChunkReload()) event.preventDefault()
 })
-window.addEventListener('load', () => sessionStorage.removeItem('chunk-reload'))
 
 const SentryErrorFallback = () => (
   <div style={{
