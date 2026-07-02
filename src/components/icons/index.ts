@@ -1,6 +1,8 @@
 export { default as AchievementBadge } from './AchievementBadge'
 export { GLYPHS } from './glyphs'
 export { ACHIEVEMENT_ICONS, getAchievementIcon } from './achievementIcons'
+export { NOTIFICATION_ICONS, getNotificationIcon } from './notificationIcons'
 export { TIER_COLORS, LOCKED } from './tokens'
 export { HexFrame } from './frames'
 export type { Tier, GlyphName, AchievementKey, IconColors } from './types'
+export type { NotificationType, NotificationIconStyle } from './notificationIcons'
