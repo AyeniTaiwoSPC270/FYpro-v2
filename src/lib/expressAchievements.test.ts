@@ -8,11 +8,10 @@ describe('express achievement catalog', () => {
       'perfectionist', 'persistent', 'shared', 'sharp_mind',
     ])
   })
-  it('every catalog entry has name + emoji + desc', () => {
+  it('every catalog entry has name + desc', () => {
     EXPRESS_ACHIEVEMENTS.forEach(a => {
       expect(a.key).toBeTruthy()
       expect(a.name).toBeTruthy()
-      expect(a.emoji).toBeTruthy()
       expect(a.desc).toBeTruthy()
     })
   })

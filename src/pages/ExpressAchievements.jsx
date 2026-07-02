@@ -3,8 +3,11 @@ import { useAchievements } from '../hooks/useAchievements'
 import { useProjectState } from '../hooks/useProjectState'
 import { useTheme } from '../context/ThemeContext'
 import { EXPRESS_ACHIEVEMENTS } from '../lib/expressAchievements'
+import AchievementBadge from '../components/icons/AchievementBadge'
+import { getAchievementIcon } from '../components/icons/achievementIcons'
 
 function AchCard({ def, earned, isDark }) {
+  const ICON = getAchievementIcon(def.key)
   return (
     <div style={{
       background: earned
@@ -21,14 +24,7 @@ function AchCard({ def, earned, isDark }) {
         : 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
-          background: earned ? 'rgba(0,102,255,0.1)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-          filter: earned ? 'none' : 'grayscale(1)',
-        }}>
-          {def.emoji}
-        </div>
+        <AchievementBadge glyph={ICON.glyph} tier={ICON.tier} earned={earned} size={44} title={def.name} />
         <p style={{
           fontFamily: "'Poppins', sans-serif", fontSize: '0.85rem', fontWeight: 700,
           color: earned ? (isDark ? '#fff' : '#0D1B2A') : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(13,27,42,0.5)',
