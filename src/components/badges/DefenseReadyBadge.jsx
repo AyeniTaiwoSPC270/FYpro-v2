@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
-
-const SHIELD_PATH =
-  'M224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
+import { GLYPHS } from '../icons/glyphs'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -148,13 +146,18 @@ export default function DefenseReadyBadge({ awardedAt }) {
         }}
       >
         {unlocked ? (
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="30" height="30" fill="#0066FF" aria-hidden="true">
-            <path d={SHIELD_PATH} />
+          <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"
+            style={{ '--gl-stroke': '#0066FF', '--gl-fill': 'rgba(0,102,255,0.28)' }}>
+            {GLYPHS.shield}
           </svg>
         ) : (
           <div style={{ position: 'relative', width: 30, height: 30 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="30" height="30" fill={isLight ? 'rgba(13,27,42,0.2)' : 'rgba(255,255,255,0.2)'} aria-hidden="true">
-              <path d={SHIELD_PATH} />
+            <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"
+              style={{
+                '--gl-stroke': isLight ? 'rgba(13,27,42,0.25)' : 'rgba(255,255,255,0.25)',
+                '--gl-fill': isLight ? 'rgba(13,27,42,0.06)' : 'rgba(255,255,255,0.05)',
+              }}>
+              {GLYPHS.shield}
             </svg>
             {/* Padlock overlay */}
             <div style={{ position: 'absolute', bottom: -2, right: -2, background: isLight ? '#E2E8F0' : '#0D1B2A', borderRadius: '50%', padding: 2 }}>
