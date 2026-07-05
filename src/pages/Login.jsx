@@ -291,7 +291,7 @@ export default function Login() {
             disabled={googleLoading}
             whileHover={!googleLoading ? { borderColor: 'rgba(148,163,184,0.5)', y: -1, boxShadow: '0 4px 16px rgba(0,0,0,0.25)' } : {}}
             whileTap={!googleLoading ? { scale: 0.98 } : {}}
-            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3.5 w-full flex items-center justify-center gap-3 text-white text-sm font-sans font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="bg-[var(--bg-input)] border border-slate-700 rounded-xl py-3.5 w-full flex items-center justify-center gap-3 text-[var(--text-primary)] text-sm font-sans font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {googleLoading
               ? <><GoogleSpinner />Connecting to Google…</>

@@ -774,6 +774,32 @@ html {
 [data-theme="light"] [data-pub] .border-white\/\[0\.1\],
 [data-theme="light"] [data-pub] .border-white\/5 { border-color: var(--pub-border-dim) !important; }
 
+/* Button borders (Login pill, ghost pricing CTAs, hamburger icon) need more
+   contrast than divider borders, and must apply outside <nav> too — ghost
+   buttons in the pricing cards and the mobile dropdown menu are siblings of
+   <nav>, not children, so the nav-scoped rule further down misses them. */
+[data-theme="light"] [data-pub] .border-white\/\[0\.22\] { border-color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] [data-pub] .border-white\/\[0\.2\] { border-color: rgba(13,27,42,0.2) !important; }
+[data-theme="light"] [data-pub] .border-white\/\[0\.18\] { border-color: rgba(13,27,42,0.15) !important; }
+[data-theme="light"] [data-pub] .hover\:border-white\/45:hover { border-color: rgba(13,27,42,0.35) !important; }
+[data-theme="light"] [data-pub] .hover\:border-white\/\[0\.42\]:hover { border-color: rgba(13,27,42,0.35) !important; }
+[data-theme="light"] [data-pub] .hover\:border-white\/40:hover { border-color: rgba(13,27,42,0.3) !important; }
+
+/* Colored-bg buttons (Start Free, Try Free) must keep white text in light
+   mode. Same specificity (0,3,0) as the blanket .text-white rule above, but
+   this one is scoped to the bg-color class so it never fights legit text
+   links (Pricing/About/Contact) that DO need to turn dark. */
+[data-theme="light"] [data-pub] .bg-blue-brand.text-white,
+[data-theme="light"] [data-pub] .bg-blue-500.text-white,
+[data-theme="light"] [data-pub] .bg-blue-600.text-white,
+[data-theme="light"] [data-pub] .bg-blue-700.text-white,
+[data-theme="light"] [data-pub] .bg-green-500.text-white,
+[data-theme="light"] [data-pub] .bg-green-600.text-white,
+[data-theme="light"] [data-pub] .bg-green-700.text-white,
+[data-theme="light"] [data-pub] .bg-green-brand.text-white,
+[data-theme="light"] [data-pub] .bg-\[\#0066FF\].text-white,
+[data-theme="light"] [data-pub] .bg-\[\#16A34A\].text-white { color: #ffffff !important; }
+
 /* ══════════════════════════════════════════════════════════════════
    PUBLIC PAGES — WARM ACADEMIA LIGHT MODE
    All overrides scoped to [data-theme="light"] [data-pub]
@@ -895,6 +921,22 @@ html {
 [data-theme="light"] nav .text-white\/65,
 [data-theme="light"] nav .text-white\/40 { color: rgba(13,27,42,0.6) !important; }
 [data-theme="light"] nav .text-white { color: #0D1B2A !important; }
+
+/* But colored-bg CTA buttons ("Try Free" etc.) in the nav must stay white —
+   higher specificity (0,3,1) than the blanket rule above (0,2,1) so it wins
+   regardless of source order, on every public page whether or not it has
+   the [data-pub] wrapper. */
+[data-theme="light"] nav .bg-blue-brand.text-white,
+[data-theme="light"] nav .bg-blue-500.text-white,
+[data-theme="light"] nav .bg-blue-600.text-white,
+[data-theme="light"] nav .bg-blue-700.text-white,
+[data-theme="light"] nav .bg-green-500.text-white,
+[data-theme="light"] nav .bg-green-600.text-white,
+[data-theme="light"] nav .bg-green-700.text-white,
+[data-theme="light"] nav .bg-green-brand.text-white,
+[data-theme="light"] nav .bg-\[\#0066FF\].text-white,
+[data-theme="light"] nav .bg-\[\#16A34A\].text-white { color: #ffffff !important; }
+
 [data-theme="light"] nav .border-white\/\[0\.22\] { border-color: rgba(13,27,42,0.2) !important; }
 [data-theme="light"] nav .border-white\/\[0\.18\] { border-color: rgba(13,27,42,0.15) !important; }
 [data-theme="light"] nav .hover\:text-white:hover { color: #0D1B2A !important; }
