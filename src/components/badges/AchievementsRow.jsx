@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { Link } from 'react-router-dom'
 import AchievementBadge from '../icons/AchievementBadge'
 import { getAchievementIcon } from '../icons/achievementIcons'
+import { clampTooltipCenterX } from '../../lib/tooltipPosition'
 
 // All 19 achievements in display order
 const ALL_ACHIEVEMENTS = [
@@ -52,7 +53,7 @@ function AchievementChip({ def, earned, isLight }) {
   function capture() {
     if (!ref.current) return
     const r = ref.current.getBoundingClientRect()
-    setCoords({ top: r.top, left: r.left + r.width / 2 })
+    setCoords({ top: r.top, left: clampTooltipCenterX(r.left + r.width / 2, 150) })
   }
 
   function handleTouchStart() {

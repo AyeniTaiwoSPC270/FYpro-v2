@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
+import { clampTooltipCenterX } from '../../lib/tooltipPosition'
 
 const STEP_META = [
   {
@@ -126,7 +127,7 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
   function captureCoords() {
     if (!containerRef.current) return
     const r = containerRef.current.getBoundingClientRect()
-    setTooltipCoords({ top: r.top, left: r.left + r.width / 2 })
+    setTooltipCoords({ top: r.top, left: clampTooltipCenterX(r.left + r.width / 2, 200) })
   }
 
   function handleTouchStart() {

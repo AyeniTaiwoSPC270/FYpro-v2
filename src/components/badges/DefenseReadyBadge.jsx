@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '../../context/ThemeContext'
 import { GLYPHS } from '../icons/glyphs'
+import { clampTooltipCenterX } from '../../lib/tooltipPosition'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -51,7 +52,7 @@ export default function DefenseReadyBadge({ awardedAt }) {
   function captureCoords() {
     if (!containerRef.current) return
     const r = containerRef.current.getBoundingClientRect()
-    setTooltipCoords({ top: r.top, left: r.left + r.width / 2 })
+    setTooltipCoords({ top: r.top, left: clampTooltipCenterX(r.left + r.width / 2, 220) })
   }
 
   function handleTouchStart() {
