@@ -91,6 +91,7 @@ export default function CookiePolicy() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-[var(--bg-base)]"
+      data-pub="true"
       style={{ backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
     >
       <Navbar />
