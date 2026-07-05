@@ -18,7 +18,10 @@ export const TIER_COLORS: Record<Tier, { light: IconColors; dark: IconColors }> 
 }
 
 // Applied when a badge is not yet earned (in addition to a grayscale filter).
+// Alphas are deliberately higher than the earned palette's fill/stroke would
+// suggest — AchievementBadge no longer layers a second opacity fade on top,
+// so these values are the only thing standing between "locked" and "invisible".
 export const LOCKED: { light: IconColors; dark: IconColors } = {
-  light: { stroke: 'rgba(13,27,42,0.30)', fill: 'rgba(13,27,42,0.06)' },
-  dark:  { stroke: 'rgba(255,255,255,0.30)', fill: 'rgba(255,255,255,0.05)' },
+  light: { stroke: 'rgba(13,27,42,0.45)', fill: 'rgba(13,27,42,0.10)' },
+  dark:  { stroke: 'rgba(255,255,255,0.40)', fill: 'rgba(255,255,255,0.08)' },
 }

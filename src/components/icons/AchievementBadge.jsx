@@ -36,11 +36,10 @@ export default function AchievementBadge({
           : eliteGlow
           ? 'drop-shadow(0 0 6px rgba(217,155,43,0.45))'
           : 'none',
-        opacity: earned ? 1 : 0.4,
         flexShrink: 0,
       }}
     >
-      {framed && <HexFrame tier={tier} uid={uid} earned={earned} />}
+      {framed && <HexFrame tier={tier} uid={uid} earned={earned} mode={mode} />}
       <g transform={transform} style={{ '--gl-stroke': palette.stroke, '--gl-fill': palette.fill }}>
         {GLYPHS[glyph]}
       </g>

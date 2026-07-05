@@ -167,13 +167,12 @@ export default function StepBadge({ index, completedAt, tooltipAlign = 'center' 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: `2px solid ${completed ? meta.color : isLight ? 'rgba(13,27,42,0.15)' : 'rgba(255,255,255,0.12)'}`,
+          border: `2px solid ${completed ? meta.color : isLight ? 'rgba(13,27,42,0.35)' : 'rgba(255,255,255,0.30)'}`,
           background: completed
             ? `radial-gradient(circle at 35% 35%, ${meta.color}22, ${meta.color}08)`
-            : isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)',
-          color: completed ? meta.color : isLight ? 'rgba(13,27,42,0.25)' : 'rgba(255,255,255,0.25)',
+            : isLight ? 'rgba(13,27,42,0.05)' : 'rgba(255,255,255,0.05)',
+          color: completed ? meta.color : isLight ? 'rgba(13,27,42,0.45)' : 'rgba(255,255,255,0.40)',
           filter: completed ? 'none' : 'grayscale(1)',
-          opacity: completed ? 1 : 0.4,
           boxShadow: completed && justCompleted ? `0 0 18px ${meta.glow}` : 'none',
           transition: 'border-color 0.4s ease, background 0.4s ease, color 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease',
           cursor: completed ? 'default' : 'default',

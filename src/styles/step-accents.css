@@ -252,17 +252,17 @@
     justify-content: center;
     width: 34px;
     height: 34px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: var(--header-btn-bg);
+    border: 1px solid var(--header-btn-border);
     border-radius: 8px;
-    color: rgba(255,255,255,0.6);
+    color: var(--text-secondary);
     cursor: pointer;
     flex-shrink: 0;
     transition: background 0.15s, color 0.15s;
   }
   .db-menu-toggle:hover {
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.9);
+    background: var(--header-btn-border);
+    color: var(--text-primary);
   }
 
   .db-header { padding: 0 16px; }
