@@ -49,7 +49,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
         <span style={{
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.62rem',
-          color: '#8a7638',
+          color: '#7A6530',
           letterSpacing: '0.1em',
           marginBottom: 6,
         }}>
@@ -62,7 +62,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
           color: '#0D1B2A',
           lineHeight: 1,
         }}>
-          {score ?? '?'}<span style={{ fontSize: '1.1rem', color: '#8a7638' }}>/10</span>
+          {score ?? '?'}<span style={{ fontSize: '1.1rem', color: '#7A6530' }}>/10</span>
         </span>
         {scoreLabel && (
           <span style={{
@@ -70,7 +70,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '0.56rem',
             fontWeight: 700,
-            color: '#8a7638',
+            color: '#7A6530',
             textTransform: 'uppercase',
             letterSpacing: '0.1em',
             padding: '3px 10px',
@@ -111,7 +111,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '0.52rem',
           fontWeight: 600,
-          color: '#8a7638',
+          color: '#7A6530',
           letterSpacing: '0.06em',
         }}>
           fypro.com.ng
