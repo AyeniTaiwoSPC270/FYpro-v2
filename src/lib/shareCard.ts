@@ -5,7 +5,10 @@ import { supabase } from './supabase'
  * The server validates ownership — the client only provides a project ID.
  * The score comes from the database, not the client.
  */
-export async function fetchShareCardBlob(projectId: string): Promise<Blob> {
+export async function fetchShareCardBlob(
+  projectId: string,
+  style: 'dark' | 'scoreboard' | 'prestige' = 'dark'
+): Promise<Blob> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Not authenticated')
 
@@ -15,7 +18,7 @@ export async function fetchShareCardBlob(projectId: string): Promise<Blob> {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ project_id: projectId }),
+    body: JSON.stringify({ project_id: projectId, style }),
   })
 
   if (!res.ok) {
