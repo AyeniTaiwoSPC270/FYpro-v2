@@ -3,18 +3,7 @@
 // This component shows the same design in-app for preview.
 
 import fyproLogo from '../../assets/fypro-logo.png'
-
-function scoreColor(score) {
-  if (score == null) return '#3B82F6'
-  if (score >= 8) return '#16A34A'
-  if (score >= 5) return '#F59E0B'
-  return '#DC2626'
-}
-
-function truncate(str, max) {
-  if (!str) return ''
-  return str.length <= max ? str : str.slice(0, max - 1) + '…'
-}
+import { scoreColor, truncate } from './cardHelpers'
 
 export default function DefenseShareCard({ score, scoreLabel, topic }) {
   const color = scoreColor(score)
