@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { downloadCertificate } from '../../lib/certificate'
 import { supabase } from '../../lib/supabase'
 import Sentry from '../../lib/sentry'
@@ -118,7 +119,7 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
   const text2   = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(13,27,42,0.55)'
   const label   = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(13,27,42,0.4)'
 
-  return (
+  return createPortal(
     <div
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{
@@ -280,6 +281,7 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
