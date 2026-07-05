@@ -81,7 +81,7 @@ Mirrors `CertificateDownloadModal.jsx` closely:
 
 ## Data flow & validation
 
-- `POST /api/share-card` request body gains an optional `style` field. Add the enum to the existing Zod schema in `api/_lib/validate.js`, defaulting to `'dark'` server-side when omitted — keeps the endpoint backward-compatible even though there is currently only one caller.
+- `POST /api/share-card` request body gains an optional `style` field, validated server-side with a plain whitelist array (`const VALID_STYLES = ['dark', 'scoreboard', 'prestige']`) that falls back to `'dark'` for anything not on the list. `api/share-card.js` doesn't use Zod today — unlike `api/ai.js`/`api/auth.js`/`api/payments.js` — so this follows `api/certificate.js`'s existing precedent for validating its own `style` parameter (a plain `validStyles.includes(style)` check) rather than introducing Zod into a file that doesn't otherwise use it.
 - Score, topic, and student name continue to come exclusively from `supabaseAdmin` reads inside `handler()` — unchanged from today. `style` is the only new client-supplied value, and it only affects cosmetic rendering, not any data shown on the card, so it introduces no fabrication risk.
 - No changes to `rateLimitCheck`, `setCorsHeaders`, or `sendTelegramAlert` usage in `api/share-card.js`.
 
