@@ -170,7 +170,7 @@ function BtnLink({ href, className, children }) {
 function BtnButton({ className, children, onClick }) {
   const { handleClick, rippleEls } = useRipple()
   return (
-    <button className={`relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all border-0 ${className}`} onClick={(e) => { handleClick(e); onClick?.(e) }}>
+    <button className={`relative overflow-hidden inline-flex items-center justify-center gap-2 font-sans font-semibold rounded-xl cursor-pointer transition-all ${className}`} onClick={(e) => { handleClick(e); onClick?.(e) }}>
       {children}
       {rippleEls}
     </button>
