@@ -36,7 +36,7 @@ function truncate(str, max) {
   return str.length <= max ? str : str.slice(0, max - 1) + '…'
 }
 
-function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
+function buildDarkCard(score, scoreLabel, topic, studentName, logoBase64) {
   const color = scoreColor(score)
   const scoreDisplay = score != null ? String(score) : '?'
 
@@ -260,6 +260,198 @@ function buildCardElement(score, scoreLabel, topic, studentName, logoBase64) {
   )
 }
 
+function buildScoreboardCard(score, scoreLabel, topic, studentName, logoBase64) {
+  const color = scoreColor(score)
+  const scoreDisplay = score != null ? String(score) : '?'
+
+  return React.createElement('div', {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: WIDTH,
+      height: HEIGHT,
+      background: color,
+      fontFamily: "'Poppins', sans-serif",
+      position: 'relative',
+      overflow: 'hidden',
+    },
+  },
+    // Dot texture overlay
+    React.createElement('div', {
+      style: {
+        position: 'absolute', inset: 0,
+        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.16) 2px, transparent 2px)',
+        backgroundSize: '40px 40px',
+        pointerEvents: 'none',
+      },
+    }),
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', padding: '64px 80px 0', gap: 16, position: 'relative' },
+    },
+      logoBase64
+        ? React.createElement('img', { src: logoBase64, style: { height: 48, width: 160, objectFit: 'contain' } })
+        : React.createElement('span', {
+            style: { fontFamily: 'Georgia, serif', fontSize: 40, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.01em' },
+          }, 'FYPro'),
+
+      React.createElement('div', { style: { flex: 1 } }),
+
+      React.createElement('span', {
+        style: { fontFamily: 'monospace', fontSize: 20, fontWeight: 600, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.1em' },
+      }, 'Defence Result'),
+    ),
+
+    // ── Score block ───────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', gap: 24 },
+    },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8 } },
+        React.createElement('span', {
+          style: { fontFamily: 'monospace', fontSize: 260, fontWeight: 700, color: '#FFFFFF', lineHeight: 0.9, letterSpacing: '-0.04em' },
+        }, scoreDisplay),
+        React.createElement('span', {
+          style: { fontFamily: 'monospace', fontSize: 80, fontWeight: 400, color: 'rgba(255,255,255,0.7)', lineHeight: 1 },
+        }, '/10'),
+      ),
+
+      scoreLabel && React.createElement('div', {
+        style: { display: 'flex', padding: '12px 40px', borderRadius: 999, background: '#FFFFFF' },
+      },
+        React.createElement('span', {
+          // Fixed dark text, not the tier `color` — a white-background badge
+          // with tier-colored text fails WCAG AA contrast for green/amber/blue
+          // tiers (only red happens to pass); this was caught and fixed in the
+          // equivalent client-side ScoreboardCard.jsx preview component.
+          style: { fontFamily: 'monospace', fontSize: 28, fontWeight: 700, color: '#0D1B2A', textTransform: 'uppercase', letterSpacing: '0.14em' },
+        }, (scoreLabel || '').toUpperCase()),
+      ),
+
+      studentName && React.createElement('span', {
+        style: { fontFamily: 'sans-serif', fontSize: 32, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '0.01em', marginTop: 8 },
+      }, truncate(studentName, 40)),
+    ),
+
+    // ── Topic ─────────────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { padding: '0 80px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, position: 'relative' },
+    },
+      React.createElement('div', { style: { width: '72%', height: 3, background: '#FFFFFF', borderRadius: 999, opacity: 0.85 } }),
+      React.createElement('p', {
+        style: { fontFamily: 'sans-serif', fontSize: 30, fontWeight: 600, color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, margin: 0, textAlign: 'center' },
+      }, truncate(topic || '', 80)),
+    ),
+
+    // ── Caption + Footer ──────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { borderTop: '1px solid rgba(255,255,255,0.3)', padding: '36px 80px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, position: 'relative' },
+    },
+      React.createElement('p', {
+        style: { fontFamily: 'sans-serif', fontSize: 28, color: 'rgba(255,255,255,0.85)', margin: 0, textAlign: 'center', lineHeight: 1.5 },
+      }, 'I just simulated my project defense on FYPro.'),
+      React.createElement('span', {
+        style: { fontFamily: 'monospace', fontSize: 26, fontWeight: 700, color: '#FFFFFF', letterSpacing: '0.06em' },
+      }, 'fypro.com.ng'),
+    ),
+  )
+}
+
+const SHIELD_PATH = 'M80.57,117A8,8,0,0,1,91,112.57l29,11.61V96a8,8,0,0,1,16,0v28.18l29-11.61A8,8,0,1,1,171,127.43l-30.31,12.12L158.4,163.2a8,8,0,1,1-12.8,9.6L128,149.33,110.4,172.8a8,8,0,1,1-12.8-9.6l17.74-23.65L85,127.43A8,8,0,0,1,80.57,117ZM224,56v56c0,52.72-25.52,84.67-46.93,102.19-23.06,18.86-46,25.27-47,25.53a8,8,0,0,1-4.2,0c-1-.26-23.91-6.67-47-25.53C57.52,196.67,32,164.72,32,112V56A16,16,0,0,1,48,40H208A16,16,0,0,1,224,56Zm-16,0L48,56l0,56c0,37.3,13.82,67.51,41.07,89.81A128.25,128.25,0,0,0,128,223.62a129.3,129.3,0,0,0,39.41-22.2C194.34,179.16,208,149.07,208,112Z'
+
+function buildPrestigeCard(score, scoreLabel, topic, studentName) {
+  const scoreDisplay = score != null ? String(score) : '?'
+  const gold = '#C9A84C' // decorative strokes/icon only — not used for text
+  // '#7A6530' below is a WCAG-contrast-fixed muted-gold text color — the
+  // equivalent client-side PrestigeCard.jsx originally used '#8a7638' here,
+  // which computed to ~4.36:1 against the ivory background (failing the
+  // 4.5:1 AA threshold for small text); '#7A6530' clears ~5.5:1.
+
+  return React.createElement('div', {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: WIDTH,
+      height: HEIGHT,
+      background: '#FFFDF5',
+      fontFamily: 'Georgia, serif',
+      position: 'relative',
+      overflow: 'hidden',
+      border: `6px solid ${gold}`,
+    },
+  },
+    // Corner ornaments
+    React.createElement('div', { style: { position: 'absolute', top: 40, left: 40, width: 48, height: 48, borderTop: `3px solid ${gold}`, borderLeft: `3px solid ${gold}` } }),
+    React.createElement('div', { style: { position: 'absolute', top: 40, right: 40, width: 48, height: 48, borderTop: `3px solid ${gold}`, borderRight: `3px solid ${gold}` } }),
+    React.createElement('div', { style: { position: 'absolute', bottom: 40, left: 40, width: 48, height: 48, borderBottom: `3px solid ${gold}`, borderLeft: `3px solid ${gold}` } }),
+    React.createElement('div', { style: { position: 'absolute', bottom: 40, right: 40, width: 48, height: 48, borderBottom: `3px solid ${gold}`, borderRight: `3px solid ${gold}` } }),
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '88px 80px 0', gap: 16, position: 'relative' },
+    },
+      React.createElement('svg', { width: 72, height: 72, viewBox: '0 0 256 256', fill: gold },
+        React.createElement('path', { d: SHIELD_PATH }),
+      ),
+      React.createElement('span', {
+        style: { fontFamily: 'Georgia, serif', fontSize: 28, color: '#0D1B2A', letterSpacing: '0.3em' },
+      }, 'DEFENCE RESULT'),
+    ),
+
+    // ── Score block ───────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', gap: 24 },
+    },
+      React.createElement('span', {
+        style: { fontFamily: 'monospace', fontSize: 24, color: '#7A6530', textTransform: 'uppercase', letterSpacing: '0.2em' },
+      }, 'Panel Score'),
+
+      React.createElement('div', { style: { display: 'flex', alignItems: 'baseline', gap: 8 } },
+        React.createElement('span', {
+          style: { fontFamily: 'Georgia, serif', fontSize: 180, fontWeight: 700, color: '#0D1B2A', lineHeight: 1 },
+        }, scoreDisplay),
+        React.createElement('span', {
+          style: { fontFamily: 'Georgia, serif', fontSize: 64, fontWeight: 400, color: '#7A6530', lineHeight: 1 },
+        }, '/10'),
+      ),
+
+      scoreLabel && React.createElement('div', {
+        style: { display: 'flex', padding: '10px 36px', border: `2px solid ${gold}` },
+      },
+        React.createElement('span', {
+          style: { fontFamily: 'monospace', fontSize: 26, fontWeight: 700, color: '#7A6530', textTransform: 'uppercase', letterSpacing: '0.14em' },
+        }, (scoreLabel || '').toUpperCase()),
+      ),
+
+      studentName && React.createElement('span', {
+        style: { fontFamily: 'Georgia, serif', fontSize: 30, fontStyle: 'italic', color: '#0D1B2A', marginTop: 8 },
+      }, truncate(studentName, 40)),
+    ),
+
+    // ── Topic ─────────────────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { padding: '0 96px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, position: 'relative' },
+    },
+      React.createElement('div', { style: { width: '60%', height: 2, background: gold, opacity: 0.85 } }),
+      React.createElement('p', {
+        style: { fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 28, color: '#0D1B2A', lineHeight: 1.5, margin: 0, textAlign: 'center' },
+      }, truncate(topic || '', 80)),
+    ),
+
+    // ── Caption + Footer ──────────────────────────────────────────────────────
+    React.createElement('div', {
+      style: { borderTop: `1px solid ${gold}66`, padding: '36px 80px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, position: 'relative' },
+    },
+      React.createElement('p', {
+        style: { fontFamily: 'Georgia, serif', fontSize: 26, color: '#0D1B2A', margin: 0, textAlign: 'center', lineHeight: 1.5 },
+      }, 'I just simulated my project defense on FYPro.'),
+      React.createElement('span', {
+        style: { fontFamily: 'monospace', fontSize: 24, fontWeight: 700, color: '#7A6530', letterSpacing: '0.06em' },
+      }, 'fypro.com.ng'),
+    ),
+  )
+}
+
 export default async function handler(req, res) {
   try {
   setCorsHeaders(req, res)
@@ -293,8 +485,13 @@ export default async function handler(req, res) {
   if (authError || !user) return res.status(401).json({ error: 'Invalid or expired token' })
 
   // ── Fetch defense result (server reads the score — client cannot fake it) ─
-  const { project_id } = req.body || {}
+  const { project_id, style } = req.body || {}
   if (!project_id) return res.status(400).json({ error: 'project_id required' })
+
+  // style is cosmetic only — it never affects the score/topic/name below,
+  // so a client sending a bogus value just falls back to the default look.
+  const VALID_STYLES = ['dark', 'scoreboard', 'prestige']
+  const safeStyle = VALID_STYLES.includes(style) ? style : 'dark'
 
   const { data: step, error: stepError } = await supabaseAdmin
     .from('project_steps')
@@ -323,20 +520,32 @@ export default async function handler(req, res) {
   const studentName = user.user_metadata?.full_name || ''
 
   // ── Render PNG via @vercel/og ─────────────────────────────────────────────
+  // Prestige has no raster logo (it uses an inline SVG shield instead), so
+  // skip the network fetch entirely for that style.
   let logoBase64 = null
-  try {
-    const logoRes = await fetch('https://www.fypro.com.ng/fypro-logo.png')
-    if (!logoRes.ok) throw new Error('logo fetch failed')
-    const logoBuffer = await logoRes.arrayBuffer()
-    const logoData = Buffer.from(logoBuffer).toString('base64')
-    logoBase64 = `data:image/png;base64,${logoData}`
-  } catch (_) {
-    // logo fetch failed — card renders without it
+  if (safeStyle !== 'prestige') {
+    try {
+      const logoUrl = safeStyle === 'scoreboard'
+        ? 'https://www.fypro.com.ng/fypro-logo-white.png'
+        : 'https://www.fypro.com.ng/fypro-logo.png'
+      const logoRes = await fetch(logoUrl)
+      if (!logoRes.ok) throw new Error('logo fetch failed')
+      const logoBuffer = await logoRes.arrayBuffer()
+      const logoData = Buffer.from(logoBuffer).toString('base64')
+      logoBase64 = `data:image/png;base64,${logoData}`
+    } catch (_) {
+      // logo fetch failed — card renders without it
+    }
   }
 
   try {
+    const cardElement =
+      safeStyle === 'scoreboard' ? buildScoreboardCard(score, scoreLabel, topic, studentName, logoBase64) :
+      safeStyle === 'prestige'   ? buildPrestigeCard(score, scoreLabel, topic, studentName) :
+      buildDarkCard(score, scoreLabel, topic, studentName, logoBase64)
+
     const imgResponse = new ImageResponse(
-      buildCardElement(score, scoreLabel, topic, studentName, logoBase64),
+      cardElement,
       { width: WIDTH, height: HEIGHT }
     )
 
