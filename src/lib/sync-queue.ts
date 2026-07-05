@@ -54,6 +54,22 @@ function persist(queue: QueueItem[]): void {
   }
 }
 
+// navigator.onLine only reflects the OS network interface, not whether the
+// backend is actually reachable (captive portals, DNS issues, flaky mobile
+// data all report onLine=true). Probe a real endpoint before trusting it.
+async function probeConnectivity(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return false
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    const res = await fetch('/api/admin?action=ping', { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+    clearTimeout(timeout)
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export function enqueue(item: Omit<QueueItem, 'id' | 'queuedAt'>): void {
   const queue = load()
   // Replace any pending write for the same project+step (last-write-wins per migration-plan.md §4)
@@ -66,12 +82,17 @@ export function enqueue(item: Omit<QueueItem, 'id' | 'queuedAt'>): void {
 
 export async function drain(): Promise<void> {
   if (draining) return
-  const queue = load()
-  if (queue.length === 0) return
-
   draining = true
   notify('reconnecting')
 
+  const reachable = await probeConnectivity()
+  if (!reachable) {
+    draining = false
+    notify('offline')
+    return
+  }
+
+  const queue = load()
   const failed: QueueItem[] = []
   for (const item of queue) {
     try {
@@ -83,7 +104,7 @@ export async function drain(): Promise<void> {
 
   persist(failed)
   draining = false
-  notify(typeof navigator !== 'undefined' && navigator.onLine ? 'online' : 'offline')
+  notify('online')
 }
 
 // Wire browser events once
