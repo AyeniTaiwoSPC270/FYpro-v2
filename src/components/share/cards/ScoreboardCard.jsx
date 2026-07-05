@@ -71,7 +71,7 @@ export default function ScoreboardCard({ score, scoreLabel, topic }) {
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '0.62rem',
             fontWeight: 700,
-            color,
+            color: '#0D1B2A',
             textTransform: 'uppercase',
             letterSpacing: '0.12em',
             padding: '4px 12px',
