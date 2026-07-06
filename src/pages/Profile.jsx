@@ -838,7 +838,7 @@ export default function Profile() {
         >
           <SectionLabel>Academic Information</SectionLabel>
 
-          <div className="flex gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { label: 'Projects Started', display: <CountUp target={1} /> },
               { label: 'Steps Completed',  display: <><CountUp target={completedCount} /><span className="text-base font-normal"> of 6</span></> },
@@ -846,11 +846,11 @@ export default function Profile() {
             ].map(({ label, display }) => (
               <div
                 key={label}
-                className="flex-1 rounded-xl p-4"
+                className={`rounded-xl p-4 min-w-0 ${label === 'Last Active' ? 'col-span-2 sm:col-span-1' : ''}`}
                 style={{ background: 'var(--bg-input)' }}
               >
-                <div className="font-sans text-2xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{display}</div>
-                <div className="font-mono text-xs uppercase tracking-wider mt-1.5" style={{ color: 'var(--text-muted)' }}>{label}</div>
+                <div className="font-sans text-2xl font-bold leading-none truncate" style={{ color: 'var(--text-primary)' }}>{display}</div>
+                <div className="font-mono text-xs uppercase tracking-wider mt-1.5 truncate" style={{ color: 'var(--text-muted)' }}>{label}</div>
               </div>
             ))}
           </div>
