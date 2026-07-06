@@ -60,14 +60,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: initial } }) => {
       if (initial) {
-        const { data: { user: verified }, error } = await supabase.auth.getUser()
-        if (error || !verified) {
-          await forceSignOut()
-          return
+        try {
+          const { data: { user: verified }, error } = await supabase.auth.getUser()
+          if (error || !verified) {
+            await forceSignOut()
+            return
+          }
+          sessionRef.current = initial
+          setSession(initial)
+          setUser(verified)
+        } catch {
+          // navigatorLock contention (e.g. another tab mid-refresh) throws instead of
+          // resolving with {error} — fall back to the unverified session rather than
+          // forcing a sign-out; onAuthStateChange/the next interval check will reconcile it
+          sessionRef.current = initial
+          setSession(initial)
+          setUser(initial.user)
         }
-        sessionRef.current = initial
-        setSession(initial)
-        setUser(verified)
       } else {
         sessionRef.current = null
         setSession(null)
@@ -88,8 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Reads sessionRef so there is no extra getSession() call in the hot path.
     const intervalId = setInterval(async () => {
       if (!sessionRef.current) return
-      const { data: { user: verified }, error } = await supabase.auth.getUser()
-      if (error || !verified) await forceSignOut()
+      try {
+        const { data: { user: verified }, error } = await supabase.auth.getUser()
+        if (error || !verified) await forceSignOut()
+      } catch {
+        // navigatorLock contention (e.g. another tab mid-refresh) throws instead of
+        // resolving with {error} — benign, just skip this check and retry next interval
+      }
     }, 5 * 60 * 1000)
 
     return () => {
