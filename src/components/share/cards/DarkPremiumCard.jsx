@@ -119,7 +119,8 @@ export default function DarkPremiumCard({ score, scoreLabel, topic }) {
       </div>
 
       {/* Topic */}
-      <div style={{ padding: '0 20px 12px' }}>
+      <div style={{ padding: '0 20px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: '72%', height: 2, background: '#0066FF', borderRadius: 999, opacity: 0.85 }} />
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.62rem',

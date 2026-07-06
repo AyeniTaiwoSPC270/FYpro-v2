@@ -83,7 +83,8 @@ export default function ScoreboardCard({ score, scoreLabel, topic }) {
         )}
       </div>
 
-      <div style={{ padding: '0 20px 12px', position: 'relative' }}>
+      <div style={{ padding: '0 20px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative' }}>
+        <div style={{ width: '72%', height: 2, background: '#FFFFFF', borderRadius: 999, opacity: 0.85 }} />
         <p style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: '0.62rem',

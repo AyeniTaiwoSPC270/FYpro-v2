@@ -81,7 +81,8 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
         )}
       </div>
 
-      <div style={{ padding: '0 22px 10px', position: 'relative' }}>
+      <div style={{ padding: '0 22px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative' }}>
+        <div style={{ width: '60%', height: 1.5, background: GOLD, opacity: 0.85 }} />
         <p style={{
           fontFamily: "'DM Serif Display', Georgia, serif",
           fontStyle: 'italic',
