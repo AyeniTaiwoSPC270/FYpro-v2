@@ -235,7 +235,7 @@ async function handleValidate(req, res) {
     const check = extractModelJson(data);
     if (!check.ok) {
       refundRun();
-      logServerGenerationFailure({
+      await logServerGenerationFailure({
         userId: user.id,
         feature: 'topic_validator',
         errorMessage: `validation failed (${check.reason})`,

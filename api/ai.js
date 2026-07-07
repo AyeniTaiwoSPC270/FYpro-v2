@@ -221,7 +221,7 @@ async function handleGeneral(req, res) {
         const check = extractModelJson(data);
         if (!check.ok) {
           refundRun();
-          logServerGenerationFailure({
+          await logServerGenerationFailure({
             userId: user.id,
             feature: dbKey,
             errorMessage: `validation failed (${check.reason})`,
