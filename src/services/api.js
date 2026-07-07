@@ -67,6 +67,12 @@ async function callClaude(step, messages, maxTokens = 2000, extraParams = {}) {
     err.code = 'GATEWAY_TIMEOUT';
     throw err;
   }
+  if (res.status === 422) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || 'AI returned an unusable response.');
+    err.code = 'AI_INVALID_RESPONSE';
+    throw err;
+  }
   if (!res.ok) {
     const err = new Error(`HTTP ${res.status}`);
     err.code = 'HTTP_ERROR';
@@ -715,15 +721,16 @@ export async function generateEmail(studentCtx, validatedTopic, chapterStructure
 // ── Error handler (call from components) ─────────────────────────────────────
 // Returns true if error was handled, false if caller should do fallback
 const AI_ERRORS = {
-  rate_limit:    'FYPro is in high demand right now. Your progress is saved — please try again in {secs} seconds.',
-  timeout:       'This is taking longer than expected. Your progress is saved. Please click Try Again.',
-  network:       'Connection lost. Your progress is saved. Check your internet and try again.',
-  generic:       'Something went wrong on our end. Your progress is saved. Please try again.',
-  token_limit:   'Your input is too long. Please shorten it and try again.',
-  json_parse:    'Received an unexpected response. Your progress is saved. Please try again.',
-  forbidden:     'This feature requires a paid upgrade. Please visit the Pricing page to unlock it.',
-  unauthorized:  'Your session has expired. Please sign in again.',
-  unavailable:   'FYPro is temporarily unavailable. Your progress is saved. Please try again in a moment.',
+  rate_limit:       'FYPro is in high demand right now. Your progress is saved — please try again in {secs} seconds.',
+  timeout:          'This is taking longer than expected. Your progress is saved. Please click Try Again.',
+  network:          'Connection lost. Your progress is saved. Check your internet and try again.',
+  generic:          'Something went wrong on our end. Your progress is saved. Please try again.',
+  token_limit:      'Your input is too long. Please shorten it and try again.',
+  json_parse:       'Received an unexpected response. Your progress is saved. Please try again.',
+  invalid_response: "FYPro's AI returned an unusable response. This attempt didn't use one of your free generations — please try again.",
+  forbidden:        'This feature requires a paid upgrade. Please visit the Pricing page to unlock it.',
+  unauthorized:     'Your session has expired. Please sign in again.',
+  unavailable:      'FYPro is temporarily unavailable. Your progress is saved. Please try again in a moment.',
 };
 
 // Module-level handle for the rate-limit countdown so components can clear it on unmount.
@@ -777,6 +784,10 @@ export function handleApiError(err, showError) {
   }
   if (err.code === 'JSON_PARSE') {
     showError(AI_ERRORS.json_parse);
+    return true;
+  }
+  if (err.code === 'AI_INVALID_RESPONSE') {
+    showError(AI_ERRORS.invalid_response);
     return true;
   }
   if (err.code === 'TOKEN_LIMIT') {
