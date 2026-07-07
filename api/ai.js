@@ -18,6 +18,8 @@ import { FREE_STEP_LIMITS as SERVER_FREE_LIMITS } from './_lib/free-limits.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
 import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
 import { getExpressBetaFree } from './_lib/express-beta.js';
+import { extractModelJson } from './_lib/parse-model-json.js';
+import { logServerGenerationFailure } from './_lib/generation-failure.js';
 
 export const config = { maxDuration: 60 };
 
@@ -210,6 +212,27 @@ async function handleGeneral(req, res) {
     });
 
     if (response.ok) {
+      // Reject a "successful" Anthropic call whose output is truncated or not
+      // valid JSON BEFORE it can charge a free-tier run or get cached — the
+      // user never gets a usable result either way, so it must not count
+      // against their free-run allowance. Only gated on isLimitedStep because
+      // the other four steps handled by this function aren't run-limited.
+      if (isLimitedStep) {
+        const check = extractModelJson(data);
+        if (!check.ok) {
+          refundRun();
+          logServerGenerationFailure({
+            userId: user.id,
+            feature: dbKey,
+            errorMessage: `validation failed (${check.reason})`,
+          });
+          res.setHeader('X-Cache', 'MISS');
+          return res.status(422).json({
+            error: "FYPro's AI returned an unusable response. This attempt didn't use one of your free generations — please try again.",
+          });
+        }
+      }
+
       setCached(cacheKey, data, ttl); // intentional fire-and-forget: cache write failure does not affect response
 
       // Sync the DB run count for free users — fire-and-forget, display/fallback only.
