@@ -13,6 +13,8 @@ import { FREE_STEP_LIMITS }               from './_lib/free-limits.js';
 import { sendTelegramAlert }              from './_lib/telegram.js';
 import { writeSystemLog }                 from './_lib/system-log.js';
 import { Sentry }                         from './_lib/sentry-server.js';
+import { extractModelJson }               from './_lib/parse-model-json.js';
+import { logServerGenerationFailure }     from './_lib/generation-failure.js';
 
 export const config = { maxDuration: 60 };
 
@@ -218,29 +220,36 @@ async function handleValidate(req, res) {
       await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
     }
 
-    if (response.ok && data.content?.[0]?.text) {
-      try {
-        const raw     = data.content[0].text;
-        const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const match   = cleaned.match(/\{[\s\S]*\}/);
-        if (match) {
-          const verdict = JSON.parse(match[0]);
-          verdict.papers            = papersResult.papers;
-          verdict.papers_status     = papersResult.status;
-          verdict.sparse_literature = papersResult.sparse_literature;
-          data.content[0].text      = JSON.stringify(verdict);
-        }
-      } catch {
-        console.warn('[research/validate] Could not inject papers into Claude response — returning verdict only');
-      }
-    }
-
     if (!response.ok) {
       refundRun(); // Anthropic returned an error status — don't charge the run
       const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
       console.error('[research/validate] Anthropic error:', response.status, errorMsg);
       return res.status(502).json({ error: errorMsg });
     }
+
+    // Reject a "successful" Anthropic call whose output is truncated or not
+    // valid JSON BEFORE it can charge the free-tier run or get cached — this
+    // replaces the old silent console.warn-and-continue behavior, which used
+    // to charge the run and cache a broken response even when this exact
+    // parse attempt failed.
+    const check = extractModelJson(data);
+    if (!check.ok) {
+      refundRun();
+      logServerGenerationFailure({
+        userId: user.id,
+        feature: 'topic_validator',
+        errorMessage: `validation failed (${check.reason})`,
+      });
+      return res.status(422).json({
+        error: "FYPro's AI returned an unusable response. This attempt didn't use one of your free generations — please try again.",
+      });
+    }
+
+    // Inject real paper metadata into the validated verdict before caching/returning.
+    check.parsed.papers            = papersResult.papers;
+    check.parsed.papers_status     = papersResult.status;
+    check.parsed.sparse_literature = papersResult.sparse_literature;
+    data.content[0].text           = JSON.stringify(check.parsed);
 
     res.setHeader('X-Cache', 'MISS');
     setCached(claudeKey, data, CLAUDE_TTL);
