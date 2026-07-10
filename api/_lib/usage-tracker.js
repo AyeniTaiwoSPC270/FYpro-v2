@@ -1,9 +1,18 @@
 import { supabaseAdmin } from './supabase-admin.js';
 import { redis }         from './rate-limit.js';
 
-// Sonnet pricing: $3 per 1M input tokens, $15 per 1M output tokens
-const INPUT_COST_PER_TOKEN  = 3  / 1_000_000;
-const OUTPUT_COST_PER_TOKEN = 15 / 1_000_000;
+// Per-model pricing (USD per token). Unknown or omitted models fall back to
+// Sonnet rates — over-estimating spend is safe: a typo'd model ID can tighten
+// the daily caps but never loosen them.
+const MODEL_PRICING = {
+  'claude-sonnet-4-6':         { in: 3 / 1_000_000, out: 15 / 1_000_000 },
+  'claude-haiku-4-5-20251001': { in: 1 / 1_000_000, out: 5  / 1_000_000 },
+};
+const DEFAULT_PRICING = MODEL_PRICING['claude-sonnet-4-6'];
+
+function pricingFor(model) {
+  return MODEL_PRICING[model] || DEFAULT_PRICING;
+}
 
 // ── Per-user daily spend ceilings (USD) ────────────────────────────────────
 // The global DAILY_CAP_USD protects the whole budget, but on its own a single
@@ -25,9 +34,10 @@ function userCostKey(userId) {
   return `cost:user:${userId}:${todayDate()}`;
 }
 
-/** Estimated USD cost of one Anthropic call from its token usage (Sonnet pricing). */
-function estimateCallCostUsd(tokensIn, tokensOut) {
-  return (tokensIn || 0) * INPUT_COST_PER_TOKEN + (tokensOut || 0) * OUTPUT_COST_PER_TOKEN;
+/** Estimated USD cost of one Anthropic call from its token usage and model. */
+function estimateCallCostUsd(tokensIn, tokensOut, model) {
+  const p = pricingFor(model);
+  return (tokensIn || 0) * p.in + (tokensOut || 0) * p.out;
 }
 
 /**
@@ -40,9 +50,7 @@ function estimateCallCostUsd(tokensIn, tokensOut) {
  * @returns {Promise<void>}
  */
 export async function trackUsage(tokensIn, tokensOut, model) {
-  const cost =
-    (tokensIn  || 0) * INPUT_COST_PER_TOKEN +
-    (tokensOut || 0) * OUTPUT_COST_PER_TOKEN;
+  const cost = estimateCallCostUsd(tokensIn, tokensOut, model);
 
   // ── Primary: RPC (atomic UPSERT inside the function) ──────────────────
   const { error: rpcError } = await supabaseAdmin.rpc('increment_daily_usage', {
@@ -134,13 +142,14 @@ export async function checkDailyCap() {
  * @param {string} userId    - Verified Supabase user id
  * @param {number} tokensIn  - Input token count from data.usage.input_tokens
  * @param {number} tokensOut - Output token count from data.usage.output_tokens
+ * @param {string} [model]   - Model ID used for the call; omitted → Sonnet rates
  * @returns {Promise<void>}
  */
-export async function trackUserUsage(userId, tokensIn, tokensOut) {
+export async function trackUserUsage(userId, tokensIn, tokensOut, model) {
   if (!userId) return;
   try {
     const key = userCostKey(userId);
-    await redis.incrbyfloat(key, estimateCallCostUsd(tokensIn, tokensOut));
+    await redis.incrbyfloat(key, estimateCallCostUsd(tokensIn, tokensOut, model));
     // Refresh TTL on every write so an active user's key always outlives the day.
     await redis.expire(key, USER_COST_TTL_SECONDS);
   } catch (err) {

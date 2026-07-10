@@ -107,3 +107,29 @@ describe('trackUserUsage', () => {
     await expect(trackUserUsage('user-1', 500, 500)).resolves.toBeUndefined()
   })
 })
+
+describe('model-aware pricing', () => {
+  it('prices Sonnet calls at $3 in / $15 out per 1M tokens', async () => {
+    await trackUserUsage('user-1', 1_000_000, 100_000, 'claude-sonnet-4-6')
+    const [, amount] = h.redis.incrbyfloat.mock.calls[0]
+    expect(amount).toBeCloseTo(3 + 1.5)
+  })
+
+  it('prices Haiku calls at $1 in / $5 out per 1M tokens', async () => {
+    await trackUserUsage('user-1', 1_000_000, 100_000, 'claude-haiku-4-5-20251001')
+    const [, amount] = h.redis.incrbyfloat.mock.calls[0]
+    expect(amount).toBeCloseTo(1 + 0.5)
+  })
+
+  it('falls back to Sonnet rates for an unknown model ID', async () => {
+    await trackUserUsage('user-1', 1000, 1000, 'claude-nonexistent-9')
+    const [, amount] = h.redis.incrbyfloat.mock.calls[0]
+    expect(amount).toBeCloseTo(0.018)
+  })
+
+  it('falls back to Sonnet rates when model is omitted (legacy call sites)', async () => {
+    await trackUserUsage('user-1', 1000, 1000)
+    const [, amount] = h.redis.incrbyfloat.mock.calls[0]
+    expect(amount).toBeCloseTo(0.018)
+  })
+})
