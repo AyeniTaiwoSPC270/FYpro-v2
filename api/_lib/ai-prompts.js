@@ -333,16 +333,32 @@ Your only job is to determine whether an uploaded document is an academic projec
 CRITICAL: Return ONLY valid JSON. No prose. No markdown.
 `.trim();
 
+// Prepended to PROJECT_REVIEWER_SYSTEM for the merged single-call PDF flow:
+// one Anthropic call both validates relevance and produces the review, so the
+// (heavy) PDF is only uploaded and processed once.
+const REVIEWER_RELEVANCE_GATE = `
+BEFORE REVIEWING — RELEVANCE GATE:
+First check whether the uploaded document is a final year project, chapter, report, or other academic work relevant to the student's stated faculty and department (see student context in the user message).
+If it is NOT relevant, return ONLY this JSON and nothing else:
+{"relevant": false, "reason": "One sentence explaining why this document does not match the student's faculty and department"}
+If it IS relevant, do NOT include a "relevant" field — proceed directly to the full review JSON described below.
+`.trim();
+
 /**
  * Resolves the Project Reviewer system prompt server-side.
- * @param {string} promptType - 'relevance-check' | 'review'
- * @param {object} context    - { previousSteps } for 'review'
+ * @param {string} promptType - 'relevance-check' | 'review' | 'review-with-relevance'
+ * @param {object} context    - { previousSteps } for 'review' and 'review-with-relevance'
  * @returns {string|null} The system prompt, or null for unknown promptType
  */
 export function getReviewerSystemPrompt(promptType, context = {}) {
   switch (promptType) {
     case 'relevance-check':
       return DOCUMENT_RELEVANCE_CHECK_SYSTEM;
+    case 'review-with-relevance': {
+      const ctx = buildPreviousStepsContext(context.previousSteps || {});
+      const sys = REVIEWER_RELEVANCE_GATE + '\n\n' + PROJECT_REVIEWER_SYSTEM;
+      return ctx ? ctx + '\n\n' + sys : sys;
+    }
     case 'review': {
       const ctx = buildPreviousStepsContext(context.previousSteps || {});
       return ctx ? ctx + '\n\n' + PROJECT_REVIEWER_SYSTEM : PROJECT_REVIEWER_SYSTEM;
