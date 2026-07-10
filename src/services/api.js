@@ -13,7 +13,6 @@ import {
   buildProjectReviewerPrompt,
   buildProjectReviewerPDFPrompt,
   buildDocumentRelevanceCheckPrompt,
-  buildDocumentRelevanceCheckPDFPrompt,
   buildDefenceBriefPrompt,
   buildDefenceBriefCoachPrompt,
 } from './prompts.js';
@@ -506,19 +505,6 @@ export async function checkDocumentRelevance(studentCtx, extractedText) {
   );
 }
 
-export async function checkDocumentRelevancePDF(studentCtx, base64Data, mediaType = 'application/pdf') {
-  const userContent = [
-    { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
-    { type: 'text', text: buildDocumentRelevanceCheckPDFPrompt(studentCtx) },
-  ];
-  return callClaudeAuth(
-    REVIEWER_ENDPOINT,
-    [{ role: 'user', content: userContent }],
-    200,
-    { promptType: 'relevance-check' }
-  );
-}
-
 // ── Step 5: Project Reviewer (text) ─────────────────────────────────────────
 export async function reviewProject(studentCtx, validatedTopic, extractedText, previousSteps = {}) {
   return callClaudeAuth(
@@ -584,7 +570,7 @@ export async function reviewProjectPDFStream(studentCtx, validatedTopic, base64D
       { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
     ]}],
     3000,
-    { promptType: 'review', previousSteps },
+    { promptType: 'review-with-relevance', previousSteps },
     onChunk
   );
 }

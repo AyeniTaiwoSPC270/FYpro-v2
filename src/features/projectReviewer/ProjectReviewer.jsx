@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProjectStream, reviewProjectPDFStream, reviewProjectDOCXStream, checkDocumentRelevance, checkDocumentRelevancePDF, handleApiError, logFailure } from '../../services/api'
+import { reviewProjectStream, reviewProjectPDFStream, reviewProjectDOCXStream, checkDocumentRelevance, handleApiError, logFailure } from '../../services/api'
 import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -317,15 +317,15 @@ export default function ProjectReviewer() {
       return
     }
 
-    // Relevance pre-check before committing to the full review.
-    // DOCX skips this — text is only available after server-side mammoth extraction,
-    // which happens during the full review call itself.
+    // Relevance pre-check before committing to the full review (text uploads only).
+    // PDF skips this — the relevance gate is merged into the single review call
+    // server-side (promptType 'review-with-relevance'), so the heavy PDF is only
+    // uploaded and processed once. DOCX skips it too — text is only available after
+    // server-side mammoth extraction, which happens during the full review call.
     try {
-      const relevanceCheck = result.pdf
-        ? await checkDocumentRelevancePDF(studentContext, result.pdf)
-        : result.docx
-          ? null
-          : await checkDocumentRelevance(studentContext, result.text)
+      const relevanceCheck = (result.pdf || result.docx)
+        ? null
+        : await checkDocumentRelevance(studentContext, result.text)
 
       if (relevanceCheck && relevanceCheck.relevant === false) {
         inflightRef.current = false
@@ -358,6 +358,19 @@ export default function ProjectReviewer() {
           : await reviewProjectStream(studentContext, validatedTopic, result.text, previousSteps, onChunk)
 
       if (timedOutRef.current) return
+      // Merged relevance gate: the single PDF call can return a rejection instead
+      // of a review. Same UX as the old pre-check rejection; the server has already
+      // refunded the Express run slot.
+      if (data && data.relevant === false) {
+        inflightRef.current = false
+        setIsProcessing(false)
+        setSection('input')
+        setError(
+          `This document does not appear to be a ${studentContext.department} project. ` +
+          `${data.reason || ''} Please upload the correct file.`
+        )
+        return
+      }
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
         inflightRef.current = false
         setSection('input')

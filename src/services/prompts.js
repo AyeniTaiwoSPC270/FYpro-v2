@@ -699,37 +699,15 @@ Return only the JSON. Nothing else.
 `.trim();
 }
 
-export function buildDocumentRelevanceCheckPDFPrompt(student) {
-  return `
-${buildStudentContext(student)}
-
-The student has uploaded a PDF document (see attached).
-Is this document a final year project, chapter, report, or academic work relevant to this student's Faculty of ${student.faculty}, Department of ${student.department}?
-
-Return ONLY this exact JSON structure:
-
-{
-  "relevant": true,
-  "reason": "One sentence explaining why this document is relevant to this student's faculty and department"
-}
-
-OR if not relevant:
-
-{
-  "relevant": false,
-  "reason": "One sentence explaining why this document does NOT match this student's Faculty of ${student.faculty}, Department of ${student.department}"
-}
-
-Return only the JSON. Nothing else.
-`.trim();
-}
-
 export function buildProjectReviewerPDFPrompt(student) {
   return `
 ${buildStudentContext(student)}
 
 The student has uploaded their project as a PDF document (see the attached document above).
-Review the entire PDF content carefully. Every strength, weakness, and examiner question MUST reference specific content, arguments, or claims from the PDF — not generic academic advice.
+
+FIRST: confirm the document is a final year project, chapter, report, or academic work relevant to this student's Faculty of ${student.faculty}, Department of ${student.department}. If it is NOT, return ONLY {"relevant": false, "reason": "one sentence"} and skip the review entirely.
+
+If it IS relevant: review the entire PDF content carefully. Every strength, weakness, and examiner question MUST reference specific content, arguments, or claims from the PDF — not generic academic advice.
 
 Return ONLY this exact JSON structure:
 
