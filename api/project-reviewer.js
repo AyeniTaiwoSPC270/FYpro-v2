@@ -306,7 +306,7 @@ const handler = async (req, res) => {
 
       if (inputTokens || outputTokens) {
         await trackUsage(inputTokens, outputTokens, model).catch(() => {});
-        await trackUserUsage(user.id, inputTokens, outputTokens).catch(() => {});
+        await trackUserUsage(user.id, inputTokens, outputTokens, model).catch(() => {});
       }
 
       if (stopReason === 'max_tokens') {
@@ -357,7 +357,7 @@ const handler = async (req, res) => {
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
       await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
-      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, model);
     }
 
     if (response.ok) {

@@ -735,7 +735,7 @@ async function handleSupervisorPrep(req, res) {
       // Count this toward the shared per-user daily counter. No dedicated cap gate
       // here: supervisor-prep is rate-limited to 5/user/day and cheap, so it can't
       // drain the budget — but its spend still counts against the heavier endpoints' gates.
-      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens);
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
     }
 
     if (!response.ok) {

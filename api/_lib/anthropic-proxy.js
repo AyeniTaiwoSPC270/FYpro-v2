@@ -54,7 +54,7 @@ export async function callAnthropic({
 
   if (data.usage) {
     await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
-    await trackUserUsage(userId, data.usage.input_tokens, data.usage.output_tokens);
+    await trackUserUsage(userId, data.usage.input_tokens, data.usage.output_tokens, model);
   }
 
   if (response.ok) {
