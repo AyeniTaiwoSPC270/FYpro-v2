@@ -328,7 +328,12 @@ const handler = async (req, res) => {
         return;
       }
 
-      if (expressOnly && reservedCount !== null) {
+      // Merged relevance gate: a wrong-document rejection completed the call but
+      // must not consume an Express lifetime review slot — refund instead of sync.
+      const wrongDocument = parsed && parsed.relevant === false;
+      if (wrongDocument) {
+        refundRun();
+      } else if (expressOnly && reservedCount !== null) {
         await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts }).catch(() => {});
       }
 
@@ -369,9 +374,21 @@ const handler = async (req, res) => {
         return res.status(500).json({ error: 'The review was too long to complete. Please try again or upload a shorter document.' });
       }
 
-      // Persist the reserved lifetime count (display/fallback only — Redis is the
-      // enforcement source). Fire before responding; Vercel freezes after.
-      if (expressOnly && reservedCount !== null) {
+      // Merged relevance gate (non-streaming mirror): parse the output to detect a
+      // wrong-document rejection and refund the Express slot instead of persisting it.
+      let nsParsed = null;
+      try {
+        const nsText     = data?.content?.[0]?.text || '';
+        const nsStripped = nsText.replace(/```json|```/g, '').trim();
+        const nsMatch    = nsStripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        nsParsed = JSON.parse(nsMatch ? nsMatch[0] : nsStripped);
+      } catch { /* unparseable output is surfaced by the client's shape validation */ }
+
+      if (nsParsed && nsParsed.relevant === false) {
+        refundRun();
+      } else if (expressOnly && reservedCount !== null) {
+        // Persist the reserved lifetime count (display/fallback only — Redis is the
+        // enforcement source). Fire before responding; Vercel freezes after.
         await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts });
       }
 
