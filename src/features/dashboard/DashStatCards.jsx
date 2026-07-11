@@ -39,7 +39,7 @@ export default memo(function DashStatCards({ STUDENT, STEPS, navTarget = '/app' 
       </div>
 
       <div className="flex-1 text-center sm:text-left">
-        <div className="font-mono text-[0.64rem] tracking-[0.1em] uppercase mb-1.5" style={{ color: 'rgba(255,255,255,0.72)' }}>
+        <div className="font-mono text-[0.64rem] tracking-[0.1em] uppercase mb-1.5 text-white">
           {activeStep ? 'Current Step' : 'Status'}
         </div>
         <div className="font-serif text-[1.2rem] md:text-[1.3rem] leading-[1.25] mb-1.5">
