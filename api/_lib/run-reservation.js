@@ -19,13 +19,20 @@ import { supabaseAdmin } from './supabase-admin.js';
  * @param {string}  args.userId       - verified Supabase user id
  * @param {number}  args.limit        - lifetime cap for this feature
  * @param {object}  args.dbRunCounts  - the user's run_counts object from user_entitlements
- * @returns {Promise<{ allowed: boolean, reservedCount: number, refund: () => void }>}
+ * @returns {Promise<{ allowed: boolean, reservedCount: number, refund: () => Promise<void> }>}
  *          allowed=false when the cap is already reached. refund() decrements the
  *          reserved slot — call it if the Anthropic call fails (no-op when nothing
  *          was reserved, e.g. the read-check or a Redis-down fail-open path).
+ *          refund() returns the underlying Redis promise so callers on a route that
+ *          responds/streams immediately after can `await` it before Vercel freezes
+ *          the function — existing fire-and-forget callers can keep ignoring the
+ *          return value. It is also self-disarming: after the first invocation,
+ *          further calls are no-ops that resolve immediately, so a route that calls
+ *          refund() again from an outer catch (e.g. after already refunding in the
+ *          try block) can never double-decrement the counter.
  */
 export async function reserveRun({ dbKey, userId, limit, dbRunCounts }) {
-  const noop = () => {};
+  const noop = () => Promise.resolve();
   const seed = (dbRunCounts && typeof dbRunCounts[dbKey] === 'number') ? dbRunCounts[dbKey] : 0;
 
   // Read-check first: cheap reject when already at/over the cap.
@@ -44,10 +51,15 @@ export async function reserveRun({ dbKey, userId, limit, dbRunCounts }) {
       return { allowed: false, reservedCount, refund: noop };
     }
 
+    let refunded = false;
     return {
       allowed: true,
       reservedCount,
-      refund: () => { redis.decr(key).catch(() => {}); },
+      refund: () => {
+        if (refunded) return Promise.resolve();
+        refunded = true;
+        return redis.decr(key).catch(() => {});
+      },
     };
   } catch (err) {
     // Redis unavailable — fail open to the read-check we already passed above.

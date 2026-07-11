@@ -310,7 +310,7 @@ const handler = async (req, res) => {
       }
 
       if (stopReason === 'max_tokens') {
-        refundRun();
+        await refundRun();
         send({ type: 'error', message: 'The review was too long to complete. Please try again or upload a shorter document.' });
         res.end();
         return;
@@ -322,7 +322,7 @@ const handler = async (req, res) => {
         const jsonMatch = stripped.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
         parsed = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
       } catch {
-        refundRun();
+        await refundRun();
         send({ type: 'error', message: 'Received an unexpected response. Please try again.' });
         res.end();
         return;
@@ -330,9 +330,10 @@ const handler = async (req, res) => {
 
       // Merged relevance gate: a wrong-document rejection completed the call but
       // must not consume an Express lifetime review slot — refund instead of sync.
+      // Awaited so the decrement lands before we respond and Vercel freezes the function.
       const wrongDocument = parsed && parsed.relevant === false;
       if (wrongDocument) {
-        refundRun();
+        await refundRun();
       } else if (expressOnly && reservedCount !== null) {
         await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts }).catch(() => {});
       }
@@ -385,7 +386,9 @@ const handler = async (req, res) => {
       } catch { /* unparseable output is surfaced by the client's shape validation */ }
 
       if (nsParsed && nsParsed.relevant === false) {
-        refundRun();
+        // Awaited for the same reason as syncRunCount below: fire before responding,
+        // Vercel freezes the function right after.
+        await refundRun();
       } else if (expressOnly && reservedCount !== null) {
         // Persist the reserved lifetime count (display/fallback only — Redis is the
         // enforcement source). Fire before responding; Vercel freezes after.
