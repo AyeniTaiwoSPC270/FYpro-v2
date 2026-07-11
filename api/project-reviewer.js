@@ -193,7 +193,10 @@ const handler = async (req, res) => {
     }
 
     // Reserve a lifetime slot for express-only users now that the file is valid.
-    if (expressOnly) {
+    // The relevance pre-check (promptType === 'relevance-check') is a cheap ~200-token
+    // gate call, not an actual review — it must never consume a lifetime slot, otherwise
+    // a text upload burns two of the user's 5 reviews (pre-check + review) for one document.
+    if (expressOnly && promptType !== 'relevance-check') {
       const r = await reserveRun({
         dbKey: 'express_reviewer',
         userId: user.id,
