@@ -85,6 +85,40 @@ describe('reserveRun', () => {
     expect(h.redis.decr).toHaveBeenCalledWith('runs:express_reviewer:u1')
   })
 
+  it('refund() returns a promise (awaitable)', async () => {
+    h.redis.incr.mockResolvedValue(2)
+    const r = await reserveRun({ dbKey: 'express_reviewer', userId: 'u1', limit: 5, dbRunCounts: {} })
+    const refundPromise = r.refund()
+    expect(refundPromise).toBeInstanceOf(Promise)
+    // Promise resolves to the redis.decr result (typically the new counter value)
+    await expect(refundPromise).resolves.toBeDefined()
+  })
+
+  it('refund() resolves even when redis.decr rejects (swallows errors)', async () => {
+    h.redis.incr.mockResolvedValue(2)
+    h.redis.decr.mockRejectedValue(new Error('redis error'))
+    const r = await reserveRun({ dbKey: 'express_reviewer', userId: 'u1', limit: 5, dbRunCounts: {} })
+    const refundPromise = r.refund()
+    // Should not throw, should resolve cleanly
+    await expect(refundPromise).resolves.toBeUndefined()
+  })
+
+  it('refund() is idempotent — second call does not call redis.decr (self-disarms)', async () => {
+    h.redis.incr.mockResolvedValue(2)
+    h.redis.decr.mockResolvedValue(1)
+    const r = await reserveRun({ dbKey: 'express_reviewer', userId: 'u1', limit: 5, dbRunCounts: {} })
+
+    // First refund() call
+    await r.refund()
+    expect(h.redis.decr).toHaveBeenCalledTimes(1)
+
+    // Second refund() call should return immediately without touching redis.decr
+    const secondRefund = r.refund()
+    expect(secondRefund).toBeInstanceOf(Promise)
+    await expect(secondRefund).resolves.toBeUndefined()
+    expect(h.redis.decr).toHaveBeenCalledTimes(1) // still only 1, not 2
+  })
+
   it('FAILS OPEN when redis throws — infra failure must never block a paying user', async () => {
     h.redis.incr.mockRejectedValue(new Error('redis down'))
     const r = await reserveRun({ dbKey: 'express_reviewer', userId: 'u1', limit: 5, dbRunCounts: { express_reviewer: 1 } })
