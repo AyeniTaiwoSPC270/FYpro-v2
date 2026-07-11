@@ -502,8 +502,8 @@ export default function ProjectReviewer() {
         <p className="pr-step-label">{isExpress ? 'Step 1: Project Reviewer' : 'Step 5: Project Reviewer'}</p>
         <p className="pr-description">
           Upload your full project or a single chapter. FYPro will grade it, identify 3 strengths
-          and 3 weaknesses specific to your content, and generate the 5 most dangerous examiner
-          questions from your actual work.
+          and any genuine weaknesses (up to 3) specific to your content, and generate the 5 most
+          dangerous examiner questions from your actual work.
         </p>
 
         {/* Empty state — shown before any file is selected */}
