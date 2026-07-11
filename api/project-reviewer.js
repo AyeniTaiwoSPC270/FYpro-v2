@@ -341,6 +341,20 @@ const handler = async (req, res) => {
         await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts }).catch(() => {});
       }
 
+      // Safety-net log only — the system prompt now instructs 1-3 genuine
+      // weaknesses (never fabricated to hit exactly 3), never 0. This never
+      // blocks or retries the response; it exists purely so system_logs shows
+      // whether the model ever actually violates that floor in practice.
+      if (!wrongDocument && Array.isArray(parsed?.weaknesses) && parsed.weaknesses.length === 0) {
+        writeSystemLog({
+          severity: 'warning',
+          feature: 'Project Reviewer',
+          source: 'ai',
+          plain_message: 'Reviewer returned 0 weaknesses despite 1-3 floor instruction',
+          raw_detail: { userId: user.id },
+        });
+      }
+
       const streamDuration = Date.now() - start;
       supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: streamDuration, user_id: user.id }).then(() => {}, () => {});
 
@@ -396,6 +410,18 @@ const handler = async (req, res) => {
         // Persist the reserved lifetime count (display/fallback only — Redis is the
         // enforcement source). Fire before responding; Vercel freezes after.
         await syncRunCount({ userId: user.id, dbKey: 'express_reviewer', newCount: reservedCount, dbRunCounts });
+      }
+
+      // Same safety-net log as the streaming path above.
+      const nsWrongDocument = nsParsed && nsParsed.relevant === false;
+      if (!nsWrongDocument && Array.isArray(nsParsed?.weaknesses) && nsParsed.weaknesses.length === 0) {
+        writeSystemLog({
+          severity: 'warning',
+          feature: 'Project Reviewer',
+          source: 'ai',
+          plain_message: 'Reviewer returned 0 weaknesses despite 1-3 floor instruction',
+          raw_detail: { userId: user.id },
+        });
       }
 
       const duration = Date.now() - start;
