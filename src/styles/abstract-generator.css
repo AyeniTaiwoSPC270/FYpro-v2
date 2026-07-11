@@ -883,6 +883,19 @@
   color: #DC2626;
 }
 
+/* Shown instead of the weaknesses list when the reviewer genuinely found none */
+.pr-feedback-empty {
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #16A34A;
+  background: rgba(22, 163, 74, 0.05);
+}
+
 /* ── Examiner questions context note ─────────────────────── */
 .pr-questions-context {
   font-family: 'Poppins', sans-serif;

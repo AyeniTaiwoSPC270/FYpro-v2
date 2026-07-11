@@ -725,24 +725,31 @@ export default function ProjectReviewer() {
             <div className="pr-feedback-block">
               <p className="pr-feedback-heading pr-feedback-heading--weakness">Weaknesses &amp; Gaps</p>
               <div id="pr-weaknesses-list" className="pr-feedback-list">
-                {(reviewData.weaknesses || []).map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={[
-                      'pr-feedback-item',
-                      'pr-feedback-item--weakness',
-                      visibleWeaknesses.includes(idx) ? 'pr-feedback-item--visible' : '',
-                    ].filter(Boolean).join(' ')}
-                  >
-                    <p className="pr-feedback-title">{item.title || ''}</p>
-                    <p className="pr-feedback-detail">{item.detail || ''}</p>
-                    {item.fix && (
-                      <p className="pr-feedback-fix">
-                        <span className="pr-fix-label">Fix:</span> {item.fix}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                {(reviewData.weaknesses || []).length === 0 ? (
+                  <p className="pr-feedback-empty">
+                    No significant weaknesses identified in this review — strong work. You can
+                    still review the examiner questions below to prepare for defense.
+                  </p>
+                ) : (
+                  (reviewData.weaknesses || []).map((item, idx) => (
+                    <div
+                      key={idx}
+                      className={[
+                        'pr-feedback-item',
+                        'pr-feedback-item--weakness',
+                        visibleWeaknesses.includes(idx) ? 'pr-feedback-item--visible' : '',
+                      ].filter(Boolean).join(' ')}
+                    >
+                      <p className="pr-feedback-title">{item.title || ''}</p>
+                      <p className="pr-feedback-detail">{item.detail || ''}</p>
+                      {item.fix && (
+                        <p className="pr-feedback-fix">
+                          <span className="pr-fix-label">Fix:</span> {item.fix}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
