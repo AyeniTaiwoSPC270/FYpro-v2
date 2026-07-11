@@ -15,13 +15,11 @@ const QUICK_ACTIONS_BASE = [
     cardBg: 'var(--bg-input)',
     border: 'rgba(22,163,74,0.28)',
     hoverBorder: 'rgba(22,163,74,0.55)',
-    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(22,163,74,0.22)',
     ctaLabel: 'Continue',
     ctaBg: '#16A34A',
     ctaColor: '#fff',
     ctaBorder: 'none',
     Icon: PlayIcon,
-    breathe: true,
   },
   {
     label: 'Jump to Defense Simulator',
@@ -32,13 +30,11 @@ const QUICK_ACTIONS_BASE = [
     cardBg: 'var(--bg-input)',
     border: 'rgba(0,102,255,0.24)',
     hoverBorder: 'rgba(0,102,255,0.5)',
-    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 28px rgba(0,102,255,0.22)',
     ctaLabel: 'Preview',
     ctaBg: 'transparent',
     ctaColor: '#60A5FA',
     ctaBorder: '1.5px solid rgba(0,102,255,0.38)',
     Icon: ZapIcon,
-    breathe: false,
     onClickKey: 'defense',
   },
   {
@@ -51,13 +47,11 @@ const QUICK_ACTIONS_BASE = [
     cardBg: 'var(--bg-input)',
     border: 'rgba(245,158,11,0.24)',
     hoverBorder: 'rgba(245,158,11,0.5)',
-    hoverGlow: '0 8px 36px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.2)',
     ctaLabel: 'Export PDF',
     ctaBg: 'transparent',
     ctaColor: '#FCD34D',
     ctaBorder: '1.5px solid rgba(245,158,11,0.38)',
     Icon: DownloadIcon,
-    breathe: false,
   },
 ]
 
@@ -106,7 +100,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
           return (
             <div key={action.label} ref={cardRef} style={revealStyle(cardVisible)}>
               <motion.button
-                whileHover={!isLockedAction ? { y: -4, boxShadow: action.hoverGlow, borderColor: action.hoverBorder } : {}}
+                whileHover={!isLockedAction ? { y: -2, borderColor: action.hoverBorder } : {}}
                 whileTap={!isLockedAction ? { scale: 0.97 } : {}}
                 aria-label={action.label}
                 aria-disabled={isLockedAction}
@@ -149,16 +143,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                   <div className="font-sans text-[0.72rem] text-slate-500 leading-[1.45]">{action.sub}</div>
                 </div>
 
-                {action.breathe ? (
-                  <motion.span
-                    animate={!isLockedAction ? { scale: [1, 1.03, 1] } : {}}
-                    transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2.4, ease: 'easeInOut' }}
-                    className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold"
-                    style={{ background: action.ctaBg, color: action.ctaColor, border: action.ctaBorder, opacity: isLockedAction ? 0.5 : 1, cursor: isLockedAction ? 'not-allowed' : 'default' }}
-                  >
-                    {action.ctaLabel} <ArrowRightIcon size={11} />
-                  </motion.span>
-                ) : action.onClickKey === 'download' ? (
+                {action.onClickKey === 'download' ? (
                   <span
                     className="inline-flex items-center gap-1.5 px-4 py-[7px] rounded-lg font-sans text-[0.76rem] font-semibold transition-all duration-200"
                     style={{

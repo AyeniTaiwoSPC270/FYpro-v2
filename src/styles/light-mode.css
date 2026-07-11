@@ -1065,28 +1065,21 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes db-active-pulse {
-  0%, 100% { border-left-color: rgba(0,102,255,0.6); }
-  50%       { border-left-color: rgba(0,102,255,1.0); }
-}
-
 /* Header greeting — slides down from above */
 .db-header-enter {
   animation: db-slide-down 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
 
-/* Journey step — active row pulsing left border */
+/* Journey step — active row, static left border (no pulse: one state, always visible) */
 .db-step-active-row {
   border-left: 2px solid rgba(0,102,255,0.6);
   padding-left: 3px;
   border-radius: 4px;
-  animation: db-active-pulse 2s ease-in-out infinite;
 }
 
-/* Journey step — completed row green glow */
+/* Journey step — completed row, plain (no glow: completed steps are quiet, not decorated) */
 .db-step-completed-row {
   border-radius: 12px;
-  box-shadow: 0 0 12px rgba(22,163,74,0.15);
 }
 
 /* Sidebar item — hover background slides in from left via pseudo-element */

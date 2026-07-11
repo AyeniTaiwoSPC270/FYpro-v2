@@ -37,97 +37,10 @@ Design System — Utility Classes
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   DASHBOARD PREMIUM REDESIGN — Cinematic / Professional overrides
-   2026-04 · Layered on top of db- base styles
+   Dashboard chrome (sidebar/header) intentionally uses the plain db-
+   base styles defined in step-accents.css — flat background, single
+   border, no gradient or glow. Chrome is navigation, not content.
    ══════════════════════════════════════════════════════════════════ */
-
-/* ── Keyframes ─────────────────────────────────────────────────── */
-@keyframes db-pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0,102,255,0.6); }
-  50%       { opacity: 0.7; transform: scale(0.75); box-shadow: 0 0 0 4px rgba(0,102,255,0); }
-}
-@keyframes db-progress-shimmer {
-  0%   { left: -80%; }
-  100% { left: 160%; }
-}
-@keyframes db-btn-shimmer {
-  0%   { left: -100%; }
-  100% { left: 160%; }
-}
-@keyframes db-stat-fade {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes db-slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes db-fade-stagger {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Main column — radial glow at top-right ────────────────────── */
-
-/* ══ 1. HEADER — frosted glass ══════════════════════════════════ */
-.db-header {
-  background: rgba(11, 15, 24, 0.82) !important;
-  backdrop-filter: blur(12px) saturate(1.4) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
-  border-bottom: none !important;
-}
-.db-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, #0066FF 0%, rgba(0,102,255,0.28) 55%, transparent 100%);
-  pointer-events: none;
-}
-
-/* ══ 2. SIDEBAR — gradient + glowing right separator ═══════════ */
-.db-sidebar {
-  background: linear-gradient(180deg, #0D1117 0%, #060B12 100%) !important;
-  border-right: none !important;
-  position: relative;
-}
-.db-sidebar::after {
-  content: '';
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg,
-    rgba(0,102,255,0.45) 0%,
-    rgba(0,102,255,0.12) 50%,
-    transparent 100%);
-  pointer-events: none;
-}
-
-/* Step items — smoother hover + stronger active glow */
-
-/* ══ 3. IN-PROGRESS CARD — complete cinematic redesign ══════════ */
-
-/* Gradient image area — fades from deep blue to transparent */
-
-/* IN PROGRESS badge — pill with pulsing blue live dot */
-
-/* Progress bar — 4px + animated shimmer */
-
-/* Continue button — full width + shimmer sweep on hover */
-
-/* ══ 4. COMPLETED STEPS — hover glow + blue icon ════════════════ */
-/* Blue icon — override green */
-/* Staggered fade-in for rows */
-
-/* ══ 5. STATS ROW ════════════════════════════════════════════════ */
-
-/* Circular ring wrap */
-
-/* Icon block */
-
-/* Stat text */
-
-/* Stats responsive */
 
 /* ══════════════════════════════════════════════════════════════
    PREMIUM VISUAL ENHANCEMENTS — App screens only

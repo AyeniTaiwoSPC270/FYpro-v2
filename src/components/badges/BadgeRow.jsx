@@ -35,9 +35,7 @@ export default function BadgeRow() {
         gap: 12,
         padding: '18px 24px',
         borderRadius: 16,
-        background: isLight
-          ? 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)'
-          : 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
+        background: isLight ? '#F8FAFC' : 'var(--bg-card, rgba(255,255,255,0.03))',
         border: isLight ? '1px solid #E2E8F0' : '1px solid rgba(255,255,255,0.07)',
         marginBottom: 20,
         scrollbarWidth: 'none',

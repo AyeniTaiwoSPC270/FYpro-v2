@@ -86,7 +86,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
       >
         {onNewSession && (
           <motion.button
-            whileHover={{ y: -1, boxShadow: '0 0 22px rgba(59,130,246,0.4)' }}
+            whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             aria-label="Start a new project"
             onClick={onNewSession}
@@ -169,7 +169,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
         {/* Avatar + dropdown */}
         <div className="relative" ref={avatarRef}>
           <motion.button
-            whileHover={{ scale: 1.07, boxShadow: '0 0 18px rgba(0,102,255,0.3)' }}
+            whileHover={{ scale: 1.07 }}
             aria-label={`Profile: ${STUDENT.name}`}
             aria-expanded={avatarOpen}
             onClick={() => setAvatarOpen((v) => !v)}
@@ -235,13 +235,6 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
           </AnimatePresence>
         </div>
       </motion.div>
-
-      {/* Gradient border bottom */}
-      <div
-        aria-hidden="true"
-        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(to right, transparent 0%, rgba(0,102,255,0.18) 20%, rgba(0,102,255,0.45) 50%, rgba(0,102,255,0.18) 80%, transparent 100%)' }}
-      />
     </header>
 
     {reportOpen && (

@@ -27,34 +27,35 @@ function usageBarColor(pct) {
   return '#DC2626'
 }
 
-function UsageBar({ used, limit, visible = true, barIndex = 0 }) {
-  const pct = limit !== null ? Math.min(1, used / Math.max(1, limit)) : null
+function joinWithAnd(labels) {
+  if (labels.length <= 1) return labels.join('')
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`
+}
 
-  if (limit === null) {
-    return (
-      <div className="flex items-center gap-2 mt-[6px]">
-        <div className="flex-1 h-[4px] rounded-full" style={{ background: 'var(--border-color)' }} />
-        <span className="font-mono text-[0.58rem] text-green-400 tracking-[0.06em] uppercase flex-shrink-0" style={{ minWidth: 56, textAlign: 'right' }}>
-          Unlimited
-        </span>
-      </div>
-    )
-  }
+function ConstrainedFeature({ label, used, limit, visible, barIndex }) {
+  const pct = Math.min(1, used / Math.max(1, limit))
+  const color = usageBarColor(pct)
+  const remaining = Math.max(0, limit - used)
 
   return (
-    <div className="flex items-center gap-2 mt-[6px]">
-      <div className="flex-1 h-[4px] rounded-full overflow-hidden" style={{ background: 'var(--border-color)' }}>
+    <div
+      className="rounded-xl px-4 py-3.5"
+      style={{ background: pct >= 0.8 ? 'rgba(220,38,38,0.06)' : 'var(--bg-page, rgba(255,255,255,0.02))', border: `1px solid ${pct >= 0.8 ? 'rgba(220,38,38,0.2)' : 'var(--border-color)'}` }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-sans text-[0.85rem] font-semibold text-white">{label}</span>
+        <span className="font-mono text-[0.68rem]" style={{ color }}>{remaining} remaining</span>
+      </div>
+      <div className="h-[6px] rounded-full overflow-hidden" style={{ background: 'var(--border-color)' }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: visible ? `${pct * 100}%` : 0 }}
           transition={{ duration: 0.7, delay: barIndex * 0.05, ease: [0.22, 1, 0.36, 1] }}
           className={`h-full rounded-full${pct >= 0.8 ? ' db-bar-red-glow' : ''}`}
-          style={{ background: usageBarColor(pct) }}
+          style={{ background: color }}
         />
       </div>
-      <span className="font-mono text-[0.6rem] flex-shrink-0" style={{ color: usageBarColor(pct), minWidth: 48, textAlign: 'right' }}>
-        {used} / {limit}
-      </span>
     </div>
   )
 }
@@ -74,16 +75,23 @@ export default function DashUsageSection({ features, runCounts, loading, onPayme
 
   const featureKeys = PLAN_FEATURES[planKey]
 
+  const constrained = []
+  const unlimitedLabels = []
+  featureKeys.forEach((key) => {
+    const limit = resolveLimit(key, features)
+    if (limit === null) {
+      unlimitedLabels.push(USAGE_FEATURE_LABELS[key])
+    } else {
+      constrained.push({ key, label: USAGE_FEATURE_LABELS[key], used: runCounts[key] ?? 0, limit })
+    }
+  })
+
   return (
     <section
       ref={sectionRef}
       aria-labelledby="usage-heading"
       className="rounded-2xl border border-slate-800/80 p-4 sm:p-6 md:p-8 mb-5 md:mb-7"
-      style={{
-        ...revealStyle(sectionVisible),
-        background: 'linear-gradient(145deg, var(--bg-card) 0%, var(--bg-input) 100%)',
-        boxShadow: '0 8px 40px rgba(59,130,246,0.06)',
-      }}
+      style={{ ...revealStyle(sectionVisible), background: 'var(--bg-card)' }}
     >
       <div className="flex items-start flex-wrap justify-between gap-2 mb-4 sm:mb-6">
         <div>
@@ -100,23 +108,19 @@ export default function DashUsageSection({ features, runCounts, loading, onPayme
         </span>
       </div>
 
-      <div className="flex flex-col gap-5">
-        {featureKeys.map((key, barIndex) => {
-          const used  = runCounts[key] ?? 0
-          const limit = resolveLimit(key, features)
-          return (
-            <div key={key}>
-              <div className="flex items-center justify-between">
-                <span className="font-sans text-[0.82rem] font-medium text-white">{USAGE_FEATURE_LABELS[key]}</span>
-                {limit !== null && (
-                  <span className="font-mono text-[0.6rem] text-slate-500">{Math.max(0, limit - used)} remaining</span>
-                )}
-              </div>
-              <UsageBar used={used} limit={limit} visible={sectionVisible} barIndex={barIndex} />
-            </div>
-          )
-        })}
-      </div>
+      {constrained.length > 0 && (
+        <div className="flex flex-col gap-3 mb-5">
+          {constrained.map((f, i) => (
+            <ConstrainedFeature key={f.key} label={f.label} used={f.used} limit={f.limit} visible={sectionVisible} barIndex={i} />
+          ))}
+        </div>
+      )}
+
+      {unlimitedLabels.length > 0 && (
+        <p className="font-sans text-[0.8rem] text-slate-400 leading-[1.7] m-0">
+          <span className="text-green-400 font-semibold">Unlimited on your {planLabel}:</span> {joinWithAnd(unlimitedLabels)}.
+        </p>
+      )}
 
       {planKey === 'free' && (
         <div

@@ -41,6 +41,18 @@ export default function MomentumRing() {
     }} />
   )
 
+  const isEmpty = pct === 0 && actions.length === 0
+
+  if (isEmpty) return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px',
+      borderRadius: 10, border: `1px dashed ${dividerColor}`, marginBottom: 20,
+      fontFamily: "'Poppins', sans-serif", fontSize: '0.82rem', color: textSecondary,
+    }}>
+      No activity in the last 7 days. <b style={{ color: textPrimary }}>Complete a step to build your momentum.</b>
+    </div>
+  )
+
   return (
     <div style={{
       background: cardBg,

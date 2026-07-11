@@ -15,7 +15,7 @@ export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen,
       style={{
         width: 260,
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%)',
+        background: 'var(--bg-sidebar)',
       }}
     >
       {/* Logo */}
@@ -86,31 +86,17 @@ export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen,
               >
                 {step.name}
               </span>
-
-              {/* Active pulse dot */}
-              {isActive && (
-                <motion.span
-                  animate={{ opacity: [1, 0.35, 1], boxShadow: ['0 0 8px rgba(0,102,255,0.9)', '0 0 2px rgba(0,102,255,0.15)', '0 0 8px rgba(0,102,255,0.9)'] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ background: '#0066FF' }}
-                />
-              )}
             </motion.div>
           )
         })}
       </nav>
 
-      {/* Student context card */}
+      {/* Active project summary — the one place this data lives */}
       <div
-        className="mx-3.5 mb-6 p-4 rounded-xl"
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderLeft: '3px solid rgba(0,102,255,0.5)',
-        }}
+        className="mx-3.5 mb-6 pt-3.5 px-0.5"
+        style={{ borderTop: '1px solid var(--border-subtle)' }}
       >
-        <div className="font-mono text-[0.56rem] tracking-[0.12em] uppercase text-blue-400 mb-2">
+        <div className="font-mono text-[0.56rem] tracking-[0.12em] uppercase text-slate-600 mb-2">
           Active Project
         </div>
         <div className="font-sans text-[0.74rem] font-semibold text-white mb-[3px] leading-[1.3]">

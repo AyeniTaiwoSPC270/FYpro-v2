@@ -34,7 +34,7 @@
 /* ── Dashboard: db-sidebar light mode ────────────────────────── */
 [data-theme="light"] .db-sidebar,
 .light .db-sidebar {
-  background: linear-gradient(180deg, var(--bg-sidebar) 0%, var(--sidebar-gradient-end) 100%) !important;
+  background: var(--bg-sidebar) !important;
   border-right: 1px solid var(--border-color) !important;
 }
 
