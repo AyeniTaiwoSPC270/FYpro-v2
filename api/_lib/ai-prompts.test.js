@@ -28,3 +28,18 @@ describe('getReviewerSystemPrompt — review-with-relevance', () => {
     expect(getReviewerSystemPrompt('unknown-type')).toBeNull()
   })
 })
+
+describe('getReviewerSystemPrompt — weakness count', () => {
+  it('instructs 1 to 3 genuine weaknesses, never fabricated to fill 3', () => {
+    const sys = getReviewerSystemPrompt('review', {})
+    expect(sys).toContain('1 to 3 genuine weaknesses')
+    expect(sys).toContain('Never invent a weakness just to reach 3')
+    expect(sys).not.toContain('Exactly 3 weaknesses')
+  })
+
+  it('leaves strengths and examiner questions at their fixed counts', () => {
+    const sys = getReviewerSystemPrompt('review', {})
+    expect(sys).toContain('Exactly 3 specific strengths')
+    expect(sys).toContain('Exactly 5 examiner questions')
+  })
+})
