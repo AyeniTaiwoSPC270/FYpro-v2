@@ -30,6 +30,8 @@ import { ProjectStateProvider } from './hooks/useProjectState'
 import ProtectedRoute from './components/ProtectedRoute'
 import { usePaidFeatures } from './hooks/usePaidFeatures'
 import { useExpressBeta } from './hooks/useExpressBeta'
+import { useProjectModes } from './hooks/useProjectModes'
+import { isExpressOnlyUser } from './lib/expressRouting'
 import Spinner from './components/Spinner'
 import { useUser } from './hooks/useUser'
 import ExpressProviders from './features/expressDefense/ExpressProviders'
@@ -98,24 +100,31 @@ function ExpressDashboardRedirect() {
   const { user } = useUser()
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { betaFree, loading: betaLoading } = useExpressBeta()
+  const { hasExpress, hasStandard, loading: projectsLoading } = useProjectModes()
 
-  const loading = featuresLoading || betaLoading
+  const loading = featuresLoading || betaLoading || projectsLoading
 
   if (loading) {
     // While entitlements load, use cached value to skip the skeleton flash on return visits.
     // Only used as a fast-path during loading — fresh data always wins once resolved.
-    const cached = user?.id ? localStorage.getItem(`fypro_eo_${user.id}`) : null
+    // Key is v2: the v1 key was written by the buggy beta check and would keep bouncing
+    // standard users to /express from cache alone.
+    const cached = user?.id ? localStorage.getItem(`fypro_express_only_v2_${user.id}`) : null
     if (cached === '1') return <Navigate to="/express" replace />
     return <DashboardPageSkeleton />
   }
 
-  const isExpressOnly =
-    (features.includes('express_defense') || betaFree) &&
-    !features.includes('defense_pack') &&
-    !features.includes('student_pack')
+  const isExpressOnly = isExpressOnlyUser({
+    features,
+    betaFree,
+    hasExpressProject: hasExpress,
+    hasStandardProject: hasStandard,
+  })
 
   // Update cache so next session can skip the skeleton
-  if (user?.id) localStorage.setItem(`fypro_eo_${user.id}`, isExpressOnly ? '1' : '0')
+  if (user?.id) {
+    localStorage.setItem(`fypro_express_only_v2_${user.id}`, isExpressOnly ? '1' : '0')
+  }
 
   if (isExpressOnly) return <Navigate to="/express" replace />
   return (

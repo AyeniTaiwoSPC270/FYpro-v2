@@ -45,7 +45,7 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
       .eq('user_id', userId)
       .neq('status', 'archived')
       .order('updated_at', { ascending: false })
-      .limit(1),
+      .limit(20),
   ])
 
   // If Supabase returned a network/server error (not PGRST116 "no rows"), do NOT
@@ -64,17 +64,18 @@ export async function resolveRouteAfterLogin(userId: string): Promise<string> {
   const isOnboarded = Boolean(
     profileRes.data?.faculty && profileRes.data?.department,
   )
-  const rows = projectRes.data as Array<{ id: string; mode: string | null }> | null
-  const topProject = rows?.[0] ?? null
-  const activeProjectId = topProject?.id ?? null
-  const isExpressProject = topProject?.mode === 'express'
+  const rows = (projectRes.data ?? []) as Array<{ id: string; mode: string | null }>
+  const hasExpressProject = rows.some(r => r.mode === 'express')
+  // The standard dashboard must never be handed an express project — they are a
+  // different product with a different shell.
+  const activeProjectId = rows.find(r => r.mode !== 'express')?.id ?? null
 
   setRoutingCache({ onboarded: isOnboarded, activeProjectId })
 
-  // Express-only users (no standard onboarding) whose top project is mode='express':
-  // route directly to /express without touching isOnboarded — their faculty/department
-  // live on the project row, not the users row, so isOnboarded is always false for them.
-  if (!isOnboarded && isExpressProject) return '/express'
+  // Never send a user with an express project through standard onboarding. /dashboard
+  // is the single place that decides express-vs-standard (it can see entitlements and
+  // beta state, which this function cannot), so hand off to it rather than guessing.
+  if (!isOnboarded && hasExpressProject) return '/dashboard'
 
   // Keep legacy isOnboarded flag in sync so AppContext reads correctly immediately.
   // Only clear it when Supabase CONFIRMS the user hasn't set faculty/department —
