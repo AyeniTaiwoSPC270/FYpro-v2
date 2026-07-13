@@ -197,6 +197,22 @@ export default function PastSessions({ projectId }) {
                           })}
                         </div>
                       )}
+                      {/* Sessions defended before score_reasoning was persisted have no
+                          reasoning to show — the badges stand alone for those. */}
+                      {(turn.scores || []).some(s => s.score_reasoning) && (
+                        <div className="dp-history-turn__reasonings">
+                          {turn.scores.map((s, i) => (
+                            s.score_reasoning ? (
+                              <p key={i} className="dp-history-turn__reasoning">
+                                <span className="dp-history-turn__reasoning-examiner">
+                                  {(s.examiner || '').replace(/^The\s+/i, '')}
+                                </span>
+                                {s.score_reasoning}
+                              </p>
+                            ) : null
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
