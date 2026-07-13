@@ -7,7 +7,8 @@ import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { useProjectState } from '../hooks/useProjectState'
 import { useUser } from '../hooks/useUser'
 import { supabase } from '../lib/supabase'
-import { updateUserProfile } from '../lib/db'
+import { updateUserProfile, getProfileStats } from '../lib/db'
+import { formatLastActive } from '../lib/profileStats'
 import { resetUser } from '../lib/analytics'
 import Spinner from '../components/Spinner'
 import { useNotifications } from '../hooks/useNotifications'
@@ -425,7 +426,7 @@ export default function Profile() {
   const planLabel = features.includes('defense_pack') ? 'Defense Plan' : features.includes('student_pack') ? 'Student Plan' : features.includes('express_defense') ? 'Express Defence' : 'Free Plan'
   const isGoogleUser = user?.identities?.some(i => i.provider === 'google') ?? false
 
-  const completedCount = state.stepsCompleted.filter(Boolean).length
+  const [stats, setStats] = useState(null)
 
   const [form, setForm] = useState({
     name:       '',
@@ -451,6 +452,17 @@ export default function Profile() {
     }))
     setAvatarUrl(user.user_metadata?.avatar_url || null)
   }, [user])
+
+  // Project/step counts span both modes, and express progress never reaches this page
+  // through context (Profile renders outside ExpressProviders) — so read them directly.
+  useEffect(() => {
+    if (!user?.id) return
+    let cancelled = false
+    getProfileStats(user.id)
+      .then(result => { if (!cancelled) setStats(result) })
+      .catch(err => console.error('[Profile] getProfileStats failed:', err.message))
+    return () => { cancelled = true }
+  }, [user?.id])
 
   // Re-sync profile fields from AppContext when useProjectState finishes loading them
   // from Supabase (async — form may have initialized before the DB data arrived)
@@ -838,22 +850,54 @@ export default function Profile() {
         >
           <SectionLabel>Academic Information</SectionLabel>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {[
-              { label: 'Projects Started', display: <CountUp target={1} /> },
-              { label: 'Steps Completed',  display: <><CountUp target={completedCount} /><span className="text-base font-normal"> of 6</span></> },
-              { label: 'Last Active',       display: 'Today' },
-            ].map(({ label, display }) => (
-              <div
-                key={label}
-                className={`rounded-xl p-4 min-w-0 ${label === 'Last Active' ? 'col-span-2 sm:col-span-1' : ''}`}
-                style={{ background: 'var(--bg-input)' }}
-              >
-                <div className="font-sans text-2xl font-bold leading-none truncate" style={{ color: 'var(--text-primary)' }}>{display}</div>
-                <div className="font-mono text-xs uppercase tracking-wider mt-1.5 truncate" style={{ color: 'var(--text-muted)' }}>{label}</div>
-              </div>
-            ))}
-          </div>
+          {!stats ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className={`rounded-xl p-4 min-w-0 ${i === 2 ? 'col-span-2 sm:col-span-1' : ''}`}
+                  style={{ background: 'var(--bg-input)' }}
+                >
+                  <div className="animate-pulse bg-slate-700/40 rounded h-6 w-16" />
+                  <div className="animate-pulse bg-slate-700/30 rounded h-3 w-24 mt-2.5" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Tiles are built from what the user actually has: an express-only student has
+            // no main project to report "of 6" on, and someone running both gets both.
+            // CountUp animates once on mount, so this only renders after stats resolve.
+            (() => {
+              const tiles = [
+                { label: 'Projects Started', display: <CountUp target={stats.projectCount} /> },
+                ...(stats.standard ? [{
+                  label: 'Main Project',
+                  display: <><CountUp target={stats.standard.completed} /><span className="text-base font-normal"> of {stats.standard.total}</span></>,
+                }] : []),
+                ...(stats.express ? [{
+                  label: 'Express Defence',
+                  display: <><CountUp target={stats.express.completed} /><span className="text-base font-normal"> of {stats.express.total}</span></>,
+                }] : []),
+                { label: 'Last Active', display: formatLastActive(stats.lastActiveAt) },
+              ]
+              const odd = tiles.length % 2 === 1
+              return (
+                <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${tiles.length > 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+                  {tiles.map(({ label, display }, i) => (
+                    <div
+                      key={label}
+                      // An odd tile count leaves a gap in the two-column mobile grid — let the last one fill it.
+                      className={`rounded-xl p-4 min-w-0 ${odd && i === tiles.length - 1 ? 'col-span-2 sm:col-span-1' : ''}`}
+                      style={{ background: 'var(--bg-input)' }}
+                    >
+                      <div className="font-sans text-2xl font-bold leading-none truncate" style={{ color: 'var(--text-primary)' }}>{display}</div>
+                      <div className="font-mono text-xs uppercase tracking-wider mt-1.5 truncate" style={{ color: 'var(--text-muted)' }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()
+          )}
         </motion.div>
 
         {/* ── Section 4: Danger Zone ── */}

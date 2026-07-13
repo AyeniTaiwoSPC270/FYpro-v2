@@ -3,6 +3,8 @@
 // Every read is automatically scoped to the authenticated user by RLS.
 
 import { supabase } from './supabase'
+import { computeProfileStats } from './profileStats'
+import type { ProfileStats, ProjectRow, StepRow } from './profileStats'
 
 // ─── Types matching architecture-decisions.md ───────────────────────────────
 
@@ -222,6 +224,23 @@ export async function getAllUserProjects(userId: string): Promise<Project[]> {
     .order('created_at', { ascending: false })
   if (error) { console.error('[supabase-client] getAllUserProjects:', error.message); return [] }
   return (data as Project[]) ?? []
+}
+
+// ─── Profile stats (/profile — spans BOTH modes, so it can't use getAllUserProjects) ──
+
+export async function getProfileStats(userId: string): Promise<ProfileStats> {
+  const [projectsRes, stepsRes] = await Promise.all([
+    supabase.from('projects').select('id, mode, updated_at').eq('user_id', userId),
+    supabase.from('project_steps').select('project_id, step_type').eq('user_id', userId),
+  ])
+
+  if (projectsRes.error) console.error('[db] getProfileStats projects:', projectsRes.error.message)
+  if (stepsRes.error) console.error('[db] getProfileStats steps:', stepsRes.error.message)
+
+  return computeProfileStats(
+    (projectsRes.data as ProjectRow[] | null) ?? [],
+    (stepsRes.data as StepRow[] | null) ?? []
+  )
 }
 
 export async function archiveAllActiveProjects(): Promise<void> {
