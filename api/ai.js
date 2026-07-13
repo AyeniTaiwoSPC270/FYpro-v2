@@ -299,6 +299,16 @@ function clampTurnScore(n) {
   return Number.isFinite(x) ? Math.min(10, Math.max(0, x)) : 0;
 }
 
+// The four labels the panel prompt is allowed to return. Anything else is dropped
+// so the stored value can be used directly as a CSS modifier by the transcript UI.
+const TURN_SCORE_LABELS = ['Fail', 'Pass', 'Merit', 'Distinction'];
+
+function normaliseScoreLabel(label) {
+  if (typeof label !== 'string') return '';
+  const match = TURN_SCORE_LABELS.find(l => l.toLowerCase() === label.trim().toLowerCase());
+  return match || '';
+}
+
 // Parse the per-turn examiner scores out of a panel follow-up response. The scores
 // that feed total_score are extracted from Claude's output SERVER-side here — never
 // trusted from the client — then persisted so finalize-defense can average them.
@@ -312,11 +322,20 @@ function parsePanelTurnScores(data) {
     return arr
       .filter(s => s && typeof s === 'object')
       .slice(0, 5)
-      .map(s => ({
-        examiner:  typeof s.examiner === 'string'  ? s.examiner.slice(0, 60)   : '',
-        score:     clampTurnScore(s.score),
-        reasoning: typeof s.reasoning === 'string' ? s.reasoning.slice(0, 500) : '',
-      }));
+      .map(s => {
+        // The panel prompt returns `score_reasoning`; accept `reasoning` too in case
+        // the model shortens it. Field names match what the live simulator renders,
+        // so Past Sessions can replay a turn exactly as it appeared during the defence.
+        const reasoning = typeof s.score_reasoning === 'string' ? s.score_reasoning
+                        : typeof s.reasoning === 'string'       ? s.reasoning
+                        : '';
+        return {
+          examiner:        typeof s.examiner === 'string' ? s.examiner.slice(0, 60) : '',
+          score:           clampTurnScore(s.score),
+          score_label:     normaliseScoreLabel(s.score_label),
+          score_reasoning: reasoning.slice(0, 500),
+        };
+      });
   } catch {
     return [];
   }
