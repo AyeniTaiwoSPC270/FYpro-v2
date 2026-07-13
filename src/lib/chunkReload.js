@@ -8,11 +8,17 @@
 // false so the caller lets the error boundary show its fallback instead.
 //
 // Shared by main.jsx (vite:preloadError) and App.jsx (safeLazy) so both
-// recovery paths draw from the same attempt budget.
+// recovery paths draw from the same attempt budget. Both fire for a single
+// failed chunk — once main.jsx default-prevents the event, Vite's preload
+// helper swallows the rejection and resolves the import as undefined, which is
+// what safeLazy then sees. So calls are deduplicated per page load: the budget
+// is spent across reloads, never twice within one.
 
 const KEY = 'chunk-reload'
 const MAX_ATTEMPTS = 1 // reload once; a second immediate failure = give up
 const WINDOW_MS = 30_000 // attempts older than this are a fresh incident, not a loop
+
+let reloading = false // reset by the page load the reload triggers
 
 function readState() {
   try {
@@ -36,6 +42,8 @@ function writeState(state) {
  *   false if the attempt cap was reached and the caller should surface the error.
  */
 export function tryChunkReload() {
+  if (reloading) return true
+
   const now = Date.now()
   let state = readState()
 
@@ -49,6 +57,7 @@ export function tryChunkReload() {
   }
 
   writeState({ n: state.n + 1, t: now })
+  reloading = true
   window.location.reload()
   return true
 }
