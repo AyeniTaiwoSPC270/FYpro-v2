@@ -474,7 +474,7 @@
   white-space: nowrap;
 }
 
-.tv-push-card__btn--no:hover { background: rgba(13,27,42,0.06); }
+.tv-push-card__btn--no:hover { background: var(--color-border); }
 
 
 /* ============================================================
