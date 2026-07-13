@@ -149,7 +149,6 @@ fypro-v2/
 │   │   │   └── PastSessions.jsx   # Past Sessions tab — session history + transcripts
 │   │   ├── expressDefense/        # All Express Defence components
 │   │   │   ├── ExpressShell.jsx          # 3-step shell (/express/run) with sidebar + step nav
-│   │   │   ├── ExpressBrief.jsx          # Project context card in Express sidebar (topic/methodology)
 │   │   │   ├── DefenceBrief.jsx          # Defence Brief feature — generate/coach/download flow
 │   │   │   ├── ExpressProjectStateProvider.jsx  # Isolated project state for Express — also fetches getUserProfile() to hydrate name/university/avatarUrl
 │   │   │   └── ExpressProviders.jsx      # Wraps Express routes with isolated providers
@@ -1006,8 +1005,9 @@ Session discipline:
 - Commit one fix per commit during bug-fix sessions (established pattern)
 
 CSS naming prefixes — NEVER mix prefixes between features:
-- es-  Express shell (ExpressShell.jsx sidebar, step nav)
-- eb-  Express Brief sidebar card (ExpressBrief.jsx)
+- es-  Express content area only (.es-main / .es-main__scroll + Express card overrides).
+       ExpressShell reuses the MAIN app chrome — .sidebar, .step-navigator, .sidebar-toggle-btn.
+       Do not reintroduce a separate Express sidebar.
 - db-  Defence Brief (DefenceBrief.jsx) — src/styles/defense-brief.css
 - oq-  Onboarding questions + TourCarousel — src/styles/onboarding-questions.css
 All other prefixes (tv-, ca-, ma-, di-, wp-, dp-, se-) remain as before.
