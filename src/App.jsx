@@ -32,7 +32,6 @@ import { usePaidFeatures } from './hooks/usePaidFeatures'
 import { useExpressBeta } from './hooks/useExpressBeta'
 import { useProjectModes } from './hooks/useProjectModes'
 import { isExpressOnlyUser } from './lib/expressRouting'
-import Spinner from './components/Spinner'
 import { useUser } from './hooks/useUser'
 import ExpressProviders from './features/expressDefense/ExpressProviders'
 import RouteProgressBar from './components/RouteProgressBar'
@@ -85,11 +84,13 @@ function S({ fallback, children }) {
   return <Suspense fallback={fallback}>{children}</Suspense>
 }
 
-function RequireExpress({ children }) {
+// fallback should match the Suspense fallback of the route being guarded, so the
+// entitlement check and the lazy-chunk load look like one continuous loading state.
+function RequireExpress({ children, fallback = <DashboardPageSkeleton /> }) {
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { betaFree, loading: betaLoading }     = useExpressBeta()
 
-  if (featuresLoading || betaLoading) return <Spinner />
+  if (featuresLoading || betaLoading) return fallback
   if (!features.includes('express_defense') && !betaFree) {
     return <Navigate to="/express-onboarding" replace />
   }
@@ -223,7 +224,7 @@ function AppRoutes() {
       } />
       <Route path="/express/run" element={
         <ProtectedRoute>
-          <RequireExpress>
+          <RequireExpress fallback={<AppShellSkeleton />}>
             <ExpressProviders>
               <S fallback={<AppShellSkeleton />}><ExpressShell /></S>
             </ExpressProviders>
