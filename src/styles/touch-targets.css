@@ -1603,6 +1603,16 @@ html {
   border-left-color: rgba(59, 130, 246, 0.4);
 }
 
+[data-theme="light"] .dp-history-turn__reasoning,
+.light .dp-history-turn__reasoning {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="light"] .dp-history-turn__reasoning-examiner,
+.light .dp-history-turn__reasoning-examiner {
+  color: var(--color-text-muted);
+}
+
 /* ── PWA Install Prompt ─────────────────────── */
 @keyframes pwa-slide-up {
   from { transform: translateY(100%); }
