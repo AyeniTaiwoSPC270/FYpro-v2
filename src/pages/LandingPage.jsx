@@ -1189,7 +1189,8 @@ function TrustedCounter() {
 
 function FinalCTA() {
   return (
-    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: 'var(--pub-bg)' }}>
+    <section className="lp-cta-dark pt-16 pb-24 relative overflow-hidden">
+      <div className="lp-cta-room" aria-hidden="true" />
       <div className="lp-cta-glow" aria-hidden="true" />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
@@ -1199,7 +1200,7 @@ function FinalCTA() {
           </Reveal>
           <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-4">
             Every question an examiner can ask, FYPro has already asked you first.<br />
-            Most students who fail their defense say the same thing: <em style={{ color: 'var(--pub-text-em)', fontStyle: 'italic' }}>"I thought I was prepared."</em>
+            Most students who fail their defense say the same thing: <em className="lp-cta-quote">"I thought I was prepared."</em>
           </Reveal>
           <Reveal delay={0.12}>
             <div className="flex items-center justify-center gap-2 mb-7">
