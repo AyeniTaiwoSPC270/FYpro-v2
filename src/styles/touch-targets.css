@@ -912,30 +912,6 @@ html {
   background: radial-gradient(ellipse 60% 50% at 50% 70%, rgba(0,102,255,0.07) 0%, transparent 70%) !important;
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   FINAL CTA — the dark island, in light mode
-   The Final CTA stays dark in light mode (see .lp-cta-dark in
-   light-mode.css) so the defence room behind it still reads. Every
-   rule here is an EXCEPTION carved out of the blanket light-mode
-   overrides above: each one is scoped through .lp-cta-dark, which
-   lands at specificity (0,4,0) and so beats the (0,3,0) !important
-   rules it is undoing. Nothing outside this section is affected.
-   ══════════════════════════════════════════════════════════════════ */
-
-/* Undo the blanket .text-white → dark rule (line ~757). */
-[data-theme="light"] [data-pub] .lp-cta-dark .text-white,
-[data-theme="light"] [data-pub] .lp-cta-dark .text-white\/65 { color: #FFFFFF !important; }
-
-/* Ghost button ("See the 6 Steps") keeps its light-on-dark border. */
-[data-theme="light"] [data-pub] .lp-cta-dark .border-white\/\[0\.22\] { border-color: rgba(255,255,255,0.22) !important; }
-[data-theme="light"] [data-pub] .lp-cta-dark .hover\:border-white\/45:hover { border-color: rgba(255,255,255,0.45) !important; }
-
-/* The glow is on a dark ground here, so it keeps its dark-mode strength
-   rather than the softened light-mode value set directly above. */
-[data-theme="light"] [data-pub] .lp-cta-dark .lp-cta-glow {
-  background: radial-gradient(ellipse 60% 70% at center, rgba(0,102,255,0.18) 0%, transparent 65%) !important;
-}
-
 /* ── How It Works step circle: sand bg so it floats on sand ─────── */
 [data-theme="light"] [data-pub] [data-hiw] .lp-step-row > div:first-child {
   background: var(--pub-bg-sand) !important;

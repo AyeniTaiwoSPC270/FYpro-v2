@@ -1288,16 +1288,11 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   FINAL CTA — dark island + empty defence room
-   This section stays dark in BOTH themes. The page spends its whole
-   length calm and light, then drops the reader into the room at the
-   moment it asks "are you actually ready?". The light-mode exceptions
-   that keep it dark live in touch-targets.css (search: lp-cta-dark).
+   FINAL CTA — empty defence room
+   DARK MODE ONLY. In light mode the section is cream (--pub-bg flips
+   to #FAFAF7) with dark text, and a low-lit room has nowhere to live
+   on it — so the room is hidden there and light mode is untouched.
    ══════════════════════════════════════════════════════════════════ */
-.lp-cta-dark {
-  background: #060E18; /* --pub-bg's DARK value, held deliberately in both themes */
-}
-
 .lp-cta-room {
   position: absolute;
   inset: 0;
@@ -1331,19 +1326,17 @@
     rgba(6,14,24,0.99) 100%);
 }
 
+/* Light mode keeps the cream CTA it has always had — no room. */
+[data-theme="light"] .lp-cta-room {
+  display: none;
+}
+
 /* Phones crop the room to an unreadable smear — pull it further back. */
 @media (max-width: 640px) {
   .lp-cta-room::before {
     opacity: 0.12;
     filter: blur(8px) saturate(0.65);
   }
-}
-
-/* The pull-quote sits on the dark island, so it holds the dark-mode
-   --pub-text-em value rather than following the theme token. */
-.lp-cta-quote {
-  color: rgba(255,255,255,0.75);
-  font-style: italic;
 }
 
 /* CTA section — moving radial glow */
