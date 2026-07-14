@@ -1287,6 +1287,65 @@
   z-index: 1;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   FINAL CTA — dark island + empty defence room
+   This section stays dark in BOTH themes. The page spends its whole
+   length calm and light, then drops the reader into the room at the
+   moment it asks "are you actually ready?". The light-mode exceptions
+   that keep it dark live in touch-targets.css (search: lp-cta-dark).
+   ══════════════════════════════════════════════════════════════════ */
+.lp-cta-dark {
+  background: #060E18; /* --pub-bg's DARK value, held deliberately in both themes */
+}
+
+.lp-cta-room {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* The photograph. Kept on ::before so the scrim below can sit at full
+   strength — a child of an opacity/filter parent would inherit both. */
+.lp-cta-room::before {
+  content: '';
+  position: absolute;
+  inset: -4%; /* overscan: blur must not bleed transparent edges inward */
+  /* PLACEHOLDER — a CSS-rendered room, not a photograph. Replace with the
+     real asset at this path: wide, low-lit, empty, one light source, NO people. */
+  background: url('/defence-room.png') center / cover no-repeat;
+  opacity: 0.20;
+  filter: blur(6px) saturate(0.65);
+}
+
+/* The scrim. This is what protects the headline — without it the room
+   competes with the type instead of sitting under it. */
+.lp-cta-room::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 68% 62% at 50% 52%,
+    rgba(6,14,24,0.86) 0%,
+    rgba(6,14,24,0.71) 55%,
+    rgba(6,14,24,0.99) 100%);
+}
+
+/* Phones crop the room to an unreadable smear — pull it further back. */
+@media (max-width: 640px) {
+  .lp-cta-room::before {
+    opacity: 0.12;
+    filter: blur(8px) saturate(0.65);
+  }
+}
+
+/* The pull-quote sits on the dark island, so it holds the dark-mode
+   --pub-text-em value rather than following the theme token. */
+.lp-cta-quote {
+  color: rgba(255,255,255,0.75);
+  font-style: italic;
+}
+
 /* CTA section — moving radial glow */
 .lp-cta-glow {
   position: absolute;
