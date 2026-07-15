@@ -26,4 +26,12 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Test files run under Node/Vitest, not the browser — grant them Node globals
+    // (process, Buffer, etc.) on top of the browser set so they don't trip no-undef.
+    files: ['**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
