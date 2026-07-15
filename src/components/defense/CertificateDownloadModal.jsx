@@ -80,6 +80,11 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
   async function handleDownload() {
     setError(null)
     setLoading(true)
+    // NOTE: CodeQL flags these two lines as "clear-text storage of sensitive
+    // information" — this is a false positive. `style` and `orientation` are
+    // cosmetic certificate render choices (modern/prestige/dark, portrait/
+    // landscape), never PII, credentials, or tokens. They are persisted so the
+    // modal remembers the user's last pick. Do not "fix" by removing them.
     localStorage.setItem('cert_style',       style)
     localStorage.setItem('cert_orientation', orientation)
     try {
