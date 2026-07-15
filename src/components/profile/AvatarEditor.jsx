@@ -30,7 +30,7 @@ const EditBadgeIcon = () => (
   </svg>
 )
 
-function AvatarEditorInner({ avatarUrl, initials, name, uploading, onSave }, ref) {
+function AvatarEditorInner({ avatarUrl, initials, name, onSave }, ref) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [cropOpen, setCropOpen] = useState(false)
