@@ -10,7 +10,7 @@
 // Strategy: drive the real default handler with a fake req/res. creditUser and
 // all notify side-effects are mocked so we assert routing, not their internals.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import crypto from 'crypto';
 
 const TEST_SECRET = 'sk_test_webhook_secret_abc123';
@@ -21,22 +21,28 @@ const TEST_SECRET = 'sk_test_webhook_secret_abc123';
 process.env.PAYSTACK_SECRET_KEY = TEST_SECRET;
 process.env.PAYSTACK_PUBLIC_KEY = 'pk_test_public';
 
-// Mutable handles so each test can program creditUser's behaviour.
+// Mutable handles so each test can program dependency behaviour.
 const h = vi.hoisted(() => ({
   creditUser: null,
   telegramAlert: null,
   telegramAlertOnce: null,
   receiptSend: null,
+  getUser: null,
+  from: null,
+  rateLimit: null,
 }));
 
 vi.mock('./_lib/supabase-admin.js', () => ({
-  supabaseAdmin: { from: vi.fn(), auth: { getUser: vi.fn() } },
+  supabaseAdmin: {
+    auth: { getUser: (...a) => h.getUser(...a) },
+    from: (...a) => h.from(...a),
+  },
 }));
 vi.mock('./_lib/sentry-server.js', () => ({
   Sentry: { captureException: vi.fn() },
 }));
 vi.mock('./_lib/rate-limit.js', () => ({
-  rateLimitCheck: vi.fn().mockResolvedValue({ allowed: true, reason: '' }),
+  rateLimitCheck: (...a) => h.rateLimit(...a),
 }));
 vi.mock('./_lib/telegram.js', () => ({
   sendTelegramAlert:     (...a) => h.telegramAlert(...a),
@@ -121,6 +127,15 @@ beforeEach(() => {
   h.telegramAlert     = vi.fn().mockResolvedValue(undefined);
   h.telegramAlertOnce = vi.fn().mockResolvedValue(undefined);
   h.receiptSend       = vi.fn().mockResolvedValue({});
+  // Defaults for the action handlers (verify): authed user, limit allowed, and a
+  // payments-row lookup for the post-success receipt. Tests override as needed.
+  h.getUser   = vi.fn().mockResolvedValue({ data: { user: { id: 'user_1', email: 'student@example.com' } }, error: null });
+  h.rateLimit = vi.fn().mockResolvedValue({ allowed: true, reason: '' });
+  h.from      = vi.fn(() => paymentLookupBuilder({ amount_kobo: 200000, tier: 'student_pack' }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 // ─── Signature verification (the security boundary) ─────────────────────────
@@ -268,5 +283,147 @@ describe('webhook — event routing', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ received: true, ignored: 'charge.failed' });
     expect(h.creditUser).not.toHaveBeenCalled();
+  });
+});
+
+// ─── verify handler (the browser-initiated credit path) ─────────────────────
+//
+// Same creditUser sink as the webhook, but reached via ?action=verify with a
+// user JWT instead of a signature. It re-verifies the reference against
+// Paystack's API before crediting. These lock the auth gate, the Paystack
+// re-verification, and the same reject/error routing as the webhook.
+
+// A chainable stand-in for supabaseAdmin.from('payments').select(...).eq(...).single().
+function paymentLookupBuilder(row) {
+  const b = {
+    select() { return b; },
+    eq() { return b; },
+    single() { return Promise.resolve({ data: row, error: null }); },
+  };
+  return b;
+}
+
+// Non-webhook request: ?action=..., JWT header, no x-paystack-signature.
+function actionReq({ action = 'verify', body = {}, method = 'POST', auth = true } = {}) {
+  const headers = { 'content-type': 'application/json' };
+  if (auth) headers['authorization'] = 'Bearer test-token';
+  return makeReq({ method, headers, body: JSON.stringify(body), query: { action } });
+}
+
+// Stub Paystack's GET /transaction/verify/:ref response.
+function stubVerifyFetch(data, { ok = true, status = 200 } = {}) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok, status, json: async () => ({ data }) }));
+}
+
+describe('verify — auth + rate-limit gate', () => {
+  it('returns 401 when no bearer token is present, without verifying anything', async () => {
+    const req = actionReq({ body: { reference: 'FYP_x' }, auth: false });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(401);
+    expect(h.getUser).not.toHaveBeenCalled();
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when the token does not resolve to a user', async () => {
+    h.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'bad jwt' } });
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(401);
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 when the caller is rate limited', async () => {
+    h.rateLimit.mockResolvedValue({ allowed: false, reason: 'Too many attempts' });
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(429);
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when the reference is missing', async () => {
+    const req = actionReq({ body: {} });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('verify — Paystack re-verification', () => {
+  it('returns 400 and never credits when Paystack verify responds non-ok', async () => {
+    stubVerifyFetch(null, { ok: false, status: 400 });
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: 'Payment could not be verified' });
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 and never credits when the Paystack fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: 'Payment could not be verified' });
+    expect(h.creditUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('verify — credit routing', () => {
+  it('credits with source=verify using the values Paystack returned, then 200', async () => {
+    stubVerifyFetch({ amount: 200000, status: 'success', currency: 'NGN' });
+    h.creditUser.mockResolvedValue({ status: 'success', tier: 'student_pack' });
+    const req = actionReq({ body: { reference: 'FYP_user_1_1_a' } });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ status: 'success', tier: 'student_pack' });
+    expect(h.creditUser).toHaveBeenCalledWith({
+      reference:          'FYP_user_1_1_a',
+      paystackAmountKobo: 200000,
+      paystackStatus:     'success',
+      paystackCurrency:   'NGN',
+      source:             'verify',
+    });
+    // receipt + alert fire on the winning success path
+    expect(h.receiptSend).toHaveBeenCalledTimes(1);
+    expect(h.telegramAlertOnce).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not send a receipt when creditUser reports already_processed', async () => {
+    stubVerifyFetch({ amount: 200000, status: 'success', currency: 'NGN' });
+    h.creditUser.mockResolvedValue({ status: 'already_processed', tier: 'student_pack' });
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ status: 'already_processed' });
+    expect(h.receiptSend).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 with a ❌ alert on a KNOWN_REJECTION', async () => {
+    stubVerifyFetch({ amount: 199999, status: 'success', currency: 'NGN' });
+    h.creditUser.mockRejectedValue(Object.assign(new Error('amount mismatch'), { code: 'KNOWN_REJECTION' }));
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: 'Payment could not be verified' });
+    expect(h.telegramAlert).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 500 on an unexpected creditUser failure', async () => {
+    stubVerifyFetch({ amount: 200000, status: 'success', currency: 'NGN' });
+    h.creditUser.mockRejectedValue(new Error('db exploded'));
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(500);
   });
 });
