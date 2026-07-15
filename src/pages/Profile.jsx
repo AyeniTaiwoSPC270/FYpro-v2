@@ -14,6 +14,8 @@ import Spinner from '../components/Spinner'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationPanel from '../components/NotificationPanel'
 import FyproLogo from '../components/FyproLogo'
+import AvatarEditor from '../components/profile/AvatarEditor'
+import { withCacheBust } from '../lib/avatar'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -484,7 +486,7 @@ export default function Profile() {
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : ''
 
-  const photoInputRef = useRef(null)
+  const avatarEditorRef = useRef(null)
 
   const SpinnerIcon = () => (
     <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -493,24 +495,26 @@ export default function Profile() {
   )
 
   function handleChangePhoto() {
-    photoInputRef.current?.click()
+    avatarEditorRef.current?.openChangePhoto()
   }
 
-  async function handleFileUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file || !user) return
+  async function uploadAvatarBlob(blob) {
+    if (!user) return
     setUploading(true)
     try {
-      const ext  = file.name.split('.').pop()
-      const path = `${user.id}.${ext}`
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      const path = `${user.id}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
       if (uploadError) { showToast('Photo upload failed'); return }
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      // Storage path is stable, so bust the CDN/browser cache to show the new crop.
+      const bustedUrl = withCacheBust(publicUrl)
       await Promise.all([
-        supabase.auth.updateUser({ data: { avatar_url: publicUrl } }),
-        updateUserProfile({ avatar_url: publicUrl }),
+        supabase.auth.updateUser({ data: { avatar_url: bustedUrl } }),
+        updateUserProfile({ avatar_url: bustedUrl }),
       ])
-      setAvatarUrl(publicUrl)
+      setAvatarUrl(bustedUrl)
       showToast('Photo updated')
     } finally {
       setUploading(false)
@@ -652,17 +656,14 @@ export default function Profile() {
             <motion.div
               animate={{ scale: [1, 1.03, 1] }}
               transition={{ duration: 0.7, delay: 0.4, ease: 'easeInOut', times: [0, 0.5, 1] }}
-              whileHover={{ boxShadow: '0 0 0 3px rgba(0,102,255,0.3)', transition: { duration: 0.2 } }}
-              className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden"
-              style={{
-                background: 'rgba(59,130,246,0.2)',
-                border: '2px solid #3B82F6',
-              }}
             >
-              {avatarUrl
-                ? <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-                : <span className="font-serif text-2xl text-blue-400 leading-none">{initials}</span>
-              }
+              <AvatarEditor
+                ref={avatarEditorRef}
+                avatarUrl={avatarUrl}
+                initials={initials}
+                name={form.name}
+                onSave={uploadAvatarBlob}
+              />
             </motion.div>
             <button
               onClick={!uploading ? handleChangePhoto : undefined}
@@ -676,13 +677,6 @@ export default function Profile() {
                 </>
               ) : 'Change Photo'}
             </button>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
           </div>
 
           {/* Info */}
