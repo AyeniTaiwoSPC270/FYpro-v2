@@ -427,3 +427,118 @@ describe('verify — credit routing', () => {
     expect(res.statusCode).toBe(500);
   });
 });
+
+// ─── consume-reset (compare-and-swap against double-spend) ──────────────────
+//
+// project_reset is a one-time entitlement. Two concurrent requests must not both
+// consume it. The handler reads paid_features, then does a conditional UPDATE
+// guarded by `.contains(['project_reset'])` — the loser of the race matches zero
+// rows and is refused. These lock that guard plus the defense_pack "free reset"
+// branch.
+
+// from(table) router for the consume-reset flow. The user_entitlements builder
+// serves BOTH the read (select→eq→maybeSingle) and the CAS write (update→eq→
+// contains→select, awaited): the write's terminal .select() is thenable.
+function consumeResetFrom({ entitlements = null, projectCount = 0, casRows = null, entErr = null, updErr = null } = {}) {
+  return (table) => {
+    if (table === 'user_entitlements') {
+      const b = {
+        select: () => b,
+        update: () => b,
+        eq: () => b,
+        contains: () => b,
+        maybeSingle: () => Promise.resolve({ data: entitlements, error: entErr }),
+        then: (resolve, reject) => Promise.resolve({ data: casRows, error: updErr }).then(resolve, reject),
+      };
+      return b;
+    }
+    if (table === 'projects') {
+      const b = { select: () => b, eq: () => Promise.resolve({ count: projectCount }) };
+      return b;
+    }
+    throw new Error(`unexpected table ${table}`);
+  };
+}
+
+describe('consume-reset', () => {
+  it('rejects a non-POST request with 405', async () => {
+    const req = actionReq({ action: 'consume-reset', method: 'GET' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(405);
+  });
+
+  it('returns 401 without a bearer token', async () => {
+    const req = actionReq({ action: 'consume-reset', auth: false });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(401);
+    expect(h.getUser).not.toHaveBeenCalled();
+  });
+
+  it('returns 429 when rate limited', async () => {
+    h.rateLimit.mockResolvedValue({ allowed: false, reason: 'slow down' });
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(429);
+  });
+
+  it('returns 403 when the user has no project_reset and no defense_pack', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['student_pack'] } }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('grants a free reset (200) for a defense_pack user with zero existing projects', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['defense_pack'] }, projectCount: 0 }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('refuses (403) a defense_pack user who already has a project and no reset entitlement', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['defense_pack'] }, projectCount: 1 }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('consumes the reset (200) when the CAS update matches the row', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['project_reset'] }, casRows: [{ user_id: 'user_1' }] }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('refuses (403) when the CAS update matches zero rows (lost the concurrent race)', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['project_reset'] }, casRows: [] }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('returns 500 when reading entitlements errors', async () => {
+    h.from = vi.fn(consumeResetFrom({ entErr: { message: 'db down' } }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(500);
+  });
+
+  it('returns 500 when the CAS update errors', async () => {
+    h.from = vi.fn(consumeResetFrom({ entitlements: { paid_features: ['project_reset'] }, updErr: { message: 'update failed' } }));
+    const req = actionReq({ action: 'consume-reset' });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(500);
+  });
+});
