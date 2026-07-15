@@ -516,6 +516,9 @@ export default function Profile() {
       ])
       setAvatarUrl(bustedUrl)
       showToast('Photo updated')
+    } catch (err) {
+      console.error('[Profile] uploadAvatarBlob failed:', err)
+      showToast('Photo upload failed')
     } finally {
       setUploading(false)
     }
