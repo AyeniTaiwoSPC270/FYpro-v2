@@ -507,3 +507,50 @@ Return ONLY this exact JSON structure:
 Return only the JSON. Nothing else.
 `.trim();
 }
+
+/**
+ * PDF Project Reviewer user-message text block. Pairs with the downloaded PDF
+ * document block (attached separately by the handler) and the
+ * 'review-with-relevance' system prompt. Server-side mirror of the client's
+ * buildProjectReviewerPDFPrompt — used when the PDF arrives via storage
+ * reference rather than an inline base64 body.
+ * @param {object} studentContext
+ * @returns {string}
+ */
+export function buildPdfReviewerUserTextBlock(studentContext) {
+  const student = studentContext || {};
+  return `
+${buildStudentContextForDocx(student)}
+
+The student has uploaded their project as a PDF document (see the attached document above).
+
+Review the entire PDF content carefully. Every strength, weakness, and examiner question MUST reference specific content, arguments, or claims from the PDF — not generic academic advice.
+
+Return ONLY this exact JSON structure:
+
+{
+  "grade": "Distinction | Merit | Pass | Fail",
+  "grade_justification": "One sentence explaining the grade — must reference specific aspects of the PDF content",
+  "score_estimate": "Numeric estimate e.g. '68% — Merit'",
+  "strengths": [
+    {"title": "Short name (5 words or fewer)","detail": "What exactly was done well — must reference actual content"},
+    {"title": "Short name","detail": "What exactly was done well"},
+    {"title": "Short name","detail": "What exactly was done well"}
+  ],
+  "weaknesses": [
+    {"title": "Short name (5 words or fewer)","detail": "What exactly needs improvement — must reference actual content","fix": "One-sentence actionable instruction"},
+    {"title": "Short name","detail": "What exactly needs improvement","fix": "One-sentence actionable instruction"},
+    {"title": "Short name","detail": "What exactly needs improvement","fix": "One-sentence actionable instruction"}
+  ],
+  "examiner_questions": [
+    {"number": 1,"question": "Specific question from actual PDF content","target": "The specific section or gap"},
+    {"number": 2,"question": "...","target": "..."},
+    {"number": 3,"question": "...","target": "..."},
+    {"number": 4,"question": "...","target": "..."},
+    {"number": 5,"question": "...","target": "..."}
+  ]
+}
+
+Return only the JSON. Nothing else.
+`.trim();
+}

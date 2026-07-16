@@ -9,7 +9,8 @@ import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
 import mammoth from 'mammoth';
-import { getReviewerSystemPrompt, buildDocxReviewerUserMessage } from './_lib/ai-prompts.js';
+import { getReviewerSystemPrompt, buildDocxReviewerUserMessage, buildPdfReviewerUserTextBlock } from './_lib/ai-prompts.js';
+import { loadPdfFromStorage, deleteReviewerUpload, sweepStaleUploads } from './_lib/reviewer-storage.js';
 import { reserveRun, syncRunCount } from './_lib/run-reservation.js';
 import { EXPRESS_TOTAL_LIMITS } from './_lib/express-limits.js';
 import { getExpressBetaFree } from './_lib/express-beta.js';
@@ -106,6 +107,7 @@ const handler = async (req, res) => {
     : {};
   let refundRun = () => {};
   let reservedCount = null;
+  let uploadedPath = null;   // set if this request used the PDF-via-storage path
 
   try {
     const {
@@ -116,6 +118,7 @@ const handler = async (req, res) => {
       model: rawModel = 'claude-sonnet-4-6',
       docx_base64,
       student_context,
+      pdf_storage_path,
     } = req.body || {};
 
     let messages = clientMessages;
@@ -192,6 +195,37 @@ const handler = async (req, res) => {
       messages = [{ role: 'user', content: buildDocxReviewerUserMessage(student_context, extractedText) }];
     }
 
+    // PDF-via-storage path: the browser uploaded the PDF directly to the
+    // project-uploads bucket (off this 60s-capped function) and sent only a
+    // reference. Download + validate here, then build the same document block
+    // the inline-base64 path used. Cleanup is scheduled for every exit below.
+    if (pdf_storage_path) {
+      if (typeof pdf_storage_path !== 'string' || !pdf_storage_path) {
+        return res.status(400).json({ error: 'Invalid upload reference.' });
+      }
+      uploadedPath = pdf_storage_path;
+      // Opportunistic orphan cleanup for this user — best-effort, never blocks.
+      sweepStaleUploads(supabaseAdmin, user.id).catch(() => {});
+      let pdfBase64;
+      try {
+        pdfBase64 = await loadPdfFromStorage({ storageClient: supabaseAdmin, userId: user.id, storagePath: pdf_storage_path });
+      } catch (err) {
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
+        const status = err.code === 'OWNERSHIP' ? 403
+          : err.code === 'DOWNLOAD_FAILED' ? 502 : 400;
+        return res.status(status).json({ error: err.code === 'OWNERSHIP'
+          ? 'You do not have access to that upload.'
+          : err.message });
+      }
+      messages = [{
+        role: 'user',
+        content: [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+          { type: 'text', text: buildPdfReviewerUserTextBlock(student_context) },
+        ],
+      }];
+    }
+
     // Reserve a lifetime slot for express-only users now that the file is valid.
     // The relevance pre-check (promptType === 'relevance-check') is a cheap ~200-token
     // gate call, not an actual review — it must never consume a lifetime slot, otherwise
@@ -204,6 +238,7 @@ const handler = async (req, res) => {
         dbRunCounts,
       });
       if (!r.allowed) {
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath); // no-op for non-storage paths
         return res.status(429).json({
           error: `You've used all ${EXPRESS_TOTAL_LIMITS.express_reviewer} of your Express project reviews.`,
         });
@@ -238,16 +273,17 @@ const handler = async (req, res) => {
           signal: AbortSignal.timeout(55000),
         });
       } catch (err) {
-        refundRun();
+        await refundRun();
         send({ type: 'error', message: err.name === 'TimeoutError' || err.name === 'AbortError'
           ? 'Request timed out. Please try again.'
           : 'An unexpected error occurred. Please try again.' });
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         res.end();
         return;
       }
 
       if (!anthropicRes.ok) {
-        refundRun();
+        await refundRun();
         const errData = await anthropicRes.json().catch(() => ({}));
         const rawMsg = errData.error?.message || '';
         let userMsg;
@@ -259,6 +295,7 @@ const handler = async (req, res) => {
           userMsg = 'AI service error. Please try again.';
         }
         send({ type: 'error', message: userMsg });
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         res.end();
         return;
       }
@@ -296,7 +333,7 @@ const handler = async (req, res) => {
           }
         }
       } catch (err) {
-        refundRun();
+        await refundRun();
         if (res.headersSent) {
           const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
           send({ type: 'error', message: isTimeout
@@ -304,6 +341,7 @@ const handler = async (req, res) => {
             : 'Connection dropped mid-review. Please try again.' });
           if (!res.writableEnded) res.end();
         }
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         return;
       }
 
@@ -315,6 +353,7 @@ const handler = async (req, res) => {
       if (stopReason === 'max_tokens') {
         await refundRun();
         send({ type: 'error', message: 'The review was too long to complete. Please try again or upload a shorter document.' });
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         res.end();
         return;
       }
@@ -327,6 +366,7 @@ const handler = async (req, res) => {
       } catch {
         await refundRun();
         send({ type: 'error', message: 'Received an unexpected response. Please try again.' });
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         res.end();
         return;
       }
@@ -358,6 +398,7 @@ const handler = async (req, res) => {
       const streamDuration = Date.now() - start;
       supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: streamDuration, user_id: user.id }).then(() => {}, () => {});
 
+      await deleteReviewerUpload(supabaseAdmin, uploadedPath);
       send({ type: 'done', result: parsed });
       res.end();
       return;
@@ -387,7 +428,8 @@ const handler = async (req, res) => {
       // Guard against truncated responses — if Claude hit the token limit the JSON
       // will be incomplete and the client will show "unexpected response" despite 200.
       if (data?.stop_reason === 'max_tokens') {
-        refundRun();
+        await refundRun();
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         console.warn('[project-reviewer] Claude hit max_tokens — response truncated');
         return res.status(500).json({ error: 'The review was too long to complete. Please try again or upload a shorter document.' });
       }
@@ -431,12 +473,14 @@ const handler = async (req, res) => {
         console.error('[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
 
+      await deleteReviewerUpload(supabaseAdmin, uploadedPath);
       return res.status(200).json(data);
     }
 
     // Non-ok Anthropic response — refund the run and return a sanitised error.
     // Never forward the raw Anthropic error body (it can carry org IDs / URLs).
-    refundRun();
+    await refundRun();
+    await deleteReviewerUpload(supabaseAdmin, uploadedPath);
     const rawMsg = String(data?.error?.message || '');
     console.error('[project-reviewer] Anthropic error', response.status, rawMsg.slice(0, 200));
     let userMsg;
@@ -448,7 +492,8 @@ const handler = async (req, res) => {
     const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
     return res.status(status).json({ error: userMsg });
   } catch (err) {
-    refundRun(); // request never produced a result — don't charge the run
+    await refundRun(); // request never produced a result — don't charge the run
+    await deleteReviewerUpload(supabaseAdmin, uploadedPath); // no-op for non-storage paths
     // If SSE has already started (streaming path), we cannot write another HTTP response.
     // Alert on Telegram for visibility and close the stream cleanly.
     if (res.headersSent) {

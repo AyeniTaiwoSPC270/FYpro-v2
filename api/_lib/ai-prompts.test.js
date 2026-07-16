@@ -3,7 +3,7 @@
 // relevance and produce the full review (halves PDF token cost).
 
 import { describe, it, expect } from 'vitest'
-import { getReviewerSystemPrompt } from './ai-prompts.js'
+import { getReviewerSystemPrompt, buildPdfReviewerUserTextBlock } from './ai-prompts.js'
 
 describe('getReviewerSystemPrompt — review-with-relevance', () => {
   it('prepends the relevance gate to the full reviewer prompt', () => {
@@ -42,4 +42,20 @@ describe('getReviewerSystemPrompt — weakness count', () => {
     expect(sys).toContain('Exactly 3 specific strengths')
     expect(sys).toContain('Exactly 5 examiner questions')
   })
+})
+
+describe('buildPdfReviewerUserTextBlock', () => {
+  it('includes the student faculty/department and asks for the review JSON', () => {
+    const text = buildPdfReviewerUserTextBlock({
+      faculty: 'Science', department: 'Computer Science',
+      level: '400', university: 'UNILAG',
+    });
+    expect(text).toContain('Computer Science');
+    expect(text).toContain('examiner_questions');
+    expect(text).toContain('Return only the JSON');
+  });
+
+  it('tolerates a missing student context object', () => {
+    expect(() => buildPdfReviewerUserTextBlock(undefined)).not.toThrow();
+  });
 })

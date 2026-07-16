@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { reviewProjectStream, reviewProjectPDFStream, reviewProjectDOCXStream, checkDocumentRelevance, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
+import { reviewProjectStream, reviewProjectDOCXStream, reviewProjectPDFStream, uploadReviewerPdf, checkDocumentRelevance, handleApiError, logFailure } from '../../services/api'
+import { checkAndRecord, recordStepRun, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -50,31 +50,8 @@ function extractTXT(file) {
   })
 }
 
-function extractPDF(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target.result || ''
-      const commaIdx = dataUrl.indexOf(',')
-      if (commaIdx === -1) {
-        reject(new Error('Could not encode the PDF file. Please try again.'))
-        return
-      }
-      const base64 = dataUrl.slice(commaIdx + 1)
-      if (!base64) {
-        reject(new Error('PDF appears to be empty. Please try a different file.'))
-        return
-      }
-      resolve({ pdf: base64 })
-    }
-    reader.onerror = () => reject(new Error('Could not read the PDF file. Please try again.'))
-    reader.readAsDataURL(file)
-  })
-}
-
 // DOCX files are sent as raw base64 to the server where mammoth extracts the
-// full text — no client-side truncation. extractPDF and extractTXT remain
-// client-side; only DOCX moves server-side.
+// full text — no client-side truncation. Only DOCX moves server-side.
 function encodeDOCX(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -93,7 +70,10 @@ function encodeDOCX(file) {
 
 function extractTextFromFile(file) {
   const ext = (file.name || '').split('.').pop().toLowerCase()
-  if (ext === 'pdf') return extractPDF(file)
+  // PDFs are uploaded as the raw File straight to storage — no client-side base64
+  // encode needed. Return a lightweight marker so the caller takes the PDF branch
+  // (and skips the relevance pre-check). Magic-byte validation happens server-side.
+  if (ext === 'pdf') return Promise.resolve({ pdf: true })
   if (ext === 'docx') return encodeDOCX(file)
   return extractTXT(file)
 }
@@ -137,6 +117,7 @@ export default function ProjectReviewer() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isDragging, setIsDragging]   = useState(false)
   const [chunkCount, setChunkCount]   = useState(0)
+  const [uploadPct, setUploadPct]     = useState(null) // null = not uploading; 0-100 = uploading
 
   // Staggered visibility for result items
   const [visibleStrengths, setVisibleStrengths]   = useState([])
@@ -165,8 +146,10 @@ export default function ProjectReviewer() {
         setSection('input')
         setSlowNetworkMessage(false)
         setIsProcessing(false)
+        setUploadPct(null)
         setError('This is taking too long on your connection. Try uploading a smaller file or a .txt version of your project.')
         logFailure('Project Reviewer', { message: 'Client timeout (120s)', code: 'GATEWAY_TIMEOUT' }, processingFileNameRef.current)
+        refundRun('project_reviewer')
       }, 120000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -314,6 +297,7 @@ export default function ProjectReviewer() {
       setIsProcessing(false)
       setSection('input')
       setError(err.message)
+      refundRun('project_reviewer')
       return
     }
 
@@ -335,6 +319,7 @@ export default function ProjectReviewer() {
           `This document does not appear to be a ${studentContext.department} project. ` +
           `${relevanceCheck.reason} Please upload the correct file.`
         )
+        refundRun('project_reviewer')
         return
       }
     } catch {
@@ -351,11 +336,20 @@ export default function ProjectReviewer() {
         writingPlan:       state.writingPlan,
       }
       const onChunk = (n) => setChunkCount(n)
-      const data = result.pdf
-        ? await reviewProjectPDFStream(studentContext, validatedTopic, result.pdf, 'application/pdf', previousSteps, onChunk)
-        : result.docx
-          ? await reviewProjectDOCXStream(studentContext, result.docx, previousSteps, onChunk)
-          : await reviewProjectStream(studentContext, validatedTopic, result.text, previousSteps, onChunk)
+
+      let data
+      if (result.pdf !== undefined || (selectedFile?.name || '').toLowerCase().endsWith('.pdf')) {
+        // Upload the raw PDF straight to storage (off the 60s function budget),
+        // then review by reference. Two-phase UI: upload % then analysis spinner.
+        setUploadPct(0)
+        const storagePath = await uploadReviewerPdf(selectedFile, (pct) => setUploadPct(pct))
+        setUploadPct(null)
+        data = await reviewProjectPDFStream(studentContext, storagePath, previousSteps, onChunk)
+      } else if (result.docx) {
+        data = await reviewProjectDOCXStream(studentContext, result.docx, previousSteps, onChunk)
+      } else {
+        data = await reviewProjectStream(studentContext, validatedTopic, result.text, previousSteps, onChunk)
+      }
 
       if (timedOutRef.current) return
       // Merged relevance gate: the single PDF call can return a rejection instead
@@ -369,6 +363,10 @@ export default function ProjectReviewer() {
           `This document does not appear to be a ${studentContext.department} project. ` +
           `${data.reason || ''} Please upload the correct file.`
         )
+        // Client-tracked project_reviewer counter mirrors the server-side Express
+        // slot refund noted above — a rejected (non-relevant) document is not a
+        // usable review, so it shouldn't burn a paid run either.
+        refundRun('project_reviewer')
         return
       }
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
@@ -376,6 +374,7 @@ export default function ProjectReviewer() {
         setSection('input')
         setError('The review returned an unexpected format. Please try again.')
         setIsProcessing(false)
+        refundRun('project_reviewer')
         return
       }
 
@@ -401,10 +400,13 @@ export default function ProjectReviewer() {
       }, 80)
     } catch (err) {
       inflightRef.current = false
-      // If the 120s timer already fired it called logFailure itself — don't double-log.
-      // If we get here first, log now so the failure record is always written.
+      setUploadPct(null)
+      // If the 120s timer already fired it called logFailure and refundRun itself
+      // — don't double them here. If we get here first, do both now so the failure
+      // record is always written and the run is never permanently burned.
       if (!timedOutRef.current) {
         logFailure('Project Reviewer', err, processingFileNameRef.current)
+        refundRun('project_reviewer')
       }
       if (timedOutRef.current) return
       setIsProcessing(false)
@@ -634,42 +636,69 @@ export default function ProjectReviewer() {
       {/* ── Loading Section ─────────────────────────────────────── */}
       {section === 'loading' && hasSubmitted && (
         <div id="pr-loading-section" className="pr-loading-section tv-section--visible">
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'var(--color-amber-light)',
-            border: '1px solid var(--color-amber)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '10px 14px',
-            marginBottom: 20,
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: '0.8rem',
-            color: '#92400e',
-          }}>
-            <span style={{ fontSize: '1rem' }}>⏱</span>
-            <span>{slowNetworkMessage
-              ? 'Still uploading on your connection — please keep this tab open. This may take up to 2 minutes on a slow network.'
-              : 'This takes 30–60 seconds for large files. Keep this tab open — your review is on the way.'
-            }</span>
-          </div>
-          <div className="skeleton-loader">
-            <div className="skeleton-bar" style={{ width: '100%' }} />
-            <div className="skeleton-bar" style={{ width: '75%' }} />
-            <div className="skeleton-bar" style={{ width: '90%' }} />
-            <div className="skeleton-bar" style={{ width: '60%' }} />
-          </div>
-          <LoadingMessages messages={LOADING_MESSAGES} />
-          {chunkCount > 0 && (
-            <p style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.7rem',
-              color: 'var(--color-text-muted)',
-              textAlign: 'center',
-              marginTop: 8,
-            }}>
-              receiving analysis… {chunkCount} chunks
-            </p>
+          {uploadPct !== null ? (
+            <div className="pr-upload-progress">
+              <p style={{
+                fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem',
+                color: 'var(--color-text-primary)', marginBottom: 10, textAlign: 'center',
+              }}>
+                Uploading your project… {uploadPct}%
+              </p>
+              <div style={{
+                height: 8, borderRadius: 999, background: 'var(--color-border)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  width: `${uploadPct}%`, height: '100%',
+                  background: 'var(--color-blue-primary)', transition: 'width 0.2s ease',
+                }} />
+              </div>
+              <p style={{
+                fontFamily: "'Poppins', sans-serif", fontSize: '0.75rem',
+                color: 'var(--color-text-muted)', marginTop: 10, textAlign: 'center',
+              }}>
+                Large files take longer on a slow connection — this won't time out.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'var(--color-amber-light)',
+                border: '1px solid var(--color-amber)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 14px',
+                marginBottom: 20,
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: '0.8rem',
+                color: '#92400e',
+              }}>
+                <span style={{ fontSize: '1rem' }}>⏱</span>
+                <span>{slowNetworkMessage
+                  ? 'Still uploading on your connection — please keep this tab open. This may take up to 2 minutes on a slow network.'
+                  : 'This takes 30–60 seconds for large files. Keep this tab open — your review is on the way.'
+                }</span>
+              </div>
+              <div className="skeleton-loader">
+                <div className="skeleton-bar" style={{ width: '100%' }} />
+                <div className="skeleton-bar" style={{ width: '75%' }} />
+                <div className="skeleton-bar" style={{ width: '90%' }} />
+                <div className="skeleton-bar" style={{ width: '60%' }} />
+              </div>
+              <LoadingMessages messages={LOADING_MESSAGES} />
+              {chunkCount > 0 && (
+                <p style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.7rem',
+                  color: 'var(--color-text-muted)',
+                  textAlign: 'center',
+                  marginTop: 8,
+                }}>
+                  receiving analysis… {chunkCount} chunks
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

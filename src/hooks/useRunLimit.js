@@ -170,6 +170,23 @@ export function recordStepRun(stepKey) {
   })
 }
 
+// Reverses a checkAndRecord() call when the attempt it guarded never produced
+// a result (upload/network failure, client timeout, malformed response). Steps
+// that record eagerly before the network call (e.g. Project Reviewer, so the
+// "runs left" UI updates instantly) must call this on every non-success exit
+// path, or a failed attempt permanently burns one of the user's paid runs.
+export function refundRun(stepKey) {
+  const counts = getRunCounts()
+  const current = counts[stepKey] ?? 0
+  if (current <= 0) return
+  counts[stepKey] = current - 1
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(counts))
+  window.dispatchEvent(new Event('fypro_run_counts_updated'))
+  syncRunCountsToSupabase(counts).catch(err => {
+    console.error('[useRunLimit] refundRun sync failed:', err?.message)
+  })
+}
+
 export function useRunLimit(features, featuresLoading = false) {
   const { user } = useUser()
   const [runCounts, setRunCounts] = useState(getRunCounts)

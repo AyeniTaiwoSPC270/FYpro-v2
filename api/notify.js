@@ -7,7 +7,7 @@
 import { Resend } from 'resend'
 import { Sentry } from './_lib/sentry-server.js'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
-import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js'
+import { sendTelegramAlert, sendTelegramAlertOnce, escapeTgHtml } from './_lib/telegram.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
 import { setExpressBetaFree, getExpressBetaFree } from './_lib/express-beta.js'
@@ -1229,7 +1229,7 @@ async function handleNotify(req, res) {
   if (authError || !user) return res.status(401).end()
 
   const { action, payload } = req.body || {}
-  const ALLOWED_ACTIONS = ['defense_completed', 'project_created', 'oauth_signup']
+  const ALLOWED_ACTIONS = ['defense_completed', 'project_created', 'oauth_signup', 'generation_failed']
   if (!ALLOWED_ACTIONS.includes(action)) return res.status(400).json({ error: 'Unknown action' })
 
   const email = user.email || 'unknown'
@@ -1248,6 +1248,21 @@ async function handleNotify(req, res) {
 
   if (action === 'oauth_signup') {
     await sendTelegramAlert(`👤 New signup: ${escapeTgHtml(email)} (Google, free)`)
+  }
+
+  // Relays failures the server never sees — client-side timeouts and network
+  // drops (e.g. Project Reviewer's 120s watchdog) are logged to
+  // generation_failures directly from the browser and otherwise never reach
+  // any code path that can call Telegram. Deduped per user+feature+day so a
+  // retry loop on a flaky connection can't spam the alert channel.
+  if (action === 'generation_failed') {
+    const feature      = String(payload?.feature || 'unknown').slice(0, 60)
+    const errorMessage = String(payload?.errorMessage || 'Unknown error').slice(0, 200)
+    const today        = new Date().toISOString().slice(0, 10)
+    await sendTelegramAlertOnce(
+      `🔴 Generation failed (client-detected): <b>${escapeTgHtml(feature)}</b> for ${escapeTgHtml(email)} — ${escapeTgHtml(errorMessage)}`,
+      `tg:genfail:${user.id}:${feature}:${today}`
+    )
   }
 
   return res.status(200).json({ ok: true })
