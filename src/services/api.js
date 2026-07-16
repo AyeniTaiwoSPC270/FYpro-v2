@@ -795,8 +795,10 @@ export function handleApiError(err, showError) {
 // ── Failure logging ───────────────────────────────────────────────────────────
 // Call from every feature's catch block. Never throws — never affects UX.
 export async function logFailure(feature, err, inputPreview = '') {
+  let session;
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data } = await supabase.auth.getSession();
+    session = data?.session;
     await supabase.from('generation_failures').insert({
       user_id:       session?.user?.id || null,
       feature,
@@ -808,6 +810,21 @@ export async function logFailure(feature, err, inputPreview = '') {
     });
   } catch {
     // silent — never affect UX
+  }
+
+  // Relay to the server so it can alert Telegram. logFailure runs entirely in
+  // the browser (client-side timeouts, network drops) — those failures never
+  // touch server code otherwise, so Telegram never learns about them. Purely
+  // best-effort: not awaited, errors swallowed, never affects UX.
+  if (session?.access_token) {
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({
+        action: 'generation_failed',
+        payload: { feature, errorMessage: err?.message || 'Unknown error' },
+      }),
+    }).catch(() => {});
   }
 }
 

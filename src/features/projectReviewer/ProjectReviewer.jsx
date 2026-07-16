@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { reviewProjectStream, reviewProjectPDFStream, reviewProjectDOCXStream, checkDocumentRelevance, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, recordStepRun, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, recordStepRun, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -167,6 +167,7 @@ export default function ProjectReviewer() {
         setIsProcessing(false)
         setError('This is taking too long on your connection. Try uploading a smaller file or a .txt version of your project.')
         logFailure('Project Reviewer', { message: 'Client timeout (120s)', code: 'GATEWAY_TIMEOUT' }, processingFileNameRef.current)
+        refundRun('project_reviewer')
       }, 120000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -314,6 +315,7 @@ export default function ProjectReviewer() {
       setIsProcessing(false)
       setSection('input')
       setError(err.message)
+      refundRun('project_reviewer')
       return
     }
 
@@ -335,6 +337,7 @@ export default function ProjectReviewer() {
           `This document does not appear to be a ${studentContext.department} project. ` +
           `${relevanceCheck.reason} Please upload the correct file.`
         )
+        refundRun('project_reviewer')
         return
       }
     } catch {
@@ -369,6 +372,10 @@ export default function ProjectReviewer() {
           `This document does not appear to be a ${studentContext.department} project. ` +
           `${data.reason || ''} Please upload the correct file.`
         )
+        // Client-tracked project_reviewer counter mirrors the server-side Express
+        // slot refund noted above — a rejected (non-relevant) document is not a
+        // usable review, so it shouldn't burn a paid run either.
+        refundRun('project_reviewer')
         return
       }
       if (!data || !data.grade || !data.strengths || !data.weaknesses || !data.examiner_questions) {
@@ -376,6 +383,7 @@ export default function ProjectReviewer() {
         setSection('input')
         setError('The review returned an unexpected format. Please try again.')
         setIsProcessing(false)
+        refundRun('project_reviewer')
         return
       }
 
@@ -401,10 +409,12 @@ export default function ProjectReviewer() {
       }, 80)
     } catch (err) {
       inflightRef.current = false
-      // If the 120s timer already fired it called logFailure itself — don't double-log.
-      // If we get here first, log now so the failure record is always written.
+      // If the 120s timer already fired it called logFailure and refundRun itself
+      // — don't double them here. If we get here first, do both now so the failure
+      // record is always written and the run is never permanently burned.
       if (!timedOutRef.current) {
         logFailure('Project Reviewer', err, processingFileNameRef.current)
+        refundRun('project_reviewer')
       }
       if (timedOutRef.current) return
       setIsProcessing(false)
