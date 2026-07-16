@@ -50,31 +50,8 @@ function extractTXT(file) {
   })
 }
 
-function extractPDF(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target.result || ''
-      const commaIdx = dataUrl.indexOf(',')
-      if (commaIdx === -1) {
-        reject(new Error('Could not encode the PDF file. Please try again.'))
-        return
-      }
-      const base64 = dataUrl.slice(commaIdx + 1)
-      if (!base64) {
-        reject(new Error('PDF appears to be empty. Please try a different file.'))
-        return
-      }
-      resolve({ pdf: base64 })
-    }
-    reader.onerror = () => reject(new Error('Could not read the PDF file. Please try again.'))
-    reader.readAsDataURL(file)
-  })
-}
-
 // DOCX files are sent as raw base64 to the server where mammoth extracts the
-// full text — no client-side truncation. extractPDF and extractTXT remain
-// client-side; only DOCX moves server-side.
+// full text — no client-side truncation. Only DOCX moves server-side.
 function encodeDOCX(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -93,7 +70,10 @@ function encodeDOCX(file) {
 
 function extractTextFromFile(file) {
   const ext = (file.name || '').split('.').pop().toLowerCase()
-  if (ext === 'pdf') return extractPDF(file)
+  // PDFs are uploaded as the raw File straight to storage — no client-side base64
+  // encode needed. Return a lightweight marker so the caller takes the PDF branch
+  // (and skips the relevance pre-check). Magic-byte validation happens server-side.
+  if (ext === 'pdf') return Promise.resolve({ pdf: true })
   if (ext === 'docx') return encodeDOCX(file)
   return extractTXT(file)
 }
