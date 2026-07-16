@@ -273,7 +273,7 @@ const handler = async (req, res) => {
           signal: AbortSignal.timeout(55000),
         });
       } catch (err) {
-        refundRun();
+        await refundRun();
         send({ type: 'error', message: err.name === 'TimeoutError' || err.name === 'AbortError'
           ? 'Request timed out. Please try again.'
           : 'An unexpected error occurred. Please try again.' });
@@ -283,7 +283,7 @@ const handler = async (req, res) => {
       }
 
       if (!anthropicRes.ok) {
-        refundRun();
+        await refundRun();
         const errData = await anthropicRes.json().catch(() => ({}));
         const rawMsg = errData.error?.message || '';
         let userMsg;
@@ -333,7 +333,7 @@ const handler = async (req, res) => {
           }
         }
       } catch (err) {
-        refundRun();
+        await refundRun();
         if (res.headersSent) {
           const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
           send({ type: 'error', message: isTimeout
@@ -428,7 +428,8 @@ const handler = async (req, res) => {
       // Guard against truncated responses — if Claude hit the token limit the JSON
       // will be incomplete and the client will show "unexpected response" despite 200.
       if (data?.stop_reason === 'max_tokens') {
-        refundRun();
+        await refundRun();
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath);
         console.warn('[project-reviewer] Claude hit max_tokens — response truncated');
         return res.status(500).json({ error: 'The review was too long to complete. Please try again or upload a shorter document.' });
       }
@@ -478,7 +479,7 @@ const handler = async (req, res) => {
 
     // Non-ok Anthropic response — refund the run and return a sanitised error.
     // Never forward the raw Anthropic error body (it can carry org IDs / URLs).
-    refundRun();
+    await refundRun();
     await deleteReviewerUpload(supabaseAdmin, uploadedPath);
     const rawMsg = String(data?.error?.message || '');
     console.error('[project-reviewer] Anthropic error', response.status, rawMsg.slice(0, 200));
@@ -491,7 +492,7 @@ const handler = async (req, res) => {
     const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
     return res.status(status).json({ error: userMsg });
   } catch (err) {
-    refundRun(); // request never produced a result — don't charge the run
+    await refundRun(); // request never produced a result — don't charge the run
     await deleteReviewerUpload(supabaseAdmin, uploadedPath); // no-op for non-storage paths
     // If SSE has already started (streaming path), we cannot write another HTTP response.
     // Alert on Telegram for visibility and close the stream cleanly.
