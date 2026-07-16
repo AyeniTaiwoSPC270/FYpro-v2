@@ -562,15 +562,47 @@ export async function reviewProjectDOCXStream(studentCtx, base64Data, previousSt
   );
 }
 
-export async function reviewProjectPDFStream(studentCtx, validatedTopic, base64Data, mediaType = 'application/pdf', previousSteps = {}, onChunk) {
+// Uploads a PDF straight to the private project-uploads bucket and returns its
+// storage path. Uses XHR (not supabase.storage.upload) so onProgress reports a
+// real percentage. The transfer goes browser → Supabase, so it is not bound by
+// our 60s serverless budget — the fix for slow-network review failures.
+export async function uploadReviewerPdf(file, onProgress) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) { const e = new Error('Session expired'); e.code = 'UNAUTHORIZED'; throw e; }
+
+  const userId = session.user.id;
+  const path   = `${userId}/${crypto.randomUUID()}.pdf`;
+  const base   = import.meta.env.VITE_SUPABASE_URL;
+  const url     = `${base}/storage/v1/object/project-uploads/${path}`;
+
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+    xhr.setRequestHeader('Content-Type', 'application/pdf');
+    xhr.setRequestHeader('x-upsert', 'false');
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else { const e = new Error(`Upload failed (${xhr.status})`); e.code = 'UPLOAD_FAILED'; reject(e); }
+    };
+    xhr.onerror = () => { const e = new Error('Upload failed. Check your connection and try again.'); e.code = 'UPLOAD_FAILED'; reject(e); };
+    xhr.ontimeout = () => { const e = new Error('Upload timed out. Try a smaller file or a faster connection.'); e.code = 'UPLOAD_TIMEOUT'; reject(e); };
+    xhr.timeout = 180000; // generous — this is only the transfer, no 60s pressure
+    xhr.send(file);
+  });
+
+  return path;
+}
+
+export async function reviewProjectPDFStream(studentCtx, pdfStoragePath, previousSteps = {}, onChunk) {
   return callClaudeAuthStream(
     REVIEWER_ENDPOINT + '?stream=1',
-    [{ role: 'user', content: [
-      { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Data } },
-      { type: 'text', text: buildProjectReviewerPDFPrompt(studentCtx) },
-    ]}],
+    [],
     3000,
-    { promptType: 'review-with-relevance', previousSteps },
+    { promptType: 'review-with-relevance', previousSteps, pdf_storage_path: pdfStoragePath, student_context: studentCtx },
     onChunk
   );
 }
