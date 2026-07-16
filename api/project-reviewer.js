@@ -238,6 +238,7 @@ const handler = async (req, res) => {
         dbRunCounts,
       });
       if (!r.allowed) {
+        await deleteReviewerUpload(supabaseAdmin, uploadedPath); // no-op for non-storage paths
         return res.status(429).json({
           error: `You've used all ${EXPRESS_TOTAL_LIMITS.express_reviewer} of your Express project reviews.`,
         });
