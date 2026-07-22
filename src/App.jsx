@@ -195,6 +195,7 @@ function AppRoutes() {
       <Route path="/maintenance" element={<S fallback={<PublicPageSkeleton />}><MaintenancePage /></S>} />
       <Route path="/changelog"   element={<S fallback={<PublicPageSkeleton />}><ChangelogPage /></S>} />
       <Route path="/roadmap"     element={<S fallback={<PublicPageSkeleton />}><RoadmapPage /></S>} />
+      <Route path="/verify"              element={<S fallback={<PublicPageSkeleton />}><VerifyCertificate /></S>} />
       <Route path="/verify/:certNumber" element={<S fallback={<PublicPageSkeleton />}><VerifyCertificate /></S>} />
 
       {/* Dashboard + account pages */}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 
 function formatDate(iso) {
@@ -10,12 +10,15 @@ function formatDate(iso) {
 
 export default function VerifyCertificate() {
   const { certNumber } = useParams()
+  const navigate = useNavigate()
   const { isDark } = useTheme()
-  const [state, setState] = useState('loading') // 'loading' | 'valid' | 'invalid' | 'error'
+  const [state, setState] = useState(certNumber ? 'loading' : 'lookup') // 'lookup' | 'loading' | 'valid' | 'invalid' | 'error'
   const [cert, setCert] = useState(null)
+  const [lookupValue, setLookupValue] = useState('')
 
   useEffect(() => {
-    if (!certNumber) { setState('invalid'); return }
+    if (!certNumber) { setState('lookup'); return }
+    setState('loading')
     fetch(`/api/certificate?action=verify&cert=${encodeURIComponent(certNumber)}`)
       .then(async r => {
         const data = await r.json()
@@ -66,6 +69,63 @@ export default function VerifyCertificate() {
         textAlign: 'center',
         animation: 'card-enter 0.4s ease forwards',
       }}>
+
+        {state === 'lookup' && (
+          <>
+            <h1 style={{
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontSize: '1.4rem',
+              color: text,
+              margin: '0 0 8px',
+            }}>Verify a Certificate</h1>
+            <p style={{ color: muted, fontSize: '0.85rem', margin: '0 0 24px' }}>
+              Enter the certificate number to confirm it was issued by FYPro.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const trimmed = lookupValue.trim()
+                if (trimmed) navigate(`/verify/${encodeURIComponent(trimmed)}`)
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+              <input
+                type="text"
+                value={lookupValue}
+                onChange={(e) => setLookupValue(e.target.value)}
+                placeholder="FYP-2026-000123"
+                autoFocus
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.9rem',
+                  color: text,
+                  background: isDark ? 'rgba(255,255,255,0.04)' : '#fff',
+                  border: `1px solid ${border}`,
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!lookupValue.trim()}
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  color: '#fff',
+                  background: lookupValue.trim() ? '#0066FF' : 'rgba(0,102,255,0.4)',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  cursor: lookupValue.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >Verify</button>
+            </form>
+          </>
+        )}
 
         {state === 'loading' && (
           <div style={{ color: muted, fontSize: '0.9rem' }}>Verifying certificate...</div>
@@ -197,10 +257,13 @@ export default function VerifyCertificate() {
                 borderRadius: 6,
               }}>{certNumber}</code> was found. It may be invalid or not yet issued.
             </p>
-            <p style={{ color: muted, fontSize: '0.75rem', margin: 0 }}>
+            <p style={{ color: muted, fontSize: '0.75rem', margin: '0 0 16px' }}>
               If you believe this is an error, contact{' '}
               <a href="mailto:hello@fypro.com.ng" style={{ color: '#0066FF' }}>hello@fypro.com.ng</a>
             </p>
+            <Link to="/verify" style={{ color: '#0066FF', fontSize: '0.8rem', textDecoration: 'none' }}>
+              Try another certificate number
+            </Link>
           </>
         )}
 
