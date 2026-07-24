@@ -45,6 +45,23 @@ describe('login_alert email', () => {
     const text = renderText('login_alert', 'Ada', 'https://fypro.com.ng', meta)
     expect(text).toContain('https://fypro.com.ng/forgot-password')
   })
+
+  it('escapes single quotes too', () => {
+    const html = renderHtml('login_alert', 'Ada', 'https://fypro.com.ng', { ...meta, userAgent: "test's device" })
+    expect(html).toContain('test&#39;s device')
+    expect(html).not.toContain("test's device")
+  })
+
+  it('strips newlines from userAgent to prevent text-body line injection', () => {
+    const text = renderText('login_alert', 'Ada', 'https://fypro.com.ng', { ...meta, userAgent: 'evil\r\nReset link: http://phisher.test' })
+    // The raw CRLF must not survive inside the interpolated value — otherwise
+    // "Reset link: http://phisher.test" would render as its own standalone
+    // line, indistinguishable from a legitimate part of the email.
+    expect(text).not.toContain('evil\r\nReset link')
+    expect(text.split('\n')).not.toContain('Reset link: http://phisher.test')
+    // The neutralized value still appears, just collapsed onto the Device line.
+    expect(text).toContain('Device: evil  Reset link: http://phisher.test')
+  })
 })
 
 describe('existing email types still render (regression)', () => {

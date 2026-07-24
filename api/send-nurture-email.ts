@@ -32,6 +32,7 @@ function escapeHtml(s: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function formatLoginTime(iso: string): string {
@@ -78,8 +79,8 @@ export function renderHtml(type: EmailType, name: string, baseUrl: string, meta:
 
   if (type === 'login_alert') {
     const time = formatLoginTime(meta.loginAt || new Date().toISOString())
-    const ip = escapeHtml(meta.ip || 'unknown')
-    const ua = escapeHtml((meta.userAgent || 'unknown device').slice(0, 80))
+    const ip = escapeHtml((meta.ip || 'unknown').replace(/[\r\n]/g, ' '))
+    const ua = escapeHtml((meta.userAgent || 'unknown device').replace(/[\r\n]/g, ' ').slice(0, 80))
     return wrap(
       '#0066FF', 'rgba(0,102,255,0.08)', 'rgba(0,102,255,0.3)', 'Security',
       `<h1 style="font-size:17px;font-weight:700;color:#f8fafc;line-height:1.35;margin:0 0 10px;">${firstName}, we noticed a new login.</h1><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">Time: ${time}</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 8px;">IP address: ${ip}</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">Device: ${ua}</p><p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.75;margin:0 0 18px;">If this was you, no action is needed. If you don't recognize this login, reset your password immediately.</p><a href="${baseUrl}/forgot-password" style="display:inline-block;background:#0066FF;color:#ffffff;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:700;text-decoration:none;">Reset my password →</a>`,
@@ -107,8 +108,8 @@ export function renderText(type: EmailType, name: string, baseUrl: string, meta:
 
   if (type === 'login_alert') {
     const time = formatLoginTime(meta.loginAt || new Date().toISOString())
-    const ip = meta.ip || 'unknown'
-    const ua = (meta.userAgent || 'unknown device').slice(0, 80)
+    const ip = (meta.ip || 'unknown').replace(/[\r\n]/g, ' ')
+    const ua = (meta.userAgent || 'unknown device').replace(/[\r\n]/g, ' ').slice(0, 80)
     return `${firstName}, we noticed a new login\n\nTime: ${time}\nIP address: ${ip}\nDevice: ${ua}\n\nIf this was you, no action is needed. If you don't recognize this login, reset your password immediately: ${baseUrl}/forgot-password`
   }
 
