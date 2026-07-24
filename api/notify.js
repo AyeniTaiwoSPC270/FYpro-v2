@@ -1256,6 +1256,11 @@ async function handleNotify(req, res) {
     }
 
     try {
+      // Telegram is awaited (matches the sibling oauth_signup branch above);
+      // the nurture-email fetch below is intentionally NOT awaited — this
+      // response doesn't depend on the email completing, unlike the inbound
+      // Telegram webhook handler elsewhere in this file, which must await
+      // before responding since Vercel freezes the function on res.end().
       await sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`)
       if (process.env.CRON_SECRET) {
         fetch(`${APP_URL}/api/send-nurture-email`, {

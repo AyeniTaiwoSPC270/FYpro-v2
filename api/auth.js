@@ -109,6 +109,12 @@ async function handleLogin(req, res) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // Fire-and-forget: intentionally not awaited so a Resend/Telegram outage
+  // never delays or fails a valid login response. This is the same tradeoff
+  // as the brute-force alerts above and the signup welcome email below —
+  // unlike the inbound Telegram webhook handler in notify.js (which must
+  // await before responding, since Vercel freezes the function on res.end()),
+  // this response doesn't depend on the notification completing.
   try {
     sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`).catch(() => null);
     if (process.env.CRON_SECRET) {
