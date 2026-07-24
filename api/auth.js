@@ -109,21 +109,25 @@ async function handleLogin(req, res) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`).catch(() => null);
-  if (process.env.CRON_SECRET) {
-    fetch(`${APP_URL}/api/send-nurture-email`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
-      body:    JSON.stringify({
-        userId:    data.user?.id,
-        emailType: 'login_alert',
-        email,
-        name:      data.user?.user_metadata?.full_name || '',
-        ip,
-        userAgent: req.headers['user-agent'] || '',
-        loginAt:   new Date().toISOString(),
-      }),
-    }).catch(e => traceLog(traceId, 'error', '[auth/login] login alert email failed:', e.message));
+  try {
+    sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`).catch(() => null);
+    if (process.env.CRON_SECRET) {
+      fetch(`${APP_URL}/api/send-nurture-email`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
+        body:    JSON.stringify({
+          userId:    data.user?.id,
+          emailType: 'login_alert',
+          email,
+          name:      data.user?.user_metadata?.full_name || '',
+          ip,
+          userAgent: req.headers['user-agent'] || '',
+          loginAt:   new Date().toISOString(),
+        }),
+      }).catch(e => traceLog(traceId, 'error', '[auth/login] login alert email failed:', e.message));
+    }
+  } catch (e) {
+    traceLog(traceId, 'error', '[auth/login] notification block failed:', e.message);
   }
 
   return res.status(200).json({

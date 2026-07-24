@@ -49,6 +49,7 @@ vi.mock('./_lib/sentry-server.js', () => ({ Sentry: { captureException: vi.fn() 
 vi.mock('./_lib/telegram.js', () => ({
   sendTelegramAlert:     (...a) => h.telegramAlert(...a),
   sendTelegramAlertOnce: (...a) => h.telegramAlertOnce(...a),
+  escapeTgHtml:          (s) => String(s),
 }));
 
 const { default: handler } = await import('./auth.js');
