@@ -167,6 +167,17 @@ export default function AuthConfirm() {
               },
               body: JSON.stringify({ action: 'oauth_signup' }),
             }).catch(() => {})
+          } else if (oauthData.session?.access_token) {
+            // Existing user logging back in via Google — send the same
+            // login alert that password logins get (api/auth.js).
+            fetch('/api/notify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${oauthData.session.access_token}`,
+              },
+              body: JSON.stringify({ action: 'oauth_login' }),
+            }).catch(() => {})
           }
           const pending = consumeOAuthReturn()
           navigate(pending || (hasOnboarded ? '/dashboard' : '/start'), { replace: true })
