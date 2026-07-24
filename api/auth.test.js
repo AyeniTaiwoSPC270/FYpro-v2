@@ -226,6 +226,27 @@ describe('login — login-alert notification', () => {
     expect(res.statusCode).toBe(401);
     expect(globalThis.fetch).toHaveBeenCalledTimes(1); // GoTrue call only — no login-alert fetch
   });
+
+  // Regression test: sendTelegramAlert was previously fire-and-forget here,
+  // which meant Vercel could freeze the function (after res.json() returns)
+  // before the outbound Telegram request completed, silently dropping the
+  // alert in production. Every other alert send in this codebase is awaited
+  // (payments.js, notify.js oauth_login) — this asserts login matches that.
+  // A mock resolves synchronously either way, so this can't check the bug via
+  // call count; it checks ORDER — if the alert isn't awaited, the response is
+  // sent in the same synchronous tick, before the mock's microtask runs.
+  it('awaits the Telegram alert before sending the response', async () => {
+    const order = [];
+    h.telegramAlert = vi.fn(() => Promise.resolve().then(() => { order.push('telegram'); }));
+
+    const res = makeRes();
+    const originalStatus = res.status.bind(res);
+    res.status = (code) => { order.push('response'); return originalStatus(code); };
+
+    await handler(makeReq({ action: 'login', body: { email: 'order@b.com', password: 'pw' } }), res);
+
+    expect(order).toEqual(['telegram', 'response']);
+  });
 });
 
 // ─── signup ───────────────────────────────────────────────────────────────────
