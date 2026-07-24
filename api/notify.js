@@ -29,6 +29,7 @@ function getWebPush() {
 
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+const APP_URL        = process.env.APP_URL || 'https://www.fypro.com.ng'
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -1229,10 +1230,35 @@ async function handleNotify(req, res) {
   if (authError || !user) return res.status(401).end()
 
   const { action, payload } = req.body || {}
-  const ALLOWED_ACTIONS = ['defense_completed', 'project_created', 'oauth_signup', 'generation_failed']
+  const ALLOWED_ACTIONS = ['defense_completed', 'project_created', 'oauth_signup', 'oauth_login', 'generation_failed']
   if (!ALLOWED_ACTIONS.includes(action)) return res.status(400).json({ error: 'Unknown action' })
 
   const email = user.email || 'unknown'
+
+  if (action === 'oauth_login') {
+    const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()
+    const userAgent = String(req.headers['user-agent'] || '')
+    try {
+      await sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`)
+      if (process.env.CRON_SECRET) {
+        fetch(`${APP_URL}/api/send-nurture-email`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
+          body:    JSON.stringify({
+            userId:    user.id,
+            emailType: 'login_alert',
+            email,
+            name:      user.user_metadata?.full_name || '',
+            ip,
+            userAgent,
+            loginAt:   new Date().toISOString(),
+          }),
+        }).catch(() => null)
+      }
+    } catch (e) {
+      console.error('[notify/oauth_login] notification block failed:', e.message)
+    }
+  }
 
   if (action === 'defense_completed') {
     const score = Number(payload?.score)
