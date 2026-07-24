@@ -1238,6 +1238,23 @@ async function handleNotify(req, res) {
   if (action === 'oauth_login') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()
     const userAgent = String(req.headers['user-agent'] || '')
+
+    if (UPSTASH_URL && UPSTASH_TOKEN) {
+      const hourBucket = new Date().toISOString().slice(0, 13) // e.g. '2026-07-24T14'
+      const userKey = `rl:oauthlogin:user:${user.id}:${hourBucket}`
+      const r = await fetch(`${UPSTASH_URL}/incr/${userKey}`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      }).then(x => x.json()).catch(() => null)
+      if ((r?.result ?? 0) > 20) {
+        return res.status(429).json({ error: 'Too many requests' })
+      }
+      if (r?.result === 1) {
+        fetch(`${UPSTASH_URL}/expire/${userKey}/3600`, {
+          headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        }).catch(() => null)
+      }
+    }
+
     try {
       await sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`)
       if (process.env.CRON_SECRET) {
