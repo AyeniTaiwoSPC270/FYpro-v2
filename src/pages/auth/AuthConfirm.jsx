@@ -167,6 +167,21 @@ export default function AuthConfirm() {
               },
               body: JSON.stringify({ action: 'oauth_signup' }),
             }).catch(() => {})
+          } else if (oauthData.session?.access_token) {
+            // Existing user logging back in via Google — send the same
+            // login alert that password logins get (api/auth.js). Unlike
+            // that path, delivery here depends on this fetch actually
+            // executing in the browser (Supabase's own redirect never
+            // touches our servers) — a closed tab or blocked request means
+            // no alert, which is an accepted tradeoff, not a bug.
+            fetch('/api/notify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${oauthData.session.access_token}`,
+              },
+              body: JSON.stringify({ action: 'oauth_login' }),
+            }).catch(() => {})
           }
           const pending = consumeOAuthReturn()
           navigate(pending || (hasOnboarded ? '/dashboard' : '/start'), { replace: true })
