@@ -169,6 +169,65 @@ describe('login — GoTrue outcomes', () => {
   });
 });
 
+describe('login — login-alert notification', () => {
+  // CRON_SECRET gates the fire-and-forget fetch to send-nurture-email; save/restore
+  // so this describe block's env change can't leak into other test files.
+  const originalCronSecret = process.env.CRON_SECRET;
+
+  beforeEach(() => {
+    process.env.CRON_SECRET = 'test-cron-secret';
+  });
+
+  afterEach(() => {
+    if (originalCronSecret === undefined) delete process.env.CRON_SECRET;
+    else process.env.CRON_SECRET = originalCronSecret;
+  });
+
+  it('fires a second fetch to send-nurture-email with the login_alert body shape on success', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        access_token: 'tok', refresh_token: 'ref', expires_in: 3600, token_type: 'bearer',
+        user: { id: 'user-123', user_metadata: { full_name: 'Jane Doe' } },
+      }),
+    }));
+
+    const res = makeRes();
+    await handler(makeReq({
+      action: 'login',
+      body: { email: 'alert@b.com', password: 'pw' },
+      headers: { 'user-agent': 'test-agent', 'x-forwarded-for': '1.2.3.4' },
+    }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2); // GoTrue call + login-alert email call
+
+    const [url, options] = globalThis.fetch.mock.calls[1];
+    expect(url).toContain('/api/send-nurture-email');
+
+    const body = JSON.parse(options.body);
+    expect(body).toEqual({
+      userId:    'user-123',
+      emailType: 'login_alert',
+      email:     'alert@b.com',
+      name:      'Jane Doe',
+      ip:        '1.2.3.4',
+      userAgent: 'test-agent',
+      loginAt:   expect.any(String),
+    });
+    expect(typeof body.loginAt).toBe('string');
+    expect(body.loginAt.length).toBeGreaterThan(0);
+  });
+
+  it('does NOT fire the login-alert fetch on a failed login (invalid credentials)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: 'invalid_grant' }) }));
+    const res = makeRes();
+    await handler(makeReq({ action: 'login', body: { email: 'a@b.com', password: 'wrong' } }), res);
+    expect(res.statusCode).toBe(401);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1); // GoTrue call only — no login-alert fetch
+  });
+});
+
 // ─── signup ───────────────────────────────────────────────────────────────────
 
 describe('signup — isNewUser guard', () => {
