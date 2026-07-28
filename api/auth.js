@@ -109,17 +109,19 @@ async function handleLogin(req, res) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  // The Telegram alert is awaited — every other alert send in this codebase
-  // (payments.js, notify.js, including the sibling oauth_login branch) does
-  // the same, because an un-awaited fetch here can get cut off when Vercel
-  // freezes the function right after res.json() below. sendTelegramAlert
-  // itself never throws and has its own 8s timeout, so this can't hang or
-  // fail the login. The send-nurture-email call stays fire-and-forget,
-  // matching the accepted latency of the existing signup welcome email.
+  // Both the Telegram alert and the login-alert email are awaited — every
+  // other alert send in this codebase (payments.js, notify.js, including the
+  // sibling oauth_login branch) does the same, because an un-awaited fetch
+  // here can get cut off when Vercel freezes the function right after
+  // res.json() below. That's what caused the login-alert email to fire only
+  // sometimes in production: it's a race between the response being sent and
+  // the fetch completing, not a Resend deliverability issue. sendTelegramAlert
+  // never throws and both calls are wrapped below, so this can't hang or fail
+  // the login.
   try {
     await sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`);
     if (process.env.CRON_SECRET) {
-      fetch(`${APP_URL}/api/send-nurture-email`, {
+      await fetch(`${APP_URL}/api/send-nurture-email`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
         body:    JSON.stringify({
