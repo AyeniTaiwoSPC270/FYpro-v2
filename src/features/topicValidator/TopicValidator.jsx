@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { validateTopic, handleApiError, logFailure, subscribePush } from '../../services/api'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -105,6 +105,7 @@ export default function TopicValidator() {
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
+        refundRun('topic_validator')
       }, 30000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -195,9 +196,11 @@ export default function TopicValidator() {
         }, 80)
       })
       .catch(err => {
-        if (timedOutRef.current) return
         inflightRef.current = false
+        // If the 30s timer already fired it refunded the run — don't double it here.
+        if (!timedOutRef.current) refundRun('topic_validator')
         logFailure('Topic Validator', err, topic.trim())
+        if (timedOutRef.current) return
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)

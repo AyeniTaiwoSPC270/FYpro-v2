@@ -30,7 +30,7 @@ import {
   THREE_EXAMINER_FIRST_QUESTION_PROMPT,
   buildThreeExaminerFollowUpPrompt,
 } from '../../services/prompts.js'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { EXPRESS_TOTAL_LIMITS } from '../../../api/_lib/express-limits.js'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
@@ -657,6 +657,7 @@ export default function DefensePrep() {
         setSection('input')
         setIsScanning(false)
         setScanError('Request timed out. Please check your connection and try again.')
+        refundRun('red_flag_detector')
       }, 30000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -946,8 +947,10 @@ export default function DefensePrep() {
       setSection('flags')
       setIsScanning(false)
     } catch (err) {
-      if (dpTimedOutRef.current) return
+      // If the 30s timer already fired it refunded the run — don't double it here.
+      if (!dpTimedOutRef.current) refundRun('red_flag_detector')
       logFailure('Defense Simulator', err, state.validatedTopic || '')
+      if (dpTimedOutRef.current) return
       setIsScanning(false)
       setSection('input')
       handleApiError(err, msg => setScanError(msg))
@@ -1065,6 +1068,10 @@ export default function DefensePrep() {
       })
       setInputLocked(false)
     } catch (err) {
+      // getFirstQuestion is the first network call after checkAndRecord('defense_simulator', ...)
+      // recorded a session — any failure here means the student never actually got a
+      // defense session, so the reservation must be refunded regardless of the reason.
+      refundRun('defense_simulator')
       if (err.code === 'FREE_TRIAL_USED') {
         setTrialUsed(true)
         localStorage.setItem('fypro_free_trial_used', 'true')

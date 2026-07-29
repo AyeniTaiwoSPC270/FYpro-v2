@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { prepareSupervisorMeeting, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useProjectState } from '../../hooks/useProjectState'
 import ApiErrorBox from '../../components/ApiErrorBox'
@@ -73,6 +73,7 @@ export default function SupervisorPrep() {
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
+        refundRun('meeting_prep')
       }, 30000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -118,9 +119,11 @@ export default function SupervisorPrep() {
         saveStep('meeting_prep', { questions, stage })
       })
       .catch(err => {
-        if (timedOutRef.current) return
         inflightRef.current = false
+        // If the 30s timer already fired it refunded the run — don't double it here.
+        if (!timedOutRef.current) refundRun('meeting_prep')
         logFailure('Meeting Prep', err, `${stage} | ${stuckOn.trim()}`)
+        if (timedOutRef.current) return
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)

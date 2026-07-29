@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { buildChapters, generateAbstract, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -266,6 +266,7 @@ export default function ChapterArchitect() {
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
+        refundRun('chapter_architect')
       }, 30000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -428,9 +429,11 @@ export default function ChapterArchitect() {
         }, 80)
       })
       .catch(err => {
-        if (caTimedOutRef.current) return
         caInflightRef.current = false
+        // If the 30s timer already fired it refunded the run — don't double it here.
+        if (!caTimedOutRef.current) refundRun('chapter_architect')
         logFailure('Chapter Architect', err, state.validatedTopic || '')
+        if (caTimedOutRef.current) return
         setSection('input')
         if (!handleApiError(err, msg => {
           setError(msg)

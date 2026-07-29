@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { adviseMethodology, buildInstrument, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { showToast } from '../../components/Toast'
@@ -92,6 +92,7 @@ export default function MethodologyAdvisor() {
         setMaSection('input')
         setMaBtnDisabled(false)
         setMaError('Request timed out. Please check your connection and try again.')
+        refundRun('methodology_advisor')
       }, 55000)
     } else {
       clearTimeout(maLoadingTimerRef.current)
@@ -108,6 +109,7 @@ export default function MethodologyAdvisor() {
         setDiSection('input')
         setDiGenBtnDisabled(false)
         setDiError('Request timed out. Please check your connection and try again.')
+        refundRun('instrument_builder')
       }, 55000)
     } else {
       clearTimeout(diLoadingTimerRef.current)
@@ -151,9 +153,11 @@ export default function MethodologyAdvisor() {
         saveStep('methodology_advisor', data)
       })
       .catch(err => {
-        if (maTimedOutRef.current) return
         maInflightRef.current = false
+        // If the 55s timer already fired it refunded the run — don't double it here.
+        if (!maTimedOutRef.current) refundRun('methodology_advisor')
         logFailure('Methodology Advisor', err, state.validatedTopic || '')
+        if (maTimedOutRef.current) return
         setMaSection('input')
         if (!handleApiError(err, msg => {
           setMaError(msg)
@@ -250,9 +254,11 @@ export default function MethodologyAdvisor() {
         saveStep('instrument_builder', data)
       })
       .catch(err => {
-        if (diTimedOutRef.current) return
         diInflightRef.current = false
+        // If the 55s timer already fired it refunded the run — don't double it here.
+        if (!diTimedOutRef.current) refundRun('instrument_builder')
         logFailure('Instrument Builder', err, selectedMethodology)
+        if (diTimedOutRef.current) return
         setDiSection('input')
         if (!handleApiError(err, msg => {
           setDiError(msg)

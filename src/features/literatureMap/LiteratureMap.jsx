@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { generateLiteratureMap, handleApiError, logFailure } from '../../services/api'
-import { checkAndRecord, useRunLimit } from '../../hooks/useRunLimit'
+import { checkAndRecord, refundRun, useRunLimit } from '../../hooks/useRunLimit'
 import { usePaidFeatures } from '../../hooks/usePaidFeatures'
 import { useApp } from '../../context/AppContext'
 import { useProjectState } from '../../hooks/useProjectState'
@@ -55,6 +55,7 @@ export default function LiteratureMap({ chapters }) {
         setSection('input')
         setBtnDisabled(false)
         setError('Request timed out. Please check your connection and try again.')
+        refundRun('literature_map')
       }, 30000)
     } else {
       clearTimeout(loadingTimerRef.current)
@@ -103,9 +104,11 @@ export default function LiteratureMap({ chapters }) {
         saveStep('literature_map', lmResult)
       })
       .catch(err => {
-        if (timedOutRef.current) return
         inflightRef.current = false
+        // If the 30s timer already fired it refunded the run — don't double it here.
+        if (!timedOutRef.current) refundRun('literature_map')
         logFailure('Literature Map', err, state.validatedTopic || '')
+        if (timedOutRef.current) return
         setSection('input')
         setBtnDisabled(false)
         if (!handleApiError(err, msg => setError(msg))) {
