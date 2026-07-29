@@ -184,8 +184,9 @@ const handler = async (req, res) => {
         hasApiKey: !!apiKey,
         detail:    errBody.slice(0, 500),
       });
-      const today = new Date().toISOString().slice(0, 10);
-      sendTelegramAlertOnce(`🔴 ElevenLabs TTS error ${ttsResponse.status} — examiner voices down in Defense Simulator`, `tg:speak:err:${ttsResponse.status}:${today}`).catch(() => null);
+      // 15-minute dedupe window (not a full day) so a recurring outage keeps
+      // re-alerting instead of going silent after the first failure.
+      sendTelegramAlertOnce(`🔴 ElevenLabs TTS error ${ttsResponse.status} — examiner voices down in Defense Simulator`, `tg:speak:err:${ttsResponse.status}`, 900).catch(() => null);
       // Never forward the raw ElevenLabs error body to the client. The frontend only
       // needs a non-2xx status to fall back to browser TTS; detail is logged above.
       const status = ttsResponse.status >= 500 ? 503 : ttsResponse.status;

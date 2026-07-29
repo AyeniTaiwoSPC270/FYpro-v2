@@ -1301,15 +1301,17 @@ async function handleNotify(req, res) {
   // Relays failures the server never sees — client-side timeouts and network
   // drops (e.g. Project Reviewer's 120s watchdog) are logged to
   // generation_failures directly from the browser and otherwise never reach
-  // any code path that can call Telegram. Deduped per user+feature+day so a
-  // retry loop on a flaky connection can't spam the alert channel.
+  // any code path that can call Telegram. Deduped per user+feature for a short
+  // window (not a full day) so a tight retry loop on a flaky connection can't
+  // spam the alert channel, while an outage that keeps recurring still re-alerts
+  // periodically instead of going silent until midnight.
   if (action === 'generation_failed') {
     const feature      = String(payload?.feature || 'unknown').slice(0, 60)
     const errorMessage = String(payload?.errorMessage || 'Unknown error').slice(0, 200)
-    const today        = new Date().toISOString().slice(0, 10)
     await sendTelegramAlertOnce(
       `🔴 Generation failed (client-detected): <b>${escapeTgHtml(feature)}</b> for ${escapeTgHtml(email)} — ${escapeTgHtml(errorMessage)}`,
-      `tg:genfail:${user.id}:${feature}:${today}`
+      `tg:genfail:${user.id}:${feature}`,
+      900
     )
   }
 
