@@ -1291,6 +1291,19 @@ async function handleNotify(req, res) {
 
   if (action === 'project_created') {
     const title = String(payload?.title || 'untitled').slice(0, 80)
+    if (payload?.mode === 'express') {
+      // Express onboarding creates this row on step 1, before the paywall —
+      // an abandoned intake form is not a real project. Only alert once the
+      // user actually holds the entitlement (the payment webhook's own alert
+      // covers the moment they pay).
+      const { data: ent } = await supabaseAdmin
+        .from('user_entitlements')
+        .select('paid_features')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const paid = Array.isArray(ent?.paid_features) && ent.paid_features.includes('express_defense')
+      if (!paid) return res.status(200).json({ ok: true, skipped: 'unpaid_express_intake' })
+    }
     await sendTelegramAlert(`📁 New project: ${escapeTgHtml(email)} started '<b>${escapeTgHtml(title)}</b>'`)
   }
 

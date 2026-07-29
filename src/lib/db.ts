@@ -362,7 +362,7 @@ export async function createExpressProject(data: {
       fetch('/api/notify', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body:    JSON.stringify({ action: 'project_created', payload: { title: 'Express Defence' } }),
+        body:    JSON.stringify({ action: 'project_created', payload: { title: 'Express Defence', mode: 'express' } }),
       }).catch(err => console.error('[notify] project_created (express) failed:', err))
     }
   }).catch(err => console.error('[notify] getSession failed:', err))
