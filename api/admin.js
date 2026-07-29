@@ -244,7 +244,7 @@ async function handleDashboard(req, res) {
     const [authUsers, paymentsRes, projectsRes, entitlementsRes, usageRes, cacheHits, failedPaymentsRes, signupsYesterdayRes, recentStepsRes] = await Promise.all([
       listAllAuthUsers(),
       supabaseAdmin.from('payments').select('user_id, amount_kobo, status, created_at, tier').eq('status', 'success'),
-      supabaseAdmin.from('projects').select('user_id, created_at'),
+      supabaseAdmin.from('projects').select('user_id, created_at, mode'),
       supabaseAdmin.from('user_entitlements').select('user_id, run_counts, paid_features, banned_until'),
       supabaseAdmin.from('daily_usage').select('total_cost_usd, request_count').eq('date', today).maybeSingle(),
       readCacheHits(),
@@ -334,6 +334,10 @@ async function handleDashboard(req, res) {
 
     const projCountByUser = {};
     for (const p of projects) {
+      // Express onboarding creates a project row on step 1, before payment —
+      // an unpaid express row isn't a real project, so don't count it toward
+      // this user's project count (it would otherwise look like feature usage).
+      if (p.mode === 'express' && !(paidFeaturesByUser[p.user_id] || []).includes('express_defense')) continue;
       projCountByUser[p.user_id] = (projCountByUser[p.user_id] || 0) + 1;
     }
 
@@ -1688,6 +1692,41 @@ async function handleDailyReport(req, res) {
   if (!verifyCronSecret(req, res)) return;
 
   try {
+    // ── Cleanup: abandoned unpaid Express intake rows ─────────────────────
+    // Express onboarding creates a project row on step 1, before payment
+    // (see ExpressOnboarding.jsx handleFormSubmit) — rows left by people who
+    // never paid would otherwise accumulate forever. RequireExpress means an
+    // unpaid user could never have reached a real feature on the row, so any
+    // unpaid express project older than 48h is safe to purge.
+    try {
+      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      const { data: staleExpress } = await supabaseAdmin
+        .from('projects')
+        .select('id, user_id')
+        .eq('mode', 'express')
+        .lt('created_at', cutoff);
+      if (staleExpress?.length) {
+        const userIds = [...new Set(staleExpress.map(p => p.user_id))];
+        const { data: entRows } = await supabaseAdmin
+          .from('user_entitlements')
+          .select('user_id, paid_features')
+          .in('user_id', userIds);
+        const paidSet = new Set(
+          (entRows || [])
+            .filter(e => Array.isArray(e.paid_features) && e.paid_features.includes('express_defense'))
+            .map(e => e.user_id)
+        );
+        const toDelete = staleExpress.filter(p => !paidSet.has(p.user_id)).map(p => p.id);
+        if (toDelete.length) {
+          await supabaseAdmin.from('project_steps').delete().in('project_id', toDelete);
+          await supabaseAdmin.from('projects').delete().in('id', toDelete);
+          console.log(`[daily-report] cleaned up ${toDelete.length} abandoned unpaid express project(s)`);
+        }
+      }
+    } catch (cleanupErr) {
+      console.error('[daily-report] express cleanup failed:', cleanupErr.message);
+    }
+
     const today      = new Date().toISOString().slice(0, 10);
     const todayStart = `${today}T00:00:00.000Z`;
     const cap        = parseFloat(process.env.DAILY_CAP_USD || '10');
