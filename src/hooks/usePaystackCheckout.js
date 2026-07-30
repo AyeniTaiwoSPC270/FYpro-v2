@@ -8,6 +8,9 @@ export function resolveFailurePayload(data, { tier, reference }) {
   if (data.status === 'success' || data.status === 'already_processed') return null
   if (data.status === 'failed') return { tier, reference, reason: data.reason || null }
   if (data.status === 'pending' || data.status === 'not_found') return null
+  // Must match the literal string api/payments.js's handleVerify returns for a
+  // KNOWN_REJECTION (see api/payments.js:347) — if that message ever changes,
+  // update this check too, or genuine declines will silently stop being detected.
   if (data.error === 'Payment could not be verified') return { tier, reference, reason: data.reason || null }
   return null
 }
