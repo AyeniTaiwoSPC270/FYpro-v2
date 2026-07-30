@@ -202,7 +202,7 @@ function Reveal({ children, delay = 0, as = 'div', className, style }) {
 
 function SectionDivider() {
   return (
-    <div className="h-px bg-white/[0.04] relative overflow-hidden">
+    <div className="lp-section-divider h-px bg-white/[0.04] relative overflow-hidden">
       <motion.div
         className="absolute inset-y-0 w-1/2"
         style={{ background: 'linear-gradient(90deg, transparent 0%, #0066FF 50%, transparent 100%)' }}
@@ -623,7 +623,7 @@ function HeroHeadline() {
     >
       {words.map((word, i) => (
         <span key={i} className="lp-hero-word" style={{ animationDelay: `${i * 80}ms` }}>
-          {italic.has(word) ? <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>{word}</em> : word}
+          {italic.has(word) ? <em className="lp-accent" style={{ fontStyle: 'italic', color: '#60A5FA' }}>{word}</em> : word}
         </span>
       ))}
     </h1>
@@ -1072,7 +1072,7 @@ function LandingFAQSection() {
             overflow: 'hidden',
           }}>
             <div style={{ padding: '24px 24px 0' }}>
-              <div style={{ fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#60A5FA', marginBottom: '8px' }}>Common Questions</div>
+              <div className="lp-accent" style={{ fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#60A5FA', marginBottom: '8px' }}>Common Questions</div>
               <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--pub-text)', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
               <p style={{ fontSize: '0.875rem', color: 'var(--pub-text-muted)', marginBottom: '20px' }}>Everything you need to know before you start.</p>
             </div>
@@ -1139,7 +1139,7 @@ function TrustedCounter() {
             style={{ background: '#60A5FA' }}
           />
           <span
-            className="font-mono text-[0.72rem] tracking-[0.06em]"
+            className="lp-accent font-mono text-[0.72rem] tracking-[0.06em]"
             style={{ color: '#60A5FA' }}
           >
             {label}
@@ -1159,7 +1159,7 @@ function FinalCTA() {
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
           <Reveal as="h2" className="font-serif text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3rem)' }}>
-            Your defense is coming.<br />Are you <em style={{ fontStyle: 'italic', color: '#60A5FA' }}>actually</em> ready?
+            Your defense is coming.<br />Are you <em className="lp-accent" style={{ fontStyle: 'italic', color: '#60A5FA' }}>actually</em> ready?
           </Reveal>
           <Reveal delay={0.1} as="p" className="text-base text-white/65 leading-[1.75] mb-4">
             Every question an examiner can ask, FYPro has already asked you first.<br />
