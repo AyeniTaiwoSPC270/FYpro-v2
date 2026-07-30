@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { usePaidFeatures } from '../hooks/usePaidFeatures'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { trackEvent } from '../lib/analytics'
+import PaymentFailedBanner from './PaymentFailedBanner'
 
 const FEATURE_META = {
   student_pack: {
@@ -45,7 +46,7 @@ function hasAccess(requiredPack, hasPaidFeature) {
 const LOCK_PATH =
   'M208,80H168V56a40,40,0,0,0-80,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM104,56a24,24,0,0,1,48,0V80H104Zm104,152H48V96H208V208Zm-80-48a8,8,0,1,1-8-8A8,8,0,0,1,136,160Z'
 
-function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, payError, blockInfo, setBlockInfo }) {
+function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, payError, blockInfo, setBlockInfo, failedPayment, retryFailedPayment, setFailedPayment }) {
   const { pathname } = useLocation()
 
   useEffect(() => {
@@ -61,6 +62,26 @@ function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, p
   }
 
   const isLoading = paying === requiredPack || verifying
+
+  if (failedPayment) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '60vh',
+        padding: '32px 16px',
+      }}>
+        <PaymentFailedBanner
+          tier={failedPayment.tier}
+          reference={failedPayment.reference}
+          reason={failedPayment.reason}
+          onRetry={retryFailedPayment}
+          onDismiss={() => setFailedPayment(null)}
+        />
+      </div>
+    )
+  }
 
   if (blockInfo) {
     return (
@@ -337,7 +358,7 @@ function Spinner() {
 export default function PaidFeatureGate({ requiredPack, children, fallback }) {
   const { hasPaidFeature, loading } = usePaidFeatures()
   const { pathname, search } = useLocation()
-  const { handlePay, paying, verifying, payError, blockInfo, setBlockInfo } = usePaystackCheckout({
+  const { handlePay, paying, verifying, payError, blockInfo, setBlockInfo, failedPayment, retryFailedPayment, setFailedPayment } = usePaystackCheckout({
     loginReturnUrl: pathname + search,
   })
 
@@ -355,6 +376,9 @@ export default function PaidFeatureGate({ requiredPack, children, fallback }) {
         payError={payError}
         blockInfo={blockInfo}
         setBlockInfo={setBlockInfo}
+        failedPayment={failedPayment}
+        retryFailedPayment={retryFailedPayment}
+        setFailedPayment={setFailedPayment}
       />
     )
   }
