@@ -251,7 +251,7 @@ function TestiCard({ quote, name, dept, initials, avatarStyle, fixed }) {
     <motion.div
       className="lp-testi-card flex flex-col gap-[18px] p-7 rounded-2xl border border-white/[0.1] transition-colors duration-200"
       style={{
-        background: 'linear-gradient(150deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%)',
+        background: 'var(--bg-card)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
         ...(fixed ? { width: 'clamp(280px, 80vw, 380px)', flexShrink: 0 } : {}),
       }}
@@ -792,7 +792,7 @@ function FeatureCardWrapper({ f, i }) {
         <MagneticCard
           className="relative overflow-hidden rounded-2xl p-6 md:p-9 h-full cursor-default"
           style={{
-            background: 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
+            background: 'var(--bg-card)',
             border: '1px solid',
             borderColor: hovered ? 'rgba(0,102,255,0.4)' : 'var(--pub-border-dim)',
             borderLeft: `3px solid ${c.border}`,
@@ -948,7 +948,7 @@ function PricingSection() {
               <motion.div
                 className={`lp-plan-card${p.featured ? ' lp-plan-card--featured' : ''} relative rounded-2xl py-7 px-6 md:py-9 md:px-8${p.featured ? ' md:scale-[1.025]' : ''}`}
                 style={{
-                  background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, var(--pub-bg-mid) 100%)' : 'linear-gradient(150deg,var(--pub-bg-mid) 0%,var(--pub-bg-alt) 100%)',
+                  background: p.featured ? 'linear-gradient(150deg, rgba(0,102,255,0.1) 0%, var(--bg-card) 100%)' : 'var(--bg-card)',
                   border: '1px solid',
                   borderColor: p.featured ? '#0066FF' : 'var(--pub-border-dim)',
                   boxShadow: p.featured ? '0 0 48px rgba(0,102,255,0.12)' : 'none',
@@ -1066,7 +1066,7 @@ function LandingFAQSection() {
       <div className="max-w-3xl mx-auto px-5 md:px-10">
         <Reveal delay={0.05}>
           <div className="lp-faq-card" style={{
-            background: 'linear-gradient(150deg, var(--pub-bg-mid) 0%, var(--pub-bg-alt) 100%)',
+            background: 'var(--bg-card)',
             border: '1px solid var(--pub-border-dim)',
             borderRadius: '16px',
             overflow: 'hidden',

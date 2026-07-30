@@ -61,7 +61,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
   const overlay    = isDark ? 'rgba(6,14,24,0.8)'              : 'rgba(0,0,0,0.45)'
-  const bg         = isDark ? '#0D1B2A'                         : '#ffffff'
+  const bg         = 'var(--bg-card)'
   const border     = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(13,27,42,0.12)'
   const headingClr = isDark ? '#ffffff'                         : '#0D1B2A'
   const bodyClr    = isDark ? 'rgba(255,255,255,0.82)'          : 'rgba(13,27,42,0.7)'

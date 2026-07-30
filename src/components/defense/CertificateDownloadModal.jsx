@@ -117,7 +117,7 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
     }
   }
 
-  const bg      = isDark ? '#0D1B2A' : '#FFFFFF'
+  const bg      = 'var(--bg-card)'
   const overlay = 'rgba(0,0,0,0.6)'
   const border  = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(13,27,42,0.12)'
   const text1   = isDark ? '#FFFFFF'               : '#0D1B2A'

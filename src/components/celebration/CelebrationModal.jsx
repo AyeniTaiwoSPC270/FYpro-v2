@@ -90,9 +90,7 @@ export default function CelebrationModal({ open, onClose, emoji, headline, body,
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             onClick={e => e.stopPropagation()}
             style={{
-              background: isDark
-                ? 'linear-gradient(145deg, #0D1B2A 0%, #0F2235 100%)'
-                : '#ffffff',
+              background: 'var(--bg-card)',
               border: isDark ? '1px solid rgba(0,102,255,0.25)' : '1px solid rgba(13,27,42,0.1)',
               borderRadius: 20,
               padding: '36px 32px',
