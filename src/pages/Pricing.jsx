@@ -448,7 +448,6 @@ function PricingCards() {
             />
           </div>
         )}
-        {!failedPayment && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 items-start pt-6">
 
           {/* ── Free ── */}
@@ -598,7 +597,6 @@ function PricingCards() {
           </Reveal>
 
         </div>
-        )}
         {payError && (
           <p className="mt-4 text-center text-red-400 text-sm font-sans">{payError}</p>
         )}
