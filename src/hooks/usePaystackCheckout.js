@@ -4,9 +4,12 @@ import { supabase } from '../lib/supabase'
 import { trackEvent } from '../lib/analytics'
 
 export function resolveFailurePayload(data, { tier, reference }) {
-  if (!data || data.status === 'success' || data.status === 'already_processed') return null
+  if (!data) return null
+  if (data.status === 'success' || data.status === 'already_processed') return null
+  if (data.status === 'failed') return { tier, reference, reason: data.reason || null }
   if (data.status === 'pending' || data.status === 'not_found') return null
-  return { tier, reference, reason: data.reason || null }
+  if (data.error === 'Payment could not be verified') return { tier, reference, reason: data.reason || null }
+  return null
 }
 
 export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {

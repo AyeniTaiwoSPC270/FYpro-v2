@@ -53,4 +53,16 @@ describe('resolveFailurePayload', () => {
   it('returns null for a null response', () => {
     expect(resolveFailurePayload(null, ctx)).toBeNull()
   })
+
+  it('returns null for an auth error (not a payment decline)', () => {
+    expect(resolveFailurePayload({ error: 'Unauthorized' }, ctx)).toBeNull()
+  })
+
+  it('returns null for a rate-limit error (not a payment decline)', () => {
+    expect(resolveFailurePayload({ error: 'Too many requests' }, ctx)).toBeNull()
+  })
+
+  it('returns null for a generic/infra error that is not the known-rejection shape', () => {
+    expect(resolveFailurePayload({ error: 'Internal error' }, ctx)).toBeNull()
+  })
 })
