@@ -6,12 +6,12 @@ import ApiErrorBox from './ApiErrorBox'
 // Paystack references: alphanumeric + hyphens/underscores, 8-100 chars, no spaces
 const REF_PATTERN = /^[A-Za-z0-9_-]{8,100}$/
 
-export default function PaymentIssueModal({ isOpen, onClose }) {
+export default function PaymentIssueModal({ isOpen, onClose, initialRef = '' }) {
   const { session } = useUser()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
-  const [transactionRef, setTransactionRef] = useState('')
+  const [transactionRef, setTransactionRef] = useState(initialRef)
   const [description, setDescription]       = useState('')
   const [isSubmitting, setIsSubmitting]     = useState(false)
   const [error, setError]                   = useState(null)
@@ -21,7 +21,7 @@ export default function PaymentIssueModal({ isOpen, onClose }) {
 
   function handleClose() {
     if (isSubmitting) return
-    setTransactionRef('')
+    setTransactionRef(initialRef)
     setDescription('')
     setError(null)
     setSubmitted(false)
