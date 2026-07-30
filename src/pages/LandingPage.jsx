@@ -1210,7 +1210,7 @@ function ExpressCtaSection() {
 
 function Footer() {
   return (
-    <footer data-footer="true" className="relative border-t border-white/[0.06]" style={{ background: 'transparent', padding: '56px 0 28px' }}>
+    <footer data-footer="true" className="relative border-t border-white/[0.06]" style={{ background: 'var(--bg-sidebar)', padding: '56px 0 28px' }}>
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
           <Reveal>

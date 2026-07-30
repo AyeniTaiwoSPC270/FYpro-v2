@@ -830,12 +830,6 @@ html {
   background-image: none !important;
 }
 
-/* ── Footer ──────────────────────────────────────────────────────── */
-[data-theme="light"] [data-pub] [data-footer] {
-  background: var(--pub-bg-footer) !important;
-  border-top-color: rgba(13,27,42,0.09) !important;
-}
-
 /* ── Feature cards: white gradient + real shadow ─────────────────── */
 [data-theme="light"] [data-pub] .lp-feat-lift > div {
   background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%) !important;
@@ -938,18 +932,6 @@ html {
 [data-theme="light"] nav .bg-white\/\[0\.04\] { background: rgba(0,0,0,0.02) !important; }
 [data-theme="light"] nav .bg-white\/85 { background: rgba(13,27,42,0.85) !important; }
 [data-theme="light"] nav .bg-white\/\[0\.08\] { background: rgba(0,0,0,0.06) !important; }
-
-/* ── Hero overlay: keep dot grid, remove blue ellipse radial ─────── */
-[data-theme="light"] [data-pub] .lp-hero-overlay {
-  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
-  background-size: 28px 28px !important;
-}
-
-/* ── Pricing page hero: remove blue ellipse radial ───────────────── */
-[data-theme="light"] .lp-pricing-hero-overlay {
-  background-image: radial-gradient(circle, rgba(0,102,255,0.04) 1px, transparent 1px) !important;
-  background-size: 28px 28px !important;
-}
 
 /* ── Defense Simulator mockup: light mode app appearance ─────────── */
 [data-theme="light"] [data-pub] .lp-hero-mockup-outer {

@@ -222,7 +222,7 @@ function PricingHero() {
       <div
         className="lp-pricing-hero-overlay absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',
+          backgroundImage: 'var(--dot-bg-image)',
           backgroundSize: '28px 28px',
         }}
       />
@@ -866,8 +866,7 @@ export default function Pricing() {
       className="min-h-screen bg-[var(--bg-base)]"
       data-pub="true"
       style={{
-        backgroundImage:
-          'radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',
+        backgroundImage: 'var(--dot-bg-image)',
         backgroundSize: '28px 28px',
       }}
     >
