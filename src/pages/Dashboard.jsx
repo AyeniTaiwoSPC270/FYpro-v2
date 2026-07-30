@@ -13,6 +13,7 @@ import { downloadProgressReport } from '../lib/generateReport'
 import { showToast } from '../components/Toast'
 import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
 import PaymentIssueModal from '../components/PaymentIssueModal'
+import PaymentFailedBanner from '../components/PaymentFailedBanner'
 import Spinner from '../components/Spinner'
 import BadgeRow from '../components/badges/BadgeRow'
 import MomentumRing from '../components/momentum/MomentumRing'
@@ -128,7 +129,7 @@ export default function Dashboard() {
       getExpressProject(user.id).then(p => setHasExpressProject(!!p))
     )
   }, [user?.id, features])
-  const { handlePay, payError } = usePaystackCheckout({ loginReturnUrl: '/dashboard' })
+  const { handlePay, payError, failedPayment, retryFailedPayment, setFailedPayment } = usePaystackCheckout({ loginReturnUrl: '/dashboard' })
 
   useEffect(() => { if (payError) showToastMessage(payError) }, [payError])
 
@@ -394,6 +395,28 @@ export default function Dashboard() {
         {deleteConfirmId && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             <DeleteProjectModal onCancel={() => { if (!deleting) setDeleteConfirmId(null) }} onConfirm={handleConfirmDelete} deleting={deleting} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {failedPayment && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(6,14,24,0.7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            <PaymentFailedBanner
+              tier={failedPayment.tier}
+              reference={failedPayment.reference}
+              reason={failedPayment.reason}
+              onRetry={retryFailedPayment}
+              onDismiss={() => setFailedPayment(null)}
+            />
           </motion.div>
         )}
       </AnimatePresence>
