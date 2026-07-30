@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import PaymentFailedBanner from '../components/PaymentFailedBanner'
 
 const CONFETTI_COLORS = [
   '#3B82F6', '#60A5FA', '#22C55E', '#4ADE80',
@@ -55,6 +56,8 @@ export default function PaymentSuccess() {
   const [tier, setTier] = useState(null)
   const [showConfetti, setShowConfetti] = useState(true)
   const [verifying, setVerifying] = useState(true)
+  const [failed, setFailed] = useState(false)
+  const [failReason, setFailReason] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -70,7 +73,14 @@ export default function PaymentSuccess() {
           body: JSON.stringify({ reference }),
         })
         const data = await res.json()
-        if (!res.ok) throw new Error('failed')
+        if (!res.ok) {
+          if (!cancelled) {
+            setFailReason(data.reason || null)
+            setFailed(true)
+            setVerifying(false)
+          }
+          return
+        }
         if (!cancelled) {
           setTier(data.tier)
           // Invalidate entitlement cache so usePaidFeatures re-fetches on next mount.
@@ -80,14 +90,17 @@ export default function PaymentSuccess() {
           if (session?.user?.id) localStorage.removeItem(`fypro_eo_${session.user.id}`)
         }
       } catch {
-        if (!cancelled) navigate('/pricing?error=payment_failed', { replace: true })
+        if (!cancelled) {
+          setFailed(true)
+          setVerifying(false)
+        }
         return
       }
       if (!cancelled) setVerifying(false)
     }
     verifyPayment()
     return () => { cancelled = true }
-  }, [reference, navigate])
+  }, [reference])
 
   useEffect(() => {
     const t = setTimeout(() => setShowConfetti(false), 2600)
@@ -115,6 +128,28 @@ export default function PaymentSuccess() {
           animation: 'spin 0.7s linear infinite',
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
+
+  if (failed) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-base)',
+        backgroundImage: 'var(--dot-bg-image)',
+        backgroundSize: '28px 28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+      }}>
+        <PaymentFailedBanner
+          tier={null}
+          reference={reference}
+          reason={failReason}
+          onRetry={() => navigate('/pricing')}
+        />
       </div>
     )
   }
