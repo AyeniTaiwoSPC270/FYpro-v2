@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { trackEvent } from '../lib/analytics'
 
+export function resolveFailurePayload(data, { tier, reference }) {
+  if (!data || data.status === 'success' || data.status === 'already_processed') return null
+  if (data.status === 'pending' || data.status === 'not_found') return null
+  return { tier, reference, reason: data.reason || null }
+}
+
 export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
   const navigate = useNavigate()
   const [paying, setPaying] = useState(null)
   const [verifying, setVerifying] = useState(false)
   const [payError, setPayError] = useState(null)
   const [blockInfo, setBlockInfo] = useState(null)
+  const [failedPayment, setFailedPayment] = useState(null)
   const pollingIntervalRef = useRef(null)
   const isInitiatingRef   = useRef(false)
 
@@ -151,7 +158,10 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
               .then(data => {
                 if (data.status === 'success' || data.status === 'already_processed') {
                   navigate(`/payment-success?reference=${pendingReference}`)
+                  return
                 }
+                const failure = resolveFailurePayload(data, { tier, reference: pendingReference })
+                if (failure) setFailedPayment(failure)
               })
               .catch(() => {})
             })
@@ -170,6 +180,10 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
           if (pollData.status === 'success') {
             stopPolling()
             navigate(`/payment-success?reference=${pendingReference}`)
+          } else if (pollData.status === 'failed') {
+            stopPolling()
+            const failure = resolveFailurePayload(pollData, { tier, reference: pendingReference })
+            if (failure) setFailedPayment(failure)
           }
         } catch {
           // keep polling
@@ -183,5 +197,15 @@ export function usePaystackCheckout({ loginReturnUrl = '/pricing' } = {}) {
     }
   }, [navigate, loginReturnUrl, loadScript, stopPolling])
 
-  return { handlePay, paying, verifying, payError, blockInfo, setBlockInfo }
+  const retryFailedPayment = useCallback(() => {
+    if (!failedPayment?.tier) return
+    const tier = failedPayment.tier
+    setFailedPayment(null)
+    handlePay(tier)
+  }, [failedPayment, handlePay])
+
+  return {
+    handlePay, paying, verifying, payError, blockInfo, setBlockInfo,
+    failedPayment, setFailedPayment, retryFailedPayment,
+  }
 }
