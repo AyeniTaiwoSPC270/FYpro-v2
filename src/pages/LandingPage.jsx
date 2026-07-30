@@ -328,8 +328,8 @@ function TestimonialsTickerSection() {
       onMouseEnter={() => animRef.current?.pause()}
       onMouseLeave={() => animRef.current?.play()}
     >
-      <div className="absolute left-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to right, var(--pub-bg), transparent)' }} />
-      <div className="absolute right-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to left, var(--pub-bg), transparent)' }} />
+      <div className="absolute left-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to right, var(--bg-base), transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-0 w-[120px] z-[2] pointer-events-none" style={{ background: 'linear-gradient(to left, var(--bg-base), transparent)' }} />
       <div ref={scope} className="flex gap-[18px]" style={{ width: 'max-content' }}>
         {[...TESTI_DATA, ...TESTI_DATA].map((t, i) => <TestiCard key={i} {...t} fixed />)}
       </div>
@@ -652,13 +652,8 @@ function Hero() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
       className="min-h-screen flex flex-col items-center text-center relative overflow-hidden pt-[90px] sm:pt-[140px] pb-16 sm:pb-20 px-6"
-      style={{ background: 'var(--pub-bg)' }}
+      style={{ background: 'transparent' }}
     >
-      {/* Dot grid texture */}
-      <div className="lp-hero-overlay absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
-        backgroundSize: '28px 28px',
-      }} />
 
       {/* Eyebrow */}
       <motion.div
@@ -827,8 +822,7 @@ function FeatureCardWrapper({ f, i }) {
 
 function FeaturesSection() {
   return (
-    <section id="features" className="py-24 relative" style={{ background: 'var(--pub-bg)' }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+    <section id="features" className="py-24 relative" style={{ background: 'transparent' }}>
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Core Features</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>Built for the gaps supervisors leave behind</Reveal>
@@ -908,8 +902,7 @@ function HowItWorks() {
 
 function TestimonialsSection() {
   return (
-    <section className="py-24 relative" style={{ background: 'var(--pub-bg)' }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.03) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+    <section className="py-24 relative" style={{ background: 'transparent' }}>
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative">
         <Reveal as="span" className="lp-kicker block font-mono text-[0.68rem] tracking-[0.14em] uppercase text-blue-brand text-center mb-3.5">Student Voices</Reveal>
         <Reveal delay={0.05} as="h2" className="font-serif text-center text-white leading-[1.15] mb-3.5" style={{ fontSize: 'clamp(1.8rem,4vw,2.9rem)' }}>What it felt like to go from confused to confident</Reveal>
@@ -1130,7 +1123,7 @@ function TrustedCounter() {
   if (!label) return null
 
   return (
-    <div className="py-8 relative" style={{ background: 'var(--pub-bg)' }}>
+    <div className="py-8 relative" style={{ background: 'transparent' }}>
       <Reveal className="flex justify-center">
         <div
           className="inline-flex items-center gap-3 rounded-full px-6 py-2.5"
@@ -1161,7 +1154,7 @@ function TrustedCounter() {
 
 function FinalCTA() {
   return (
-    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: 'var(--pub-bg)' }}>
+    <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: 'transparent' }}>
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />
@@ -1217,8 +1210,7 @@ function ExpressCtaSection() {
 
 function Footer() {
   return (
-    <footer data-footer="true" className="relative border-t border-white/[0.06]" style={{ background: 'var(--pub-bg)', padding: '56px 0 28px' }}>
-      <div className="absolute top-0 left-0 right-0 h-[72px] pointer-events-none z-0" style={{ background: 'linear-gradient(to bottom, var(--pub-bg), transparent)' }} />
+    <footer data-footer="true" className="relative border-t border-white/[0.06]" style={{ background: 'transparent', padding: '56px 0 28px' }}>
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="grid gap-7 mb-11 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[240px_1fr_1fr_1fr]">
           <Reveal>
@@ -1317,7 +1309,7 @@ export default function LandingPage() {
       transition={{ duration: 0.6 }}
       data-landing-page="true"
       data-pub="true"
-      style={{ background: 'var(--pub-bg)' }}
+      style={{ background: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
     >
       <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: scrollProgress + '%', backgroundColor: '#2563EB', zIndex: 9999, transition: 'width 0.1s linear' }} />
       <Navbar />
