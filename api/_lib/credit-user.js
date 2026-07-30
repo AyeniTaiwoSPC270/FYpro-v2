@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase-admin.js';
 import { expectedAmountKobo } from './pricing.js';
 
-export async function creditUser({ reference, paystackAmountKobo, paystackStatus, paystackCurrency, source }) {
+export async function creditUser({ reference, paystackAmountKobo, paystackStatus, paystackCurrency, paystackGatewayResponse, source }) {
   // 1. Look up payment row by reference
   const { data: payment, error: lookupErr } = await supabaseAdmin
     .from('payments')
@@ -28,6 +28,7 @@ export async function creditUser({ reference, paystackAmountKobo, paystackStatus
       .eq('paystack_reference', reference);
     const e = new Error('Paystack status not success: ' + paystackStatus);
     e.code = 'KNOWN_REJECTION';
+    e.reason = paystackGatewayResponse || null;
     throw e;
   }
 

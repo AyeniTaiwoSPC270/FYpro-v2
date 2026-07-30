@@ -119,6 +119,24 @@ describe('creditUser — rejection paths', () => {
     expect(findCall('upsert', 'user_entitlements')).toBeUndefined()
   })
 
+  it('attaches the Paystack gateway_response as .reason when status is not success', async () => {
+    h.db = makeSupabaseMock({
+      payments: [{ data: pendingPayment() }, { data: null }],
+    })
+    await expect(
+      creditUser(validParams({ paystackStatus: 'failed', paystackGatewayResponse: 'Insufficient Funds' }))
+    ).rejects.toMatchObject({ code: 'KNOWN_REJECTION', reason: 'Insufficient Funds' })
+  })
+
+  it('sets .reason to null when Paystack does not provide a gateway_response', async () => {
+    h.db = makeSupabaseMock({
+      payments: [{ data: pendingPayment() }, { data: null }],
+    })
+    await expect(
+      creditUser(validParams({ paystackStatus: 'failed' }))
+    ).rejects.toMatchObject({ code: 'KNOWN_REJECTION', reason: null })
+  })
+
   it('rejects when currency is not NGN', async () => {
     h.db = makeSupabaseMock({ payments: [{ data: pendingPayment() }] })
     await expect(creditUser(validParams({ paystackCurrency: 'USD' })))
