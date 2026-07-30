@@ -375,8 +375,19 @@
 [data-theme="light"] .app-content .tv-paper-citations,
 .light .app-content .tv-paper-citations { color: var(--color-blue-primary) !important; }
 
-/* ── 6. Landing page — force dark mode variables regardless of theme ──── */
-[data-landing-page="true"] {
+/* ── 6. Landing page — solid dark-blue canvas (DARK MODE ONLY) ─────────
+   Re-declares the dark palette on the landing-page subtree so the hero and
+   the transparent sections sit on one flat navy canvas.
+
+   This MUST stay scoped to the dark theme. Custom properties inherit, so an
+   unscoped [data-landing-page] block redefines --bg-base/--bg-card for the
+   whole subtree and beats :root[data-theme="light"]. The --pub-* tokens are
+   deliberately not re-declared here, so in light mode --pub-text stayed dark
+   and every heading rendered dark-on-dark.
+
+   :not([data-theme="light"]) rather than [data-theme="dark"] so the default
+   (attribute not yet applied on first paint) still gets the dark canvas. */
+:root:not([data-theme="light"]) [data-landing-page="true"] {
   background: #060E18;
   --bg-base:    #0A0F1C;
   --bg-card:    #0D1425;
@@ -974,6 +985,20 @@ html {
   border: 1px solid rgba(0,102,255,0.25) !important;
   box-shadow: 0 0 12px rgba(0,102,255,0.08) !important;
   opacity: 1 !important;
+}
+
+/* ── Accent blue text: #60A5FA is tuned for the dark canvas and drops to
+      ~2.2:1 on the light one. #0066FF matches what .lp-hero-eyebrow and
+      .lp-stat-num-wrap already switch to above. !important is required —
+      these accents are set via inline style attributes in the JSX. ─────── */
+[data-theme="light"] [data-pub] .lp-accent {
+  color: #0066FF !important;
+}
+
+/* ── Section dividers: bg-white/[0.04] is invisible on a light canvas.
+      The nav-scoped rule above misses these — they are siblings of <nav>. ── */
+[data-theme="light"] [data-pub] .lp-section-divider {
+  background-color: rgba(13,27,42,0.09) !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════
