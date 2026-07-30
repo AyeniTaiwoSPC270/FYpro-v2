@@ -644,48 +644,21 @@ function HeroSub() {
 function Hero() {
   const heroRef = useRef(null)
   const { theme } = useTheme()
-  const [spotPos, setSpotPos] = useState({ x: '50%', y: '42%' })
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el) return
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect()
-      setSpotPos({ x: e.clientX - r.left, y: e.clientY - r.top })
-    }
-    const onLeave = () => setSpotPos({ x: '50%', y: '42%' })
-    el.addEventListener('mousemove', onMove, { passive: true })
-    el.addEventListener('mouseleave', onLeave)
-    return () => { el.removeEventListener('mousemove', onMove); el.removeEventListener('mouseleave', onLeave) }
-  }, [])
 
   return (
     <motion.section
       ref={heroRef}
       initial={{ opacity: 0 }}
-      animate={{
-        opacity: 1,
-        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-      }}
-      transition={{
-        opacity: { duration: 0.6 },
-        backgroundPosition: { duration: 8, ease: 'easeInOut', repeat: Infinity },
-      }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
       className="min-h-screen flex flex-col items-center text-center relative overflow-hidden pt-[90px] sm:pt-[140px] pb-16 sm:pb-20 px-6"
-      style={{
-        background: 'linear-gradient(135deg, var(--pub-bg) 0%, var(--pub-bg-alt) 28%, var(--pub-bg-mid) 54%, var(--pub-bg-alt) 80%, var(--pub-bg) 100%)',
-        backgroundSize: '400% 400%',
-      }}
+      style={{ background: 'var(--pub-bg)' }}
     >
-      {/* Dot grid + blue radial */}
+      {/* Dot grid texture */}
       <div className="lp-hero-overlay absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(ellipse 80% 55% at 50% 10%, rgba(0,102,255,0.18) 0%, transparent 65%), radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
-        backgroundSize: '100% 100%, 28px 28px',
+        backgroundImage: 'radial-gradient(circle, rgba(0,102,255,0.045) 1px, transparent 1px)',
+        backgroundSize: '28px 28px',
       }} />
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-[100px] pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--pub-bg))' }} />
-      {/* Cursor spotlight */}
-      <div className="absolute pointer-events-none w-[700px] h-[700px] rounded-full z-0 will-change-[left,top]"
-        style={{ left: spotPos.x, top: spotPos.y, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(0,102,255,0.07) 0%, transparent 65%)', transition: 'left 0.1s ease, top 0.1s ease' }} />
 
       {/* Eyebrow */}
       <motion.div
@@ -726,7 +699,6 @@ function Hero() {
 
       {/* App Mockup */}
       <div className="relative z-[1] w-full max-w-[880px]">
-        <div className="absolute pointer-events-none blur-[28px]" style={{ top: '8%', left: '5%', right: '5%', bottom: -40, background: 'radial-gradient(ellipse, rgba(0,102,255,0.28) 0%, transparent 70%)' }} />
         <motion.img
           src={theme === 'light' ? '/FYPro-Product-Showcase-light.png' : '/FYPro-Product-Showcase-v2.png'}
           alt="FYPro — from topic to defence, powered by AI"
@@ -1190,8 +1162,6 @@ function TrustedCounter() {
 function FinalCTA() {
   return (
     <section className="pt-16 pb-24 relative overflow-hidden" style={{ background: 'var(--pub-bg)' }}>
-      <div className="lp-cta-room" aria-hidden="true" />
-      <div className="lp-cta-glow" aria-hidden="true" />
       <div className="max-w-[1080px] mx-auto px-5 md:px-10 relative z-[1]">
         <div className="max-w-[620px] mx-auto text-center">
           <ShieldIcon size={56} className="block mx-auto mb-[22px]" style={{ filter: 'drop-shadow(0 4px 18px rgba(0,102,255,0.45))' }} />

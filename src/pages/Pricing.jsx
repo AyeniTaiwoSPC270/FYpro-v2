@@ -222,9 +222,8 @@ function PricingHero() {
       <div
         className="lp-pricing-hero-overlay absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage:
-            'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(37,99,235,0.13) 0%, transparent 60%), radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',
-          backgroundSize: '100% 100%, 28px 28px',
+          backgroundImage: 'radial-gradient(circle, rgba(37,99,235,0.04) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
         }}
       />
       <div className="max-w-6xl mx-auto px-6 relative z-[1]">
@@ -795,13 +794,6 @@ function FAQSection() {
 function BottomCTA() {
   return (
     <section className="mt-24 mb-24 text-center px-6 relative overflow-hidden">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 55% 65% at 50% 50%, rgba(37,99,235,0.1) 0%, transparent 65%)',
-        }}
-      />
       <div className="relative z-[1]">
         <Reveal as="h2" className="font-serif text-4xl text-white">
           Ready to stop guessing?
