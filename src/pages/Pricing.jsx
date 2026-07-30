@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { supabase } from '../lib/supabase'
 import FyproLogo from '../components/FyproLogo'
+import PaymentFailedBanner from '../components/PaymentFailedBanner'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -414,7 +415,7 @@ function BlockAlert({ message, onDismiss }) {
 }
 
 function PricingCards() {
-  const { handlePay, paying, payError, blockInfo, setBlockInfo } = usePaystackCheckout()
+  const { handlePay, paying, payError, blockInfo, setBlockInfo, failedPayment, retryFailedPayment, setFailedPayment } = usePaystackCheckout()
   const [isUpgrader, setIsUpgrader] = useState(false)
 
   useEffect(() => {
@@ -436,6 +437,18 @@ function PricingCards() {
     <section>
       <div className="max-w-6xl mx-auto px-6">
         {/* pt-6 gives the floating badge room above the featured card */}
+        {failedPayment && (
+          <div className="mt-16">
+            <PaymentFailedBanner
+              tier={failedPayment.tier}
+              reference={failedPayment.reference}
+              reason={failedPayment.reason}
+              onRetry={retryFailedPayment}
+              onDismiss={() => setFailedPayment(null)}
+            />
+          </div>
+        )}
+        {!failedPayment && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 items-start pt-6">
 
           {/* ── Free ── */}
@@ -585,6 +598,7 @@ function PricingCards() {
           </Reveal>
 
         </div>
+        )}
         {payError && (
           <p className="mt-4 text-center text-red-400 text-sm font-sans">{payError}</p>
         )}
