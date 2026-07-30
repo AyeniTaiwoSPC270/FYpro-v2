@@ -180,7 +180,7 @@ async function handleCheckStatus(req, res) {
   if (error || !data) return res.status(404).json({ status: 'not_found' });
 
   return res.status(200).json({
-    status: data.status === 'success' ? 'success' : 'pending',
+    status: data.status === 'success' ? 'success' : data.status === 'failed' ? 'failed' : 'pending',
   });
 }
 
@@ -310,6 +310,7 @@ async function handleVerify(req, res) {
       paystackAmountKobo: paystackData.amount,
       paystackStatus:     paystackData.status,
       paystackCurrency:   paystackData.currency,
+      paystackGatewayResponse: paystackData.gateway_response,
       source:             'verify',
     });
 
@@ -343,7 +344,7 @@ async function handleVerify(req, res) {
     if (err.code === 'KNOWN_REJECTION') {
       await sendTelegramAlert(`❌ Payment failed: ${user.email} - ${err.message}`)
       traceLog(traceId, 'warn', '[payments/verify] known rejection', { reference, reason: err.message });
-      return res.status(400).json({ error: 'Payment could not be verified' });
+      return res.status(400).json({ error: 'Payment could not be verified', reason: err.reason });
     }
     traceLog(traceId, 'error', '[payments/verify] unexpected error', { reference, message: err.message });
     return res.status(500).json({ error: 'Internal error' });

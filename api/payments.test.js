@@ -418,6 +418,25 @@ describe('verify — credit routing', () => {
     expect(h.telegramAlert).toHaveBeenCalledTimes(1);
   });
 
+  it('includes the Paystack decline reason in the error response on a KNOWN_REJECTION', async () => {
+    stubVerifyFetch({ amount: 200000, status: 'failed', currency: 'NGN', gateway_response: 'Insufficient Funds' });
+    h.creditUser.mockRejectedValue(Object.assign(new Error('Paystack status not success: failed'), { code: 'KNOWN_REJECTION', reason: 'Insufficient Funds' }));
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: 'Payment could not be verified', reason: 'Insufficient Funds' });
+  });
+
+  it('passes gateway_response through to creditUser as paystackGatewayResponse', async () => {
+    stubVerifyFetch({ amount: 200000, status: 'failed', currency: 'NGN', gateway_response: 'Declined' });
+    h.creditUser.mockRejectedValue(Object.assign(new Error('nope'), { code: 'KNOWN_REJECTION', reason: 'Declined' }));
+    const req = actionReq({ body: { reference: 'FYP_x' } });
+    const res = makeRes();
+    await handler(req, res);
+    expect(h.creditUser).toHaveBeenCalledWith(expect.objectContaining({ paystackGatewayResponse: 'Declined' }));
+  });
+
   it('returns 500 on an unexpected creditUser failure', async () => {
     stubVerifyFetch({ amount: 200000, status: 'success', currency: 'NGN' });
     h.creditUser.mockRejectedValue(new Error('db exploded'));
@@ -425,6 +444,45 @@ describe('verify — credit routing', () => {
     const res = makeRes();
     await handler(req, res);
     expect(res.statusCode).toBe(500);
+  });
+});
+
+// ─── check-status (the polling endpoint) ────────────────────────────────────
+//
+// This is the only signal a still-open popup-closed flow gets while polling.
+// It must distinguish a genuinely failed payment from one still pending —
+// collapsing them together means a declined transaction polls forever.
+
+function checkStatusReq({ reference = 'FYP_x', auth = true } = {}) {
+  const headers = {};
+  if (auth) headers['authorization'] = 'Bearer test-token';
+  return makeReq({ method: 'GET', headers, query: { action: 'check-status', reference } });
+}
+
+describe('check-status', () => {
+  it('returns failed (not pending) when the underlying payment row is status: failed', async () => {
+    h.from = vi.fn(() => paymentLookupBuilder({ status: 'failed' }));
+    const req = checkStatusReq();
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ status: 'failed' });
+  });
+
+  it('returns pending when the row is still pending', async () => {
+    h.from = vi.fn(() => paymentLookupBuilder({ status: 'pending' }));
+    const req = checkStatusReq();
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.body).toEqual({ status: 'pending' });
+  });
+
+  it('returns success when the row is success', async () => {
+    h.from = vi.fn(() => paymentLookupBuilder({ status: 'success' }));
+    const req = checkStatusReq();
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.body).toEqual({ status: 'success' });
   });
 });
 
