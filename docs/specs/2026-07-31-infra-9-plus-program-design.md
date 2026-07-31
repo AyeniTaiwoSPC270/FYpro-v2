@@ -151,14 +151,16 @@ them. A pull request that breaks every test can merge green.
    containing a deliberate type error and confirming the merge control is disabled.
 5. A production deploy cannot bypass the gate.
 
+6. Local and CI test runs cover the same files. Today they do not: `npm run test` locally collects
+   74 test files / 936 tests, but 43 of those files are stale duplicates under `api/.worktrees/`,
+   which is gitignored and therefore absent in CI. The real suite is **41 files / 507 tests**. A
+   gate is not meaningful while "passes locally" and "passes in CI" mean different things.
+
 ### Known free-tier risks
 
-- **Criterion 4 may be unavailable.** Branch protection and rulesets on *private* repositories have
-  historically required a paid GitHub plan. Confirm what `AyeniTaiwoSPC270/FYpro-v2` actually
-  permits before committing to this criterion. If unavailable, substitute: CI failure fires a
-  Telegram alert, and the merge discipline is documented rather than enforced. The category then
-  caps at 8.5 until the repo is public or the plan changes — record that honestly rather than
-  scoring around it.
+- **Criterion 4 is available — resolved 2026-07-31.** `AyeniTaiwoSPC270/FYpro-v2` is a **public**
+  repository, so branch protection and rulesets are free. The contingency previously recorded here
+  (cap CI/CD at 8.5) is withdrawn.
 - **Criterion 5 has no clean free path.** Vercel Hobby deploys on push to `main` independently of
   GitHub Actions, and deployment protection is a Pro feature. Workaround: make `npm run build` run
   typecheck and tests as part of the build, so a broken commit fails the Vercel build itself.
@@ -262,13 +264,16 @@ not quietly inflated later.
 **Lifts:** API Design 7.5 → 9. **Assists:** Database Design.
 
 **Current state:** `api/admin.js` is 2,544 lines, `api/notify.js` 1,790, `api/ai.js` 1,195 — the
-12-function Hobby ceiling has pushed several endpoints into god-endpoint shape. Two stale git
-worktrees (`feat-onboarding-questions`, `login-notifications`) sit inside `api/.worktrees/`,
-carrying duplicate source and test files inside the Vercel functions directory.
+12-function Hobby ceiling has pushed several endpoints into god-endpoint shape.
 
 ### Exit criteria
 
-1. `api/.worktrees/` is removed and prevented from recurring (gitignore or worktree relocation).
+1. *(The stale `api/.worktrees/` directories move into W1 — see §7 criterion 6. **Correction:** an
+   earlier draft of this spec implied they were deployed to Vercel. They are not. `.worktrees` is
+   gitignored (`.gitignore:35`) and untracked, so it never reaches the repo, CI, or a deploy. It is
+   also no longer a registered git worktree — these are orphaned directories. The only real damage
+   is that local `npm run test` silently runs 43 stale duplicate test files, so local and CI results
+   diverge. That makes it a W1 gate-integrity problem, not a W5 deployment problem.)*
 2. *(Renumbering the duplicate `0029_*`/`0034_*` migrations moves into W1 — see §7 criterion 2 —
    so the lint and the fix land together.)*
 3. `admin.js`, `notify.js`, and `ai.js` are decomposed into per-action handler modules under
@@ -285,8 +290,9 @@ carrying duplicate source and test files inside the Vercel functions directory.
 
 **Lifts:** Testing 7.0 → 9.
 
-**Current state:** roughly 31 real test files (16 under `src/`, 15 under `api/`). Coverage is
-partial and unenforced.
+**Current state (measured 2026-07-31):** 41 real test files, 507 passing tests, ~25s wall clock.
+Coverage is partial and unenforced. *(A naive `npm run test` reports 74 files / 936 tests; the
+difference is stale `api/.worktrees/` duplicates, addressed in W1.)*
 
 ### Exit criteria
 
