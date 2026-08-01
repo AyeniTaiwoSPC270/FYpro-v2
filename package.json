@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint:migrations": "node scripts/lint-migrations.js"
+    "lint:migrations": "node scripts/lint-migrations.js",
+    "lint:api": "node scripts/lint-api-functions.js"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
