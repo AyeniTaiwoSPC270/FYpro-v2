@@ -11,17 +11,17 @@ permissions:
 
 jobs:
   ci:
-    name: Audit · Lint · Build
+    name: Audit · Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -46,6 +46,21 @@ jobs:
             echo "No ESLint config found — skipping lint."
           fi
 
+      # Structural guards — cheap, and they fail fast before the slower steps.
+      - name: Lint migration numbering
+        run: npm run lint:migrations
+
+      - name: Guard Vercel function count
+        run: npm run lint:api
+
+      # tsc --noEmit with strictNullChecks + noImplicitAny (tsconfig.json).
+      - name: Typecheck
+        run: npm run typecheck
+
+      # vitest run — 43 files / 518 tests at time of writing (~25s).
+      - name: Test
+        run: npm run test
+
       - name: Build
         run: npm run build
 
@@ -66,6 +81,10 @@ jobs:
                 '|-------|--------|',
                 '| Security audit (`--audit-level=moderate`) | ✅ Clean |',
                 '| ESLint | ✅ No errors |',
+                '| Migration numbering | ✅ No duplicate prefixes |',
+                '| Vercel function count | ✅ Within 12 |',
+                '| Typecheck (`tsc --noEmit`) | ✅ No errors |',
+                '| Tests (`vitest run`) | ✅ Passing |',
                 '| Vite build | ✅ Success |',
               ].join('\n')
             })

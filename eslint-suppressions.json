@@ -1,0 +1,519 @@
+{
+  "api/_lib/credit-user.js": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "api/_lib/credit-user.test.js": {
+    "no-unused-vars": {
+      "count": 4
+    }
+  },
+  "api/_lib/papers.js": {
+    "no-control-regex": {
+      "count": 2
+    }
+  },
+  "api/admin.js": {
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "api/certificate.js": {
+    "no-unused-vars": {
+      "count": 3
+    }
+  },
+  "api/notify.js": {
+    "no-empty": {
+      "count": 7
+    },
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "api/share-card.js": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "public/tools/brain.js": {
+    "no-unused-vars": {
+      "count": 4
+    }
+  },
+  "src/components/ApiErrorBox.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/CookieBanner.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/NotificationPanel.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/PWAInstallPrompt.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/PaymentFailedBanner.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/ProtectedRoute.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/components/Toast.jsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/components/badges/AchievementsRow.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/badges/BadgeRow.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/badges/DefenseReadyBadge.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/badges/StepBadge.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/components/celebration/CelebrationModal.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/celebration/DefenseCelebration.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/changelog/AnnouncementBanner.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/defense/CertificateDownloadModal.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/defense/CertificateUnlock.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/feedback/FeedbackThumbs.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/onboarding/ReferralCapture.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/profile/AvatarEditor.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/components/share/ShareCardStyleModal.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/context/AppContext.jsx": {
+    "no-empty": {
+      "count": 3
+    },
+    "react-hooks/immutability": {
+      "count": 2
+    },
+    "react-refresh/only-export-components": {
+      "count": 2
+    }
+  },
+  "src/context/ThemeContext.jsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/features/chapterArchitect/ChapterArchitect.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/dashboard/DashProgressJourney.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/dashboard/DashQuickActions.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/dashboard/DashSidebar.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/features/dashboard/DashStatCards.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/dashboard/DashTopBar.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/features/dashboard/DashUsageSection.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/features/dashboard/ProjectsGrid.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/features/dashboard/_shared.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-refresh/only-export-components": {
+      "count": 8
+    }
+  },
+  "src/features/defensePrep/DefensePrep.jsx": {
+    "no-unused-vars": {
+      "count": 3
+    },
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/features/expressDefense/DefenceBrief.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    }
+  },
+  "src/features/literatureMap/LiteratureMap.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/methodology/MethodologyAdvisor.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/projectReviewer/ProjectReviewer.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/features/shell/AppShell.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    },
+    "react-hooks/refs": {
+      "count": 6
+    }
+  },
+  "src/features/supervisorEmail/SupervisorEmail.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/supervisorPrep/SupervisorPrep.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/topicValidator/TopicValidator.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/features/writingPlanner/WritingPlanner.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useExpressBeta.js": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/useNotifications.js": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/hooks/usePaidFeatures.js": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/lib/generateDefenceBrief.js": {
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "src/lib/generateReport.test.js": {
+    "no-unused-vars": {
+      "count": 7
+    }
+  },
+  "src/main.jsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/pages/About.jsx": {
+    "no-unused-vars": {
+      "count": 3
+    }
+  },
+  "src/pages/Contact.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/CookiePolicy.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/Dashboard.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "src/pages/ExpressDashboard.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/ExpressOnboarding.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/ForgotPassword.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/pages/LandingPage.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/pages/Login.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/NotFound.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/PaymentSuccess.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/Privacy.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/Profile.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 2
+    },
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "src/pages/ResetPassword.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/Settings.jsx": {
+    "no-unused-vars": {
+      "count": 3
+    },
+    "react-hooks/static-components": {
+      "count": 2
+    }
+  },
+  "src/pages/Signup.jsx": {
+    "no-unused-vars": {
+      "count": 3
+    }
+  },
+  "src/pages/SplashOnboarding.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/Terms.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/VerifyCertificate.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/VerifyEmail.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/account/EmailPreferences.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/account/MyReferrals.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/admin/Health.jsx": {
+    "no-empty": {
+      "count": 1
+    },
+    "no-unused-vars": {
+      "count": 4
+    },
+    "react-hooks/immutability": {
+      "count": 1
+    },
+    "react-hooks/preserve-manual-memoization": {
+      "count": 14
+    },
+    "react-hooks/purity": {
+      "count": 4
+    },
+    "react-hooks/refs": {
+      "count": 4
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 4
+    }
+  },
+  "src/pages/auth/AuthConfirm.jsx": {
+    "no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/pages/changelog/ChangelogPage.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/pages/roadmap/RoadmapCard.jsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/pages/roadmap/RoadmapPage.jsx": {
+    "no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/services/api.js": {
+    "no-unused-vars": {
+      "count": 4
+    }
+  }
+}
