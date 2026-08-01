@@ -20,7 +20,7 @@ export const MAX_FUNCTIONS = 12;
  */
 export function countApiEntrypoints(filenames) {
   return filenames
-    .filter(name => /\.(js|ts)$/.test(name))
+    .filter(name => /\.(js|ts|mjs|cjs)$/.test(name))
     .filter(name => !name.includes('.test.'))
     .sort();
 }

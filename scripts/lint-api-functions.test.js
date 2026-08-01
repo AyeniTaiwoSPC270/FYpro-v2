@@ -30,4 +30,11 @@ describe('countApiEntrypoints', () => {
   it('exposes the Vercel Hobby ceiling as 12', () => {
     expect(MAX_FUNCTIONS).toBe(12);
   });
+
+  it('counts .mjs and .cjs files as entrypoints, while still excluding their test files', () => {
+    expect(countApiEntrypoints(['newthing.mjs', 'legacy.cjs', 'newthing.test.mjs'])).toEqual([
+      'legacy.cjs',
+      'newthing.mjs',
+    ]);
+  });
 });
