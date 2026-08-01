@@ -6,7 +6,15 @@
 
 **Architecture:** Two small standalone Node lint scripts (`scripts/lint-migrations.js`, `scripts/lint-api-functions.js`), each exporting a pure function that is unit-tested and a CLI wrapper that exits non-zero. Both are wired into `.github/workflows/ci.yml` alongside the existing `typecheck` and `test` scripts. Because Vercel Hobby deploys on push independently of GitHub Actions, a `vercel-build` npm script re-runs the same gate at deploy time. A GitHub ruleset then makes the CI check required for merge.
 
-**Tech Stack:** Node 20 (ESM — `package.json` has `"type": "module"`), vitest 4, TypeScript (`tsc --noEmit`), GitHub Actions, GitHub CLI (`gh`), Vercel.
+**Tech Stack:** Node 24 (ESM — `package.json` has `"type": "module"`), vitest 4, TypeScript (`tsc --noEmit`), GitHub Actions, GitHub CLI (`gh`), Vercel.
+
+> **Amendment (2026-08-01, Task 4):** originally written against Node 20. Wiring
+> the CI gate surfaced a two-week-old `npm ci` EUSAGE failure on Node 20/npm 10
+> (an unsatisfiable optional peer dep in `@sentry/node`'s bundled
+> `@sentry/server-utils`, tolerated by npm 11 but not npm 10). CI's
+> `actions/setup-node` was bumped to Node 24 to fix it; project-owner-approved.
+> Task 5 (the `vercel-build` gate) must confirm Vercel's own project Node
+> version is also 24 before relying on the same `npm ci` succeeding there.
 
 **Source spec:** `docs/specs/2026-07-31-infra-9-plus-program-design.md` §7 (W1).
 
