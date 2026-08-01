@@ -1,3 +1,4 @@
+-- Renumbered 2026-07-31 from 0034_user_ratings.sql (prefix collided with 0034_add_defense_brief_step_type.sql). Already applied in production.
 -- Migration 0034: user_ratings
 -- Stores proactive star ratings + open-ended suggestions from the rating modal.
 -- Separate from feature_feedback (thumbs) — different schema and purpose.
