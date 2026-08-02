@@ -84,11 +84,8 @@ async function handleGeneral(req, res) {
   try {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' }).catch(rlErr => {
-        traceLog(traceId, 'error', '[ai/general] rateLimitCheck threw (failing open):', rlErr.message);
-        return { allowed: true, reason: '' };
-      }),
-      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'claude' }),
+      checkDailyCap(),
     ]);
   } catch (authErr) {
     traceLog(traceId, 'error', '[ai/general] auth.getUser threw:', authErr.message);
@@ -396,7 +393,7 @@ async function handleFinalizeDefense(req, res) {
   try {
     [authResult, rl] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'finalize-defense' }).catch(() => ({ allowed: true, reason: '' })),
+      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'finalize-defense' }),
     ]);
   } catch (authErr) {
     traceLog(traceId, 'error', '[ai/finalize-defense] auth threw:', authErr.message);
@@ -496,11 +493,8 @@ async function handleDefense(req, res) {
   try {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' }).catch(rlErr => {
-        traceLog(traceId, 'error', '[ai/defense] rateLimitCheck threw (failing open):', rlErr.message);
-        return { allowed: true, reason: '' };
-      }),
-      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+      rateLimitCheck(req, { userDay: 20, ipDay: 40, prefix: 'defense' }),
+      checkDailyCap(),
     ]);
   } catch (authErr) {
     traceLog(traceId, 'error', '[ai/defense] auth.getUser threw:', authErr.message);
@@ -708,8 +702,8 @@ async function handleSupervisorPrep(req, res) {
   try {
     [authResult, rl, cap, cached] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' }).catch(() => ({ allowed: true, reason: '' })),
-      checkDailyCap().catch(() => ({ allowed: true })),
+      rateLimitCheck(req, { userDay: 5, ipDay: 15, prefix: 'supervisor-prep' }),
+      checkDailyCap(),
       getCached(cacheKey).catch(() => null),
     ]);
   } catch (err) {
@@ -825,10 +819,7 @@ async function handleCheckAchievements(req, res) {
   const requestedProjectId = typeof req.body?.projectId === 'string' ? req.body.projectId : null;
 
   // Rate limit: 30 per user per day, 60 per IP per hour
-  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'check-achievements' }).catch(rlErr => {
-    console.error('[ai/check-achievements] rateLimitCheck threw (failing open):', rlErr.message);
-    return { allowed: true, reason: '' };
-  });
+  const rl = await rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'check-achievements' });
   if (!rl.allowed) return res.status(429).json({ error: rl.reason });
 
   try {
@@ -1011,8 +1002,8 @@ async function handleDefenceBrief(req, res) {
   try {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'defence-brief' }).catch(() => ({ allowed: true, reason: '' })),
-      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+      rateLimitCheck(req, { userDay: 30, ipDay: 60, prefix: 'defence-brief' }),
+      checkDailyCap(),
     ]);
   } catch (authErr) {
     traceLog(traceId, 'error', '[ai/defence-brief] auth threw:', authErr.message);
@@ -1116,8 +1107,8 @@ async function handleDefenceBriefCoach(req, res) {
   try {
     [authResult, rl, cap] = await Promise.all([
       supabaseAdmin.auth.getUser(token),
-      rateLimitCheck(req, { userDay: 60, ipDay: 120, prefix: 'defence-brief-coach' }).catch(() => ({ allowed: true, reason: '' })),
-      checkDailyCap().catch(() => ({ allowed: true, spent: 0, cap: 10 })),
+      rateLimitCheck(req, { userDay: 60, ipDay: 120, prefix: 'defence-brief-coach' }),
+      checkDailyCap(),
     ]);
   } catch (authErr) {
     traceLog(traceId, 'error', '[ai/defence-brief-coach] auth threw:', authErr.message);

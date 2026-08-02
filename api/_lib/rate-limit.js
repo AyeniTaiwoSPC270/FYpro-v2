@@ -3,6 +3,7 @@
 
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { guardedCheck } from './failure-policy.js';
 
 export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -48,16 +49,29 @@ function utcDateKey() {
 
 /**
  * Enforces per-IP and per-user daily rate limits via Upstash Redis fixedWindow counters.
- * Call at the top of any serverless handler; callers should `.catch()` with a fail-open default.
+ * Call at the top of any serverless handler. Fails OPEN on any Redis error — a cache
+ * outage must never lock out legitimate users; the trip is recorded via guardedCheck
+ * (system_logs counter + deduplicated Sentry + Telegram alert). Never throws.
  * @param {object} req            - Vercel request object (reads x-forwarded-for and Authorization)
  * @param {object} limits         - Rate limit configuration
  * @param {number} limits.userDay - Max requests per authenticated user per UTC calendar day
  * @param {number} limits.ipDay   - Max requests per IP per UTC calendar day
  * @param {string} limits.prefix  - Redis key namespace (e.g. 'claude', 'defense')
  * @returns {Promise<{ allowed: boolean, reason: string }>}
- * @throws {Error} If Redis is unavailable (callers should catch and fail open)
  */
 export async function rateLimitCheck(req, limits) {
+  return guardedCheck(
+    () => rateLimitCheckUnguarded(req, limits),
+    {
+      policy:       'open',
+      name:         `rateLimit:${limits.prefix || 'default'}`,
+      openResult:   { allowed: true, reason: '' },
+      closedResult: { allowed: false, reason: 'Rate limit check unavailable.' },
+    }
+  );
+}
+
+async function rateLimitCheckUnguarded(req, limits) {
   const { userDay, ipDay, prefix = 'default' } = limits;
 
   const ip = String(
