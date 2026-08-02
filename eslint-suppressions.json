@@ -37,6 +37,11 @@
       "count": 1
     }
   },
+  "public/brain.js": {
+    "no-unused-vars": {
+      "count": 4
+    }
+  },
   "public/tools/brain.js": {
     "no-unused-vars": {
       "count": 4
