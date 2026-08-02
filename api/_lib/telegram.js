@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis'
+import { reliably } from './reliable-async.js'
 
 /** Escape HTML special chars for Telegram parse_mode:'HTML' messages. */
 export function escapeTgHtml(s) {
@@ -19,24 +20,29 @@ function getRedis() {
 }
 
 /**
- * Fire-and-forget Telegram alert. Never throws.
- * No-ops silently if TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID are not set.
+ * Sends a Telegram alert, retrying with backoff and dead-lettering on
+ * exhaustion (W2). No-ops silently if TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID
+ * are not set. Never throws.
+ *
+ * This only guarantees delivery for callers that `await` it — Vercel can
+ * still cut an un-awaited promise short once the response is sent. Most
+ * call sites across api/ already await this; the ones that intentionally
+ * don't (documented in the W2 decision table, row 11) keep that trade-off.
  */
 export async function sendTelegramAlert(message) {
   const token  = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID
   if (!token || !chatId) return
 
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  await reliably(async () => {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' }),
       signal:  AbortSignal.timeout(8000),
     })
-  } catch (err) {
-    console.error('[telegram] alert failed:', err.message)
-  }
+    if (!res.ok) throw new Error(`Telegram API ${res.status}`)
+  }, { feature: 'telegram-alert', payload: { message: message.slice(0, 200) } })
 }
 
 /**
