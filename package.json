@@ -3,10 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:prune": "eslint . --prune-suppressions",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
