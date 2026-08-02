@@ -24,3 +24,5 @@ export function clearUserLocalStorage(): void {
   })
   try { sessionStorage.clear() } catch {}
 }
+
+export const __ciGateProof: number = "this is a string, not a number";
