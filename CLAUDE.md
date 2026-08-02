@@ -286,6 +286,8 @@ fypro-v2/
 │   │   ├── rate-limit.js          # Upstash rate limiter helpers
 │   │   ├── rating-force.js        # Redis+Supabase-backed rating modal force flag (admin toggle via app_config)
 │   │   ├── usage-tracker.js       # Daily token/cost tracking
+│   │   ├── failure-policy.js      # W2: shared fail-open/fail-closed guardedCheck() — see docs/architecture decision table
+│   │   ├── reliable-async.js      # W2: retry + dead-letter for fire-and-forget side effects (reliably())
 │   │   ├── ai-prompts.js          # SERVER-side system prompts (defense + reviewer — never trust client prompts)
 │   │   ├── anthropic-proxy.js     # Shared Anthropic call wrapper
 │   │   ├── validate.js            # Shared Zod validation schemas
@@ -576,6 +578,16 @@ Express achievements are scoped to the express project; main achievements scoped
 - created_at
 - Users can INSERT and SELECT own rows. NO client UPDATE/DELETE — status managed server-side.
 - Submitted via ReportButton → /api/notify?action=submit-report. Fires Telegram alert on insert.
+
+### dead_letter_queue (migration 0042)
+- id (uuid)
+- feature (text)
+- payload (jsonb, nullable)
+- error_message (text, nullable)
+- created_at
+- resolved_at (nullable)
+- Service-role only: no client INSERT/SELECT/UPDATE/DELETE policies. Written by
+  api/_lib/reliable-async.js when a retried side effect exhausts all attempts.
 
 ---
 
