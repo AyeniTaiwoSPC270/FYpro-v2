@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "lint:migrations": "node scripts/lint-migrations.js",
     "lint:api": "node scripts/lint-api-functions.js",
-    "audit": "audit-ci --config audit-ci.jsonc"
+    "audit": "audit-ci --config audit-ci.jsonc",
+    "vercel-build": "npm run lint:migrations && npm run lint:api && npm run typecheck && npm run test && vite build"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
