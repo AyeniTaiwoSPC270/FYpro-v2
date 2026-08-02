@@ -1,0 +1,21 @@
+{
+  // Gates on moderate+ severity, same threshold the plain `npm audit
+  // --audit-level=moderate` step used before this file existed.
+  "moderate": true,
+
+  // Suppressed advisories — keep this list to exactly what's justified below.
+  // Do not add an entry without a comment explaining why it's safe to ignore
+  // and when it should be removed.
+  "allowlist": [
+    // GHSA-qwww-vcr4-c8h2 (react-router, RSC Mode CSRF Bypass) — high severity,
+    // affects react-router 7.12.0 - 8.2.0. No patched version exists yet as of
+    // 2026-08-02 (7.18.2 is latest and still in-range); npm's only proposed
+    // "fix" is downgrading to 7.11.0, a semver-major step back that risks
+    // reintroducing the DoS vulnerability the June 2026 v6->v7 upgrade was
+    // done to patch (see CLAUDE.md). App does not use RSC mode, so this
+    // specific bypass is not reachable in production.
+    // Remove this entry once a patched react-router-dom is released and
+    // installed — check `npm view react-router-dom versions` periodically.
+    "GHSA-qwww-vcr4-c8h2"
+  ]
+}

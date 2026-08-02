@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint:migrations": "node scripts/lint-migrations.js",
-    "lint:api": "node scripts/lint-api-functions.js"
+    "lint:api": "node scripts/lint-api-functions.js",
+    "audit": "audit-ci --config audit-ci.jsonc"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
@@ -44,6 +45,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "audit-ci": "^7.1.0",
     "autoprefixer": "^10.5.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
