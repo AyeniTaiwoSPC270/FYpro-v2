@@ -9,6 +9,7 @@ import { Redis }     from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce, escapeTgHtml } from './_lib/telegram.js';
+import { reliably } from './_lib/reliable-async.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { validate, AuthLoginSchema, AuthSignupSchema, AuthForgotSchema } from './_lib/validate.js';
 
@@ -213,11 +214,17 @@ async function handleSignup(req, res) {
       })(),
     ]);
     if (process.env.CRON_SECRET) {
-      fetch(`${APP_URL}/api/send-nurture-email`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
-        body:    JSON.stringify({ userId, emailType: 'welcome', email, name: full_name || '' }),
-      }).catch(e => traceLog(traceId, 'error', '[auth/signup] welcome email failed:', e.message));
+      // Retried + dead-lettered on failure (W2) rather than silently dropped —
+      // same bug class as the unawaited login alert fixed in be60a7b.
+      const nurturePayload = { userId, emailType: 'welcome', email, name: full_name || '' };
+      await reliably(async () => {
+        const res = await fetch(`${APP_URL}/api/send-nurture-email`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
+          body:    JSON.stringify(nurturePayload),
+        });
+        if (!res.ok) throw new Error(`send-nurture-email ${res.status}`);
+      }, { feature: 'nurture-email:welcome', payload: nurturePayload });
     }
   }
 
