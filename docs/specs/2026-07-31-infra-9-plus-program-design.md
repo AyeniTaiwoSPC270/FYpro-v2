@@ -166,6 +166,37 @@ them. A pull request that breaks every test can merge green.
   typecheck and tests as part of the build, so a broken commit fails the Vercel build itself.
   Cost: slower builds. This is the only free mechanism that makes the gate real.
 
+### Verified — 2026-08-02
+
+All six exit criteria confirmed on `main`:
+
+1. `.github/workflows/ci.yml` job `Audit · Lint · Typecheck · Test · Build` runs `npm run
+   typecheck` and `npm run test`; both are required steps (PR #8).
+2. `scripts/lint-migrations.js` fails the build on a duplicate numeric prefix; the two pre-existing
+   collisions (`0029_*`, `0034_*`) were renumbered in the same change (PR #8, commit `499d116`).
+3. `scripts/lint-api-functions.js` fails the build above 12 `api/` entrypoints (PR #8, commit
+   `cfd6bce`, widened to also count `.mjs`/`.cjs` in commit `31f74b4`).
+4. Branch ruleset **"Require CI on main"** (id `20227598`, `enforcement: active`) requires the
+   `Audit · Lint · Typecheck · Test · Build` check on PRs into `main`. Blocked-merge drill: PR #10
+   ("TEST: verify CI gate blocks merge") added a deliberate type error to `src/lib/storage.ts`; CI
+   failed at the Typecheck step (`error TS2322: Type 'string' is not assignable to type
+   'number'.`) and `gh pr view 10 --json mergeStateStatus` returned `BLOCKED`, as expected. PR
+   closed and the proof branch deleted after verification.
+5. `package.json`'s `vercel-build` script (PR #8, commit `4d4c8a8`) runs the same gate before
+   `vite build` on every Vercel deployment. A first attempt broke production and staging (PR #8's
+   merge, commit `f66ae25`): `.vercelignore` blanket-excluded all test files repo-wide, so
+   `vercel-build`'s `npm run test` step found zero files inside Vercel's build container and
+   failed the deploy. Fixed by scoping the exclusion to `api/**/*.test.{js,ts}` and
+   `api/**/*.spec.{js,ts}` only — the files that actually risk being deployed as spurious
+   serverless functions (PR #9, commit `af0e92d`). Verified via the resulting deployment's build
+   log: `vercel-build` ran lint:migrations, lint:api, and typecheck, then `vitest run` found and
+   passed `Test Files 18 passed (18)` / `Tests 185 passed (185)`, then `vite build` succeeded;
+   both `Vercel – f-ypro-v2` and `Vercel – fypro-staging` returned to `success` on the merge
+   commit (`88215db`). The PR #10 drill (criterion 4) also confirmed this independently: the same
+   deliberate type error failed both Vercel preview deployments, not just the GitHub Actions check.
+6. `npx vitest run` reports the same file/test count locally and in CI (43 files / 518 tests as of
+   this date — the plan's original 41/507 figure predates Tasks 2-3 adding new test files).
+
 ---
 
 ## 8. W2 — Failure policy
