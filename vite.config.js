@@ -20,9 +20,13 @@ export default defineConfig({
   ],
   test: {
     environment: 'node',
-    // Orphaned git worktrees under api/.worktrees/ hold stale duplicates of the
-    // real suite. They are gitignored, so CI never collects them — excluding them
-    // here keeps a local `npm run test` honest about what CI will actually run.
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.worktrees/**'],
+    // Orphaned git worktrees hold stale duplicates of the real suite. CI's
+    // checkout never has them (a plain `actions/checkout` doesn't populate
+    // nested worktree gitlinks), so excluding them here keeps a local
+    // `npm run test` honest about what CI will actually run. Deliberately
+    // '**/worktrees/**', not '**/.worktrees/**' — the pattern must also match
+    // .claude/worktrees/<name>/ (no leading dot on "worktrees" itself), which
+    // holds a real, currently-registered worktree from prior UI-fix work.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/worktrees/**'],
   },
 })

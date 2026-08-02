@@ -300,14 +300,17 @@ fypro-v2/
 │           ├── defense-nudge.tsx
 │           └── urgency-reminder.tsx
 ├── migrations/                    # SQL files — run in Supabase SQL Editor
-│   └── 0002 through 0035_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
-│                                  #  0026 user_achievements, 0029 express_defense_tier,
+│   └── 0002 through 0041_*.sql    # (0015 app_config, 0019 notifications, 0025 push_subscriptions,
+│                                  #  0026 user_achievements,
 │                                  #  0030 project_mode, 0031 achievements_project_scope,
 │                                  #  0032 onboarding_questions,
 │                                  #  0033 defense_certificates_faculty_department,
 │                                  #  0034_add_defense_brief_step_type (adds 'defense_brief' to step_type CHECK),
-│                                  #  0034_user_ratings (star ratings table + RLS),
-│                                  #  0035_user_reports (user issue reports table + RLS))
+│                                  #  0035_user_reports (user issue reports table + RLS),
+│                                  #  0040_express_defense_tier (renumbered from 0029 2026-08-01 —
+│                                  #    collided with a since-added 0029_dismissed_banners),
+│                                  #  0041_user_ratings (renumbered from 0034 2026-08-01 — collided
+│                                  #    with 0034_add_defense_brief_step_type; star ratings + RLS))
 ├── scripts/                       # Dev/ops scripts — NOT deployed
 │   ├── verify-rls-after-refactor.js  # RLS regression test
 │   ├── flush-reviewer-rate-limits.js
@@ -548,7 +551,7 @@ Express achievements are scoped to the express project; main achievements scoped
 ### admin_users
 - Admin role table — controls admin access gate (1 row in prod)
 
-### user_ratings (migration 0034)
+### user_ratings (migration 0041, renumbered from 0034 2026-08-01)
 - id (uuid)
 - user_id (FK → auth.users, CASCADE)
 - stars (smallint, CHECK 1–5)
@@ -1003,6 +1006,12 @@ Session discipline:
 - Run `npm run typecheck` (tsc, strictNullChecks + noImplicitAny on) and
   `npm run test` (vitest) before committing non-trivial changes
 - Commit one fix per commit during bug-fix sessions (established pattern)
+- `npm run lint` is a real CI/deploy gate (ESLint 9 bulk-suppressions,
+  `eslint-suppressions.json` baseline — see §19). Fixing a baselined lint error
+  requires `npm run lint:prune` (regenerates the baseline) and committing the
+  updated `eslint-suppressions.json`, or the fix itself will fail CI with a
+  confusing "suppressions left that do not occur anymore" error instead of a
+  normal lint error.
 
 CSS naming prefixes — NEVER mix prefixes between features:
 - es-  Express content area only (.es-main / .es-main__scroll + Express card overrides).
@@ -1031,6 +1040,24 @@ Support email:    hello@fypro.com.ng (forwards to ayenit381@gmail.com via Cloudf
 Admin dashboard:  https://www.fypro.com.ng/admin/health
 Launched:         June 2026 (live and accepting payments)
 v3 target:        December 2026
+
+---
+
+## 19. KNOWN TECH DEBT
+
+### ESLint suppression baseline (added 2026-08-01)
+
+`eslint-suppressions.json` freezes **215 pre-existing lint errors across 79 files** as a
+baseline via ESLint 9's bulk-suppressions feature, so `npm run lint` is a real CI/deploy
+gate against *new* violations without blocking on an unbounded cleanup. Top categories:
+`no-unused-vars` (96), `react-hooks/set-state-in-effect` (44, concentrated in
+`src/pages/admin/Health.jsx`), `no-empty` (20), `react-hooks/preserve-manual-memoization`
+(14), `react-refresh/only-export-components` (13), `react-hooks/refs` (12).
+
+Fixing one: run `npm run lint:prune` after the fix and commit the updated
+`eslint-suppressions.json` (see §17). The baseline can only shrink — a file with fewer
+violations than its recorded count fails CI until pruned, which is deliberate (it forces
+the baseline to stay honest) but reads as a confusing error the first time you hit it.
 
 ---
 

@@ -1,4 +1,4 @@
-# Keep api/'s test files out of the Vercel deployment bundle.
+# Keep api/'s TOP-LEVEL test files out of the Vercel deployment bundle.
 #
 # Vercel turns every top-level file in api/ into a serverless function. A test
 # file like api/payments.test.js would therefore be deployed as a function,
@@ -6,12 +6,15 @@
 # potentially failing the build. Excluding them here means they are never
 # uploaded, so they can never be mistaken for functions.
 #
-# Scoped to api/ only (not a blanket */.test.js): .vercelignore controls what
-# Vercel's build container even sees, not just what gets deployed. A repo-wide
-# pattern here also strips src/**/*.test.jsx and scripts/*.test.js before
-# `vercel-build` ever runs `npm run test`, which then finds zero test files
-# and fails the build. Only api/'s test files pose the function-count risk.
-api/**/*.test.js
-api/**/*.test.ts
-api/**/*.spec.js
-api/**/*.spec.ts
+# Scoped to api/*.test.* (top level only), NOT api/**/*.test.* (all depths):
+# Vercel's own zero-config API detection already ignores underscore-prefixed
+# directories like api/_lib/ (see scripts/lint-api-functions.js's own doc
+# comment) — those test files were never at risk, and excluding them anyway
+# strips them from the vercel-build container, so `npm run test` silently ran
+# a smaller suite there than in CI (18/33 files, missing the payments/auth/
+# credit suites under api/_lib/). Only the 5 top-level api/*.test.* files pose
+# the actual function-count risk.
+api/*.test.js
+api/*.test.ts
+api/*.spec.js
+api/*.spec.ts

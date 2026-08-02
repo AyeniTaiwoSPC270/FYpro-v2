@@ -187,15 +187,25 @@ All six exit criteria confirmed on `main`:
    merge, commit `f66ae25`): `.vercelignore` blanket-excluded all test files repo-wide, so
    `vercel-build`'s `npm run test` step found zero files inside Vercel's build container and
    failed the deploy. Fixed by scoping the exclusion to `api/**/*.test.{js,ts}` and
-   `api/**/*.spec.{js,ts}` only — the files that actually risk being deployed as spurious
-   serverless functions (PR #9, commit `af0e92d`). Verified via the resulting deployment's build
-   log: `vercel-build` ran lint:migrations, lint:api, and typecheck, then `vitest run` found and
-   passed `Test Files 18 passed (18)` / `Tests 185 passed (185)`, then `vite build` succeeded;
-   both `Vercel – f-ypro-v2` and `Vercel – fypro-staging` returned to `success` on the merge
-   commit (`88215db`). The PR #10 drill (criterion 4) also confirmed this independently: the same
+   `api/**/*.spec.{js,ts}` (PR #9, commit `af0e92d`) — but that scope was still too broad: it
+   excluded all 15 test files under `api/`, when only the 5 directly at the top level of `api/`
+   risk being deployed as spurious serverless functions (the other 10 live under `api/_lib/`,
+   which Vercel's own zero-config detection already ignores as underscore-prefixed). The
+   over-broad scope meant `vercel-build` ran only 18 of the repo's 33 test files (missing the
+   payments/auth/credit-user suites), which the final whole-branch review caught. Corrected to
+   `api/*.test.{js,ts}` / `api/*.spec.{js,ts}` (top level only) the same day. Verified via a
+   deployment build log after the fix: `vercel-build` ran lint:migrations, lint:api, and
+   typecheck, then `vitest run` found and passed all 33 test files, then `vite build` succeeded.
+   The PR #10 drill (criterion 4) also confirmed the gate is live independently: the same
    deliberate type error failed both Vercel preview deployments, not just the GitHub Actions check.
-6. `npx vitest run` reports the same file/test count locally and in CI (43 files / 518 tests as of
-   this date — the plan's original 41/507 figure predates Tasks 2-3 adding new test files).
+6. `npx vitest run` reports the same file/test count locally and in CI. **Correction (final
+   whole-branch review, same day):** the number recorded here was initially wrong — `vite.config.js`
+   excluded `**/.worktrees/**` (with a leading dot), which does not match `.claude/worktrees/`
+   (no leading dot on "worktrees" itself), a real, currently-registered git worktree from prior
+   UI-fix work. Locally this collected 10 stale duplicate test files from that worktree on top of
+   the real suite; CI's plain checkout never had them. Fixed by widening the pattern to
+   `**/worktrees/**`. Corrected, verified count: **33 files / 366 tests**, matching
+   `git ls-files | grep -cE '\.(test|spec)\.'` exactly.
 
 ---
 
