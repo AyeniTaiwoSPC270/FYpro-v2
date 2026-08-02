@@ -11,27 +11,27 @@ permissions:
 
 jobs:
   ci:
-    name: Audit · Lint · Build
+    name: Audit · Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      # Fail the build if any moderate, high, or critical vulnerability is found.
-      # Run with --audit-level=moderate as specified — informational/low advisories
-      # are reported but do not block the build.
+      # Fail the build if any moderate, high, or critical vulnerability is found,
+      # except advisories explicitly allowlisted in audit-ci.jsonc (each entry
+      # requires a comment justifying why it's safe and when to remove it).
       - name: Security audit
-        run: npm audit --audit-level=moderate
+        run: npm run audit
 
       # ESLint v9 flat config (eslint.config.js) is present in this repo.
       # The check is guarded anyway so the step degrades gracefully if the
@@ -45,6 +45,21 @@ jobs:
           else
             echo "No ESLint config found — skipping lint."
           fi
+
+      # Structural guards — cheap, and they fail fast before the slower steps.
+      - name: Lint migration numbering
+        run: npm run lint:migrations
+
+      - name: Guard Vercel function count
+        run: npm run lint:api
+
+      # tsc --noEmit with strictNullChecks + noImplicitAny (tsconfig.json).
+      - name: Typecheck
+        run: npm run typecheck
+
+      # vitest run — 43 files / 518 tests at time of writing (~25s).
+      - name: Test
+        run: npm run test
 
       - name: Build
         run: npm run build
@@ -64,8 +79,12 @@ jobs:
                 '',
                 '| Check | Result |',
                 '|-------|--------|',
-                '| Security audit (`--audit-level=moderate`) | ✅ Clean |',
+                '| Security audit (moderate+, allowlist in `audit-ci.jsonc`) | ✅ Clean |',
                 '| ESLint | ✅ No errors |',
+                '| Migration numbering | ✅ No duplicate prefixes |',
+                '| Vercel function count | ✅ Within 12 |',
+                '| Typecheck (`tsc --noEmit`) | ✅ No errors |',
+                '| Tests (`vitest run`) | ✅ Passing |',
                 '| Vite build | ✅ Success |',
               ].join('\n')
             })
