@@ -1,14 +1,17 @@
-# Keep test files out of the Vercel deployment bundle.
+# Keep api/'s test files out of the Vercel deployment bundle.
 #
 # Vercel turns every top-level file in api/ into a serverless function. A test
 # file like api/payments.test.js would therefore be deployed as a function,
 # consuming a slot against the Hobby-plan limit of 12 (we are already at 12) and
 # potentially failing the build. Excluding them here means they are never
-# uploaded, so they can never be mistaken for functions. Vitest reads them from
-# the local working tree, so local + CI test runs are unaffected.
-*.test.js
-*.test.ts
-*.test.jsx
-*.test.tsx
-*.spec.js
-*.spec.ts
+# uploaded, so they can never be mistaken for functions.
+#
+# Scoped to api/ only (not a blanket */.test.js): .vercelignore controls what
+# Vercel's build container even sees, not just what gets deployed. A repo-wide
+# pattern here also strips src/**/*.test.jsx and scripts/*.test.js before
+# `vercel-build` ever runs `npm run test`, which then finds zero test files
+# and fails the build. Only api/'s test files pose the function-count risk.
+api/**/*.test.js
+api/**/*.test.ts
+api/**/*.spec.js
+api/**/*.spec.ts
