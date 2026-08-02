@@ -32,29 +32,38 @@ export async function guardedCheck(checkFn, { policy, name, openResult, closedRe
   try {
     return await checkFn();
   } catch (err) {
-    recordFailurePolicyTrip(name, policy, err);
+    await recordFailurePolicyTrip(name, policy, err);
     return policy === 'closed' ? closedResult : openResult;
   }
 }
 
-function recordFailurePolicyTrip(name, policy, err) {
-  const message = String(err?.message || err);
-  console.error(`[failure-policy] ${name} unavailable — failing ${policy}:`, message);
+// Awaited by guardedCheck before it returns, so Vercel doesn't freeze the
+// function mid-flight on the trip recorder's own async work (system_logs
+// write + the Telegram send now performed by sendTelegramAlertOnce). Must
+// never throw/reject — a logging failure must never surface as the guarded
+// check's own failure.
+async function recordFailurePolicyTrip(name, policy, err) {
+  try {
+    const message = String(err?.message || err);
+    console.error(`[failure-policy] ${name} unavailable — failing ${policy}:`, message);
 
-  writeSystemLog({
-    severity:      'error',
-    feature:       `fail-${policy}:${name}`,
-    source:        'failure-policy',
-    plain_message: `${name} dependency unavailable — failed ${policy}`,
-    raw_detail:    { error: message },
-  });
+    await writeSystemLog({
+      severity:      'error',
+      feature:       `fail-${policy}:${name}`,
+      source:        'failure-policy',
+      plain_message: `${name} dependency unavailable — failed ${policy}`,
+      raw_detail:    { error: message },
+    });
 
-  Sentry.captureMessage(`[fail-${policy}] ${name} dependency unavailable: ${message}`, 'error');
+    Sentry.captureMessage(`[fail-${policy}] ${name} dependency unavailable: ${message}`, 'error');
 
-  const today = new Date().toISOString().slice(0, 10);
-  sendTelegramAlertOnce(
-    `🛑 ${name} failing ${policy === 'closed' ? 'CLOSED (blocking requests)' : 'OPEN'} — dependency unavailable: ${message}`,
-    `tg:failpolicy:${name}:${today}`,
-    3600
-  );
+    const today = new Date().toISOString().slice(0, 10);
+    await sendTelegramAlertOnce(
+      `🛑 ${name} failing ${policy === 'closed' ? 'CLOSED (blocking requests)' : 'OPEN'} — dependency unavailable: ${message}`,
+      `tg:failpolicy:${name}:${today}`,
+      3600
+    );
+  } catch (recordErr) {
+    console.error(`[failure-policy] recordFailurePolicyTrip itself failed for ${name}:`, recordErr?.message || recordErr);
+  }
 }

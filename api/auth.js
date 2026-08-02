@@ -222,6 +222,7 @@ async function handleSignup(req, res) {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
           body:    JSON.stringify(nurturePayload),
+          signal:  AbortSignal.timeout(3000),
         });
         if (!res.ok) throw new Error(`send-nurture-email ${res.status}`);
       }, { feature: 'nurture-email:welcome', payload: nurturePayload });

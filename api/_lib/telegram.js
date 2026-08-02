@@ -47,20 +47,36 @@ export async function sendTelegramAlert(message) {
 
 /**
  * Send a Telegram alert at most once per dedupeKey window.
- * Uses Redis to deduplicate; falls back to always sending if Redis is unavailable.
+ * Uses Redis to deduplicate; falls back to always sending if Redis is unavailable
+ * OR if the dedupe check itself errors (e.g. a Redis outage) — a dedupe failure
+ * must never suppress the alert it would otherwise gate, especially since this
+ * is exactly the path failure-policy trips route through.
  * @param {string} dedupeKey - unique key, e.g. 'tg:spend:cap:2026-05-11'
  * @param {number} ttlSeconds - how long to suppress duplicates (default 24 hours)
  */
 export async function sendTelegramAlertOnce(message, dedupeKey, ttlSeconds = 86400) {
-  try {
-    const redis = getRedis()
-    if (redis) {
-      const exists = await redis.get(dedupeKey)
-      if (exists) return
-      await redis.set(dedupeKey, '1', { ex: ttlSeconds })
+  const redis = getRedis()
+
+  if (redis) {
+    let isDuplicate = false
+    try {
+      isDuplicate = !!(await redis.get(dedupeKey))
+    } catch (err) {
+      console.error('[telegram] dedupe check failed, sending anyway:', err.message)
     }
-    await sendTelegramAlert(message)
-  } catch (err) {
-    console.error('[telegram] dedupe alert failed:', err.message)
+    if (isDuplicate) return
+  }
+
+  // Outside the dedupe try/catch — must be reached whenever dedupe didn't
+  // short-circuit, even if the dedupe check itself threw. sendTelegramAlert
+  // never throws (see its own doc comment).
+  await sendTelegramAlert(message)
+
+  if (redis) {
+    try {
+      await redis.set(dedupeKey, '1', { ex: ttlSeconds })
+    } catch (err) {
+      console.error('[telegram] dedupe marker write failed:', err.message)
+    }
   }
 }

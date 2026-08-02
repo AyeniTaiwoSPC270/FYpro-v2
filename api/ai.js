@@ -157,7 +157,9 @@ async function handleGeneral(req, res) {
 
   // Per-user daily spend ceiling — gate the actual Anthropic call (cache hits
   // above cost nothing and are never blocked). Stops one account draining the
-  // global budget; free users are held lower than paid. Fails open on Redis error.
+  // global budget; free users are held lower than paid. Fails closed on
+  // Redis/Supabase error — see
+  // docs/architecture/2026-08-02-w2-failure-policy-decision-table.md.
   const userCap = await checkUserCap(user.id, isPaid);
   if (!userCap.allowed) {
     sendTelegramAlertOnce(
