@@ -1,18 +1,24 @@
-// Tests for the per-user daily spend ceiling: checkUserCap + trackUserUsage.
+// Tests for the spend ceilings: checkDailyCap (global) + checkUserCap (per-user)
+// + trackUserUsage.
 //
-// This is the P0 abuse defence — without it one free-tier account can drain the
-// global DAILY_CAP_USD and deny service to paying users. A regression here either
-// re-opens that hole (cap not enforced) or wrongly locks out legitimate users.
+// This is the P0 abuse defence — without it one free-tier account (or an infra
+// outage) can drain the global DAILY_CAP_USD and deny service to paying users.
+// Both caps now fail CLOSED on a dependency outage (W2 — see
+// docs/architecture/2026-08-02-w2-failure-policy-decision-table.md, row 2/3):
+// a regression here either re-opens the uncapped-spend hole, or wrongly locks
+// out legitimate users.
 //
-// Strategy: mock the redis handle (from rate-limit.js) so each test programs its
-// own counter value, and stub supabase-admin.js (it throws at import without env
-// vars and the per-user helpers never touch it).
+// Strategy: mock the redis handle (from rate-limit.js) and supabaseAdmin's
+// `.from()` chain so each test programs its own counter/row value, and stub
+// out failure-policy.js's alerting dependencies so trips don't hit real infra.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ redis: null }))
+const h = vi.hoisted(() => ({ redis: null, supabaseFrom: null }))
 
-vi.mock('./supabase-admin.js', () => ({ supabaseAdmin: {} }))
+vi.mock('./supabase-admin.js', () => ({
+  supabaseAdmin: { from: (...a) => h.supabaseFrom(...a) },
+}))
 vi.mock('./rate-limit.js', () => ({
   redis: {
     get:        (...a) => h.redis.get(...a),
@@ -20,11 +26,22 @@ vi.mock('./rate-limit.js', () => ({
     expire:     (...a) => h.redis.expire(...a),
   },
 }))
+vi.mock('./telegram.js', () => ({ sendTelegramAlertOnce: vi.fn() }))
+vi.mock('./sentry-server.js', () => ({ Sentry: { captureMessage: vi.fn() } }))
+vi.mock('./system-log.js', () => ({ writeSystemLog: vi.fn() }))
 
-const { checkUserCap, trackUserUsage } = await import('./usage-tracker.js')
+const { checkUserCap, trackUserUsage, checkDailyCap } = await import('./usage-tracker.js')
 
 const FREE_CAP = 0.75
 const PAID_CAP = 4
+
+function supabaseFromReturning(maybeSingleResult) {
+  return vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    eq:     vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue(maybeSingleResult),
+  }))
+}
 
 beforeEach(() => {
   h.redis = {
@@ -32,6 +49,8 @@ beforeEach(() => {
     incrbyfloat: vi.fn().mockResolvedValue('0'),
     expire:      vi.fn().mockResolvedValue(1),
   }
+  h.supabaseFrom = supabaseFromReturning({ data: null, error: null })
+  delete process.env.DAILY_CAP_USD
 })
 
 describe('checkUserCap', () => {
@@ -80,10 +99,50 @@ describe('checkUserCap', () => {
     expect(h.redis.get).not.toHaveBeenCalled()
   })
 
-  it('FAILS OPEN when redis throws — infra failure must never block users', async () => {
+  it('FAILS CLOSED when redis throws — an outage must never uncap spend', async () => {
     h.redis.get.mockRejectedValue(new Error('redis down'))
     const r = await checkUserCap('user-1', false)
-    expect(r.allowed).toBe(true)
+    expect(r.allowed).toBe(false)
+  })
+})
+
+describe('checkDailyCap', () => {
+  it('allows when spent is under the cap', async () => {
+    process.env.DAILY_CAP_USD = '10'
+    h.supabaseFrom = supabaseFromReturning({ data: { total_cost_usd: '3.50' }, error: null })
+    const r = await checkDailyCap()
+    expect(r).toMatchObject({ allowed: true, spent: 3.5, cap: 10 })
+  })
+
+  it('blocks when spent is at or over the cap', async () => {
+    process.env.DAILY_CAP_USD = '10'
+    h.supabaseFrom = supabaseFromReturning({ data: { total_cost_usd: '10' }, error: null })
+    const r = await checkDailyCap()
+    expect(r.allowed).toBe(false)
+  })
+
+  it('treats a missing row as zero spend, allowed', async () => {
+    h.supabaseFrom = supabaseFromReturning({ data: null, error: null })
+    const r = await checkDailyCap()
+    expect(r).toMatchObject({ allowed: true, spent: 0 })
+  })
+
+  it('defaults the cap to 10 when DAILY_CAP_USD is unset', async () => {
+    h.supabaseFrom = supabaseFromReturning({ data: null, error: null })
+    const r = await checkDailyCap()
+    expect(r.cap).toBe(10)
+  })
+
+  it('FAILS CLOSED when the Supabase query errors — an outage must never uncap spend', async () => {
+    h.supabaseFrom = supabaseFromReturning({ data: null, error: new Error('db error') })
+    const r = await checkDailyCap()
+    expect(r.allowed).toBe(false)
+  })
+
+  it('FAILS CLOSED when the Supabase call throws outright', async () => {
+    h.supabaseFrom = vi.fn(() => { throw new Error('connection refused') })
+    const r = await checkDailyCap()
+    expect(r.allowed).toBe(false)
   })
 })
 

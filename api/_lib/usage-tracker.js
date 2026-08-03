@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase-admin.js';
 import { redis }         from './rate-limit.js';
+import { guardedCheck } from './failure-policy.js';
 
 // Per-model pricing (USD per token). Unknown or omitted models fall back to
 // Sonnet rates — over-estimating spend is safe: a typo'd model ID can tighten
@@ -111,27 +112,34 @@ export async function trackUsage(tokensIn, tokensOut, model) {
 
 /**
  * Checks whether today's cumulative Claude spend is still under DAILY_CAP_USD.
- * Fails open (returns allowed: true) if the DB is unreachable — never blocks users on infra errors.
+ * Fails CLOSED (returns allowed: false) if the DB is unreachable — an infra
+ * outage must never uncap spend. The trip is recorded via guardedCheck
+ * (system_logs counter + deduplicated Sentry + Telegram alert).
  * @returns {Promise<{ allowed: boolean, spent: number, cap: number }>}
  */
 export async function checkDailyCap() {
   const cap = parseFloat(process.env.DAILY_CAP_USD || '10');
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('daily_usage')
-      .select('total_cost_usd')
-      .eq('date', todayDate())
-      .maybeSingle();
+  return guardedCheck(
+    async () => {
+      const { data, error } = await supabaseAdmin
+        .from('daily_usage')
+        .select('total_cost_usd')
+        .eq('date', todayDate())
+        .maybeSingle();
 
-    if (error) throw error;
-    if (!data) return { allowed: true, spent: 0, cap };
+      if (error) throw error;
+      if (!data) return { allowed: true, spent: 0, cap };
 
-    const spent = parseFloat(data.total_cost_usd) || 0;
-    return { allowed: spent < cap, spent, cap };
-  } catch (err) {
-    console.error('[usage-tracker] checkDailyCap failed (failing open):', err.message);
-    return { allowed: true, spent: 0, cap };
-  }
+      const spent = parseFloat(data.total_cost_usd) || 0;
+      return { allowed: spent < cap, spent, cap };
+    },
+    {
+      policy:       'closed',
+      name:         'checkDailyCap',
+      openResult:   { allowed: true,  spent: 0, cap },
+      closedResult: { allowed: false, spent: 0, cap },
+    }
+  );
 }
 
 /**
@@ -159,8 +167,10 @@ export async function trackUserUsage(userId, tokensIn, tokensOut, model) {
 
 /**
  * Checks whether a single user is still under their per-user daily spend ceiling.
- * Free and paid users get different ceilings. Fails OPEN (allowed: true) on any
- * Redis error — a cache outage must never block users, matching checkDailyCap.
+ * Free and paid users get different ceilings. Fails CLOSED (allowed: false) on
+ * any Redis error — an infra outage must never uncap spend, matching checkDailyCap.
+ * The trip is recorded via guardedCheck (system_logs counter + deduplicated
+ * Sentry + Telegram alert).
  * @param {string}  userId - Verified Supabase user id
  * @param {boolean} isPaid - true if the user holds any paid entitlement
  * @returns {Promise<{ allowed: boolean, spent: number, cap: number, isPaid: boolean }>}
@@ -168,12 +178,18 @@ export async function trackUserUsage(userId, tokensIn, tokensOut, model) {
 export async function checkUserCap(userId, isPaid) {
   const cap = isPaid ? PAID_USER_DAILY_CAP_USD : FREE_USER_DAILY_CAP_USD;
   if (!userId) return { allowed: true, spent: 0, cap, isPaid: !!isPaid };
-  try {
-    const raw   = await redis.get(userCostKey(userId));
-    const spent = parseFloat(raw) || 0;
-    return { allowed: spent < cap, spent, cap, isPaid: !!isPaid };
-  } catch (err) {
-    console.error('[usage-tracker] checkUserCap failed (failing open):', err.message);
-    return { allowed: true, spent: 0, cap, isPaid: !!isPaid };
-  }
+
+  return guardedCheck(
+    async () => {
+      const raw   = await redis.get(userCostKey(userId));
+      const spent = parseFloat(raw) || 0;
+      return { allowed: spent < cap, spent, cap, isPaid: !!isPaid };
+    },
+    {
+      policy:       'closed',
+      name:         'checkUserCap',
+      openResult:   { allowed: true,  spent: 0, cap, isPaid: !!isPaid },
+      closedResult: { allowed: false, spent: 0, cap, isPaid: !!isPaid },
+    }
+  );
 }

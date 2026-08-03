@@ -7,6 +7,7 @@ import { Redis } from '@upstash/redis';
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { extractUserId } from './_lib/rate-limit.js';
 import { sendTelegramAlert, escapeTgHtml } from './_lib/telegram.js';
+import { reliably } from './_lib/reliable-async.js';
 
 const CODE_RE  = /^[A-Z0-9]{6}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -125,23 +126,24 @@ async function handleTrack(req, res) {
 
   sendTelegramAlert(`🔗 Referral signup: ${escapeTgHtml(normalEmail)} used code <code>${escapeTgHtml(code)}</code>`).catch(() => null);
 
-  // Notify the referrer — best-effort
-  supabaseAdmin
+  // Notify the referrer — retried + dead-lettered on failure (W2) rather
+  // than silently dropped.
+  const { data: profile } = await supabaseAdmin
     .from('users')
     .select('full_name')
     .eq('id', newUser.id)
-    .maybeSingle()
-    .then(({ data: profile }) => {
-      const referredName = profile?.full_name || normalEmail
-      return supabaseAdmin.from('notifications').insert({
-        user_id:  referrer.id,
-        type:     'referral_join',
-        title:    'Referral joined',
-        message:  `${referredName} signed up using your referral link.`,
-        metadata: { referred_name: referredName },
-      })
-    })
-    .catch(e => console.error('[referral/track] notification insert failed:', e.message));
+    .maybeSingle();
+  const referredName = profile?.full_name || normalEmail;
+  await reliably(async () => {
+    const { error } = await supabaseAdmin.from('notifications').insert({
+      user_id:  referrer.id,
+      type:     'referral_join',
+      title:    'Referral joined',
+      message:  `${referredName} signed up using your referral link.`,
+      metadata: { referred_name: referredName },
+    });
+    if (error) throw error;
+  }, { feature: 'notification:referral_join', payload: { referrer_id: referrer.id, referred_name: referredName } });
 
   return res.status(200).json({ tracked: true });
 }

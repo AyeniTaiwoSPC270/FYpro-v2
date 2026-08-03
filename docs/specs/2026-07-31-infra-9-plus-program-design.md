@@ -238,6 +238,23 @@ sharpest edge identified in the audit.
 6. **Drill:** revoke Upstash credentials in staging, exercise every endpoint, and confirm observed
    behaviour matches the decision table row for row.
 
+### Verified — 2026-08-02
+
+1. Decision table committed: `docs/architecture/2026-08-02-w2-failure-policy-decision-table.md`.
+2. `checkDailyCap`/`checkUserCap` fail closed — `api/_lib/usage-tracker.test.js`.
+3. Every fail-open/closed trip recorded (system_logs + Sentry + deduplicated Telegram)
+   via `guardedCheck` — `api/_lib/failure-policy.test.js`.
+4. Shared helper (`api/_lib/failure-policy.js`) replaces all 12 inline `.catch()`
+   swallows in `api/ai.js` — `git grep` confirms zero remain.
+5. Retry + dead-letter for the 3 named fire-and-forget sites (signup nurture email,
+   login nurture email, referral notification) plus `sendTelegramAlert` generally —
+   `api/_lib/reliable-async.test.js`, `api/_lib/telegram.test.js`.
+6. Drill: automated handler-layer proof for every gated action —
+   `api/ai.failure-policy.test.js` (6/6 passing). Live staging credential-revocation
+   half of the drill: see `docs/architecture/2026-08-02-w2-drill-runbook.md` — **not
+   yet executed as of this writing; requires a human to run it against a confirmed
+   staging-only Upstash instance.**
+
 ---
 
 ## 9. W3 — Cost & telemetry

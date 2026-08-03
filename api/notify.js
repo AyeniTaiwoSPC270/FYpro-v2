@@ -8,6 +8,7 @@ import { Resend } from 'resend'
 import { Sentry } from './_lib/sentry-server.js'
 import { supabaseAdmin } from './_lib/supabase-admin.js'
 import { sendTelegramAlert, sendTelegramAlertOnce, escapeTgHtml } from './_lib/telegram.js'
+import { reliably } from './_lib/reliable-async.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
 import { setExpressBetaFree, getExpressBetaFree } from './_lib/express-beta.js'
@@ -1256,26 +1257,34 @@ async function handleNotify(req, res) {
     }
 
     try {
-      // Telegram is awaited (matches the sibling oauth_signup branch above);
-      // the nurture-email fetch below is intentionally NOT awaited — this
-      // response doesn't depend on the email completing, unlike the inbound
-      // Telegram webhook handler elsewhere in this file, which must await
-      // before responding since Vercel freezes the function on res.end().
+      // Telegram is awaited (matches the sibling oauth_signup branch above).
+      // The nurture-email fetch is now also awaited, through reliably() — W2
+      // requires retry + dead-letter for this class of side effect, which only
+      // works if the call is still in flight when the retries run: Vercel can
+      // kill an un-awaited promise once the response is sent (see
+      // api/_lib/reliable-async.js). The prior "don't block on this" choice
+      // traded a few hundred ms of latency for not silently losing the email
+      // on a transient failure — W2 makes the opposite trade.
       await sendTelegramAlert(`🔓 Login: ${escapeTgHtml(email)} (IP: ${escapeTgHtml(ip)})`)
       if (process.env.CRON_SECRET) {
-        fetch(`${APP_URL}/api/send-nurture-email`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
-          body:    JSON.stringify({
-            userId:    user.id,
-            emailType: 'login_alert',
-            email,
-            name:      user.user_metadata?.full_name || '',
-            ip,
-            userAgent,
-            loginAt:   new Date().toISOString(),
-          }),
-        }).catch(() => null)
+        const nurturePayload = {
+          userId:    user.id,
+          emailType: 'login_alert',
+          email,
+          name:      user.user_metadata?.full_name || '',
+          ip,
+          userAgent,
+          loginAt:   new Date().toISOString(),
+        }
+        await reliably(async () => {
+          const res = await fetch(`${APP_URL}/api/send-nurture-email`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET}` },
+            body:    JSON.stringify(nurturePayload),
+            signal:  AbortSignal.timeout(3000),
+          })
+          if (!res.ok) throw new Error(`send-nurture-email ${res.status}`)
+        }, { feature: 'nurture-email:login_alert', payload: nurturePayload })
       }
     } catch (e) {
       console.error('[notify/oauth_login] notification block failed:', e.message)
