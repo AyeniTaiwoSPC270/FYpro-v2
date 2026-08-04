@@ -11,6 +11,7 @@ import { setCorsHeaders }  from './_lib/cors.js';
 import { sendTelegramAlert, sendTelegramAlertOnce } from './_lib/telegram.js';
 import { isAllowedGeneralStep, getGeneralSystemPrompt, getDefenseSystemPrompt } from './_lib/ai-prompts.js';
 import { callAnthropic } from './_lib/anthropic-proxy.js';
+import { logAiCall } from './_lib/ai-cost-log.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { Sentry }                   from './_lib/sentry-server.js';
 import { validate, AiMessagesSchema } from './_lib/validate.js';
@@ -152,6 +153,7 @@ async function handleGeneral(req, res) {
 
   if (cached) {
     res.setHeader('X-Cache', 'HIT');
+    await logAiCall({ userId: user.id, feature: step, model, cacheHit: true, traceId });
     return res.status(200).json(cached);
   }
 
@@ -208,6 +210,7 @@ async function handleGeneral(req, res) {
       max_tokens,
       system,
       messages,
+      traceId,
     });
 
     if (response.ok) {
@@ -635,6 +638,7 @@ async function handleDefense(req, res) {
       max_tokens,
       system,
       messages,
+      traceId,
     });
     if (!response.ok) return sendSanitizedAiError(res, response, data, traceId, 'defense');
 
@@ -1076,7 +1080,7 @@ async function handleDefenceBrief(req, res) {
   }
 
   try {
-    const { response, data } = await callAnthropic({ feature: 'defence-brief', userId: user.id, model, max_tokens, system, messages });
+    const { response, data } = await callAnthropic({ feature: 'defence-brief', userId: user.id, model, max_tokens, system, messages, traceId });
     if (response.ok) {
       if (expressOnly && reservedCount !== null) {
         await syncRunCount({ userId: user.id, dbKey: 'express_defence_brief', newCount: reservedCount, dbRunCounts });
@@ -1156,7 +1160,7 @@ async function handleDefenceBriefCoach(req, res) {
   const max_tokens = Math.min(Number(rawMaxTokens) || 500, MAX_TOKENS_LIMIT);
 
   try {
-    const { response, data } = await callAnthropic({ feature: 'defence-brief-coach', userId: user.id, model, max_tokens, system, messages });
+    const { response, data } = await callAnthropic({ feature: 'defence-brief-coach', userId: user.id, model, max_tokens, system, messages, traceId });
     if (!response.ok) return sendSanitizedAiError(res, response, data, traceId, 'defence-brief-coach');
     return res.status(200).json(data);
   } catch (err) {
