@@ -3,7 +3,7 @@
 // default         → General Claude proxy (cached, no auth required)
 
 import { rateLimitCheck, extractUserId, redis, freeRunKey } from './_lib/rate-limit.js';
-import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
+import { checkDailyCap, checkUserCap } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { supabaseAdmin }  from './_lib/supabase-admin.js';
 import { writeSystemLog } from './_lib/system-log.js';
@@ -681,6 +681,9 @@ const SUPERVISOR_PREP_TTL = 21600; // 6 hours
  * @returns {Promise<void>}
  */
 async function handleSupervisorPrep(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
@@ -725,55 +728,23 @@ async function handleSupervisorPrep(req, res) {
 
   if (cached) {
     res.setHeader('X-Cache', 'HIT');
+    await logAiCall({ userId: user.id, feature: 'supervisor-prep', model: 'claude-sonnet-4-6', cacheHit: true, traceId });
     return res.status(200).json(cached);
   }
 
   try {
 
-    const start    = Date.now();
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:       'claude-sonnet-4-6',
-        max_tokens:  1000,
-        system:      SUPERVISOR_PREP_SYSTEM,
-        messages:    [{ role: 'user', content: userPrompt }],
-        temperature: 0,
-      }),
-      signal: AbortSignal.timeout(50000),
+    const { response, data } = await callAnthropic({
+      feature:    'supervisor-prep',
+      userId:     user.id,
+      model:      'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system:     SUPERVISOR_PREP_SYSTEM,
+      messages:   [{ role: 'user', content: userPrompt }],
+      traceId,
     });
 
-    const data = await response.json();
-    if (data.usage) {
-      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
-      // Count this toward the shared per-user daily counter. No dedicated cap gate
-      // here: supervisor-prep is rate-limited to 5/user/day and cheap, so it can't
-      // drain the budget — but its spend still counts against the heavier endpoints' gates.
-      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
-    }
-
-    if (!response.ok) {
-      // Never forward the raw Anthropic error body — it can carry org IDs / URLs.
-      console.error('[ai/supervisor-prep] Anthropic', response.status, String(data?.error?.message || '').slice(0, 200));
-      const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : response.status;
-      return res.status(status).json({
-        error: response.status === 429
-          ? 'FYPro is in high demand right now. Please try again in a moment.'
-          : 'AI service error. Please try again.',
-      });
-    }
-
-    const duration       = Date.now() - start;
-    const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'supervisor-prep', duration_ms: duration, user_id: user.id });
-    const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-    await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-      console.error('[ai/supervisor-prep] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
-    });
+    if (!response.ok) return sendSanitizedAiError(res, response, data, traceId, 'supervisor-prep');
 
     const text = data.content?.[0]?.text ?? '';
     let questions;
@@ -1185,7 +1156,7 @@ export default async function handler(req, res) {
     if (req.query.action === 'defence-brief-coach') return handleDefenceBriefCoach(req, res);
     return handleGeneral(req, res);
   } catch (err) {
-    Sentry.captureException(err);
+    Sentry.captureException(err, { tags: { trace_id: res.getHeader('X-Trace-Id') } });
     console.error('[api/ai] unhandled error:', err);
     if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }

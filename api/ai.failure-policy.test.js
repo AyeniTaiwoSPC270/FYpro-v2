@@ -20,13 +20,6 @@
 //     checks process.env.ANTHROPIC_API_KEY (unset in this test environment)
 //     BEFORE reaching the checkDailyCap gate — both would 400/500 before the
 //     gate under test without these.
-//   - A defensive global fetch stub is added because handleSupervisorPrep
-//     calls the Anthropic API directly via fetch() rather than through the
-//     mocked callAnthropic() helper (every other action uses callAnthropic).
-//     It's never expected to be invoked (checkDailyCap fails closed before
-//     handleSupervisorPrep reaches its fetch call) — the stub just turns an
-//     accidental real network call into a loud test failure instead of a
-//     silent hang/flake.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
@@ -105,14 +98,10 @@ beforeEach(() => {
   // handleSupervisorPrep checks process.env.ANTHROPIC_API_KEY before its own
   // gates — unset in this test env, so stub it to reach the code under test.
   vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
-  // Defensive only — see file header. No test path here is expected to reach
-  // a real fetch() call; this just fails loudly instead of hitting the network.
-  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('unexpected real fetch() call in W2 drill test')));
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
 });
 
 describe('W2 drill — fail-closed checkDailyCap blocks every gated action', () => {
