@@ -4,7 +4,7 @@
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { Sentry }        from './_lib/sentry-server.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
-import { checkDailyCap, checkUserCap } from './_lib/usage-tracker.js';
+import { checkDailyCap, checkUserCap, trackUsage, trackUserUsage } from './_lib/usage-tracker.js';
 import { generateTraceId, traceLog } from './_lib/trace.js';
 import { logAiCall } from './_lib/ai-cost-log.js';
 import { writeSystemLog } from './_lib/system-log.js';
@@ -351,6 +351,8 @@ const handler = async (req, res) => {
       }
 
       if (inputTokens || outputTokens) {
+        await trackUsage(inputTokens, outputTokens, model).catch(() => {});
+        await trackUserUsage(user.id, inputTokens, outputTokens, model).catch(() => {});
         await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: inputTokens, tokensOut: outputTokens, traceId });
       }
 
@@ -424,6 +426,8 @@ const handler = async (req, res) => {
     const data = await response.json();
     console.log('[project-reviewer] Anthropic responded with status:', response.status);
     if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, model);
       await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId, durationMs: Date.now() - start });
     }
 

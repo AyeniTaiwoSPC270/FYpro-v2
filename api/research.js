@@ -4,7 +4,7 @@
 
 import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }                 from './_lib/cors.js';
-import { checkDailyCap, checkUserCap } from './_lib/usage-tracker.js';
+import { checkDailyCap, checkUserCap, trackUsage, trackUserUsage } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
 import { generateTraceId, traceLog }      from './_lib/trace.js';
 import { logAiCall }                      from './_lib/ai-cost-log.js';
@@ -222,6 +222,8 @@ async function handleValidate(req, res) {
 
     const data = await response.json();
     if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
       await logAiCall({ userId: user.id, feature: 'topic-validator', model: 'claude-sonnet-4-6', tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId });
     }
 
@@ -400,6 +402,8 @@ async function handleLitMap(req, res) {
 
     const data = await response.json();
     if (data.usage) {
+      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
       await logAiCall({ userId: user.id, feature: 'lit-map', model: 'claude-sonnet-4-6', tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId });
     }
 
