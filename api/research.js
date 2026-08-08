@@ -4,8 +4,10 @@
 
 import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }                 from './_lib/cors.js';
-import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
+import { checkDailyCap, checkUserCap } from './_lib/usage-tracker.js';
 import { getCached, setCached, buildCacheKey } from './_lib/cache.js';
+import { generateTraceId, traceLog }      from './_lib/trace.js';
+import { logAiCall }                      from './_lib/ai-cost-log.js';
 import { fetchPapersForValidation, fetchPapersForLitMap } from './_lib/papers.js';
 import { supabaseAdmin }                  from './_lib/supabase-admin.js';
 import { TOPIC_VALIDATOR_SYSTEM, LITERATURE_MAP_SYSTEM } from './_lib/ai-prompts.js';
@@ -71,6 +73,9 @@ async function userCapBlocked(userId, res, knownIsPaid) {
  * @throws {Error} If Anthropic request times out after 50s (returns 504)
  */
 async function handleValidate(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
@@ -103,7 +108,7 @@ async function handleValidate(req, res) {
       getCached(claudeKey).catch(() => null),
     ]);
   } catch (err) {
-    console.error('[research/validate] auth.getUser threw:', err.message);
+    traceLog(traceId, 'error', '[research/validate] auth.getUser threw:', err.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -115,8 +120,9 @@ async function handleValidate(req, res) {
   if (claudeCached) {
     const { error: cacheInsertErr } = await supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: 0, user_id: user.id });
     if (cacheInsertErr) {
-      console.error('[research/validate] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
+      traceLog(traceId, 'error', '[research/validate] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
     }
+    await logAiCall({ userId: user.id, feature: 'topic-validator', model: 'claude-sonnet-4-6', cacheHit: true, traceId });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
@@ -132,7 +138,7 @@ async function handleValidate(req, res) {
       .maybeSingle();
     entData = data;
   } catch (e) {
-    console.error('[research/validate] entitlements fetch failed (assuming free):', e.message);
+    traceLog(traceId, 'error', '[research/validate] entitlements fetch failed (assuming free):', e.message);
   }
   const paidFeatures = Array.isArray(entData?.paid_features) ? entData.paid_features : [];
   // Spend cap counts express_defense as paid; the run limit does not (it must
@@ -170,7 +176,7 @@ async function handleValidate(req, res) {
         return res.status(429).json({ error: 'Free tier limit reached for this feature. Upgrade to the Student Pack to continue.' });
       }
     } catch (redisErr) {
-      console.error('[research/validate] run reservation failed (failing open):', redisErr?.message);
+      traceLog(traceId, 'error', '[research/validate] run reservation failed (failing open):', redisErr?.message);
       runKey = null;
       reservedCount = null;
     }
@@ -216,14 +222,13 @@ async function handleValidate(req, res) {
 
     const data = await response.json();
     if (data.usage) {
-      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
-      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await logAiCall({ userId: user.id, feature: 'topic-validator', model: 'claude-sonnet-4-6', tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId });
     }
 
     if (!response.ok) {
       refundRun(); // Anthropic returned an error status — don't charge the run
       const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
-      console.error('[research/validate] Anthropic error:', response.status, errorMsg);
+      traceLog(traceId, 'error', '[research/validate] Anthropic error:', response.status, errorMsg);
       return res.status(502).json({ error: errorMsg });
     }
 
@@ -264,23 +269,23 @@ async function handleValidate(req, res) {
           { user_id: user.id, run_counts: { ...dbRunCounts, topic_validator: newCount }, updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
         );
-      if (runSyncErr) console.error('[research/validate] run count sync failed:', runSyncErr?.message);
+      if (runSyncErr) traceLog(traceId, 'error', '[research/validate] run count sync failed:', runSyncErr?.message);
     }
 
     const duration = Date.now() - start;
     const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'topic-validator', duration_ms: duration, user_id: user.id });
     const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
     await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-      console.error('[research/validate] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+      traceLog(traceId, 'error', '[research/validate] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
     });
     return res.status(200).json(data);
   } catch (err) {
     refundRun(); // request never produced a result — don't charge the run
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[research/validate] Anthropic request timed out after 50s');
+      traceLog(traceId, 'error', '[research/validate] Anthropic request timed out after 50s');
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
-    console.error('[research/validate]', err.message);
+    traceLog(traceId, 'error', '[research/validate]', err.message);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
@@ -294,6 +299,9 @@ async function handleValidate(req, res) {
  * @throws {Error} If Anthropic request times out after 50s (returns 504)
  */
 async function handleLitMap(req, res) {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
@@ -322,7 +330,7 @@ async function handleLitMap(req, res) {
       getCached(claudeKey).catch(() => null),
     ]);
   } catch (err) {
-    console.error('[research/lit-map] auth.getUser threw:', err.message);
+    traceLog(traceId, 'error', '[research/lit-map] auth.getUser threw:', err.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -334,8 +342,9 @@ async function handleLitMap(req, res) {
   if (claudeCached) {
     const { error: cacheInsertErr } = await supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: 0, user_id: user.id });
     if (cacheInsertErr) {
-      console.error('[research/lit-map] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
+      traceLog(traceId, 'error', '[research/lit-map] response_times insert failed (cache-hit):', cacheInsertErr?.message, cacheInsertErr?.code, cacheInsertErr?.details, cacheInsertErr?.hint, JSON.stringify(cacheInsertErr));
     }
+    await logAiCall({ userId: user.id, feature: 'lit-map', model: 'claude-sonnet-4-6', cacheHit: true, traceId });
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(claudeCached);
   }
@@ -391,8 +400,7 @@ async function handleLitMap(req, res) {
 
     const data = await response.json();
     if (data.usage) {
-      await trackUsage(data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
-      await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, 'claude-sonnet-4-6');
+      await logAiCall({ userId: user.id, feature: 'lit-map', model: 'claude-sonnet-4-6', tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId });
     }
 
     if (response.ok && data.content?.[0]?.text) {
@@ -408,13 +416,13 @@ async function handleLitMap(req, res) {
           data.content[0].text     = JSON.stringify(litMap);
         }
       } catch {
-        console.warn('[research/lit-map] Could not inject papers into Claude response — returning map only');
+        traceLog(traceId, 'warn', '[research/lit-map] Could not inject papers into Claude response — returning map only');
       }
     }
 
     if (!response.ok) {
       const errorMsg = data?.error?.message || data?.error || `Claude API error (${response.status})`;
-      console.error('[research/lit-map] Anthropic error:', response.status, errorMsg);
+      traceLog(traceId, 'error', '[research/lit-map] Anthropic error:', response.status, errorMsg);
       return res.status(502).json({ error: errorMsg });
     }
 
@@ -424,15 +432,15 @@ async function handleLitMap(req, res) {
     const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'lit-map', duration_ms: duration, user_id: user.id });
     const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
     await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-      console.error('[research/lit-map] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+      traceLog(traceId, 'error', '[research/lit-map] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
     });
     return res.status(200).json(data);
   } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[research/lit-map] Anthropic request timed out after 50s');
+      traceLog(traceId, 'error', '[research/lit-map] Anthropic request timed out after 50s');
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
-    console.error('[research/lit-map]', err.message);
+    traceLog(traceId, 'error', '[research/lit-map]', err.message);
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 }
@@ -477,7 +485,7 @@ export default async function handler(req, res) {
     if (action === 'lit-map')  return handleLitMap(req, res);
     return res.status(400).json({ error: 'Unknown action. Use ?action=validate, ?action=lit-map, or ?action=user-count' });
   } catch (err) {
-    Sentry.captureException(err);
+    Sentry.captureException(err, { tags: { trace_id: res.getHeader('X-Trace-Id') } });
     console.error('[api/research] unhandled error:', err);
     sendTelegramAlert(`🔴 Unhandled error in /api/research?action=${req.query?.action || 'unknown'} — ${err.message}`).catch(() => null);
     writeSystemLog({ severity: 'critical', feature: 'research', source: 'api', plain_message: `Unhandled error: ${err.message}`, raw_detail: { stack: err.stack, action: req.query?.action } }).catch(() => null);
