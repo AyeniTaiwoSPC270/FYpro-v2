@@ -819,6 +819,7 @@ const DATA_KEY_COLS = {
   admin_users:          ['id','email','created_at'],
   user_reports:         ['id','user_id','reason','created_at'],
   user_ratings:         ['id','user_id','rating','feedback','created_at'],
+  ai_call_log:          ['id','user_id','feature','model','cost_usd','cache_hit','created_at'],
 }
 
 // Precomputed set of allowed table names — avoids rebuilding on every /data call

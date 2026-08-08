@@ -288,6 +288,7 @@ fypro-v2/
 │   │   ├── usage-tracker.js       # Daily token/cost tracking
 │   │   ├── failure-policy.js      # W2: shared fail-open/fail-closed guardedCheck() — see docs/architecture decision table
 │   │   ├── reliable-async.js      # W2: retry + dead-letter for fire-and-forget side effects (reliably())
+│   │   ├── ai-cost-log.js         # W3: per-call Anthropic cost/token/cache/trace ledger (logAiCall)
 │   │   ├── ai-prompts.js          # SERVER-side system prompts (defense + reviewer — never trust client prompts)
 │   │   ├── anthropic-proxy.js     # Shared Anthropic call wrapper
 │   │   ├── validate.js            # Shared Zod validation schemas
@@ -588,6 +589,21 @@ Express achievements are scoped to the express project; main achievements scoped
 - resolved_at (nullable)
 - Service-role only: no client INSERT/SELECT/UPDATE/DELETE policies. Written by
   api/_lib/reliable-async.js when a retried side effect exhausts all attempts.
+
+### ai_call_log (migration 0043)
+- id (uuid)
+- user_id (uuid, nullable — FK auth.users)
+- feature (text) — e.g. 'topic-validator', 'defense-simulator', 'project-reviewer'
+- model (text)
+- tokens_in, tokens_out (integer)
+- cost_usd (numeric)
+- cache_hit (boolean)
+- trace_id (text, nullable)
+- duration_ms (integer, nullable)
+- created_at (timestamptz)
+- Service-role only: no client INSERT/SELECT/UPDATE/DELETE policies. Written by
+  api/_lib/ai-cost-log.js (logAiCall) from every Anthropic call site and cache-hit
+  branch. Pruned to 90 days by api/admin.js action=prune-ai-cost-log.
 
 ---
 
