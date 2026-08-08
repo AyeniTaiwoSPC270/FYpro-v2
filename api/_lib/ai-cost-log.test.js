@@ -3,7 +3,7 @@
 // api/ai.js, api/project-reviewer.js, and api/research.js routes through this
 // function — see docs/specs/2026-08-03-w3-cost-telemetry-design.md.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({ insert: null, lastTable: null, lastRow: null }))
 
@@ -24,6 +24,10 @@ beforeEach(() => {
 })
 
 describe('logAiCall', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('writes to the ai_call_log table', async () => {
     await logAiCall({ userId: 'u1', feature: 'topic-validator', model: 'claude-sonnet-4-6', tokensIn: 100, tokensOut: 50 })
     expect(h.lastTable).toBe('ai_call_log')
@@ -65,6 +69,16 @@ describe('logAiCall', () => {
     const p = logAiCall({ userId: 'u1', feature: 'topic-validator', model: 'claude-sonnet-4-6' })
     await vi.advanceTimersByTimeAsync(3000)
     await expect(p).resolves.toBeUndefined()
-    vi.useRealTimers()
+  })
+
+  it('logs the Supabase-level error when insert resolves with { error } instead of throwing', async () => {
+    h.insert.mockResolvedValue({ data: null, error: { message: 'relation "ai_call_log" does not exist' } })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await logAiCall({ userId: 'u1', feature: 'topic-validator', model: 'claude-sonnet-4-6', tokensIn: 10, tokensOut: 5 })
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('topic-validator'),
+      expect.stringContaining('relation "ai_call_log" does not exist')
+    )
+    errorSpy.mockRestore()
   })
 })

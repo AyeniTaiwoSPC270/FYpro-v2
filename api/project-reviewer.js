@@ -353,7 +353,7 @@ const handler = async (req, res) => {
       if (inputTokens || outputTokens) {
         await trackUsage(inputTokens, outputTokens, model).catch(() => {});
         await trackUserUsage(user.id, inputTokens, outputTokens, model).catch(() => {});
-        await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: inputTokens, tokensOut: outputTokens, traceId });
+        await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: inputTokens, tokensOut: outputTokens, traceId, durationMs: Date.now() - start });
       }
 
       if (stopReason === 'max_tokens') {

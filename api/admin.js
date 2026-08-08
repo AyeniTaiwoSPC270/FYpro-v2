@@ -2271,7 +2271,7 @@ function scoreHistogram(rows) {
   return buckets
 }
 
-// action: "data-tab" — curated KPIs + 8 chart datasets + 29 table row counts
+// action: "data-tab" — curated KPIs + 8 chart datasets + 30 table row counts
 async function handleDataTab(req, res) {
   const caller = await verifyAdmin(req, res)
   if (!caller) return
@@ -2335,9 +2335,9 @@ async function handleDataTab(req, res) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, kobo]) => ({ name, value: Math.round(kobo / 100) }))
 
-    // ── Table row counts (all 29 tables in parallel) ─────────────────────────
+    // ── Table row counts (all 30 tables in parallel) ─────────────────────────
     const ALL_TABLES = [
-      'admin_users','app_config','auth_attempts','daily_usage',
+      'admin_users','ai_call_log','app_config','auth_attempts','daily_usage',
       'defense_certificates','defense_credits','defense_sessions','defense_turns',
       'email_log','email_preferences','feature_feedback','generation_failures',
       'institutions','notifications','payment_issues','payments',
