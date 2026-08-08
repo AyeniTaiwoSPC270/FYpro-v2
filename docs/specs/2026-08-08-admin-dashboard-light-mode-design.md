@@ -52,8 +52,42 @@ isolated preference, independent of the public site's theme.
 
 ### 1. Token layer — new `src/pages/admin/adminTheme.css`
 
-Defines admin-scoped CSS custom properties under an attribute selector that is
-distinct from the public site's `[data-theme]`:
+A full code audit during planning found the color surface is bigger than
+originally scoped: beyond the ~150 inline styles using the named constants,
+there are ~90 additional literal `rgba(255,255,255,X)` / hex values scattered
+through `Health.jsx` that bypass the constants entirely, plus 3 more
+`` `${COLOR}NN` `` alpha-suffix concatenation hacks beyond the 2 first found
+(in `StatusBadge` and `PlanBadge`). Auditing every one of those individually
+would be a large, error-prone effort disproportionate to the feature. The
+palette design below avoids that entirely by only theming the **structural**
+tokens (backgrounds/surfaces/borders/text) and keeping the **semantic accent**
+colors (blue/green/amber/red) identical hex in both themes:
+
+- Blue/green/amber/red are only ever used for badges, borders, chart accents,
+  and icons in this file — never as body text color (text always resolves
+  through `WHITE`/`DIM`/`MUTED`, which *do* theme). Decorative accent contrast
+  on a light surface isn't a WCAG concern the way body text contrast is, so
+  there's no need for a per-theme variant of these four colors.
+- Because they stay plain hex strings (not `var()` references), every
+  existing `` `${GREEN}22` ``-style alpha-suffix concatenation — the 2
+  originally found plus the 3 more found in `StatusBadge`/`PlanBadge` —
+  continues to work with **zero code changes**, since string concatenation
+  onto a `var(--x)` reference is what breaks it, not onto a plain hex string.
+- Only `BG`, `SURFACE`, `CARD`, `BORDER`, `WHITE`, `DIM`, `MUTED` become
+  `var(--admin-*)` references.
+- The ~90 scattered literal `rgba(255,255,255,X)` overlays (dividers,
+  skeleton backgrounds, hover states, dimmed text that never got routed
+  through the `BORDER`/`DIM`/`MUTED` constants originally) get fixed by one
+  mechanical, non-semantic token: `--admin-fg-rgb`, holding just the RGB
+  triplet (no alpha). Every literal `rgba(255,255,255,` in the file becomes
+  `rgba(var(--admin-fg-rgb),`, preserving whatever alpha value was already
+  there. This is a single find-and-replace, not 90 individual judgment calls.
+- `rgba(0,0,0,*)` modal backdrop scrims are left untouched — a dark overlay
+  behind a modal is correct in both themes.
+- The vivid one-off accent hexes (`#4ade80`, `#fbbf24`, `#60a5fa`, `#f87171`,
+  `#3B82F6`, `#8B5CF6`, `#06B6D4`, `PIE_COLORS`) are decorative (chart glows,
+  live-pulse dot, feed-item dots) and stay constant across themes for the same
+  reason as the semantic accents above.
 
 ```css
 [data-admin-theme="dark"] {
@@ -61,16 +95,10 @@ distinct from the public site's `[data-theme]`:
   --admin-surface: #0D1B2A;
   --admin-card: #0F2235;
   --admin-border: rgba(255,255,255,0.08);
-  --admin-blue: #0066FF;
-  --admin-green: #16A34A;
-  --admin-amber: #F59E0B;
-  --admin-red: #DC2626;
   --admin-white: #FFFFFF;
   --admin-dim: rgba(255,255,255,0.7);
   --admin-muted: rgba(255,255,255,0.4);
-  --admin-green-soft: rgba(22,163,74,0.13);
-  --admin-pie-1: #0066FF; --admin-pie-2: #16A34A; --admin-pie-3: #F59E0B;
-  --admin-pie-4: #DC2626; --admin-pie-5: #8B5CF6; --admin-pie-6: #06B6D4;
+  --admin-fg-rgb: 255,255,255;
 }
 
 [data-admin-theme="light"] {
@@ -78,23 +106,16 @@ distinct from the public site's `[data-theme]`:
   --admin-surface: #FFFFFF;
   --admin-card: #FFFFFF;
   --admin-border: rgba(13,27,42,0.10);
-  --admin-blue: #0066FF;
-  --admin-green: #16A34A;
-  --admin-amber: #D97706; /* deepened from #F59E0B for AA contrast on white */
-  --admin-red: #DC2626;
   --admin-white: #0D1B2A; /* "white text" token inverts to dark navy text */
   --admin-dim: rgba(13,27,42,0.65);
   --admin-muted: rgba(13,27,42,0.40);
-  --admin-green-soft: rgba(22,163,74,0.12);
-  --admin-pie-1: #0066FF; --admin-pie-2: #16A34A; --admin-pie-3: #D97706;
-  --admin-pie-4: #DC2626; --admin-pie-5: #8B5CF6; --admin-pie-6: #0891B2;
+  --admin-fg-rgb: 13,27,42;
 }
 ```
 
-The `--admin-green-soft` token replaces the two existing alpha-suffix hacks in
-`Health.jsx` (string concatenation like `` `${GREEN}22` `` to fake an alpha
-channel on a hex constant) — those break once `GREEN` becomes a `var()`
-string, so they get a dedicated pre-blended token instead.
+`BLUE` (#0066FF), `GREEN` (#16A34A), `AMBER` (#F59E0B), `RED` (#DC2626), and
+`PIE_COLORS` are unaffected by the theme and stay plain hex constants — see
+Section 4.
 
 ### 2. Isolation
 
@@ -124,48 +145,57 @@ drilling.
 
 Replaces the three independent hex-literal copies of `BG`/`SURFACE`/`CARD`/
 `BORDER`/`BLUE`/`GREEN`/`AMBER`/`RED`/`WHITE`/`DIM`/`MUTED`/`PIE_COLORS` with
-one shared export, as CSS-variable strings:
+one shared export. Only the structural 7 become CSS-variable strings; the
+semantic/decorative colors are re-exported unchanged (this still fixes the
+existing three-way duplication, it's just not theme-dependent for these five):
 
 ```js
 export const BG = 'var(--admin-bg)'
 export const SURFACE = 'var(--admin-surface)'
 export const CARD = 'var(--admin-card)'
 export const BORDER = 'var(--admin-border)'
-export const BLUE = 'var(--admin-blue)'
-export const GREEN = 'var(--admin-green)'
-export const AMBER = 'var(--admin-amber)'
-export const RED = 'var(--admin-red)'
 export const WHITE = 'var(--admin-white)'
 export const DIM = 'var(--admin-dim)'
 export const MUTED = 'var(--admin-muted)'
-export const GREEN_SOFT = 'var(--admin-green-soft)'
-export const PIE_COLORS = [
-  'var(--admin-pie-1)', 'var(--admin-pie-2)', 'var(--admin-pie-3)',
-  'var(--admin-pie-4)', 'var(--admin-pie-5)', 'var(--admin-pie-6)',
-]
+
+export const BLUE = '#0066FF'
+export const GREEN = '#16A34A'
+export const AMBER = '#F59E0B'
+export const RED = '#DC2626'
+export const PIE_COLORS = ['#0066FF', '#16A34A', '#F59E0B', '#DC2626', '#8B5CF6', '#06B6D4']
 ```
 
 `Health.jsx`, `FeatureFeedbackWidget.jsx`, and `RatingsWidget.jsx` import from
-this module instead of redeclaring their own copies. This is both the fix for
-the existing three-way duplication and the mechanism that makes every one of
-the ~150 existing inline-style call sites, every recharts `stroke`/`fill`/
-`contentStyle` prop, and the raw SVG `stroke` attributes theme automatically —
-**zero per-call-site edits** required, because `var(--admin-*)` is a valid CSS
-`<paint>`/color value everywhere a hex string was previously accepted
-(inline styles, SVG presentation attributes, recharts props all pass through
-to real CSS/SVG rendering).
+this module instead of redeclaring their own copies. Because `var(--admin-*)`
+is a valid CSS `<paint>`/color value everywhere a hex string was previously
+accepted (inline styles, SVG presentation attributes, recharts props all pass
+through to real CSS/SVG rendering), every existing call site that already
+used `BG`/`SURFACE`/`CARD`/`BORDER`/`WHITE`/`DIM`/`MUTED` themes automatically
+with **zero per-call-site edits**. Call sites using `BLUE`/`GREEN`/`AMBER`/
+`RED`/`PIE_COLORS` — including all 5 `` `${COLOR}NN` `` alpha-suffix
+concatenation call sites — are untouched, because those constants are still
+plain hex strings.
 
-The two `` `${GREEN}22` `` call sites are the one exception and get changed to
-reference `GREEN_SOFT` directly instead of string-concatenating an alpha
-suffix onto a token.
+### 5. Structural literal sweep + static `<style>` block
 
-### 5. Static `<style>` block
+Two mechanical, non-semantic find-and-replace passes across `Health.jsx`,
+`FeatureFeedbackWidget.jsx`, `RatingsWidget.jsx`, and the `<style>{`...`}`</style>`
+block (Health.jsx ~lines 1989–2034):
 
-Mechanical swap of the ~15 hardcoded hex/rgba values in the `<style>{`...`}`</style>`
-block (`.mc-topbar`, `.mc-tabs`, `.mc-card`, `.mc-action-btn`, `.mc-skeleton`,
-`.mc-live-pulse`, `.mc-section-divider`, `.mc-mobile-tab-select`, etc.) to the
-matching `var(--admin-*)` custom properties. Contained entirely within this
-one ~40-line block.
+1. Every literal `rgba(255,255,255,` becomes `rgba(var(--admin-fg-rgb),` —
+   this covers the ~90 scattered structural overlays (dividers, skeleton
+   backgrounds, hover states, dimmed labels) that never routed through the
+   named constants originally.
+2. The handful of duplicated literal `#060E18` (→ `BG`), `#0D1B2A` (→
+   `SURFACE`), and `#fff`/`#FFFFFF` (→ `WHITE`) instances that should have
+   used the constants but didn't (e.g. the `isAdmin === null` loading screen
+   at Health.jsx:1805-1806, and `.mc-topbar`/`.mc-tabs`/`.mc-action-btn:hover`
+   inside the `<style>` block) get swapped to reference the token/var
+   directly.
+
+`rgba(0,0,0,*)` modal backdrops and the vivid one-off accent hexes (`#4ade80`,
+`#fbbf24`, `#60a5fa`, `#f87171`, `#3B82F6`, `#8B5CF6`, `#06B6D4`) are
+deliberately left untouched per Section 1.
 
 ### 6. Toggle UI
 
@@ -183,12 +213,9 @@ Vitals, Logs, Reports, Ratings, Data) plus both widgets, in both themes,
 checking:
 - Chart legibility (recharts tooltips, `CartesianGrid` lines, pie segments)
   against the new light background.
-- The `GREEN_SOFT` token and any other one-off literal hex found during
-  implementation that bypasses the shared token module (a full grep sweep of
-  raw `#`/`rgba(` literals in `Health.jsx` turned up ~119 occurrences at
-  design time; most are the token definitions themselves or already route
-  through the named constants, but a residual few may be one-offs that need
-  folding into the token set as they're found).
+- The `rgba(var(--admin-fg-rgb),*)` sweep resolves correctly in both themes
+  (spot-check dividers, skeleton loaders, and dimmed labels specifically,
+  since those are the highest-volume swap).
 - Dark mode renders pixel-identical to current production (regression check).
 
 ## Alternatives considered
@@ -214,11 +241,7 @@ migration is planned.
 
 ## Open items for implementation
 
-- Confirm the residual ad-hoc hex literals (beyond the two `${GREEN}22` spots
-  already accounted for) found via `grep -n "#[0-9A-Fa-f]\{3,6\}\|rgba(" src/pages/admin/Health.jsx`
-  are either already routed through named constants or get folded into
-  `adminTokens.js`/`adminTheme.css` as new tokens.
 - Confirm icon choice/placement for the toggle button doesn't collide with
-  existing `.mc-topbar` icons (notification bell, admin identity, etc.) at the
-  600px mobile breakpoint where several topbar elements already hide
-  (`mc-topbar-date`, `mc-topbar-center`, `mc-topbar-utility`).
+  existing `.mc-topbar` icons (refresh, alerts test, Sentry test, founder
+  photo) in the right-hand icon group, or at the 600px mobile breakpoint
+  where `mc-topbar-date`/`mc-topbar-center`/`mc-topbar-utility` already hide.
