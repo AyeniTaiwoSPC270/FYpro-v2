@@ -919,7 +919,7 @@ async function cmdSetPhoto(chatId) {
   return '📷 Send your photo now. You have 5 minutes.'
 }
 
-async function handleIncomingPhoto(chatId, photoArray) {
+async function handleIncomingPhoto(chatId, fileId, contentType = 'image/jpeg') {
   const url   = UPSTASH_URL
   const token = UPSTASH_TOKEN
   if (!url || !token) {
@@ -936,9 +936,6 @@ async function handleIncomingPhoto(chatId, photoArray) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN
   if (!botToken) return '❌ Bot token not configured.'
 
-  // Largest photo is last element
-  const largest = photoArray[photoArray.length - 1]
-  const fileId  = largest?.file_id
   if (!fileId) return '❌ Could not read photo file ID.'
 
   try {
@@ -963,8 +960,8 @@ async function handleIncomingPhoto(chatId, photoArray) {
     const { error: uploadErr } = await supabaseAdmin.storage
       .from('admin-assets')
       .upload('founder/profile.jpg', photoBuffer, {
-        contentType: 'image/jpeg',
-        upsert:      true,
+        contentType,
+        upsert: true,
       })
     if (uploadErr) throw uploadErr
 
@@ -1149,8 +1146,21 @@ async function handleTelegramBot(req, res) {
   const chatId = message.chat.id
 
   // ── Photo message (only process when /setphoto pending flag is set) ──────
-  if (message.photo) {
-    const reply = await handleIncomingPhoto(chatId, message.photo)
+  // Telegram delivers images as `photo` (compressed) or `document` (sent as a
+  // file, e.g. from desktop with compression declined) — both must be handled
+  // or an image sent as a document is silently dropped with no reply.
+  if (message.photo || message.document) {
+    let fileId, contentType
+    if (message.photo) {
+      fileId      = message.photo[message.photo.length - 1]?.file_id
+      contentType = 'image/jpeg'
+    } else {
+      const mime = message.document.mime_type || ''
+      if (!mime.startsWith('image/')) return res.status(200).end()
+      fileId      = message.document.file_id
+      contentType = mime
+    }
+    const reply = await handleIncomingPhoto(chatId, fileId, contentType)
     if (reply) await sendReply(chatId, reply)
     return res.status(200).end()
   }

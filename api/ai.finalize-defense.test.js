@@ -38,6 +38,7 @@ vi.mock('./_lib/cache.js', () => ({
 }));
 vi.mock('./_lib/system-log.js', () => ({ writeSystemLog: vi.fn() }));
 vi.mock('./_lib/anthropic-proxy.js', () => ({ callAnthropic: vi.fn() }));
+vi.mock('./_lib/ai-cost-log.js', () => ({ logAiCall: vi.fn() }));
 vi.mock('./_lib/telegram.js', () => ({ sendTelegramAlert: vi.fn(), sendTelegramAlertOnce: vi.fn() }));
 vi.mock('./_lib/sentry-server.js', () => ({ Sentry: { captureException: vi.fn() } }));
 vi.mock('./_lib/run-reservation.js', () => ({ reserveRun: vi.fn(), syncRunCount: vi.fn() }));
