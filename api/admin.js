@@ -2453,7 +2453,7 @@ async function handleGetFounderPhotoUploadUrl(req, res) {
 
   const { data, error } = await supabaseAdmin.storage
     .from('admin-assets')
-    .createSignedUploadUrl('founder/profile.jpg')
+    .createSignedUploadUrl('founder/profile.jpg', { upsert: true })
 
   if (error) {
     console.error('[admin/get-founder-photo-upload-url]', error.message)
