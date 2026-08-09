@@ -15,6 +15,7 @@ import AnnouncementBanner from '../components/changelog/AnnouncementBanner'
 import PaymentIssueModal from '../components/PaymentIssueModal'
 import PaymentFailedBanner from '../components/PaymentFailedBanner'
 import Spinner from '../components/Spinner'
+import FullPageLoadError from '../components/FullPageLoadError'
 import BadgeRow from '../components/badges/BadgeRow'
 import MomentumRing from '../components/momentum/MomentumRing'
 import AchievementsRow from '../components/badges/AchievementsRow'
@@ -55,13 +56,13 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const navigate = useNavigate()
   const { state, clearProjectData, isOnboarded, onboardingResolved } = useApp()
-  const { selectProject, projectId: activeProjectId, isLoading: projectStateLoading } = useProjectState()
+  const { selectProject, projectId: activeProjectId, isLoading: projectStateLoading, loadError, retryLoad } = useProjectState()
 
   // Kept as a safety net in case the render-path guard below is bypassed.
   useEffect(() => {
-    if (projectStateLoading || !onboardingResolved) return
+    if (projectStateLoading || !onboardingResolved || loadError) return
     if (!isOnboarded) navigate('/start', { replace: true })
-  }, [isOnboarded, onboardingResolved, navigate, projectStateLoading])
+  }, [isOnboarded, onboardingResolved, navigate, projectStateLoading, loadError])
 
   const { user } = useUser()
   const [projects, setProjects] = useState([])
@@ -233,6 +234,11 @@ export default function Dashboard() {
       setDeleting(false)
     }
   }
+
+  // Project state failed to load AND there was no cached snapshot to fall back on —
+  // onboardingResolved will never resolve on its own here (see useProjectState.ts).
+  // Show a retry state, never a guessed redirect or a blank dashboard.
+  if (loadError) return <FullPageLoadError onRetry={retryLoad} stepName="dashboard" />
 
   // Hold the skeleton until Supabase has confirmed onboarding status —
   // prevents the dashboard from rendering and flashing before the /start redirect.

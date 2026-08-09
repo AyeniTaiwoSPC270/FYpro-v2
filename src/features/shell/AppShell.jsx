@@ -38,6 +38,7 @@ const DefensePrep        = safeLazy(() => import('../defensePrep/DefensePrep'))
 const SupervisorEmail    = safeLazy(() => import('../supervisorEmail/SupervisorEmail'))
 import FyproLogo from '../../components/FyproLogo'
 import { AppShellSkeleton } from '../../components/skeletons/PageSkeletons'
+import FullPageLoadError from '../../components/FullPageLoadError'
 import RankPill from '../../components/rank/RankPill'
 import RatingModal from '../../components/rating/RatingModal'
 import { useRatingTrigger } from '../../hooks/useRatingTrigger'
@@ -138,10 +139,11 @@ function StepLoadingSkeleton() {
 export default function AppShell() {
   const navigate = useNavigate()
   const { state, navigateStep, isOnboarded, onboardingResolved } = useApp()
-  const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration, isOfflineMode } = useProjectState()
+  const { isLoading, showMigrationModal, dismissMigrationModal, confirmMigration, isOfflineMode, loadError, retryLoad } = useProjectState()
 
   useEffect(() => {
     if (isLoading) return
+    if (loadError) return  // never redirect off a guess when the load itself failed
     if (!onboardingResolved) return  // wait for Supabase before acting on localStorage cache
     if (!isOnboarded) {
       navigate('/start', { replace: true })
@@ -162,7 +164,7 @@ export default function AppShell() {
       navigate('/dashboard', { replace: true })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate and isOnboarded are stable refs; onboardingResolved only flips once
-  }, [isLoading, onboardingResolved])
+  }, [isLoading, onboardingResolved, loadError])
 
   const { features, loading: featuresLoading } = usePaidFeatures()
   const { isOverLimit } = useRunLimit(features, featuresLoading)
@@ -220,6 +222,7 @@ export default function AppShell() {
   const CurrentStep = STEP_COMPONENTS[state.currentStep] ?? STEP_COMPONENTS[0]
 
   if (isLoading) return <AppShellSkeleton />
+  if (loadError) return <FullPageLoadError onRetry={retryLoad} stepName="app-shell" />
 
   return (
     <div id="app-shell" style={{ display: 'flex', overflow: 'hidden', flexDirection: 'column' }}>

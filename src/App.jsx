@@ -37,10 +37,12 @@ import ExpressProviders from './features/expressDefense/ExpressProviders'
 import RouteProgressBar from './components/RouteProgressBar'
 import CookieBanner from './components/CookieBanner'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
+import FullPageLoadError from './components/FullPageLoadError'
 import {
   AuthPageSkeleton,
   PublicPageSkeleton,
   DashboardPageSkeleton,
+  AccountPageSkeleton,
   AppShellSkeleton,
 } from './components/skeletons/PageSkeletons'
 
@@ -87,10 +89,13 @@ function S({ fallback, children }) {
 // fallback should match the Suspense fallback of the route being guarded, so the
 // entitlement check and the lazy-chunk load look like one continuous loading state.
 function RequireExpress({ children, fallback = <DashboardPageSkeleton /> }) {
-  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { features, loading: featuresLoading, error: featuresError, refetch } = usePaidFeatures()
   const { betaFree, loading: betaLoading }     = useExpressBeta()
 
   if (featuresLoading || betaLoading) return fallback
+  // Entitlement fetch failed — features is [] here but that's NOT proof the user
+  // lacks express_defense. Never bounce to the paywall on a network blip.
+  if (featuresError) return <FullPageLoadError onRetry={refetch} stepName="express-gate" />
   if (!features.includes('express_defense') && !betaFree) {
     return <Navigate to="/express-onboarding" replace />
   }
@@ -99,9 +104,9 @@ function RequireExpress({ children, fallback = <DashboardPageSkeleton /> }) {
 
 function ExpressDashboardRedirect() {
   const { user } = useUser()
-  const { features, loading: featuresLoading } = usePaidFeatures()
+  const { features, loading: featuresLoading, error: featuresError, refetch: refetchFeatures } = usePaidFeatures()
   const { betaFree, loading: betaLoading } = useExpressBeta()
-  const { hasExpress, hasStandard, loading: projectsLoading } = useProjectModes()
+  const { hasExpress, hasStandard, loading: projectsLoading, error: modesError, refetch: refetchModes } = useProjectModes()
 
   const loading = featuresLoading || betaLoading || projectsLoading
 
@@ -113,6 +118,18 @@ function ExpressDashboardRedirect() {
     const cached = user?.id ? localStorage.getItem(`fypro_express_only_v2_${user.id}`) : null
     if (cached === '1') return <Navigate to="/express" replace />
     return <DashboardPageSkeleton />
+  }
+
+  // Either signal failed to load — features/hasExpress are unreliable defaults here,
+  // not proof this is a standard user. Show a retry state instead of guessing, and
+  // skip the cache write below so a blip can't overwrite a correct cached '1'.
+  if (featuresError || modesError) {
+    return (
+      <FullPageLoadError
+        onRetry={() => { refetchFeatures(); refetchModes() }}
+        stepName="dashboard-redirect"
+      />
+    )
   }
 
   const isExpressOnly = isExpressOnlyUser({
@@ -201,12 +218,12 @@ function AppRoutes() {
       {/* Dashboard + account pages */}
       <Route path="/dashboard" element={<ProtectedRoute><ExpressDashboardRedirect /></ProtectedRoute>} />
       <Route path="/start"     element={<ProtectedRoute><S fallback={<AuthPageSkeleton />}><SplashOnboarding /></S></ProtectedRoute>} />
-      <Route path="/profile"   element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Profile /></S></ProtectedRoute>} />
-      <Route path="/settings"  element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Settings /></S></ProtectedRoute>} />
-      <Route path="/account/email-preferences" element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><EmailPreferences /></S></ProtectedRoute>} />
-      <Route path="/account/certificates"      element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyCertificates /></S></ProtectedRoute>} />
-      <Route path="/account/referrals"         element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><MyReferrals /></S></ProtectedRoute>} />
-      <Route path="/account/achievements"      element={<ProtectedRoute><S fallback={<DashboardPageSkeleton />}><Achievements /></S></ProtectedRoute>} />
+      <Route path="/profile"   element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><Profile /></S></ProtectedRoute>} />
+      <Route path="/settings"  element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><Settings /></S></ProtectedRoute>} />
+      <Route path="/account/email-preferences" element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><EmailPreferences /></S></ProtectedRoute>} />
+      <Route path="/account/certificates"      element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><MyCertificates /></S></ProtectedRoute>} />
+      <Route path="/account/referrals"         element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><MyReferrals /></S></ProtectedRoute>} />
+      <Route path="/account/achievements"      element={<ProtectedRoute><S fallback={<AccountPageSkeleton />}><Achievements /></S></ProtectedRoute>} />
       <Route path="/payment-success"           element={<ProtectedRoute><S fallback={<PublicPageSkeleton />}><PaymentSuccess /></S></ProtectedRoute>} />
       <Route path="/admin/health"              element={<ProtectedRoute adminOnly><S fallback={<DashboardPageSkeleton />}><AdminHealth /></S></ProtectedRoute>} />
 

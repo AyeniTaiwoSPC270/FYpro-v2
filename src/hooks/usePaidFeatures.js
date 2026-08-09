@@ -6,10 +6,12 @@ export function usePaidFeatures() {
   const { user, loading: userLoading } = useUser()
   const [features, setFeatures] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const fetchFeatures = useCallback(async (userId) => {
     if (!userId) {
       setFeatures([])
+      setError(false)
       setLoading(false)
       return
     }
@@ -17,8 +19,13 @@ export function usePaidFeatures() {
     try {
       const data = await getCachedEntitlements(userId)
       setFeatures(data?.paid_features ?? [])
+      setError(false)
     } catch {
+      // Fetch failed — features are unknown, NOT necessarily empty. Callers that make
+      // routing decisions off `features` (e.g. isExpressOnlyUser) must check `error`
+      // first, since an empty array here is indistinguishable from "no entitlements".
       setFeatures([])
+      setError(true)
     }
     setLoading(false)
   }, [])
@@ -49,6 +56,7 @@ export function usePaidFeatures() {
     hasPaidFeature,
     loading: loading || userLoading,
     features,
+    error,
     refetch: () => {
       if (user?.id) invalidateCachedEntitlements(user.id)
       return fetchFeatures(user?.id ?? null)
