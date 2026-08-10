@@ -5,6 +5,7 @@
 import { supabaseAdmin }    from './supabase-admin.js';
 import { trackUsage, trackUserUsage } from './usage-tracker.js';
 import { sendTelegramAlert } from './telegram.js';
+import { logAiCall } from './ai-cost-log.js';
 
 const ANTHROPIC_API_URL  = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION  = '2023-06-01';
@@ -32,6 +33,7 @@ export async function callAnthropic({
   system,
   messages,
   temperature = 0,
+  traceId,
 }) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw Object.assign(new Error('ANTHROPIC_API_KEY is not set'), { isConfig: true });
@@ -62,9 +64,20 @@ export async function callAnthropic({
       .from('response_times')
       .insert({ feature, duration_ms: durationMs, user_id: userId });
     const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-    await Promise.race([insertPromise, timeoutPromise]).catch(err =>
+    const responseTimesWrite = Promise.race([insertPromise, timeoutPromise]).catch(err =>
       console.error(`[anthropic-proxy] response_times insert failed (${feature}):`, err?.message)
     );
+    const costLogWrite = data.usage
+      ? logAiCall({
+          userId, feature, model,
+          tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens,
+          traceId, durationMs,
+        })
+      : Promise.resolve();
+    // Run both bounded-race writes concurrently, not sequentially — each is
+    // independently capped at ~3s worst-case; awaiting them one after another
+    // would double the worst-case latency added to every successful call.
+    await Promise.all([responseTimesWrite, costLogWrite]);
   } else {
     sendTelegramAlert(`🔴 Generation failed: ${feature} for user:${userId.slice(0, 8)} — Anthropic ${response.status}: ${String(data?.error?.message || data?.type || '').slice(0, 120)}`);
   }
