@@ -716,7 +716,7 @@ async function handleSupervisorPrep(req, res) {
       getCached(cacheKey).catch(() => null),
     ]);
   } catch (err) {
-    console.error('[ai/supervisor-prep] auth.getUser threw:', err.message);
+    traceLog(traceId, 'error', '[ai/supervisor-prep] auth.getUser threw:', err.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -754,7 +754,7 @@ async function handleSupervisorPrep(req, res) {
       questions     = JSON.parse(match ? match[0] : cleaned);
       if (!Array.isArray(questions)) throw new Error('Not an array');
     } catch {
-      console.error('[supervisor-prep] parse error — raw text:', text.slice(0, 200));
+      traceLog(traceId, 'error', '[supervisor-prep] parse error — raw text:', text.slice(0, 200));
       return res.status(500).json({ error: 'Failed to parse response. Please try again.' });
     }
 
@@ -763,7 +763,7 @@ async function handleSupervisorPrep(req, res) {
     setCached(cacheKey, result, SUPERVISOR_PREP_TTL);
     return res.status(200).json(result);
   } catch (err) {
-    console.error('[supervisor-prep] error:', err.message);
+    traceLog(traceId, 'error', '[supervisor-prep] error:', err.message);
     await sendTelegramAlert(`🔴 Generation failed: supervisor-prep - ${err.message}`)
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
