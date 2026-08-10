@@ -122,6 +122,46 @@ export function DashboardPageSkeleton() {
   )
 }
 
+// Matches the account-family page shape (Profile, Settings, Email Preferences,
+// My Certificates, My Referrals, Achievements): a sticky top navbar followed by a
+// centered single-column stack of cards. Distinct from DashboardPageSkeleton's
+// sidebar+grid shape, which those pages do not use.
+export function AccountPageSkeleton() {
+  return (
+    <div aria-hidden="true" style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div style={{
+        height: 68,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 32px',
+        borderBottom: '1px solid var(--border-color)',
+      }}>
+        <div className="skeleton-shimmer" style={{ width: 100, height: 22, borderRadius: 6 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="skeleton-shimmer" style={{ width: 38, height: 38, borderRadius: 12 }} />
+          <div className="skeleton-shimmer" style={{ width: 34, height: 34, borderRadius: '50%' }} />
+        </div>
+      </div>
+      <div style={{
+        maxWidth: 768,
+        margin: '0 auto',
+        padding: '48px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+      }}>
+        <div className="skeleton-shimmer" style={{ width: 180, height: 28, borderRadius: 6 }} />
+        <div className="skeleton-shimmer" style={{ width: 260, height: 14, borderRadius: 6, marginBottom: 20 }} />
+        {[0, 1, 2].map(i => (
+          <div key={i} className="skeleton-shimmer" style={{ width: '100%', height: 140, borderRadius: 16 }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function AppShellSkeleton() {
   return (
     <div aria-hidden="true" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-base)' }}>

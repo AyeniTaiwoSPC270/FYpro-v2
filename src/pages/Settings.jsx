@@ -752,6 +752,12 @@ export default function Settings() {
               disabled={savingNotif}
             />
           </div>
+          <Link
+            to="/account/email-preferences"
+            className="inline-block mt-4 font-sans text-xs text-blue-400 hover:text-blue-300 no-underline transition-colors duration-150"
+          >
+            Manage all email preferences →
+          </Link>
           {savingNotif && (
             <div className="mt-2 flex items-center gap-2 justify-end px-1">
               <div className="w-3 h-3 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />

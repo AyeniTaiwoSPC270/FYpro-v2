@@ -131,6 +131,8 @@ interface ProjectStateValue {
   projectId: string | null
   isLoading: boolean
   isOfflineMode: boolean
+  loadError: boolean
+  retryLoad: () => void
   showMigrationModal: boolean
   dismissMigrationModal: () => void
   confirmMigration: () => void
@@ -151,6 +153,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [showMigrationModal, setShowMigrationModal] = useState(false)
   const [isOfflineMode, setIsOfflineMode] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const [retryToken, setRetryToken] = useState(0)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const stateRef = useRef(state)
   const userRef = useRef(user)
@@ -208,6 +212,7 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
 
         // Persist snapshot for offline fallback before hydrating
         setIsOfflineMode(false)
+        setLoadError(false)
         persistSnapshot(userId, userState)
 
         const hydration: Record<string, unknown> = {}
@@ -310,8 +315,15 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
           })
 
           setIsOfflineMode(true)
+          setLoadError(false)
         } else {
-          markOnboardingResolved({})  // fail open — unblock navigation
+          // No server data AND no cached snapshot — we genuinely don't know this
+          // user's onboarding/project state. Do NOT call markOnboardingResolved:
+          // that would leave onboardingResolved=true with isOnboarded=false, and
+          // every consumer (Dashboard.jsx, AppShell.jsx) treats that combination as
+          // "redirect to /start". Instead surface loadError so callers show a retry
+          // state in place — never guess a destination on a failed load.
+          setLoadError(true)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -328,7 +340,9 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribeToProject and set are stable refs; authLoading only matters for the initial gate
-  }, [user?.id, authLoading])
+  }, [user?.id, authLoading, retryToken])
+
+  const retryLoad = useCallback(() => setRetryToken(t => t + 1), [])
 
   const ensureProject = useCallback(async (): Promise<string | null> => {
     if (projectId) return projectId
@@ -502,6 +516,8 @@ export function ProjectStateProvider({ children }: { children: ReactNode }) {
     projectId,
     isLoading,
     isOfflineMode,
+    loadError,
+    retryLoad,
     showMigrationModal,
     dismissMigrationModal,
     confirmMigration,
