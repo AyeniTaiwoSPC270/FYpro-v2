@@ -15,7 +15,7 @@ import { verifyCronSecret } from './_lib/cron-auth.js';
 import { verifyAdmin } from './_lib/admin-auth.js';
 
 const ALLOWED_TABLES = new Set([
-  'admin_users','app_config','auth_attempts','daily_usage',
+  'admin_users','ai_call_log','app_config','auth_attempts','daily_usage',
   'defense_certificates','defense_credits','defense_sessions','defense_turns',
   'email_log','email_preferences','feature_feedback','generation_failures',
   'institutions','notifications','payment_issues','payments',
@@ -1684,6 +1684,32 @@ async function handleDispatchNurtureEmails(req, res) {
   }
 }
 
+// action: "prune-ai-cost-log"
+// Triggered by external cron (cron-job.org), same auth pattern as daily-report.
+// Hard-deletes ai_call_log rows older than 90 days. No rollup: daily_usage already
+// retains the long-term aggregate independently of this per-call table — see
+// docs/specs/2026-08-03-w3-cost-telemetry-design.md.
+async function handlePruneAiCostLog(req, res) {
+  if (!verifyCronSecret(req, res)) return;
+
+  try {
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { error, count } = await supabaseAdmin
+      .from('ai_call_log')
+      .delete({ count: 'exact' })
+      .lt('created_at', cutoff);
+
+    if (error) throw error;
+
+    console.log(`[prune-ai-cost-log] deleted ${count ?? 0} row(s) older than ${cutoff}`);
+    return res.status(200).json({ deleted: count ?? 0 });
+  } catch (err) {
+    console.error('[prune-ai-cost-log] error:', err.message);
+    Sentry.captureException(err);
+    return res.status(500).json({ error: 'Prune failed.' });
+  }
+}
+
 // action: "daily-report"
 // Triggered by Vercel cron or external cron (cron-job.org).
 // Accepts either Vercel-native (Authorization: Bearer) or x-cron-secret header.
@@ -2245,7 +2271,7 @@ function scoreHistogram(rows) {
   return buckets
 }
 
-// action: "data-tab" — curated KPIs + 8 chart datasets + 29 table row counts
+// action: "data-tab" — curated KPIs + 8 chart datasets + 30 table row counts
 async function handleDataTab(req, res) {
   const caller = await verifyAdmin(req, res)
   if (!caller) return
@@ -2309,9 +2335,9 @@ async function handleDataTab(req, res) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, kobo]) => ({ name, value: Math.round(kobo / 100) }))
 
-    // ── Table row counts (all 29 tables in parallel) ─────────────────────────
+    // ── Table row counts (all 30 tables in parallel) ─────────────────────────
     const ALL_TABLES = [
-      'admin_users','app_config','auth_attempts','daily_usage',
+      'admin_users','ai_call_log','app_config','auth_attempts','daily_usage',
       'defense_certificates','defense_credits','defense_sessions','defense_turns',
       'email_log','email_preferences','feature_feedback','generation_failures',
       'institutions','notifications','payment_issues','payments',
@@ -2427,7 +2453,7 @@ async function handleGetFounderPhotoUploadUrl(req, res) {
 
   const { data, error } = await supabaseAdmin.storage
     .from('admin-assets')
-    .createSignedUploadUrl('founder/profile.jpg')
+    .createSignedUploadUrl('founder/profile.jpg', { upsert: true })
 
   if (error) {
     console.error('[admin/get-founder-photo-upload-url]', error.message)
@@ -2514,6 +2540,7 @@ export default async function handler(req, res) {
   if (action === 'test-all-alerts')         return handleTestAllAlerts(req, res);
   if (action === 'test-sentry-webhook')     return handleTestSentryWebhook(req, res);
   if (action === 'daily-report')            return handleDailyReport(req, res);
+  if (action === 'prune-ai-cost-log')       return handlePruneAiCostLog(req, res);
   if (action === 'error-check')             return handleErrorCheck(req, res);
   if (action === 'dispatch-nurture-emails') return handleDispatchNurtureEmails(req, res);
   if (action === 'resolve-sentry-issues')   return handleResolveSentryIssues(req, res);

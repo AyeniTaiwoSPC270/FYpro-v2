@@ -23,7 +23,7 @@ const MUTED   = 'rgba(255,255,255,0.4)'
 const PIE_COLORS = ['#0066FF', '#16A34A', '#F59E0B', '#DC2626', '#8B5CF6', '#06B6D4']
 
 const BROWSER_TABLES = [
-  'admin_users', 'app_config', 'auth_attempts', 'daily_usage',
+  'admin_users', 'ai_call_log', 'app_config', 'auth_attempts', 'daily_usage',
   'defense_certificates', 'defense_credits', 'defense_sessions', 'defense_turns',
   'email_log', 'email_preferences', 'feature_feedback', 'generation_failures',
   'institutions', 'notifications', 'payment_issues', 'payments',

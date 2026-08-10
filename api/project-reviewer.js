@@ -4,7 +4,9 @@
 import { supabaseAdmin } from './_lib/supabase-admin.js';
 import { Sentry }        from './_lib/sentry-server.js';
 import { rateLimitCheck } from './_lib/rate-limit.js';
-import { checkDailyCap, trackUsage, trackUserUsage, checkUserCap } from './_lib/usage-tracker.js';
+import { checkDailyCap, checkUserCap, trackUsage, trackUserUsage } from './_lib/usage-tracker.js';
+import { generateTraceId, traceLog } from './_lib/trace.js';
+import { logAiCall } from './_lib/ai-cost-log.js';
 import { writeSystemLog } from './_lib/system-log.js';
 import { setCorsHeaders } from './_lib/cors.js';
 import { sendTelegramAlert } from './_lib/telegram.js';
@@ -32,6 +34,9 @@ const MAX_TOKENS_LIMIT = 4096;
  */
 const handler = async (req, res) => {
   try {
+  const traceId = generateTraceId();
+  res.setHeader('X-Trace-Id', traceId);
+
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -46,7 +51,7 @@ const handler = async (req, res) => {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error('[project-reviewer] ANTHROPIC_API_KEY is not set');
+    traceLog(traceId, 'error', '[project-reviewer] ANTHROPIC_API_KEY is not set');
     return res.status(500).json({ error: 'API key not configured on server.' });
   }
 
@@ -58,7 +63,7 @@ const handler = async (req, res) => {
       rateLimitCheck(req, { userDay: 10, ipDay: 100, prefix: 'reviewer' }).catch(() => ({ allowed: true, reason: '' })),
     ]);
   } catch (err) {
-    console.error('[project-reviewer] auth.getUser threw:', err.message);
+    traceLog(traceId, 'error', '[project-reviewer] auth.getUser threw:', err.message);
     return res.status(503).json({ error: 'Authentication service unavailable. Please try again.' });
   }
 
@@ -73,7 +78,7 @@ const handler = async (req, res) => {
   ]);
 
   if (entResult.error) {
-    console.error('[project-reviewer] entitlements query error:', entResult.error.message);
+    traceLog(traceId, 'error', '[project-reviewer] entitlements query error:', entResult.error.message);
     return res.status(500).json({ error: 'Failed to verify entitlements. Please try again.' });
   }
 
@@ -179,10 +184,10 @@ const handler = async (req, res) => {
         const { value, messages: warnings } = await mammoth.extractRawText({ buffer });
         extractedText = value;
         if (warnings && warnings.length) {
-          console.warn('[project-reviewer] mammoth warnings:', warnings.map(w => w.message).join('; '));
+          traceLog(traceId, 'warn', '[project-reviewer] mammoth warnings:', warnings.map(w => w.message).join('; '));
         }
       } catch (mammothErr) {
-        console.error('[project-reviewer] mammoth extraction failed:', mammothErr.message);
+        traceLog(traceId, 'error', '[project-reviewer] mammoth extraction failed:', mammothErr.message);
         return res.status(400).json({
           error: 'Could not extract text from this Word file — it may be encrypted or image-only. Please convert it to PDF and upload again.',
         });
@@ -348,6 +353,7 @@ const handler = async (req, res) => {
       if (inputTokens || outputTokens) {
         await trackUsage(inputTokens, outputTokens, model).catch(() => {});
         await trackUserUsage(user.id, inputTokens, outputTokens, model).catch(() => {});
+        await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: inputTokens, tokensOut: outputTokens, traceId, durationMs: Date.now() - start });
       }
 
       if (stopReason === 'max_tokens') {
@@ -422,6 +428,7 @@ const handler = async (req, res) => {
     if (data.usage) {
       await trackUsage(data.usage.input_tokens, data.usage.output_tokens, model);
       await trackUserUsage(user.id, data.usage.input_tokens, data.usage.output_tokens, model);
+      await logAiCall({ userId: user.id, feature: 'project-reviewer', model, tokensIn: data.usage.input_tokens, tokensOut: data.usage.output_tokens, traceId, durationMs: Date.now() - start });
     }
 
     if (response.ok) {
@@ -430,7 +437,7 @@ const handler = async (req, res) => {
       if (data?.stop_reason === 'max_tokens') {
         await refundRun();
         await deleteReviewerUpload(supabaseAdmin, uploadedPath);
-        console.warn('[project-reviewer] Claude hit max_tokens — response truncated');
+        traceLog(traceId, 'warn', '[project-reviewer] Claude hit max_tokens — response truncated');
         return res.status(500).json({ error: 'The review was too long to complete. Please try again or upload a shorter document.' });
       }
 
@@ -470,7 +477,7 @@ const handler = async (req, res) => {
       const insertPromise  = supabaseAdmin.from('response_times').insert({ feature: 'project-reviewer', duration_ms: duration, user_id: user.id });
       const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
       await Promise.race([insertPromise, timeoutPromise]).catch(err => {
-        console.error('[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
+        traceLog(traceId, 'error', '[project-reviewer] response_times insert failed:', err?.message, err?.code, err?.details, err?.hint, JSON.stringify(err));
       });
 
       await deleteReviewerUpload(supabaseAdmin, uploadedPath);
@@ -482,7 +489,7 @@ const handler = async (req, res) => {
     await refundRun();
     await deleteReviewerUpload(supabaseAdmin, uploadedPath);
     const rawMsg = String(data?.error?.message || '');
-    console.error('[project-reviewer] Anthropic error', response.status, rawMsg.slice(0, 200));
+    traceLog(traceId, 'error', '[project-reviewer] Anthropic error', response.status, rawMsg.slice(0, 200));
     let userMsg;
     if (response.status === 429 || rawMsg.includes('rate limit') || rawMsg.includes('tokens per minute')) {
       userMsg = 'Your document is too large to process right now. Try uploading a shorter excerpt (10–15 pages) or a .txt version of your key chapters.';
@@ -502,11 +509,11 @@ const handler = async (req, res) => {
       return;
     }
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      console.error('[project-reviewer] Anthropic request timed out after 55s');
+      traceLog(traceId, 'error', '[project-reviewer] Anthropic request timed out after 55s');
       sendTelegramAlert(`⏱️ Project Reviewer timed out for user:${user.id.slice(0, 8)} (Defense Pack)`).catch(() => null);
       return res.status(504).json({ error: 'Request timed out. Please try again.' });
     }
-    console.error('[project-reviewer] error:', err.message);
+    traceLog(traceId, 'error', '[project-reviewer] error:', err.message);
     sendTelegramAlert(`🔴 Project Reviewer failed for user:${user.id.slice(0, 8)} — ${err.message}`).catch(() => null);
     writeSystemLog({
       severity: 'error',
@@ -518,7 +525,7 @@ const handler = async (req, res) => {
     return res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
   } catch (err) {
-    Sentry.captureException(err);
+    Sentry.captureException(err, { tags: { trace_id: res.getHeader('X-Trace-Id') } });
     console.error('[api/project-reviewer] unhandled error:', err);
     if (!res.headersSent) return res.status(500).json({ error: 'Internal server error' });
   }

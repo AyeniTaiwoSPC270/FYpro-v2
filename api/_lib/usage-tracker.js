@@ -11,7 +11,7 @@ const MODEL_PRICING = {
 };
 const DEFAULT_PRICING = MODEL_PRICING['claude-sonnet-4-6'];
 
-function pricingFor(model) {
+export function pricingFor(model) {
   return MODEL_PRICING[model] || DEFAULT_PRICING;
 }
 
@@ -36,7 +36,7 @@ function userCostKey(userId) {
 }
 
 /** Estimated USD cost of one Anthropic call from its token usage and model. */
-function estimateCallCostUsd(tokensIn, tokensOut, model) {
+export function estimateCallCostUsd(tokensIn, tokensOut, model) {
   const p = pricingFor(model);
   return (tokensIn || 0) * p.in + (tokensOut || 0) * p.out;
 }
