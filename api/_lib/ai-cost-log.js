@@ -25,6 +25,10 @@ import { estimateCallCostUsd } from './usage-tracker.js';
  */
 export async function logAiCall({ userId, feature, model, tokensIn = 0, tokensOut = 0, cacheHit = false, traceId, durationMs }) {
   const cost = estimateCallCostUsd(tokensIn, tokensOut, model);
+  // .catch() here turns a thrown/network rejection into a resolved { error }
+  // result, so insertPromise itself can never reject — Promise.race below
+  // never throws, and a late resolution (after losing the race) can't produce
+  // an unhandled rejection either.
   const insertPromise = supabaseAdmin.from('ai_call_log').insert({
     user_id: userId || null,
     feature,
@@ -35,9 +39,10 @@ export async function logAiCall({ userId, feature, model, tokensIn = 0, tokensOu
     cache_hit: cacheHit,
     trace_id: traceId || null,
     duration_ms: durationMs ?? null,
-  });
+  }).catch(err => ({ error: err }));
   const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
-  await Promise.race([insertPromise, timeoutPromise]).catch(err =>
-    console.error(`[ai-cost-log] insert failed (${feature}):`, err?.message)
-  );
+  const result = await Promise.race([insertPromise, timeoutPromise]);
+  if (result?.error) {
+    console.error(`[ai-cost-log] insert failed (${feature}):`, result.error?.message ?? result.error);
+  }
 }

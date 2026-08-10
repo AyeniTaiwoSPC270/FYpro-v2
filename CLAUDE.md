@@ -267,7 +267,7 @@ fypro-v2/
 │   │                              #   + nurture email only fire for genuine new signups (not re-signup attempts)
 │   ├── certificate.js             # Certificate record creation/verification (score >= 7/10)
 │   ├── notify.js                  # Telegram alerts + bot webhook + push subscribe/unsubscribe + send-nudges cron
-│   │                              #   + submit-report handler + /data command (query any of 29 tables)
+│   │                              #   + submit-report handler + /data command (query any of 30 tables)
 │   ├── payments.js                # Paystack initiate/verify/webhook/consume-reset (CAS guard)
 │   ├── project-reviewer.js        # PDF upload + Claude review (Defense Pack only, 4 MB cap)
 │   ├── referral.js                # Referral tracking + defense credit milestones
@@ -288,6 +288,7 @@ fypro-v2/
 │   │   ├── usage-tracker.js       # Daily token/cost tracking
 │   │   ├── failure-policy.js      # W2: shared fail-open/fail-closed guardedCheck() — see docs/architecture decision table
 │   │   ├── reliable-async.js      # W2: retry + dead-letter for fire-and-forget side effects (reliably())
+│   │   ├── ai-cost-log.js         # W3: per-call Anthropic cost/token/cache/trace ledger (logAiCall)
 │   │   ├── ai-prompts.js          # SERVER-side system prompts (defense + reviewer — never trust client prompts)
 │   │   ├── anthropic-proxy.js     # Shared Anthropic call wrapper
 │   │   ├── validate.js            # Shared Zod validation schemas
@@ -589,6 +590,21 @@ Express achievements are scoped to the express project; main achievements scoped
 - Service-role only: no client INSERT/SELECT/UPDATE/DELETE policies. Written by
   api/_lib/reliable-async.js when a retried side effect exhausts all attempts.
 
+### ai_call_log (migration 0043)
+- id (uuid)
+- user_id (uuid, nullable — FK auth.users)
+- feature (text) — e.g. 'topic-validator', 'defense-simulator', 'project-reviewer'
+- model (text)
+- tokens_in, tokens_out (integer)
+- cost_usd (numeric)
+- cache_hit (boolean)
+- trace_id (text, nullable)
+- duration_ms (integer, nullable)
+- created_at (timestamptz)
+- Service-role only: no client INSERT/SELECT/UPDATE/DELETE policies. Written by
+  api/_lib/ai-cost-log.js (logAiCall) from every Anthropic call site and cache-hit
+  branch. Pruned to 90 days by api/admin.js action=prune-ai-cost-log.
+
 ---
 
 ## 6. RLS RULES — READ BEFORE TOUCHING DATABASE CODE
@@ -754,8 +770,8 @@ Inbound commands (tap buttons or type):
 - /start or /help → shows inline keyboard with all commands
 - /stats, /revenue, /users, /spend, /errors, /payments, /health
 - /broadcast <message> → email all users; /broadcast_paid <message> → email paid users only
-- /data <table> → query any of 29 tables (rows shown in HTML-escaped format, row count in footer)
-  ALLOWED tables: admin_users, app_config, auth_attempts, daily_usage, defense_certificates,
+- /data <table> → query any of 30 tables (rows shown in HTML-escaped format, row count in footer)
+  ALLOWED tables: admin_users, ai_call_log, app_config, auth_attempts, daily_usage, defense_certificates,
   defense_credits, defense_sessions, defense_turns, email_log, email_preferences,
   feature_feedback, generation_failures, institutions, notifications, payment_issues,
   payments, project_steps, projects, push_subscriptions, referrals, response_times,
@@ -978,8 +994,8 @@ All features shipped and working in production (fypro.com.ng):
 - User reports — ReportButton inline in ApiErrorBox and DashTopBar; type: error | general;
   status tracked server-side (open → acknowledged → resolved); fires Telegram alert on submit
 - Admin Data Tab (📊) — KPI cards with polling, 8 curated charts (signups, revenue, usage
-  trends), 29-table browser with search, sort, pagination; backed by data-tab + data-browse actions
-- Telegram /data command — query any of 29 tables directly from bot; HTML-escaped rows + row count footer
+  trends), 30-table browser with search, sort, pagination; backed by data-tab + data-browse actions
+- Telegram /data command — query any of 30 tables directly from bot; HTML-escaped rows + row count footer
 - Auth hardening — per-email login rate limit (20/1hr, SHA-256 hashed key), isNewUser guard
   prevents profile overwrite + false Telegram/notification/nurture triggers on re-signup attempts
 - project_steps step_type constraint updated to include 'defense_brief' (migration 0034)
