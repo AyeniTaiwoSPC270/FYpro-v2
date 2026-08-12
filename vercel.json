@@ -14,7 +14,7 @@
     }
   },
   "rewrites": [
-    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/).*)", "destination": "/shell.html" }
   ],
   "headers": [
     {
@@ -39,6 +39,10 @@
     },
     {
       "source": "/payment-success",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/shell.html",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {
