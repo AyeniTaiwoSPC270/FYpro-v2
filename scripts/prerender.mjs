@@ -1,8 +1,30 @@
-import puppeteer from 'puppeteer'
 import { preview } from 'vite'
 import { copyFileSync, mkdirSync, writeFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
+
+// Vercel's build container is a minimal Linux image that's missing the
+// shared libraries (libnspr4, libnss3, ...) regular desktop Chrome needs —
+// @sparticuz/chromium ships a Chromium build made for exactly these
+// serverless/minimal-Linux environments. Locally (any other OS/environment)
+// plain `puppeteer`'s bundled Chrome works fine and is simpler, so only pull
+// in the serverless build on Vercel.
+async function launchBrowser() {
+  if (process.env.VERCEL) {
+    const { default: chromium } = await import('@sparticuz/chromium')
+    const { default: puppeteerCore } = await import('puppeteer-core')
+    return puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    })
+  }
+  const { default: puppeteer } = await import('puppeteer')
+  return puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  })
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const distDir = join(__dirname, '..', 'dist')
@@ -72,10 +94,7 @@ async function main() {
   const server = await preview({ preview: { port: 4173, strictPort: false } })
   const base = server.resolvedUrls.local[0].replace(/\/$/, '')
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  })
+  const browser = await launchBrowser()
 
   // Capture every route into memory FIRST. Writing dist/index.html mid-loop
   // would corrupt the shell that vite preview is still serving to the
