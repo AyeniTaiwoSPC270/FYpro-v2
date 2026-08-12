@@ -115,7 +115,19 @@ async function main() {
   for (const route of ROUTES) {
     console.log(`Prerendering ${route.path}...`)
     const page = await browser.newPage()
-    await page.goto(`${base}${route.path}`, { waitUntil: 'networkidle0', timeout: 30000 })
+
+    // Third-party calls (fonts, analytics, Supabase) don't affect the markup
+    // we're capturing and make network-idle-based waits flaky/slow — block
+    // everything but the app itself.
+    await page.setRequestInterception(true)
+    page.on('request', (req) => (req.url().startsWith(base) ? req.continue() : req.abort()))
+
+    await page.goto(`${base}${route.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    // Wait for a concrete render signal instead of network idle — every one
+    // of these routes has an <h1> as part of its actual rendered content.
+    // If this times out, fail loudly (non-zero exit fails the build) rather
+    // than silently writing near-empty HTML to dist/.
+    await page.waitForSelector('h1', { timeout: 15000 })
     await overrideMeta(page, route)
     const html = await page.content()
     captures.push({ outFile: route.outFile, html })
@@ -142,6 +154,20 @@ main().catch((err) => {
 
 - [ ] **Step 3: Run the script and verify each output file has real content**
 
+**Known local-environment limitation:** in a sandbox/checkout whose
+`.env.local` doesn't have `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (and
+the other `VITE_*` keys) populated, `src/lib/supabase.ts`'s `createClient()`
+throws at module-eval time and the entire React app crashes on mount before
+rendering anything — the script itself runs fine and writes output files,
+but those files will contain near-empty HTML (same size as `dist/shell.html`)
+because there was nothing to capture. This is not a bug in the script; it's
+confirmed by a `page.on('pageerror', ...)` listener printing
+`supabaseUrl is required.` before any content renders. If you hit this,
+either populate those env vars locally (e.g. `vercel env pull .env.local`)
+before running this step, or skip straight to Task 5, where the real Vercel
+preview deployment has working env vars and can prove content renders
+correctly end-to-end.
+
 Run: `node scripts/prerender.mjs`
 Expected output ends with:
 ```
@@ -152,9 +178,10 @@ Expected output ends with:
 Prerendering done.
 ```
 
-Then verify actual page content landed in each file (these are real, distinctive
-strings pulled from the current page components — not word-fragmented by any
-stagger-animation component):
+If your `.env.local` has working Supabase credentials, verify actual page
+content landed in each file (these are real, distinctive strings pulled from
+the current page components — not word-fragmented by any stagger-animation
+component):
 
 ```bash
 grep -c "guides you from a rough topic to a defensible project" dist/index.html
@@ -284,13 +311,20 @@ git commit -m "fix: route non-marketing paths to shell.html so prerendered pages
 
 **Files:** none (verification only)
 
+**This task's content checks require working `VITE_SUPABASE_URL`/
+`VITE_SUPABASE_ANON_KEY` (etc.) in `.env.local`** — see the note in Task 1
+Step 3. If those aren't available in this environment, run Step 1 to confirm
+the pipeline doesn't crash/error out, skip Steps 2-3's content assertions,
+and rely on Task 5's checks against the real Vercel preview (which has
+working env vars) for actual content verification instead.
+
 - [ ] **Step 1: Run the full build pipeline exactly as Vercel will**
 
 Run: `npm run vercel-build`
 Expected: same as Task 2 Step 2 — full chain passes, ends with
 `Prerendering done.`
 
-- [ ] **Step 2: Re-run the content/meta checks from Task 1 Step 3 against this fresh build**
+- [ ] **Step 2: Re-run the content/meta checks from Task 1 Step 3 against this fresh build (skip if `.env.local` lacks working Supabase credentials)**
 
 ```bash
 grep -c "guides you from a rough topic to a defensible project" dist/index.html
