@@ -14,6 +14,70 @@ Full design context: `docs/specs/2026-08-12-prerender-marketing-pages-design.md`
 
 ---
 
+## Post-implementation: what actually broke on real deployment (2026-08-12/13)
+
+The design spec flagged two unverified risks. Both turned out to be real,
+plus a third issue the spec didn't anticipate. All three are now fixed;
+final state confirmed working end-to-end against a live Vercel preview.
+
+1. **Chrome wasn't installed in Vercel's build container.** First deploy
+   failed: `Error: Could not find Chrome ... your cache path is incorrectly
+   configured (which is: /vercel/.cache/puppeteer)`. Fixed by adding
+   `"postinstall": "npx puppeteer browsers install chrome"` to `package.json`
+   so the download happens explicitly during `npm install` rather than
+   relying on Puppeteer's own postinstall hook.
+
+2. **Desktop Chrome can't launch on Vercel's build container even once
+   installed.** Second deploy failed differently:
+   `Error: Failed to launch the browser process: Code: 127` /
+   `libnspr4.so: cannot open shared object file`. Vercel's build image is a
+   minimal Linux environment missing the shared libraries regular desktop
+   Chrome needs — not fixable via npm alone (no apt-get access). Fixed by
+   adding `@sparticuz/chromium` + `puppeteer-core` as devDependencies and
+   branching `scripts/prerender.mjs`'s browser launch: `puppeteer-core` +
+   `@sparticuz/chromium` when `process.env.VERCEL` is set, plain `puppeteer`
+   (unchanged) for local/non-Vercel runs.
+
+3. **Vercel's dashboard Build Command was hard-overridden to `npm run
+   build`, not `npm run vercel-build`.** This predates this work — a
+   pre-existing project setting — and meant the prerender step never
+   actually ran on real deployments, regardless of how correct the script
+   and `package.json` wiring were. Confirmed via Project Settings → Build
+   and Deployment (Build Command field showed `npm run build` with Override
+   on) and via live `fetch()` checks against the deployed preview URL
+   (`/pricing` etc. all 404'd, `/` served the empty shell). Considered
+   making the plain `build` script include prerendering instead (avoiding
+   any Vercel dashboard change), but `.github/workflows/ci.yml:65` runs
+   `npm run build` with no Supabase secrets wired into that workflow — doing
+   that would have broken the required CI "Build" check the same way local
+   verification was blocked (crash-before-render, non-zero exit). Fixed by
+   updating the Vercel dashboard's Build Command override to
+   `npm run vercel-build` instead (scoped to Vercel's own deploy process,
+   doesn't touch CI at all), then redeploying.
+
+**Final verification**, via authenticated `fetch()` calls (Vercel's preview
+deployment protection blocks plain `curl`) against the live PR preview
+after all three fixes and a fresh redeploy:
+
+- `/`, `/pricing`, `/about`, `/contact` — all 200, real prerendered content
+  (7.7KB shell → 22-78KB actual pages), correct per-page `<title>`.
+  (`/` initially still showed the stale empty shell due to a CDN edge cache
+  hit on that exact path from an earlier failed test — resolved with a
+  cache-busting query param + `cache: 'no-store'`, confirmed `x-vercel-cache:
+  MISS` on the real response.)
+- `/login`, `/dashboard` — still 200 with the empty shell (`shell.html`
+  fallback working correctly), unaffected.
+- `/shell.html` — reachable directly, correctly `noindex`.
+- Visual check: navigated to `/pricing` in a real browser tab — renders
+  correctly, no visual regressions, cookie banner and pricing cards work.
+- Not verified: an actual interactive login → dashboard → workflow smoke
+  test (no test account credentials available in this session). The
+  routing-level checks above (shell.html unchanged, non-marketing routes
+  serve identical shell content to before) plus CI's full test suite
+  passing are the basis of confidence here instead.
+
+---
+
 ### Task 1: Write `scripts/prerender.mjs`
 
 **Files:**
