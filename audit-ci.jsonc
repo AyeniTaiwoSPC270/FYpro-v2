@@ -16,6 +16,19 @@
     // specific bypass is not reachable in production.
     // Remove this entry once a patched react-router-dom is released and
     // installed — check `npm view react-router-dom versions` periodically.
-    "GHSA-qwww-vcr4-c8h2"
+    "GHSA-qwww-vcr4-c8h2",
+
+    // GHSA-jmr9-qjv8-65gv (extract-zip, unvalidated symlink path traversal) —
+    // high severity, no patched version exists as of 2026-08-13. Transitive
+    // devDependency of @puppeteer/browsers (via @sparticuz/chromium and the
+    // `postinstall` Chrome download for scripts/prerender.mjs — see
+    // docs/plans/2026-08-12-prerender-marketing-pages.md). Only ever used to
+    // extract Chrome's own official zip from Google's CDN during
+    // `npm install`/build — never processes untrusted/user-supplied zip
+    // files, so the path-traversal vector isn't reachable here. Not a
+    // runtime/production dependency.
+    // Remove this entry once a patched extract-zip is released — check
+    // `npm view extract-zip versions` periodically.
+    "GHSA-jmr9-qjv8-65gv"
   ]
 }
