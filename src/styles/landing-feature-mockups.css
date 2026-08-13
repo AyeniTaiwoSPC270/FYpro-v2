@@ -12,6 +12,26 @@
 .lp-fmock-fixed{transform:scale(calc(100cqw / 1280px));transform-origin:top left;font-family:'Poppins',sans-serif}
 @media (prefers-reduced-motion: reduce){.lp-fmock-fixed{transition:none}}
 
+/* ── Mobile crop-zoom ──────────────────────────────────────────
+   Below ~380px of container width (real phone screens — desktop's
+   2-up cards and tablet single-column cards stay wider than this
+   and keep the full-canvas view), scaling the whole 1280px canvas
+   down makes every label unreadable. Instead, scale a narrower
+   *slice* of the same canvas up to fill the card — sidebar + the
+   start of the main card for the sidebar mockups, the centred
+   column for the Defence Simulator mockup — so text stays legible
+   at the cost of showing less of the screen per card. */
+@container (max-width: 380px){
+  .lp-fmock-scale-wrap{aspect-ratio:760/475}
+  .lp-fmock-fixed{transform:scale(calc(100cqw / 760px))}
+  .lp-fmock-scale-wrap:has(.lp-fmock-wp),
+  .lp-fmock-scale-wrap:has(.lp-fmock-pr){aspect-ratio:900/560}
+  .lp-fmock-scale-wrap:has(.lp-fmock-wp) .lp-fmock-fixed,
+  .lp-fmock-scale-wrap:has(.lp-fmock-pr) .lp-fmock-fixed{transform:scale(calc(100cqw / 900px))}
+  .lp-fmock-scale-wrap:has(.lp-fmock-dp){aspect-ratio:700/440}
+  .lp-fmock-scale-wrap:has(.lp-fmock-dp) .lp-fmock-fixed{transform:scale(calc(100cqw / 700px)) translateX(-260px)}
+}
+
 /* ── tv ──────────────────────────────────────────── */
 .lp-fmock-tv{width:1280px;height:800px;border-radius:24px;border:1px solid rgba(0,102,255,0.22);background:#080F1C;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .lp-fmock-tv .topbar{height:78px;display:flex;align-items:center;padding:0 28px;border-bottom:1px solid rgba(255,255,255,0.06);position:relative;flex-shrink:0}
