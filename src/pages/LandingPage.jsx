@@ -628,9 +628,9 @@ function MockupLogo() {
   )
 }
 
-function MockupThemeToggle({ onClick }) {
+function MockupThemeToggle() {
   return (
-    <button className="theme-toggle" type="button" aria-label="Toggle light mode" onClick={onClick}>
+    <button className="theme-toggle" type="button" tabIndex={-1} aria-hidden="true">
       <svg className="ti-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
       <svg className="ti-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
     </button>
@@ -677,12 +677,12 @@ function MockupFrame({ scopeClass, light, children }) {
 }
 
 function TopicValidatorMockup() {
-  const [light, setLight] = useState(false)
+  const { theme } = useTheme()
   return (
-    <MockupFrame scopeClass="lp-fmock-tv" light={light}>
+    <MockupFrame scopeClass="lp-fmock-tv" light={theme === 'light'}>
       <div className="topbar">
         <MockupLogo />
-        <MockupThemeToggle onClick={() => setLight((l) => !l)} />
+        <MockupThemeToggle />
         <MockupStepDots />
       </div>
       <div className="body">
@@ -732,12 +732,12 @@ function TopicValidatorMockup() {
 }
 
 function ChapterArchitectMockup() {
-  const [light, setLight] = useState(false)
+  const { theme } = useTheme()
   return (
-    <MockupFrame scopeClass="lp-fmock-ca" light={light}>
+    <MockupFrame scopeClass="lp-fmock-ca" light={theme === 'light'}>
       <div className="topbar">
         <MockupLogo />
-        <MockupThemeToggle onClick={() => setLight((l) => !l)} />
+        <MockupThemeToggle />
         <MockupStepDots />
       </div>
       <div className="body">
@@ -791,12 +791,12 @@ function ChapterArchitectMockup() {
 }
 
 function MethodologyAdvisorMockup() {
-  const [light, setLight] = useState(false)
+  const { theme } = useTheme()
   return (
-    <MockupFrame scopeClass="lp-fmock-ma" light={light}>
+    <MockupFrame scopeClass="lp-fmock-ma" light={theme === 'light'}>
       <div className="topbar">
         <MockupLogo />
-        <MockupThemeToggle onClick={() => setLight((l) => !l)} />
+        <MockupThemeToggle />
         <MockupStepDots glowIndex={2} />
       </div>
       <div className="body">
@@ -845,12 +845,12 @@ function MethodologyAdvisorMockup() {
 }
 
 function WritingPlannerMockup() {
-  const [light, setLight] = useState(false)
+  const { theme } = useTheme()
   return (
-    <MockupFrame scopeClass="lp-fmock-wp" light={light}>
+    <MockupFrame scopeClass="lp-fmock-wp" light={theme === 'light'}>
       <div className="topbar">
         <MockupLogo />
-        <MockupThemeToggle onClick={() => setLight((l) => !l)} />
+        <MockupThemeToggle />
         <MockupStepDots glowIndex={3} />
       </div>
       <div className="body">
@@ -914,12 +914,12 @@ function WritingPlannerMockup() {
 }
 
 function ProjectReviewerMockup() {
-  const [light, setLight] = useState(false)
+  const { theme } = useTheme()
   return (
-    <MockupFrame scopeClass="lp-fmock-pr" light={light}>
+    <MockupFrame scopeClass="lp-fmock-pr" light={theme === 'light'}>
       <div className="topbar">
         <MockupLogo />
-        <MockupThemeToggle onClick={() => setLight((l) => !l)} />
+        <MockupThemeToggle />
         <MockupStepDots glowIndex={4} />
       </div>
       <div className="body">
