@@ -11,7 +11,7 @@ if (import.meta.env.VITE_POSTHOG_KEY) {
   })
 }
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { tryChunkReload } from './lib/chunkReload'
@@ -47,10 +47,32 @@ const SentryErrorFallback = () => (
   </div>
 );
 
-createRoot(document.getElementById('root')).render(
+const container = document.getElementById('root')
+const app = (
   <StrictMode>
     <Sentry.ErrorBoundary fallback={<SentryErrorFallback />}>
       <App />
     </Sentry.ErrorBoundary>
-  </StrictMode>,
+  </StrictMode>
 )
+
+// The build-time prerender step (scripts/prerender.mjs) ships fully-rendered
+// static markup inside #root for /, /pricing, /about, /contact — every other
+// route falls back to the empty shell.html. createRoot() on a non-empty
+// container doesn't reconcile against existing DOM: it wipes it and mounts
+// fresh, which is exactly the blank-flash-then-repaint every prerendered page
+// showed on load. hydrateRoot() reconciles instead, so the prerendered paint
+// stays on screen through the handoff.
+if (container.hasChildNodes()) {
+  hydrateRoot(container, app, {
+    // React recovers from a hydration mismatch on its own (regenerates just
+    // the mismatched subtree), so this is monitoring, not a crash handler —
+    // it should stay quiet in normal use. Routed to Sentry instead of the
+    // console so a real regression here surfaces without adding console noise.
+    onRecoverableError: (error, errorInfo) => {
+      Sentry.captureException(error, { extra: { componentStack: errorInfo?.componentStack } })
+    },
+  })
+} else {
+  createRoot(container).render(app)
+}

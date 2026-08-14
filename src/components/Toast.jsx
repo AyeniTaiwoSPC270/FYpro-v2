@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
+
+const subscribeNoop = () => () => {}
 
 // ── Internal store (singleton, no React needed for triggering) ─────────────────
 let _listeners = []
@@ -15,6 +17,14 @@ export function showToast(message, type = 'success') {
 export function ToastProvider() {
   const [toasts, setToasts] = useState([])
   const timers = useRef({})
+
+  // This portal targets document.body, outside the tree hydrateRoot()
+  // reconciles against — prerendered pages (scripts/prerender.mjs) never have
+  // it in their static HTML, so rendering it on the first client pass would
+  // be an immediate hydration mismatch. useSyncExternalStore's server/client
+  // snapshot split defers the portal to post-hydration (client snapshot only
+  // becomes true after mount) without a synchronous setState-in-effect.
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false)
 
   const remove = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
@@ -38,6 +48,8 @@ export function ToastProvider() {
   }, [])
 
   const ICONS = { success: '✓', error: '⚠', unlock: '→' }
+
+  if (!mounted) return null
 
   return createPortal(
     <div id="fy-toast-container">

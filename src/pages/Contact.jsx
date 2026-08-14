@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import FyproLogo from '../components/FyproLogo'
+import { skipEntranceAnimation } from '../lib/initialLoad'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -380,7 +381,7 @@ export default function Contact() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={skipEntranceAnimation ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen"
