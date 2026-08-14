@@ -117,6 +117,18 @@ async function main() {
     // than silently writing near-empty HTML to dist/.
     await page.waitForSelector('h1', { timeout: 15000 })
     await overrideMeta(page, route)
+    // ToastProvider (mounted globally, wrapping every route) portals its
+    // container straight into document.body via createPortal, outside the
+    // #root subtree hydrateRoot() reconciles against. Baking that empty div
+    // into the static HTML left a stray body-level sibling that made every
+    // client hydration throw (React error #418) and fall back to a full
+    // client re-render — exactly the blank-flash-then-repaint this
+    // prerendering effort was meant to avoid. It's always empty at capture
+    // time (no toast is showing during an automated prerender), so drop it
+    // before serializing.
+    await page.evaluate(() => {
+      document.getElementById('fy-toast-container')?.remove()
+    })
     const html = await page.content()
     captures.push({ outFile: route.outFile, html })
     await page.close()

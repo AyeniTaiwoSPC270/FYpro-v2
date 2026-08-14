@@ -4,6 +4,7 @@ import { usePaystackCheckout } from '../hooks/usePaystackCheckout'
 import { supabase } from '../lib/supabase'
 import FyproLogo from '../components/FyproLogo'
 import PaymentFailedBanner from '../components/PaymentFailedBanner'
+import { skipEntranceAnimation } from '../lib/initialLoad'
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
 
@@ -872,7 +873,7 @@ function PricingFooter() {
 export default function Pricing() {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={skipEntranceAnimation ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
       className="min-h-screen bg-[var(--bg-base)]"

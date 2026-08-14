@@ -42,11 +42,6 @@
       "count": 4
     }
   },
-  "public/tools/brain.js": {
-    "no-unused-vars": {
-      "count": 4
-    }
-  },
   "src/components/ApiErrorBox.jsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
