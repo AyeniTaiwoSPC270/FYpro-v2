@@ -7,8 +7,13 @@
    into the real in-app tv-/ca-/ma-/wp-/pr-/dp- stylesheets.
    ═══════════════════════════════════════════════════════ */
 
-.lp-fmock-outer{width:100%;position:relative}
-.lp-fmock-scale-wrap{width:100%;aspect-ratio:1280/800;overflow:hidden;border-radius:16px;container-type:inline-size}
+/* container-type lives on .lp-fmock-outer, NOT .lp-fmock-scale-wrap — a
+   container can't respond to a @container query about its own size, so
+   putting containment on scale-wrap silently no-ops any aspect-ratio
+   override targeting scale-wrap itself (only descendant rules, like the
+   transform on .lp-fmock-fixed, would ever actually apply). */
+.lp-fmock-outer{width:100%;position:relative;container-type:inline-size}
+.lp-fmock-scale-wrap{width:100%;aspect-ratio:1280/800;overflow:hidden;border-radius:16px}
 .lp-fmock-fixed{transform:scale(calc(100cqw / 1280px));transform-origin:top left;font-family:'Poppins',sans-serif}
 @media (prefers-reduced-motion: reduce){.lp-fmock-fixed{transition:none}}
 
@@ -16,20 +21,34 @@
    Below ~380px of container width (real phone screens — desktop's
    2-up cards and tablet single-column cards stay wider than this
    and keep the full-canvas view), scaling the whole 1280px canvas
-   down makes every label unreadable. Instead, scale a narrower
-   *slice* of the same canvas up to fill the card — sidebar + the
-   start of the main card for the sidebar mockups, the centred
-   column for the Defence Simulator mockup — so text stays legible
-   at the cost of showing less of the screen per card. */
+   down makes every label unreadable. Instead, each rule below
+   crops to that mockup's real "card" element at its native pixel
+   size (sidebar + topbar chrome dropped entirely) and scales THAT
+   up to fill the container, so full lines of text are visible
+   instead of being sliced off mid-word on the right edge. Heights
+   are cut immediately after each card's primary CTA button/chip —
+   never mid-paragraph — verified against real getBoundingClientRect
+   measurements of the rendered mockups, not eyeballed. Regenerate
+   these numbers (see devtools snippet in PR description) if any
+   mockup's JSX copy changes enough to reflow. */
 @container (max-width: 380px){
-  .lp-fmock-scale-wrap{aspect-ratio:760/475}
-  .lp-fmock-fixed{transform:scale(calc(100cqw / 760px))}
-  .lp-fmock-scale-wrap:has(.lp-fmock-wp),
-  .lp-fmock-scale-wrap:has(.lp-fmock-pr){aspect-ratio:900/560}
-  .lp-fmock-scale-wrap:has(.lp-fmock-wp) .lp-fmock-fixed,
-  .lp-fmock-scale-wrap:has(.lp-fmock-pr) .lp-fmock-fixed{transform:scale(calc(100cqw / 900px))}
-  .lp-fmock-scale-wrap:has(.lp-fmock-dp){aspect-ratio:700/440}
-  .lp-fmock-scale-wrap:has(.lp-fmock-dp) .lp-fmock-fixed{transform:scale(calc(100cqw / 700px)) translateX(-260px)}
+  .lp-fmock-scale-wrap{aspect-ratio:800/330}
+  .lp-fmock-fixed{transform:scale(calc(100cqw / 800px)) translate(-327px,-105px)}
+
+  .lp-fmock-scale-wrap:has(.lp-fmock-ca){aspect-ratio:800/475}
+  .lp-fmock-scale-wrap:has(.lp-fmock-ca) .lp-fmock-fixed{transform:scale(calc(100cqw / 800px)) translate(-327px,-105px)}
+
+  .lp-fmock-scale-wrap:has(.lp-fmock-ma){aspect-ratio:800/275}
+  .lp-fmock-scale-wrap:has(.lp-fmock-ma) .lp-fmock-fixed{transform:scale(calc(100cqw / 800px)) translate(-327px,-105px)}
+
+  .lp-fmock-scale-wrap:has(.lp-fmock-wp){aspect-ratio:460/345}
+  .lp-fmock-scale-wrap:has(.lp-fmock-wp) .lp-fmock-fixed{transform:scale(calc(100cqw / 460px)) translate(-498px,-109px)}
+
+  .lp-fmock-scale-wrap:has(.lp-fmock-pr){aspect-ratio:460/610}
+  .lp-fmock-scale-wrap:has(.lp-fmock-pr) .lp-fmock-fixed{transform:scale(calc(100cqw / 460px)) translate(-497px,-105px)}
+
+  .lp-fmock-scale-wrap:has(.lp-fmock-dp){aspect-ratio:660/572}
+  .lp-fmock-scale-wrap:has(.lp-fmock-dp) .lp-fmock-fixed{transform:scale(calc(100cqw / 660px)) translate(-310px,-100px)}
 }
 
 /* ── tv ──────────────────────────────────────────── */
