@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import FyproLogo from '../components/FyproLogo'
 import { supabase } from '../lib/supabase'
+import { skipEntranceAnimation } from '../lib/initialLoad'
 
 // ─── Shield Icon ──────────────────────────────────────────────────────────────
 
@@ -266,7 +267,7 @@ export default function About() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={skipEntranceAnimation ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-[var(--bg-base)]"

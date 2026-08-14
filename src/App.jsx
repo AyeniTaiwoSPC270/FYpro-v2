@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { tryChunkReload } from './lib/chunkReload'
+import { markInitialLoadDone } from './lib/initialLoad'
 
 // A failed chunk reaches us as undefined rather than a rejection: main.jsx default-prevents
 // vite:preloadError, and Vite's preload helper then swallows the error and resolves the import
@@ -46,11 +47,21 @@ import {
   AppShellSkeleton,
 } from './components/skeletons/PageSkeletons'
 
+// These four are the only routes scripts/prerender.mjs ships as static HTML
+// (see vercel.json's rewrite carve-out). Puppeteer-scraped markup has none of
+// the hydration boundary markers real SSR (renderToString) embeds, so a
+// Suspense boundary that "resolved" in that scrape can't hydrate cleanly
+// against a still-pending lazy import on the client — React throws a
+// hydration mismatch and regenerates the subtree, which is exactly the
+// blank-flash-then-repaint prerendering was meant to avoid. Importing them
+// statically removes the Suspense boundary (and the lazy-chunk network hop)
+// entirely for these routes, so hydration has nothing async to race against.
+import LandingPage from './pages/LandingPage'
+import Pricing from './pages/Pricing'
+import About from './pages/About'
+import Contact from './pages/Contact'
+
 // Lazy-loaded route components
-const LandingPage       = safeLazy(() => import('./pages/LandingPage'))
-const Pricing           = safeLazy(() => import('./pages/Pricing'))
-const About             = safeLazy(() => import('./pages/About'))
-const Contact           = safeLazy(() => import('./pages/Contact'))
 const Privacy           = safeLazy(() => import('./pages/Privacy'))
 const Terms             = safeLazy(() => import('./pages/Terms'))
 const CookiePolicy      = safeLazy(() => import('./pages/CookiePolicy'))
@@ -202,10 +213,10 @@ function AppRoutes() {
       <Route path="/auth/callback"   element={<S fallback={<AuthPageSkeleton />}><AuthConfirm /></S>} />
 
       {/* Public pages */}
-      <Route path="/"            element={<S fallback={<PublicPageSkeleton />}><LandingPage /></S>} />
-      <Route path="/pricing"     element={<S fallback={<PublicPageSkeleton />}><Pricing /></S>} />
-      <Route path="/about"       element={<S fallback={<PublicPageSkeleton />}><About /></S>} />
-      <Route path="/contact"     element={<S fallback={<PublicPageSkeleton />}><Contact /></S>} />
+      <Route path="/"            element={<LandingPage />} />
+      <Route path="/pricing"     element={<Pricing />} />
+      <Route path="/about"       element={<About />} />
+      <Route path="/contact"     element={<Contact />} />
       <Route path="/privacy"     element={<S fallback={<PublicPageSkeleton />}><Privacy /></S>} />
       <Route path="/terms"       element={<S fallback={<PublicPageSkeleton />}><Terms /></S>} />
       <Route path="/cookie-policy" element={<S fallback={<PublicPageSkeleton />}><CookiePolicy /></S>} />
@@ -267,6 +278,9 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Runs once after the very first commit — see src/lib/initialLoad.ts for why.
+  useEffect(() => { markInitialLoadDone() }, [])
+
   return (
     <AuthProvider>
     <ThemeProvider>
@@ -287,9 +301,7 @@ export default function App() {
         <ToastProvider />
         <CookieBanner />
         <PWAInstallPrompt />
-        <Suspense fallback={null}>
-          <AppRoutes />
-        </Suspense>
+        <AppRoutes />
         </ProjectStateProvider>
       </BrowserRouter>
     </AppProvider>

@@ -11,6 +11,7 @@ import {
 import ReferralCapture from '../components/onboarding/ReferralCapture'
 import FyproLogo from '../components/FyproLogo'
 import { useTheme } from '../context/ThemeContext'
+import { skipEntranceAnimation } from '../lib/initialLoad'
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -1698,7 +1699,7 @@ export default function LandingPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={skipEntranceAnimation ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
       data-landing-page="true"

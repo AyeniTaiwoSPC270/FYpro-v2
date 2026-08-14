@@ -14,7 +14,16 @@ export function showToast(message, type = 'success') {
 // ── Provider ───────────────────────────────────────────────────────────────────
 export function ToastProvider() {
   const [toasts, setToasts] = useState([])
+  const [mounted, setMounted] = useState(false)
   const timers = useRef({})
+
+  // This portal targets document.body, outside the tree hydrateRoot()
+  // reconciles against — prerendered pages (scripts/prerender.mjs) never have
+  // it in their static HTML, so rendering it on the first client pass would
+  // be an immediate hydration mismatch. Deferring it to post-mount keeps the
+  // first pass a no-op match (nothing here either way) and only creates the
+  // portal once we're safely past hydration.
+  useEffect(() => { setMounted(true) }, [])
 
   const remove = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
@@ -38,6 +47,8 @@ export function ToastProvider() {
   }, [])
 
   const ICONS = { success: '✓', error: '⚠', unlock: '→' }
+
+  if (!mounted) return null
 
   return createPortal(
     <div id="fy-toast-container">
