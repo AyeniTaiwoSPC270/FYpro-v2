@@ -615,400 +615,26 @@ function HeroMockup() {
 }
 
 // ─── FEATURE CARD MOCKUPS ───────────────────────────────────────────────────
-// Real-UI screenshots of each workflow step, scaled to fit inside the feature
-// cards below. Styling lives in src/styles/landing-feature-mockups.css,
-// scoped per component under .lp-fmock-* so these mockups' generic class
-// names never collide with the real in-app tv-/ca-/ma-/wp-/pr-/dp- styles.
-
-function MockupLogo() {
-  return (
-    <div className="logo">
-      <img className="logo-img logo-img--dark" src="/fypro-logo.png" alt="FYPro" />
-      <img className="logo-img logo-img--light" src="/fypro-logo-light.png" alt="FYPro" />
-    </div>
-  )
-}
-
-function MockupThemeToggle() {
-  return (
-    <button className="theme-toggle" type="button" tabIndex={-1} aria-hidden="true">
-      <svg className="ti-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
-      <svg className="ti-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-    </button>
-  )
-}
-
-const MOCKUP_STEPS = [
-  { label: 'Topic', color: '#0066FF' },
-  { label: 'Chapter', color: '#22D3EE' },
-  { label: 'Methodology', color: '#F59E0B', glow: 'rgba(245,158,11,0.28)' },
-  { label: 'Writing', color: '#16A34A', glow: 'rgba(22,163,74,0.28)' },
-  { label: 'Project', color: '#A855F7', glow: 'rgba(168,85,247,0.28)' },
-  { label: 'Defence', color: '#DC2626' },
-]
-
-function MockupStepDots({ glowIndex = -1 }) {
-  return (
-    <div className="steps">
-      {MOCKUP_STEPS.map((s, i) => (
-        <div className="step" key={s.label}>
-          <div
-            className="dot"
-            style={i === glowIndex && s.glow ? { background: s.color, boxShadow: `0 0 0 4px ${s.glow}` } : { background: s.color }}
-          >✓</div>
-          <div className="lbl">{s.label}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function MockupFrame({ scopeClass, light, children }) {
-  return (
-    <div className="lp-fmock-outer">
-      <div className="lp-fmock-scale-wrap">
-        <div className="lp-fmock-fixed">
-          <div className={light === undefined ? scopeClass : `${scopeClass}${light ? ' light' : ''}`}>
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TopicValidatorMockup() {
-  const { theme } = useTheme()
-  return (
-    <MockupFrame scopeClass="lp-fmock-tv" light={theme === 'light'}>
-      <div className="topbar">
-        <MockupLogo />
-        <MockupThemeToggle />
-        <MockupStepDots />
-      </div>
-      <div className="body">
-        <div className="sidebar">
-          <div className="profile">
-            <div className="u">University of Lagos (U…</div>
-            <div className="d">Faculty of Engineering<br />Mechanical Engineering<br />Level 500</div>
-            <div className="proj">FEA-Based Thermal Stress Analysis of a Boiler Chimney Structure Under Fouling-Induced Temperature Gradients Using ANSYS Mechanical: A Simulation Study for a 10 TPH Industrial Boiler</div>
-          </div>
-          <div className="rank">
-            <div className="k">Research Rank</div>
-            <div className="v">🛡 Certified Researcher</div>
-            <div className="maxrank">MAX RANK ✓</div>
-          </div>
-          <div className="navlist">
-            <div className="nav active"><span className="nd" style={{ background: '#0066FF' }} />Topic Validator<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#22D3EE' }} />Chapter Architect<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#F59E0B' }} />Methodology Advisor<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#16A34A' }} />Writing Planner<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#A855F7' }} />Project Reviewer <span style={{ fontSize: '8.5px', opacity: 0.5 }}>(optional)</span><span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#DC2626' }} />Defence Prep<span className="ck">✓</span></div>
-          </div>
-          <div className="meet">🗓 Meeting Prep</div>
-        </div>
-        <div className="main">
-          <div className="card">
-            <div className="wm">1</div>
-            <div className="h1">Step 1: Topic Validator</div>
-            <div className="sub">Edit your topic if needed, then validate it. FYPro will check scope, originality, faculty fit, and data-collection feasibility.</div>
-            <div className="field">e.g. Impact of social media on academic performance among undergraduates</div>
-            <div className="validatebtn">Validate Topic</div>
-            <div className="status">NEEDS REFINEMENT</div>
-            <div className="expl">The topic is technically sound and faculty-appropriate but is dangerously over-scoped for a 5000-word, single undergraduate project — combining FEA thermal stress analysis, fouling-induced gradient modelling, and heat recovery unit design simultaneously exceeds what can be rigorously executed and written up at this word count.</div>
-            <div className="divider" />
-            <div className="kicker">Related Research Found</div>
-            <div className="papers">
-              <div className="paper"><div className="t">Design and FEA Analysis of Boiler Chimney against Fouling</div><div className="m">Priyanka Thigale · 2019</div></div>
-              <div className="paper"><div className="t">Monitoring kraft recovery boiler fouling using principal component analysis</div><div className="m">Peter Versteeg · 2009</div></div>
-              <div className="paper"><div className="t">Heat recovery boiler</div><div className="m">1998</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="whatsapp"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.7 3.1 1.1 4.8 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2zm5.9 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.6-1.2-3.1s.8-2.2 1.1-2.5c.3-.3.6-.4.8-.4h.6c.2 0 .5 0 .7.5.3.6.9 2.1 1 2.3.1.2.1.4 0 .6-.3.6-.6.9-.8 1.2-.2.2-.4.5-.2.9.5 1 1.3 1.9 2.1 2.5.9.7 1.6.9 1.9.9.3 0 .5-.1.7-.3.3-.3.7-.9 1-1.3.2-.3.5-.3.8-.2.3.1 1.8.9 2.1 1s.5.2.6.3c.1.2.1.7-.1 1.4z" /></svg></div>
-    </MockupFrame>
-  )
-}
-
-function ChapterArchitectMockup() {
-  const { theme } = useTheme()
-  return (
-    <MockupFrame scopeClass="lp-fmock-ca" light={theme === 'light'}>
-      <div className="topbar">
-        <MockupLogo />
-        <MockupThemeToggle />
-        <MockupStepDots />
-      </div>
-      <div className="body">
-        <div className="sidebar">
-          <div className="profile">
-            <div className="u">University of Lagos (U…</div>
-            <div className="d">Faculty of Engineering<br />Mechanical Engineering<br />Level 500</div>
-            <div className="proj">FEA-Based Thermal Stress Analysis of a Boiler Chimney Structure Under Fouling-Induced Temperature Gradients Using ANSYS Mechanical: A Simulation Study for a 10 TPH Industrial Boiler</div>
-          </div>
-          <div className="rank">
-            <div className="k">Research Rank</div>
-            <div className="v">🛡 Certified Researcher</div>
-            <div className="maxrank">MAX RANK ✓</div>
-          </div>
-          <div className="navlist">
-            <div className="nav"><span className="nd" style={{ background: '#0066FF' }} />Topic Validator<span className="ck">✓</span></div>
-            <div className="nav active"><span className="nd" style={{ background: '#22D3EE' }} />Chapter Architect<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#F59E0B' }} />Methodology Advisor<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#16A34A' }} />Writing Planner<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#A855F7' }} />Project Reviewer <span style={{ fontSize: '8.5px', opacity: 0.5 }}>(optional)</span><span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#DC2626' }} />Defence Prep<span className="ck">✓</span></div>
-          </div>
-          <div className="meet">🗓 Meeting Prep</div>
-        </div>
-        <div className="main">
-          <div className="card">
-            <div className="wm">2</div>
-            <div className="back">← Back to Topic Validator</div>
-            <div className="h1">Step 2: Chapter Architect</div>
-            <div className="sub">Choose a structure type, enter your total word count target, then let FYPro map out your chapters — each with a core question, content outline, and word allocation.</div>
-            <div className="label">Structure Type</div>
-            <div className="togglerow">
-              <div className="toggle on">Standard 5-Chapter</div>
-              <div className="toggle off">Custom</div>
-            </div>
-            <div className="flowline">Intro → Literature Review → Methodology → Results &amp; Discussion → Conclusion</div>
-            <div className="label">Total Word Count Target</div>
-            <div className="wc">e.g. 15000</div>
-            <div className="genbtn">Generate Chapters</div>
-            <div className="expl">This standard 5-chapter engineering structure suits FEA-based thermal analysis by progressing from boiler fouling theory through ANSYS simulation methodology to stress results interpretation and design recommendations.</div>
-            <div className="chapters">
-              <div className="chrow"><div className="chnum">01</div><div className="chtitle">Introduction to Thermal Stress Analysis of Boiler Chimney Heat Recovery Units</div><div className="chchev">▾</div></div>
-              <div className="chrow"><div className="chnum">02</div><div className="chtitle">Literature Review on Fouling Mechanisms, Heat Recovery Thermal Behaviour, and FEA Applications in Boiler Systems</div><div className="chchev">▾</div></div>
-              <div className="chrow"><div className="chnum">03</div><div className="chtitle">Methodology: Geometric Modelling, Fouling &amp; Boundary Conditions, ANSYS Simulation Setup</div><div className="chchev">▾</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </MockupFrame>
-  )
-}
-
-function MethodologyAdvisorMockup() {
-  const { theme } = useTheme()
-  return (
-    <MockupFrame scopeClass="lp-fmock-ma" light={theme === 'light'}>
-      <div className="topbar">
-        <MockupLogo />
-        <MockupThemeToggle />
-        <MockupStepDots glowIndex={2} />
-      </div>
-      <div className="body">
-        <div className="sidebar">
-          <div className="profile">
-            <div className="u">University of Lagos (U…</div>
-            <div className="d">Faculty of Engineering<br />Mechanical Engineering<br />Level 500</div>
-            <div className="proj">FEA-Based Thermal Stress Analysis of a Boiler Chimney Structure Under Fouling-Induced Temperature Gradients Using ANSYS Mechanical: A Simulation Study for a 10 TPH Industrial Boiler</div>
-          </div>
-          <div className="rank">
-            <div className="k">Research Rank</div>
-            <div className="v">🛡 Certified Researcher</div>
-            <div className="maxrank">MAX RANK ✓</div>
-          </div>
-          <div className="navlist">
-            <div className="nav"><span className="nd" style={{ background: '#0066FF' }} />Topic Validator<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#22D3EE' }} />Chapter Architect<span className="ck">✓</span></div>
-            <div className="nav active"><span className="nd" style={{ background: '#F59E0B' }} />Methodology Advisor</div>
-            <div className="nav"><span className="nd" style={{ background: '#16A34A' }} />Writing Planner<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#A855F7' }} />Project Reviewer <span style={{ fontSize: '8.5px', opacity: 0.5 }}>(optional)</span><span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#DC2626' }} />Defence Prep<span className="ck">✓</span></div>
-          </div>
-          <div className="meet">🗓 Meeting Prep</div>
-        </div>
-        <div className="main">
-          <div className="card">
-            <div className="wm">3</div>
-            <div className="back">← Back to Chapter Architect</div>
-            <div className="h1">Step 3: Methodology Advisor</div>
-            <div className="sub">FYPro will analyse all three research paradigms for your specific topic — Quantitative, Qualitative, and Mixed Methods — and explain the trade-offs of each. FYPro will recommend one, but the final choice is yours.</div>
-            <div className="genbtn">Analyse Methodology</div>
-            <div className="recbox">
-              <div className="reckicker">FYPro Recommends</div>
-              <div className="recname">Quantitative</div>
-              <div className="recdesc">This topic is entirely driven by numerical simulation outputs — temperature gradients, stress distributions, heat flux values, and deformation data — all of which are measurable, computable quantities that demand a quantitative framework.</div>
-            </div>
-            <div className="detail">
-              <div className="drow"><div className="dname">Quantitative</div><span className="badge strong">Strong</span><span className="badge rec">★ Recommended</span></div>
-              <div className="ddesc">This research involves FEA-based simulation of thermal and structural behaviour in a boiler chimney heat recovery unit under fouling conditions. Every output — wall temperature distribution, von Mises stress, thermal deformation, heat recovery efficiency, and fouling resistance values — is numerical. ANSYS generates discrete, measurable data points that can be statistically compared across fouling thickness scenarios (e.g., 0mm, 2mm, 5mm fouling layers). The entire research logic is: define boundary conditions → run simulation → extract numerical results → validate against empirical correlations or published data → draw conclusions. This is the textbook definition of quantitative research.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </MockupFrame>
-  )
-}
-
-function WritingPlannerMockup() {
-  const { theme } = useTheme()
-  return (
-    <MockupFrame scopeClass="lp-fmock-wp" light={theme === 'light'}>
-      <div className="topbar">
-        <MockupLogo />
-        <MockupThemeToggle />
-        <MockupStepDots glowIndex={3} />
-      </div>
-      <div className="body">
-        <div className="sidebar">
-          <div className="profile">
-            <div className="u">University of Lagos (U…</div>
-            <div className="d">Faculty of Engineering<br />Mechanical Engineering<br />Level 500</div>
-            <div className="proj">FEA-Based Thermal Stress Analysis of a Boiler Chimney Structure Under Fouling-Induced Temperature Gradients Using ANSYS Mechanical: A Simulation Study for a 10 TPH Industrial Boiler</div>
-          </div>
-          <div className="rank">
-            <div className="k">Research Rank</div>
-            <div className="v">🛡 Certified Researcher</div>
-            <div className="maxrank">MAX RANK ✓</div>
-          </div>
-          <div className="navlist">
-            <div className="nav"><span className="nd" style={{ background: '#0066FF' }} />Topic Validator<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#22D3EE' }} />Chapter Architect<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#F59E0B' }} />Methodology Advisor<span className="ck">✓</span></div>
-            <div className="nav active"><span className="nd" style={{ background: '#16A34A' }} />Writing Planner</div>
-            <div className="nav"><span className="nd" style={{ background: '#A855F7' }} />Project Reviewer <span style={{ fontSize: '8.5px', opacity: 0.5 }}>(optional)</span><span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#DC2626' }} />Defence Prep<span className="ck">✓</span></div>
-          </div>
-          <div className="meet">🗓 Meeting Prep</div>
-        </div>
-        <div className="main">
-          <div className="card">
-            <div className="back">← Back to Methodology Advisor</div>
-            <div className="h1">Step 4: Writing Planner</div>
-            <div className="sub">FYPro will build a realistic week-by-week writing schedule from today to your submission deadline — weighted by chapter complexity and adjusted for Nigerian public holidays and exam periods.</div>
-            <div className="fieldlbl">Submission Deadline</div>
-            <div className="dateinput"><span>dd/mm/yyyy</span><span className="calicon" /></div>
-            <div className="genbtn">Generate Writing Plan</div>
-            <div className="statbar">
-              <div className="stat"><div className="num">6</div><div className="lbl">Total Weeks</div></div>
-              <div className="stat"><div className="num">3000</div><div className="lbl">Words / Week Avg</div></div>
-              <div className="stat"><div className="num">18000</div><div className="lbl">Total Words</div></div>
-            </div>
-            <div className="timeline">
-              <div className="wk current">
-                <span className="wdot" style={{ background: '#DC2626' }} />
-                <div className="wcard">
-                  <div className="wtop"><span className="wtitle">WEEK 1</span><span className="wrange">May 11 – May 17</span><span className="herechip">You Are Here</span></div>
-                  <div className="wdesc">This week you are writing Chapter 1: Introduction, covering the background of boiler chimney heat recovery systems, the problem of fouling-induced temperature gradients in 10 TPH industrial boilers, and the justification for FEA-based thermal stress analysis using ANSYS Mechanical.</div>
-                  <div className="wwords">2500 words</div>
-                </div>
-              </div>
-              <div className="wk">
-                <span className="wdot" style={{ background: 'rgba(255,255,255,0.2)' }} />
-                <div className="wcard">
-                  <div className="wtop"><span className="wtitle">WEEK 2</span><span className="wrange">May 18 – May 24</span></div>
-                  <div className="wdesc">This week you are writing Chapter 2: Literature Review, focusing on prior FEA studies of boiler chimney fouling and thermal stress modelling.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="wa" />
-    </MockupFrame>
-  )
-}
-
-function ProjectReviewerMockup() {
-  const { theme } = useTheme()
-  return (
-    <MockupFrame scopeClass="lp-fmock-pr" light={theme === 'light'}>
-      <div className="topbar">
-        <MockupLogo />
-        <MockupThemeToggle />
-        <MockupStepDots glowIndex={4} />
-      </div>
-      <div className="body">
-        <div className="sidebar">
-          <div className="profile">
-            <div className="u">University of Lagos (U…</div>
-            <div className="d">Faculty of Science<br />Biochemistry<br />Level 500</div>
-            <div className="proj">Hepatoprotective Activity of Kolaviron-Enriched Fraction of Garcinia kola Seed Extract Against CCl4-Induced Oxidative Stress and Hepatic Inflammation in Wistar Rats: Focus on NF-κB Pathway Markers and Antioxidant Enzyme Modulation</div>
-          </div>
-          <div className="rank">
-            <div className="k">Research Rank</div>
-            <div className="v">🛡 Certified Researcher</div>
-            <div className="maxrank">MAX RANK ✓</div>
-          </div>
-          <div className="navlist">
-            <div className="nav"><span className="nd" style={{ background: '#0066FF' }} />Topic Validator<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#22D3EE' }} />Chapter Architect<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#F59E0B' }} />Methodology Advisor<span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#16A34A' }} />Writing Planner<span className="ck">✓</span></div>
-            <div className="nav active"><span className="nd" style={{ background: '#A855F7' }} />Project Reviewer <span style={{ fontSize: '8.5px', opacity: 0.5 }}>(optional)</span><span className="ck">✓</span></div>
-            <div className="nav"><span className="nd" style={{ background: '#DC2626' }} />Defence Prep<span className="ck">✓</span></div>
-          </div>
-          <div className="meet">🗓 Meeting Prep</div>
-        </div>
-        <div className="main">
-          <div className="card">
-            <div className="back">← Back to Writing Planner</div>
-            <div className="h1">Step 5: Project Reviewer</div>
-            <div className="sub">Upload your full project or a single chapter. FYPro will grade it, identify 3 strengths and any genuine weaknesses (up to 3) specific to your content, and generate the 5 most dangerous examiner questions from your actual work.</div>
-            <div className="sub2">Upload your draft chapter or full project document. FYPro will review it for structural gaps, argument clarity, and common examiner red flags — giving you targeted feedback before your defense.</div>
-            <div className="dropzone">
-              <div className="upicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg></div>
-              <div className="droptext">Drop your file here or <a href="#" onClick={(e) => e.preventDefault()}>click to browse</a></div>
-              <div className="dropmeta">PDF · Word (.docx) · Plain text (.txt) · Max 4 MB</div>
-              <div className="droptip">Tip: For projects 80+ pages, upload as Word (.docx) for best results.</div>
-            </div>
-            <div className="reviewbtn">Review My Project</div>
-            <div className="passchip">Pass — 54%</div>
-            <div className="feedback">The submission demonstrates competent experimental design and coherent biochemical methodology, but critically diverges from the validated topic by using a crude aqueous extract rather than a kolaviron-enriched fraction, omits NF-κB pathway markers entirely from objectives and assays, and presents only qualitative phytochemical screening where quantitative analysis was required —</div>
-          </div>
-        </div>
-      </div>
-    </MockupFrame>
-  )
-}
-
-function DefenseSimulatorMockup() {
-  return (
-    <MockupFrame scopeClass="lp-fmock-dp">
-      <div className="topbar">
-        <img className="logo-img" src="/fypro-logo.png" alt="FYPro" />
-        <div className="kicker">Defence Examination Panel</div>
-        <div className="endbtn">End Defence Session</div>
-      </div>
-      <div className="main">
-        <div className="col">
-          <div className="qhead">
-            <div className="qkicker">Question 1 of 5</div>
-            <div className="dots"><div className="dot active" /><div className="dot" /><div className="dot" /><div className="dot" /><div className="dot" /></div>
-          </div>
-          <div className="examinerrow">
-            <div className="examinername">The Methodologist:</div>
-            <div className="voicestate"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="15" y1="9" x2="15" y2="15" /><line x1="18" y1="7" x2="18" y2="17" /></svg>Voice paused</div>
-            <div className="retrybtn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6" /><path d="M3.5 15a9 9 0 1 0 2-9.5L1 10" /></svg>Retry</div>
-          </div>
-          <div className="qcard">
-            <div className="qtext">Before we proceed to the technical details of your work, tell this panel: why did you choose to predict student academic performance using machine learning, and what specific gap in existing practice at your institution motivated this particular research problem?</div>
-            <div className="scrollhint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg></div>
-          </div>
-          <div className="resplbl">Your Response</div>
-          <div className="textarea">Type your answer here…</div>
-          <div className="wordcount">0 / 300 words</div>
-          <div className="mic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg></div>
-          <div className="sendbtn">Send Answer</div>
-        </div>
-      </div>
-    </MockupFrame>
-  )
-}
+// Static screenshots of each workflow step's real UI, shown inside the feature
+// cards below. Source images live in public/landing-mockups/. Defense Simulator
+// has no light variant (the tribunal UI is dark-mode only, same as in-app).
 
 const FEATURE_MOCKUPS = [
-  TopicValidatorMockup,
-  ChapterArchitectMockup,
-  MethodologyAdvisorMockup,
-  WritingPlannerMockup,
-  ProjectReviewerMockup,
-  DefenseSimulatorMockup,
+  { dark: '/landing-mockups/topic-validator-dark.png', light: '/landing-mockups/topic-validator-light.png' },
+  { dark: '/landing-mockups/chapter-architect-dark.png', light: '/landing-mockups/chapter-architect-light.png' },
+  { dark: '/landing-mockups/methodology-advisor-dark.png', light: '/landing-mockups/methodology-advisor-light.png' },
+  { dark: '/landing-mockups/writing-planner-dark.png', light: '/landing-mockups/writing-planner-light.png' },
+  { dark: '/landing-mockups/project-reviewer-dark.png', light: '/landing-mockups/project-reviewer-light.png' },
+  { dark: '/landing-mockups/defense-simulator-dark.png', light: '/landing-mockups/defense-simulator-dark.png' },
 ]
+
+function FeatureMockup({ src }) {
+  return (
+    <div className="lp-fmock-outer">
+      <img className="lp-fmock-img" src={src} alt="" loading="lazy" decoding="async" draggable={false} />
+    </div>
+  )
+}
 
 function HeroHeadline() {
   const words = ['The', 'Supervisor', 'Most', 'Final', 'Year', 'Students', 'Never', 'Had']
@@ -1178,8 +804,9 @@ const FEAT_COLOR_MAP = {
 
 function FeatureCardWrapper({ f, i }) {
   const [hovered, setHovered] = useState(false)
+  const { theme } = useTheme()
   const c = FEAT_COLOR_MAP[f.color]
-  const Mockup = FEATURE_MOCKUPS[i]
+  const mockup = FEATURE_MOCKUPS[i]
   return (
     <Reveal delay={i * 0.07} className="h-full">
       <div
@@ -1201,9 +828,9 @@ function FeatureCardWrapper({ f, i }) {
           dataN={f.n}
         >
           <span aria-hidden="true" className="lp-feat-wm absolute bottom-[-16px] right-[14px] font-serif text-[7.5rem] leading-none pointer-events-none select-none" style={{ color: 'rgba(255,255,255,0.025)' }}>{f.n}</span>
-          {Mockup && (
+          {mockup && (
             <div className="mb-5">
-              <Mockup />
+              <FeatureMockup src={theme === 'light' ? mockup.light : mockup.dark} />
             </div>
           )}
           <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase mb-2 font-medium" style={{ color: c.kicker }}>{f.kicker}</div>
