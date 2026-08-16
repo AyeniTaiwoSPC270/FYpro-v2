@@ -129,6 +129,18 @@ async function main() {
     await page.evaluate(() => {
       document.getElementById('fy-toast-container')?.remove()
     })
+    // CookieBanner decides whether to show based on localStorage
+    // ('cookie_consent'), which is empty in this fresh headless profile —
+    // so it always renders visible=true here regardless of what a real
+    // visitor has already decided. Baking that in causes the exact same
+    // hydration-mismatch flash as the toast container above: the banner
+    // shows from the static HTML, then vanishes (or never should have
+    // appeared) once CookieBanner's real client-side effect runs against
+    // the visitor's actual localStorage. Strip it so hydration always
+    // starts from "hidden" and the client effect is what decides.
+    await page.evaluate(() => {
+      document.querySelector('[aria-label="Cookie consent"]')?.remove()
+    })
     const html = await page.content()
     captures.push({ outFile: route.outFile, html })
     await page.close()
