@@ -641,11 +641,16 @@ async function cmdAlerts(args) {
 
 function alertsKeyboard(enabled) {
   return {
-    inline_keyboard: [[
-      enabled
-        ? { text: '🔕 Turn OFF', callback_data: 'alerts_off' }
-        : { text: '🔔 Turn ON',  callback_data: 'alerts_on'  },
-    ]],
+    inline_keyboard: [
+      [
+        enabled
+          ? { text: '🔕 Turn OFF', callback_data: 'alerts_off' }
+          : { text: '🔔 Turn ON',  callback_data: 'alerts_on'  },
+      ],
+      [
+        { text: '⬅️ Menu', callback_data: 'help' },
+      ],
+    ],
   }
 }
 

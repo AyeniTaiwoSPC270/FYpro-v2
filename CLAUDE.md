@@ -510,6 +510,10 @@ All tables have RLS enabled. Zero tables with rowsecurity=false (verified).
 - key (text, PK)
 - value (text)
 - updated_at
+- Known keys include `rating_modal_force` (see user_ratings below) and
+  `daily_report_enabled` — mutes only the daily 9PM WAT Telegram report (not other
+  Telegram alerts), toggled via the bot's /alerts command; defaults to enabled when
+  the row is absent.
 
 ### daily_usage
 - date (date, unique)
@@ -770,6 +774,8 @@ Inbound commands (tap buttons or type):
 - /start or /help → shows inline keyboard with all commands
 - /stats, /revenue, /users, /spend, /errors, /payments, /health
 - /broadcast <message> → email all users; /broadcast_paid <message> → email paid users only
+- /alerts [on|off] → mute/unmute the daily 9PM WAT report (tappable toggle button; state
+  stored in app_config key daily_report_enabled, default enabled)
 - /data <table> → query any of 30 tables (rows shown in HTML-escaped format, row count in footer)
   ALLOWED tables: admin_users, ai_call_log, app_config, auth_attempts, daily_usage, defense_certificates,
   defense_credits, defense_sessions, defense_turns, email_log, email_preferences,
