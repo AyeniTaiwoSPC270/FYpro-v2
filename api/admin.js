@@ -8,6 +8,7 @@ import { rateLimitCheck, redis, freeRunKey } from './_lib/rate-limit.js';
 import { setCorsHeaders }       from './_lib/cors.js';
 import { sendTelegramAlert }   from './_lib/telegram.js';
 import { setMaintenanceMode as setMaintenanceModeLib } from './_lib/maintenance.js';
+import { getDailyReportEnabled } from './_lib/daily-report-pref.js';
 import { getExpressBetaFree, setExpressBetaFree } from './_lib/express-beta.js';
 import { getRatingForce, setRatingForce as setRatingForceLib } from './_lib/rating-force.js';
 import { validate, SubmitRatingSchema } from './_lib/validate.js';
@@ -1861,7 +1862,11 @@ async function handleDailyReport(req, res) {
       ...orphanedSection,
     ].join('\n');
 
-    await sendTelegramAlert(message);
+    if (await getDailyReportEnabled()) {
+      await sendTelegramAlert(message);
+    } else {
+      console.log('[admin/daily-report] skipped — disabled via Telegram /alerts toggle');
+    }
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('[admin/daily-report] error:', err.message);
