@@ -1154,11 +1154,18 @@ async function handleTelegramBot(req, res) {
 
     if (String(chatId) !== admId) return res.status(200).end()
 
+    let cbKey  = cq.data
+    let cbArgs = []
+    if (cbKey === 'alerts_on')  { cbKey = 'alerts'; cbArgs = ['on'] }
+    if (cbKey === 'alerts_off') { cbKey = 'alerts'; cbArgs = ['off'] }
+    const isAlertsFlow = cbKey === 'alerts'
+
     try {
-      const reply = await runCommand(cq.data, [])
+      const reply = await runCommand(cbKey, cbArgs)
       if (reply) {
-        const edited = await editMessage(chatId, msgId, reply, KEYBOARD)
-        if (!edited) await sendReply(chatId, reply, KEYBOARD)
+        const kb     = isAlertsFlow ? alertsKeyboard(await getDailyReportEnabled()) : KEYBOARD
+        const edited = await editMessage(chatId, msgId, reply, kb)
+        if (!edited) await sendReply(chatId, reply, kb)
       }
       await answerCallbackQuery(cq.id)
     } catch (err) {
@@ -1254,7 +1261,8 @@ async function handleTelegramBot(req, res) {
   try {
     const reply = await runCommand(cmdKey, args)
     if (!reply) return res.status(200).end()
-    await sendReply(chatId, reply, KEYBOARD)
+    const kb = cmdKey === 'alerts' ? alertsKeyboard(await getDailyReportEnabled()) : KEYBOARD
+    await sendReply(chatId, reply, kb)
   } catch (err) {
     console.error('[notify/bot] command error:', err.message)
     await sendReply(chatId, `❌ Command failed — check server logs`, KEYBOARD)
