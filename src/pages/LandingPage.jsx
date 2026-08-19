@@ -1300,16 +1300,24 @@ function Footer() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const [scrollProgress, setScrollProgress] = useState(0)
+  const scrollBarRef = useRef(null)
   const { hash } = useLocation()
 
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false
+    const updateProgress = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop
       const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
       const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0
-      setScrollProgress(progress)
+      if (scrollBarRef.current) scrollBarRef.current.style.width = progress + '%'
+      ticking = false
     }
+    const handleScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(updateProgress)
+    }
+    updateProgress()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -1333,7 +1341,7 @@ export default function LandingPage() {
       data-pub="true"
       style={{ background: 'var(--bg-base)', backgroundImage: 'var(--dot-bg-image)', backgroundSize: '28px 28px' }}
     >
-      <div style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: scrollProgress + '%', backgroundColor: '#2563EB', zIndex: 9999, transition: 'width 0.1s linear' }} />
+      <div ref={scrollBarRef} style={{ position: 'fixed', top: 0, left: 0, height: '3px', width: 0, backgroundColor: '#2563EB', zIndex: 9999, willChange: 'width' }} />
       <Navbar />
       <Hero />
       <StatsBar />
