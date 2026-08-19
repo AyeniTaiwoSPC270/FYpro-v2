@@ -45,6 +45,7 @@ export default function CookieBanner() {
         flexWrap: 'wrap',
         gap: '12px',
         boxShadow: isLight ? '0 -4px 24px rgba(0,0,0,0.08)' : '0 -4px 24px rgba(0,0,0,0.5)',
+        animation: 'fy-banner-enter 0.35s ease',
       }}
     >
       <p
