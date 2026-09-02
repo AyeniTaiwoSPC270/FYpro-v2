@@ -5,7 +5,8 @@
 > If not, strictly follow this document.
 
 **Project:** FYPro — AI-Powered Final Year Project Companion
-**Version:** 1.0 | **Date:** 2026-04-22
+**Version:** 2.0 | **Date:** 2026-09-02
+**Stack:** React (Vite) + Tailwind + CSS custom properties. Not vanilla HTML/JS — v1 was removed from the repo May 2026.
 **Aesthetic Direction:** Dark academia × Precision engineering × African digital product
 
 ---
@@ -26,11 +27,13 @@ It should feel like the smartest professor in the department redesigned their en
 - Generic Inter + blue button everything
 - Cold or sterile — it has warmth within its darkness
 
+**Deliberate register divergence:** general product-UI guidance discourages display/serif typefaces in dashboards and app chrome (they read as decoration, not function). FYPro breaks that rule on purpose — DM Serif Display on step headings is core to "dark academia" and to *not* looking like Linear/Notion/generic-SaaS. This is a considered trade-off, not an oversight: keep it, but never let a serif leak into data, labels, or anything that needs to be scanned quickly (see §3).
+
 ---
 
 ## 2. Color Palette
 
-> **Rule:** Always use CSS variables. Never hardcode hex values in component CSS.
+> **Rule:** Always use CSS variables. Never hardcode hex values in component CSS — including inside example snippets in this document. If a color isn't tokenized yet, add the token here first.
 
 ```css
 :root {
@@ -38,7 +41,7 @@ It should feel like the smartest professor in the department redesigned their en
   --color-bg-deep:        #060E18;   /* Defense Mode — very dark navy */
   --color-bg-dark:        #0D1B2A;   /* Sidebar, primary dark surfaces */
   --color-bg-mid:         #0F2235;   /* Secondary dark surfaces, hover states */
-  --color-bg-surface:     #F0F4F8;   /* Main content workspace */
+  --color-bg-surface:     #F0F4F8;   /* Main content workspace (light shell) */
   --color-bg-card:        #FFFFFF;   /* Card backgrounds */
 
   /* ─── Brand Blues ─────────────────────────────────── */
@@ -49,33 +52,60 @@ It should feel like the smartest professor in the department redesigned their en
 
   /* ─── Accent Colors ───────────────────────────────── */
   --color-green:          #16A34A;   /* Success, confirm, completed, primary CTA */
+  --color-green-dark:     #15803D;
   --color-green-light:    #F0FFF4;
   --color-red:            #DC2626;   /* Error, critical flags, danger */
   --color-red-light:      #FFF5F5;
   --color-amber:          #F59E0B;   /* Warning, buffer weeks, serious flags */
   --color-amber-light:    #FFFBEB;
+  --color-teal:           #0891B2;   /* Writing Planner / secondary data accent */
+  --color-orange:         #EA580C;
+
+  /* ─── Per-step accent identity ────────────────────── */
+  --color-step-topic:      #0066FF;  /* Step 1 — Topic Validator */
+  --color-step-chapter:    #F59E0B;  /* Step 2 — Chapter Architect */
+  --color-step-method:     #16A34A;  /* Step 3 — Methodology Advisor */
+  --color-step-instrument: #8B5CF6;  /* Step 4 — Instrument Builder */
+  --color-step-writing:    #0891B2;  /* Step 5 — Writing Planner */
+  --color-step-defense:    #DC2626;  /* Step 6 — Defense Prep */
 
   /* ─── Text ────────────────────────────────────────── */
   --color-text-primary:   #0D1B2A;
   --color-text-secondary: rgba(13, 27, 42, 0.6);
   --color-text-muted:     rgba(13, 27, 42, 0.4);
+  --color-text-faint:     rgba(13, 27, 42, 0.25);
   --color-text-white:     #FFFFFF;
   --color-text-white-dim: rgba(255, 255, 255, 0.7);
+  --color-text-white-faint: rgba(255, 255, 255, 0.45);
 
   /* ─── Borders ─────────────────────────────────────── */
   --color-border:         rgba(13, 27, 42, 0.1);
   --color-border-strong:  rgba(13, 27, 42, 0.2);
   --color-border-blue:    rgba(0, 102, 255, 0.3);
-  --color-border-dark:    rgba(255, 255, 255, 0.08);  /* Borders on dark surfaces */
+  --color-border-white:   rgba(255, 255, 255, 0.08);
+  --color-border-white-strong: rgba(255, 255, 255, 0.15);
+
+  /* ─── Card surface gradients (subtle sheen, not hex-in-place) ─ */
+  --gradient-card-blue:   linear-gradient(145deg, var(--color-bg-card) 0%, #f4f8ff 100%);
+  --gradient-card-amber:  linear-gradient(145deg, var(--color-bg-card) 0%, #fffdf5 100%);
+  --gradient-card-green:  linear-gradient(145deg, var(--color-bg-card) 0%, #f4fff8 100%);
+  --gradient-card-violet: linear-gradient(145deg, var(--color-bg-card) 0%, #faf7ff 100%);
+  --gradient-card-cyan:   linear-gradient(145deg, var(--color-bg-card) 0%, #f3fbfd 100%);
+  --gradient-card-red:    linear-gradient(145deg, var(--color-bg-card) 0%, #fff5f5 100%);
+  --gradient-sidebar:     linear-gradient(180deg, var(--color-bg-dark) 0%, #091420 100%);
 
   /* ─── Shadows ─────────────────────────────────────── */
   --shadow-card:          0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
   --shadow-card-hover:    0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-blue-glow:     0 0 24px rgba(0, 102, 255, 0.4);
+  --shadow-blue-glow-soft:0 0 16px rgba(0, 102, 255, 0.25);
   --shadow-green-glow:    0 0 20px rgba(22, 163, 74, 0.35);
-  --shadow-dark-card:     0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 6px rgba(0, 0, 0, 0.2);
+  --shadow-red-glow:      0 0 18px rgba(220, 38, 38, 0.35);
+  --shadow-shield:        0 8px 32px rgba(0, 102, 255, 0.45);
 }
 ```
+
+**Glow shadows — use with intent, not by default.** `--shadow-blue-glow` / `--shadow-green-glow` are already used across most primary-action hovers in the shipped app, so they stay as tokens. But a full-bleed glow on every hover is a well-known generic-AI-tool tell. For **new** components, default to `--shadow-card-hover` (a neutral, background-tinted lift) and reach for a glow token only on the one or two actions per screen that are meant to feel like the "electric" primary action (Defense Simulator submit, primary step CTA) — not on every button.
 
 ### Color Usage Map
 
@@ -89,12 +119,28 @@ It should feel like the smartest professor in the department redesigned their en
 | Ghost / Secondary | Transparent + border | Never fill ghost buttons |
 | Danger | `--color-red` border only | Never solid red fill unless actively pressed |
 | Active step indicator | `--color-blue-primary` | Navigator dots, sidebar active state |
+| Companion card identity | `--color-step-*` | Literature Map / Abstract Generator / Instrument Builder each get their parent step's accent, not a new color |
+
+---
+
+## 2b. Theming — Light & Dark Mode
+
+Both modes are first-class on every page, public and authenticated. This is not optional or a stretch goal — treat it as a hard requirement on any new component.
+
+**Mechanism:** the active theme is applied as `[data-theme="light"]` / `[data-theme="dark"]` on a root element (also mirrored as `.light` / `.dark` classes in some older selectors) and toggled by `src/context/ThemeContext.jsx`. Two token layers exist and both matter:
+
+1. **Static CSS custom properties** — the `--color-*` scale in §2, defined once in `src/styles/design-system.css`. These are the ones this document specifies and the ones new components should reach for.
+2. **Runtime theme tokens** — `--bg-base`, `--bg-card`, `--bg-sidebar`, `--bg-input`, `--text-primary`, `--text-secondary`, `--text-muted`, `--border-color`, `--sidebar-gradient-end`, referenced with fallback values (e.g. `var(--bg-base, #060E18)`) throughout `base.css` and `light-mode.css`. These flip value per theme and predate the `--color-*` set. Don't invent a third naming scheme — if a component needs a themed value, check whether it already has a `--bg-*`/`--text-*`/`--border-color` runtime token before reaching for a `--color-*` static one.
+
+Light-mode overrides for both layers live in `src/styles/light-mode.css` (2,000+ lines — this document doesn't restate every override; treat that file as the source of truth for exact per-component light values). The canonical example: `--color-text-primary` defaults to `#0D1B2A` (dark navy, correct for light surfaces) at the root, while `.app-content` on the dark shell explicitly re-pins several `--color-*` and `--text-*` tokens together so text stays legible against the light workspace regardless of which layer a given component reads from.
+
+**When building new UI:** write one sentence of physical scene (who's looking at this, on what device, in what light) before defaulting to dark — see the shared design law. FYPro's own answer, already encoded in the shipped app, is: dark shell as the default mood (matches "dark academia"), full light-mode parity because Nigerian students use this in bright rooms, on shared devices, during the day. Don't relitigate that per-component; just implement both.
 
 ---
 
 ## 3. Typography
 
-> **Rule:** Three fonts, three roles. Never substitute with system fonts.
+> **Rule:** Three fonts, three roles. Never substitute with system fonts. This is FYPro's one deliberate exception to product-register default typography guidance — see §1.
 
 ```css
 /* Already imported in index.html — do not re-import */
@@ -103,18 +149,31 @@ It should feel like the smartest professor in the department redesigned their en
 /* JetBrains Mono — Verdicts, scores, badges, technical readouts */
 ```
 
+```css
+:root {
+  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-body:    'Poppins', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Menlo', monospace;
+}
+```
+
 ### Type Scale
 
 ```css
 :root {
-  --text-xs:    0.65rem;    /* 10px — tiny labels, status badges */
-  --text-sm:    0.75rem;    /* 12px — muted labels, metadata */
-  --text-base:  0.875rem;   /* 14px — body text */
-  --text-md:    1rem;       /* 16px — medium body */
-  --text-lg:    1.125rem;   /* 18px — large body */
-  --text-xl:    1.25rem;    /* 20px — step labels */
-  --text-2xl:   1.5rem;     /* 24px — section headings */
-  --text-3xl:   2rem;       /* 32px — major headings */
+  --text-xs:    0.65rem;    /* ~10.4px — tiny labels, mono badges */
+  --text-sm:    0.75rem;    /* 12px — metadata, uppercase labels */
+  --text-base:  0.875rem;   /* 14px — body text, descriptions */
+  --text-md:    1rem;       /* 16px — emphasized body */
+  --text-lg:    1.125rem;   /* 18px — onboarding tagline */
+  --text-xl:    1.4rem;     /* 22.4px — step labels (serif) */
+  --text-2xl:   1.875rem;   /* 30px — onboarding wordmark */
+  --text-3xl:   2.75rem;    /* 44px — splash wordmark */
+
+  --tracking-tight: 0.01em;
+  --tracking-base:  0.02em;
+  --tracking-wide:  0.04em;
+  --tracking-caps:  0.1em;
 }
 ```
 
@@ -131,7 +190,9 @@ It should feel like the smartest professor in the department redesigned their en
 | Step number (watermark) | JetBrains Mono | 700 | 120px+ |
 | Technical badges | JetBrains Mono | 500 | `--text-xs` |
 
-**Line height:** 1.6 for body text. 1.2 for headings. 1.0 for badges/mono.
+**Never** put DM Serif Display on a data value, a table cell, a badge, or anything that needs to be scanned quickly — that's what breaks the "product, not brand poster" contract. Serif is for headings and hero moments only.
+
+**Line height:** `--leading-tight` 1.3 for headings, `--leading-base` 1.6 for body, `--leading-relaxed` 1.65 for longer copy blocks, 1.0 for badges/mono.
 **Line length:** Max 70ch for body text blocks — never full-width paragraphs.
 
 ---
@@ -169,6 +230,9 @@ The workspace must feel like a surface, not a void:
 }
 ```
 
+### Multi-surface layouts (dashboard, admin)
+Not every screen is a single centered step card. The multi-project dashboard grid, `/admin/health` Mission Control tabs, and gamification surfaces (badges, achievements, momentum ring) are all real, shipped parts of the product and follow the same tokens — but they're grids and panels, not step cards. Don't force a step-card shape onto them. Companion cards (Literature Map, Abstract Generator inside Chapter Architect; Instrument Builder inside Methodology Advisor) nest inside their parent step card — when they do, they must NOT visually read as a second, competing card: no independent drop shadow stacked on top of the parent's, inherit the parent step's accent color (`--color-step-*`) rather than picking a new one, and keep their own elevation flat relative to the parent.
+
 ---
 
 ## 5. Border Radius
@@ -176,9 +240,10 @@ The workspace must feel like a surface, not a void:
 ```css
 :root {
   --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   16px;
-  --radius-xl:   24px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
   --radius-pill: 999px;
 }
 ```
@@ -189,7 +254,7 @@ The workspace must feel like a surface, not a void:
 | Buttons | `--radius-md` |
 | Badges / tags | `--radius-pill` |
 | Input fields | `--radius-sm` |
-| Modals | `--radius-xl` |
+| Modals | `--radius-2xl` |
 | Sidebar items (active) | `--radius-sm` |
 
 ---
@@ -200,7 +265,7 @@ The workspace must feel like a surface, not a void:
 Every step uses this as the starting point:
 ```css
 .step-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  background: var(--gradient-card-blue);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
@@ -209,7 +274,7 @@ Every step uses this as the starting point:
   max-width: 660px;
   position: relative;
   overflow: hidden;
-  animation: card-enter 0.4s ease forwards;
+  animation: card-enter 0.4s var(--ease-out-expo) forwards;
 }
 
 .step-card:hover {
@@ -220,7 +285,7 @@ Every step uses this as the starting point:
 /* Step number watermark — each step sets its own content */
 .step-card::before {
   content: attr(data-step);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 140px;
   font-weight: 700;
   color: rgba(0, 102, 255, 0.04);
@@ -232,6 +297,7 @@ Every step uses this as the starting point:
   user-select: none;
 }
 ```
+Swap `--gradient-card-blue` for the matching `--gradient-card-*` token when a step wants a different undertone (e.g. amber for Chapter Architect, green for Methodology Advisor) instead of introducing a new hardcoded gradient.
 
 ### Card Entry Animation
 ```css
@@ -251,7 +317,7 @@ Every step uses this as the starting point:
   border: none;
   padding: 14px 28px;
   border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-base);
   cursor: pointer;
@@ -269,7 +335,7 @@ Every step uses this as the starting point:
   border: none;
   padding: 14px 28px;
   border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-base);
   cursor: pointer;
@@ -293,7 +359,7 @@ Every step uses this as the starting point:
   border: 1.5px solid var(--color-border-strong);
   padding: 13px 27px;
   border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-base);
   cursor: pointer;
@@ -312,7 +378,7 @@ Every step uses this as the starting point:
   border: 1.5px solid var(--color-red);
   padding: 13px 27px;
   border-radius: var(--radius-md);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-base);
@@ -330,25 +396,25 @@ Every step uses this as the starting point:
   padding: 14px 16px;
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-body);
   font-size: var(--text-base);
   color: var(--color-text-primary);
-  background: #FAFBFC;
+  background: var(--bg-input);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-  line-height: 1.6;
+  line-height: var(--leading-base);
 }
 .form-input:focus {
   outline: none;
   border-color: var(--color-blue-primary);
   box-shadow: 0 0 0 3px var(--color-blue-glow);
-  background: #FFFFFF;
+  background: var(--color-bg-card);
 }
 .form-input::placeholder {
   color: var(--color-text-muted);
 }
 ```
 
-### Loading State (Spinning Shield)
+### Loading State
 
 ```css
 .loading-state {
@@ -367,20 +433,15 @@ Every step uses this as the starting point:
 }
 /* Always disable the trigger button while loading */
 /* Always show loading state before any API call fires */
+/* Use the shared Spinner component (src/components/Spinner.jsx) rather than a bespoke spinner per feature */
 ```
 
-### Section Toggle Pattern
+### Section Reveal Pattern
+
+React state drives visibility (`useState`/conditional render) — this replaced the earlier `classList.add/remove('STEP-section--visible')` DOM-toggle pattern when the app moved off vanilla JS. Don't reintroduce direct `classList` manipulation in a React component.
 
 ```css
-/* Show a section */
-el.classList.remove('STEP-section--hidden');
-el.classList.add('STEP-section--visible');
-
-/* Hide a section */
-el.classList.remove('STEP-section--visible');
-el.classList.add('STEP-section--hidden');
-
-.STEP-section--visible { display: block; animation: card-enter 0.35s ease forwards; }
+.STEP-section--visible { display: block; animation: card-enter 0.35s var(--ease-out-expo) forwards; }
 .STEP-section--hidden  { display: none; }
 ```
 
@@ -410,23 +471,19 @@ el.classList.add('STEP-section--hidden');
 
 ```css
 .app-sidebar {
-  background: linear-gradient(180deg, #0D1B2A 0%, #091420 100%);
+  background: var(--gradient-sidebar);
   width: 260px;
-}
-
-/* Active step item */
-.sidebar-step--active {
-  border-left: 3px solid var(--color-blue-primary);
-  background: rgba(0, 102, 255, 0.08);
 }
 
 /* Completed step checkmark */
 @keyframes check-appear {
-  from { transform: scale(0) rotate(-10deg); opacity: 0; }
-  to   { transform: scale(1) rotate(0deg); opacity: 1; }
+  from { transform: scale(0.35); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
-.step-check { animation: check-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.step-check { animation: check-appear 0.4s var(--ease-out-expo) forwards; }
 ```
+
+**Active-state indicator — legacy pattern, don't extend it.** The shipped sidebar (`.sidebar__context-card`, `.db-sidebar-active`), chapter rows (`.ca-chapter-row`), and dashboard active-step row (`.db-step-active-row`) all currently signal "active/current" with a colored `border-left`. That's a side-stripe accent, which is a well-documented generic-AI-tool tell and is on the explicit anti-pattern list below — it's already pervasive enough in the shipped app that ripping it out everywhere is its own migration project, not a documentation fix. For any **new** active/selected-state component, use a background tint (`rgba(0, 102, 255, 0.08)`-style, already the established hover/active fill) plus font-weight or a leading icon instead of a border-left. Do not add new `border-left` accents to match the old pattern.
 
 ---
 
@@ -437,36 +494,45 @@ el.classList.add('STEP-section--hidden');
   --transition-fast:   0.15s ease;
   --transition-base:   0.2s ease;
   --transition-slow:   0.35s ease;
+  --ease-out-expo:      cubic-bezier(0.22, 1, 0.36, 1);
 }
 ```
 
 **Rules:**
-- Micro-interactions (hover, focus): `--transition-fast`
-- State changes (section reveal, button fill): `--transition-base`
-- Card entry, panel slides: `--transition-slow`
-- Loading spinners: `1s linear infinite`
-- Never animate `width`, `height`, or `layout properties` — only `transform` and `opacity`
+- Micro-interactions (hover, focus, simple opacity/color changes): `--transition-fast` / `--transition-base` with plain `ease` — these are short enough that the curve doesn't read.
+- Anything with real motion distance — card entry, panel slides, section reveals, checkmarks — use `--ease-out-expo`, not plain `ease` and never a bounce/overshoot curve (no `cubic-bezier` values that exceed 1.0, e.g. `1.56`). The one sanctioned exception is a deliberate "pop" on verdict/status badges (`badge-bounce-in`), which is a considered flourish for a specific high-stakes moment (Defense Simulator scoring), not a default.
+- Loading spinners: `1s linear infinite`.
+- Never animate `width`, `height`, or other layout properties — only `transform` and `opacity`.
 
 ---
 
 ## 9. CSS Naming Convention
 
-Each step has its own prefix. NEVER mix prefixes between steps:
+Each feature has its own prefix. **Never mix prefixes between features** — a class using the wrong prefix is a correctness bug, not a style nit.
 
-| Step | Prefix | Feature |
-|------|--------|---------|
-| Step 1 | `tv-` | Topic Validator |
-| Step 2 | `ca-` | Chapter Architect |
-| Step 3 | `ma-` | Methodology Advisor |
-| Step 4 | `di-` | Instrument Builder |
-| Step 5 | `wp-` | Writing Planner |
-| Step 6 | `dp-` | Defense Prep |
-| Bonus | `se-` | Supervisor Email |
+| Feature | Prefix |
+|------|--------|
+| Step 1 — Topic Validator | `tv-` |
+| Step 2 — Chapter Architect | `ca-` |
+| Step 3 — Methodology Advisor | `ma-` |
+| Step 4 — Instrument Builder | `di-` *(the CSS file is `instrument-builder.css`, but the classes are `di-*`, not `ib-*` — verified against `src/styles/instrument-builder.css`)* |
+| Step 5 — Writing Planner | `wp-` |
+| Step 6 — Defense Prep / Defense Simulator | `dp-` |
+| Supervisor Email | `se-` |
+| Supervisor Meeting Prep Agent | `sp-` |
+| Literature Map (companion card) | `lm-` |
+| Abstract Generator (companion card) | `ag-` |
+| Project Reviewer | `pr-` |
+| Express Defence shell | `es-` |
+| Onboarding questions / TourCarousel | `oq-` |
+| Defence Brief | `db-` |
 
-New CSS always appends to the bottom of `style.css` inside a clearly delimited block:
+> **⚠ Known collision, unresolved:** `db-` is currently used for **both** Defence Brief (`src/styles/defense-brief.css`, as intended) **and** the Dashboard premium animations block in `src/styles/light-mode.css` (`.db-header-enter`, `.db-step-active-row`, `.db-sidebar-item`, `.db-sidebar-active`, `.db-bar-red-glow`, `.db-quick-icon`, `.db-quick-card`). This wasn't caught before both shipped. It hasn't caused a visible clash yet because the class *names* don't literally overlap, only the *prefix* does — but it violates the naming rule and the next person adding a `db-` class to either feature could easily collide for real. Recommend renaming the Dashboard block to `dash-` in a dedicated follow-up (touches `light-mode.css` and the Dashboard JSX that applies these classes) rather than folding it into this document pass.
+
+New CSS always appends to the bottom of the relevant `src/styles/*.css` file inside a clearly delimited block:
 ```css
 /* ═══════════════════════════════════════════════════════
-   STEP N — FEATURE NAME
+   FEATURE NAME — prefix-
    ═══════════════════════════════════════════════════════ */
 ```
 
@@ -494,26 +560,30 @@ New CSS always appends to the bottom of `style.css` inside a clearly delimited b
 - Purple gradients — ever
 - All cards looking identical — differentiate each step
 - Flat, uninteresting backgrounds — add depth, texture, character
+- Side-stripe (`border-left`/`border-right`) accents on **new** components — see §7. It's tolerated as legacy in a handful of already-shipped places, never added fresh.
+- A glow shadow on every hover — reserve `--shadow-blue-glow`/`--shadow-green-glow` for the one or two primary actions per screen that should feel electric, default to `--shadow-card-hover` otherwise
 
 **Typography:**
 - Inter, Roboto, Arial, or system fonts as primary typeface
+- DM Serif Display anywhere except headings/hero text — never on data, labels, or badges
 - All-caps body text
 - Line lengths beyond 70ch
+- Bounce/overshoot easing (`cubic-bezier` values above 1.0) on anything but the sanctioned badge-pop moment
 
 **Color:**
 - Generic blue as the only CTA color — green for confirm/continue
 - Solid red fill for danger buttons (border only)
-- Hardcoded hex values in component CSS
+- Hardcoded hex values in component CSS — including in this document; add a token instead
 
 **Interaction:**
 - No loading state before API calls
-- `innerHTML` insertion without `escapeHtml()`
 - Two simultaneous API calls from the same step
 - `JSON.parse()` without `try/catch`
 - Missing `cursor: pointer` on interactive elements
+- Direct `classList` manipulation for show/hide inside a React component — use conditional render / state instead (see §6)
 
 **Layout:**
-- Mobile-specific breakpoints (basic responsiveness only)
+- Forcing every screen into the single-step-card shape — dashboards, admin, and grid surfaces get their own patterns (§4)
 - Content hidden behind fixed navbars
 - Horizontal scroll on mobile
 
@@ -525,12 +595,14 @@ Before delivering any step or component:
 - [ ] All form inputs have `<label>` elements
 - [ ] Icon-only buttons have `aria-label`
 - [ ] Color is never the only indicator of meaning
-- [ ] `prefers-reduced-motion` respected — wrap all animations in media query
+- [ ] `prefers-reduced-motion` respected — wrap all animations in media query (see the `@media (prefers-reduced-motion: reduce)` blocks already established in `light-mode.css` for a working pattern to copy)
 - [ ] Tab order matches visual order
-- [ ] Focus states visible (use `:focus-visible`)
+- [ ] Focus states visible (use `:focus-visible` — a global keyboard-focus ring already exists in `design-system.css`, don't suppress it with a per-element `outline: none` unless you replace it)
 - [ ] Text contrast ≥ 4.5:1 on light surfaces, ≥ 7:1 on dark surfaces
 - [ ] Touch targets ≥ 44×44px (applies to step nav dots and sidebar items)
 - [ ] All SVG icons have appropriate `aria-hidden="true"` if decorative
+
+No formal WCAG level is declared elsewhere in the project docs — treat AA as the floor (the contrast targets above already exceed AA on dark surfaces) until told otherwise.
 
 ---
 
@@ -539,20 +611,15 @@ Before delivering any step or component:
 - All API calls must show a loading state before firing
 - Never make two API calls simultaneously from the same step
 - `JSON.parse()` always wrapped in `try/catch`
-- `escapeHtml()` always used before `innerHTML` insertion
-- Lazy-load nothing — this is a single-page app with progressive revelation
+- React handles output escaping automatically — never use `dangerouslySetInnerHTML` (see CLAUDE.md §15.5); there is no manual `escapeHtml()` step to remember
+- Route-level code is lazy-loaded (`React.lazy`) with per-route skeleton screens — this is standard for new routes, not an exception
 - Animations use `transform` and `opacity` only — no layout thrashing
 
 ---
 
-## 14. Script Load Order
+## 14. Motion Layer — React
 
-Strict order in `index.html`:
-```
-state.js → universities.js → prompts.js → api.js →
-step1.js → step2.js → step3.js → step4.js →
-step5.js → step6.js → supervisor-email.js → app.js
-```
+Beyond the plain-CSS keyframes in this document, page-level and step transitions run through Framer Motion (`motion.div`, `AnimatePresence`) in `src/features/shell/AppShell.jsx`. This is easy to get wrong: `Suspense` boundaries for lazy-loaded routes must stay *inside* the `motion.div`, not wrap it — putting `Suspense` outside `AnimatePresence` has previously caused a step to render blank in production builds only (dev server masked it). If you're touching route transitions or adding a new lazy route, check `AppShell.jsx`'s existing structure before changing the nesting.
 
 ---
 
