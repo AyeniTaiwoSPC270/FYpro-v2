@@ -1020,7 +1020,7 @@ html {
   }
 
   /* Dashboard topbar: tighter greeting text */
-  .db-header-enter .font-serif {
+  .dash-header-enter .font-serif {
     font-size: 0.95rem !important;
   }
 
@@ -1069,7 +1069,7 @@ html {
   }
 
   /* Dashboard sidebar items */
-  .db-sidebar-item {
+  .dash-sidebar-item {
     min-height: 44px;
   }
 

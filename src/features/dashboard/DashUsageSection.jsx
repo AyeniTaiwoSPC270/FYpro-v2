@@ -52,7 +52,7 @@ function ConstrainedFeature({ label, used, limit, visible, barIndex }) {
           initial={{ width: 0 }}
           animate={{ width: visible ? `${pct * 100}%` : 0 }}
           transition={{ duration: 0.7, delay: barIndex * 0.05, ease: [0.22, 1, 0.36, 1] }}
-          className={`h-full rounded-full${pct >= 0.8 ? ' db-bar-red-glow' : ''}`}
+          className={`h-full rounded-full${pct >= 0.8 ? ' dash-bar-red-glow' : ''}`}
           style={{ background: color }}
         />
       </div>

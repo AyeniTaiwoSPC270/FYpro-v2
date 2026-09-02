@@ -263,16 +263,16 @@
 }
 .dp-summary-list li:last-child { border-bottom: none; }
 
-/* Panel verdict + final advice — left blue accent strip */
+/* Panel verdict + final advice — tinted panel, not a border stripe */
 .dp-summary-verdict,
 .dp-summary-advice {
   font-style: italic;
   font-size: 17px;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.82);
-  border-left: 3px solid #2563EB;
-  border-top: none;
-  padding-left: 16px;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px 16px;
   margin: 20px 0;
 }
 
