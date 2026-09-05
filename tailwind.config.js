@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["'DM Serif Display'", "Georgia", "serif"],
+        serif: ["'Inter'", "-apple-system", "sans-serif"],
         sans:  ["'Poppins'", "sans-serif"],
         mono:  ["'JetBrains Mono'", "monospace"],
       },

@@ -73,7 +73,7 @@ export default function VerifyCertificate() {
         {state === 'lookup' && (
           <>
             <h1 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.4rem',
               color: text,
               margin: '0 0 8px',
@@ -162,7 +162,7 @@ export default function VerifyCertificate() {
             }}>VERIFIED</div>
 
             <h1 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.5rem',
               color: text,
               margin: '0 0 6px',
@@ -243,7 +243,7 @@ export default function VerifyCertificate() {
               marginBottom: 20,
             }}>NOT FOUND</div>
             <h1 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.4rem',
               color: text,
               margin: '0 0 10px',
@@ -271,7 +271,7 @@ export default function VerifyCertificate() {
           <>
             <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>⚠️</div>
             <h1 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.4rem',
               color: text,
               margin: '0 0 10px',

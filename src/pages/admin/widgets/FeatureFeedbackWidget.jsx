@@ -78,8 +78,8 @@ export default function FeatureFeedbackWidget({ data, loading, error }) {
         borderBottom: `1px solid ${BORDER}`,
       }}>
         <h2 style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: 22, fontWeight: 400,
+          fontFamily: "'Inter', -apple-system, sans-serif",
+          fontSize: 22, fontWeight: 600,
           color: WHITE, margin: 0,
         }}>
           Feature Feedback

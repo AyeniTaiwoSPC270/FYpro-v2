@@ -138,7 +138,7 @@ export default function NotificationPanel({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
-            fontFamily: "'DM Serif Display', serif",
+            fontFamily: "'Inter', -apple-system, sans-serif",
             fontSize: '0.9rem',
             fontWeight: 700,
             color: 'var(--text-primary)',

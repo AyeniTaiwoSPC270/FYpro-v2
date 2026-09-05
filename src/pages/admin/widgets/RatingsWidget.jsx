@@ -174,7 +174,7 @@ export default function RatingsWidget({ stats, recent, loading, error }) {
           padding: '14px 18px', borderBottom: `1px solid ${BORDER}`,
         }}>
           <span style={{
-            fontFamily: "'DM Serif Display', serif",
+            fontFamily: "'Inter', -apple-system, sans-serif",
             fontSize: 15, color: WHITE,
           }}>Recent Submissions</span>
           <span style={{

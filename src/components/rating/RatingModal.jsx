@@ -105,8 +105,8 @@ export default function RatingModal({ prompt, onClose }) {
                 Quick Feedback
               </div>
               <h2 style={{
-                fontFamily: "'DM Serif Display', serif",
-                fontSize:   '1.125rem', fontWeight: 400,
+                fontFamily: "'Inter', -apple-system, sans-serif",
+                fontSize:   '1.125rem', fontWeight: 600,
                 color:      'var(--color-text-primary)',
                 margin:     0, lineHeight: 1.35,
               }}>
@@ -198,8 +198,8 @@ export default function RatingModal({ prompt, onClose }) {
                 Quick Feedback · Step 2
               </div>
               <h2 style={{
-                fontFamily: "'DM Serif Display', serif",
-                fontSize:   '1.125rem', fontWeight: 400,
+                fontFamily: "'Inter', -apple-system, sans-serif",
+                fontSize:   '1.125rem', fontWeight: 600,
                 color:      'var(--color-text-primary)',
                 margin:     0,
               }}>
@@ -318,8 +318,8 @@ export default function RatingModal({ prompt, onClose }) {
           <div style={{ padding: '32px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: '2.5rem', marginBottom: 10 }} role="img" aria-label="Graduation cap">🎓</div>
             <h2 style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize:   '1.375rem', fontWeight: 400,
+              fontFamily: "'Inter', -apple-system, sans-serif",
+              fontSize:   '1.375rem', fontWeight: 600,
               color:      'var(--color-text-primary)', margin: '0 0 8px',
             }}>
               Thank you!

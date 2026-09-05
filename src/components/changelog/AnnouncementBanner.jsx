@@ -134,8 +134,8 @@ export default function AnnouncementBanner() {
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
             <span
               style={{
-                fontFamily: "'DM Serif Display', Georgia, serif",
-                fontWeight: 400,
+                fontFamily: "'Inter', -apple-system, sans-serif",
+                fontWeight: 600,
                 fontSize: '0.9rem',
                 color: isLight ? '#0F172A' : '#FFFFFF',
                 whiteSpace: 'nowrap',

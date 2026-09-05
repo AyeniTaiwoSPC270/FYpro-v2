@@ -142,7 +142,7 @@ export default function CertificateDownloadModal({ isOpen, onClose, defenseSessi
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22 }}>
           <div>
-            <p style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '1.1rem', color: text1, margin: 0, marginBottom: 4 }}>
+            <p style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '1.1rem', color: text1, margin: 0, marginBottom: 4 }}>
               Download Certificate
             </p>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.72rem', color: text2, margin: 0 }}>

@@ -31,7 +31,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
           <path d={SHIELD_PATH} />
         </svg>
         <span style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '0.72rem',
           color: '#0D1B2A',
           letterSpacing: '0.14em',
@@ -56,7 +56,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
           PANEL SCORE
         </span>
         <span style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '2.4rem',
           fontWeight: 700,
           color: '#0D1B2A',
@@ -84,7 +84,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
       <div style={{ padding: '0 22px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative' }}>
         <div style={{ width: '60%', height: 1.5, background: GOLD, opacity: 0.85 }} />
         <p style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontStyle: 'italic',
           fontSize: '0.62rem',
           color: '#0D1B2A',
@@ -97,7 +97,7 @@ export default function PrestigeCard({ score, scoreLabel, topic }) {
 
       <div style={{ padding: '8px 22px', borderTop: `1px solid ${GOLD}66`, position: 'relative' }}>
         <p style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '0.6rem',
           color: '#0D1B2A',
           textAlign: 'center',

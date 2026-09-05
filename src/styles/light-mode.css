@@ -300,7 +300,7 @@
   --color-bg-card:        #FFFFFF;
 }
 
-/* ── Step headings (DM Serif step labels) ─────────────────────── */
+/* ── Step headings (Inter step labels) ─────────────────────── */
 [data-theme="light"] .app-content .tv-step-label,
 [data-theme="light"] .app-content .ca-step-label,
 [data-theme="light"] .app-content .ma-step-label,
@@ -530,7 +530,7 @@
 }
 
 .sp-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.6rem;
   color: #ffffff;
   line-height: 1.2;
@@ -640,7 +640,7 @@
 }
 
 .sp-result-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.3rem;
   color: #ffffff;
 }

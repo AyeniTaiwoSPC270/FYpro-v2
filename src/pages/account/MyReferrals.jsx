@@ -207,7 +207,7 @@ export default function MyReferrals() {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: textPrimary, margin: 0, lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '2rem', color: textPrimary, margin: 0, lineHeight: 1.2 }}>
             Refer a Friend
           </h1>
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem', color: textSecondary, marginTop: 8 }}>
@@ -238,7 +238,7 @@ export default function MyReferrals() {
             boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
             animation: 'card-enter 0.4s ease forwards',
           }}>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
+            <p style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
               Could not load referrals
             </p>
             <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.84rem', color: textSecondary, margin: '0 0 20px' }}>
@@ -383,7 +383,7 @@ export default function MyReferrals() {
                 textAlign: 'center',
                 boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.06)',
               }}>
-                <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
+                <p style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '1.1rem', color: textPrimary, margin: '0 0 8px' }}>
                   No referrals yet
                 </p>
                 <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.84rem', color: textSecondary, margin: 0 }}>

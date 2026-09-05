@@ -106,9 +106,9 @@ export default function MaintenancePage() {
 
         {/* Heading */}
         <h1 style={{
-          fontFamily:   "'DM Serif Display', serif",
+          fontFamily:   "'Inter', -apple-system, sans-serif",
           fontSize:     'clamp(2rem, 8vw, 2.75rem)',
-          fontWeight:   400,
+          fontWeight:   600,
           color:        'var(--color-text-white)',
           lineHeight:   1.2,
           margin:       '0 0 20px',

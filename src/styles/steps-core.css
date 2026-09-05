@@ -33,9 +33,9 @@
   gap: 16px;
 }
 .tv-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
   margin-bottom: 2px;
 }
@@ -502,9 +502,9 @@
   gap: 20px;
 }
 .ca-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
 }
 .ca-description {
@@ -691,7 +691,7 @@
   right: 56px;
   top: 50%;
   transform: translateY(-50%);
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 4.5rem;
   line-height: 1;
   color: rgba(13,27,42,0.04);
@@ -907,9 +907,9 @@
   gap: 20px;
 }
 .ma-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
 }
 .ma-description {

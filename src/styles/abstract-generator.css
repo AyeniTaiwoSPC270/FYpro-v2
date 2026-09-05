@@ -30,9 +30,9 @@
   position: absolute;
   top: -8px;
   right: 14px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 7rem;
-  font-weight: 400;
+  font-weight: 600;
   color: rgba(8, 145, 178, 0.06);
   pointer-events: none;
   user-select: none;
@@ -54,9 +54,9 @@
 
 /* ── Step label / card title ─────────────────────────────── */
 .ag-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
   margin: 0;
 }
@@ -255,7 +255,7 @@
 
 /* ── Step label ───────────────────────────────────────────── */
 .lm-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-xl);
   color: var(--color-text-primary);
   margin: 0;
@@ -328,7 +328,7 @@
 
 /* ── Section sub-headings inside result ───────────────────── */
 .lm-section-heading {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-lg);
   color: var(--color-text-primary);
   margin: 0 0 14px 0;
@@ -567,7 +567,7 @@
 
 /* ── Step label ───────────────────────────────────────────── */
 .pr-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-xl);
   color: var(--color-text-primary);
   margin: 0;
@@ -812,7 +812,7 @@
 
 /* Feedback section heading — coloured by modifier */
 .pr-feedback-heading {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-lg);
   margin: 0;
 }
@@ -1117,7 +1117,7 @@
   box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 36px rgba(0,102,255,0.07) !important;
 }
 
-/* ── 5. Step headings (DM Serif) ───────────────────────────────── */
+/* ── 5. Step headings (Inter) ───────────────────────────────── */
 .app-content .tv-step-label,
 .app-content .ca-step-label,
 .app-content .ma-step-label,

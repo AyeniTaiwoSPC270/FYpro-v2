@@ -23,9 +23,9 @@
   gap: 20px;
 }
 .wp-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
 }
 .wp-description {
@@ -420,9 +420,9 @@
 }
 
 .se-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
   margin-bottom: 2px;
 }

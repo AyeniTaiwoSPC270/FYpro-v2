@@ -27,7 +27,7 @@ It should feel like the smartest professor in the department redesigned their en
 - Generic Inter + blue button everything
 - Cold or sterile — it has warmth within its darkness
 
-**Deliberate register divergence:** general product-UI guidance discourages display/serif typefaces in dashboards and app chrome (they read as decoration, not function). FYPro breaks that rule on purpose — DM Serif Display on step headings is core to "dark academia" and to *not* looking like Linear/Notion/generic-SaaS. This is a considered trade-off, not an oversight: keep it, but never let a serif leak into data, labels, or anything that needs to be scanned quickly (see §3).
+**Typography note (updated 2026-09-05):** Headings previously used DM Serif Display as a deliberate register divergence from generic SaaS defaults. That's been replaced with Inter (weight 600) for a cleaner, more modern heading register while Poppins continues to carry all body text — so headings and body no longer contrast in typeface, only in weight and size. Never let heading-weight Inter leak into data, labels, or anything that needs to be scanned quickly (see §3).
 
 ---
 
@@ -140,18 +140,18 @@ Light-mode overrides for both layers live in `src/styles/light-mode.css` (2,000+
 
 ## 3. Typography
 
-> **Rule:** Three fonts, three roles. Never substitute with system fonts. This is FYPro's one deliberate exception to product-register default typography guidance — see §1.
+> **Rule:** Three fonts, three roles. Never substitute with system fonts.
 
 ```css
 /* Already imported in index.html — do not re-import */
-/* DM Serif Display — Headings, step labels, hero text */
+/* Inter — Headings, step labels, hero text */
 /* Poppins — All body text, descriptions, labels, buttons */
 /* JetBrains Mono — Verdicts, scores, badges, technical readouts */
 ```
 
 ```css
 :root {
-  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-display: 'Inter', -apple-system, sans-serif;
   --font-body:    'Poppins', -apple-system, sans-serif;
   --font-mono:    'JetBrains Mono', 'Menlo', monospace;
 }
@@ -181,8 +181,8 @@ Light-mode overrides for both layers live in `src/styles/light-mode.css` (2,000+
 
 | Element | Font | Weight | Size |
 |---------|------|--------|------|
-| Step name / hero heading | DM Serif Display | 400 | `--text-3xl` |
-| Section headings | DM Serif Display | 400 | `--text-2xl` |
+| Step name / hero heading | Inter | 600 | `--text-3xl` |
+| Section headings | Inter | 600 | `--text-2xl` |
 | Body text | Poppins | 400 | `--text-base` |
 | Button labels | Poppins | 600 | `--text-base` |
 | Form labels | Poppins | 500 | `--text-sm` |
@@ -190,7 +190,7 @@ Light-mode overrides for both layers live in `src/styles/light-mode.css` (2,000+
 | Step number (watermark) | JetBrains Mono | 700 | 120px+ |
 | Technical badges | JetBrains Mono | 500 | `--text-xs` |
 
-**Never** put DM Serif Display on a data value, a table cell, a badge, or anything that needs to be scanned quickly — that's what breaks the "product, not brand poster" contract. Serif is for headings and hero moments only.
+**Never** put Inter (the `--font-display` weight/role) on a data value, a table cell, a badge, or anything that needs to be scanned quickly — that's what breaks the "product, not brand poster" contract. Display type is for headings and hero moments only.
 
 **Line height:** `--leading-tight` 1.3 for headings, `--leading-base` 1.6 for body, `--leading-relaxed` 1.65 for longer copy blocks, 1.0 for badges/mono.
 **Line length:** Max 70ch for body text blocks — never full-width paragraphs.
@@ -564,8 +564,8 @@ New CSS always appends to the bottom of the relevant `src/styles/*.css` file ins
 - A glow shadow on every hover — reserve `--shadow-blue-glow`/`--shadow-green-glow` for the one or two primary actions per screen that should feel electric, default to `--shadow-card-hover` otherwise
 
 **Typography:**
-- Inter, Roboto, Arial, or system fonts as primary typeface
-- DM Serif Display anywhere except headings/hero text — never on data, labels, or badges
+- Roboto, Arial, or generic system fonts as primary typeface
+- Inter (the `--font-display` role) anywhere except headings/hero text — never on data, labels, or badges
 - All-caps body text
 - Line lengths beyond 70ch
 - Bounce/overshoot easing (`cubic-bezier` values above 1.0) on anything but the sanctioned badge-pop moment

@@ -115,7 +115,7 @@ export default function TourCarousel({ onClose, startAt = 0, variant = 'standard
                   </div>
                 </div>
                 <div style={{ padding: '9px 9px 0', overflow: 'hidden', height: 'calc(100% - 76px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 7 }}>Step 1: Topic Validator</div>
+                  <div style={{ font: "700 12px/1.2 'Inter', -apple-system, sans-serif", color: 'var(--ph-text)', marginBottom: 7 }}>Step 1: Topic Validator</div>
                   <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 5, padding: '6px 7px', marginBottom: 6 }}>
                     <div style={{ font: "600 7px/1 'JetBrains Mono',monospace", color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>NEEDS REFINEMENT</div>
                     <div style={{ font: '400 6.5px/1.5 Poppins,sans-serif', color: 'var(--ph-text-sec)' }}>Topic is technically sound but over-scoped for a 5,000-word undergraduate project.</div>
@@ -149,7 +149,7 @@ export default function TourCarousel({ onClose, startAt = 0, variant = 'standard
                   <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>← Back to Topic Validator</div>
                 </div>
                 <div style={{ padding: '9px', overflow: 'hidden', height: 'calc(100% - 60px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 6 }}>Step 2: Chapter Architect</div>
+                  <div style={{ font: "700 12px/1.2 'Inter', -apple-system, sans-serif", color: 'var(--ph-text)', marginBottom: 6 }}>Step 2: Chapter Architect</div>
                   <div style={{ display: 'flex', gap: 3, marginBottom: 7 }}>
                     <div style={{ flex: 1, background: '#0066FF', borderRadius: 4, padding: '5px 4px', textAlign: 'center' }}><span style={{ font: '600 7px/1 Poppins,sans-serif', color: '#fff' }}>Standard 5-Chapter</span></div>
                     <div style={{ flex: 1, background: 'var(--ph-tab-bg)', border: '1px solid var(--ph-tab-bdr)', borderRadius: 4, padding: '5px 4px', textAlign: 'center' }}><span style={{ font: '500 7px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>Custom</span></div>
@@ -214,7 +214,7 @@ export default function TourCarousel({ onClose, startAt = 0, variant = 'standard
                   <div style={{ font: '400 6.5px/1 Poppins,sans-serif', color: 'var(--ph-text-dim)' }}>← Back to Methodology Advisor</div>
                 </div>
                 <div style={{ padding: '9px', overflow: 'hidden', height: 'calc(100% - 60px)' }}>
-                  <div style={{ font: "700 12px/1.2 'DM Serif Display',serif", color: 'var(--ph-text)', marginBottom: 2 }}>Step 4: Writing Planner</div>
+                  <div style={{ font: "700 12px/1.2 'Inter', -apple-system, sans-serif", color: 'var(--ph-text)', marginBottom: 2 }}>Step 4: Writing Planner</div>
                   <div style={{ font: '400 6.5px/1.4 Poppins,sans-serif', color: 'var(--ph-text-dim)', marginBottom: 7 }}>Week-by-week schedule, weighted by chapter complexity.</div>
                   <div style={{ background: '#0066FF', borderRadius: 5, padding: '6px 8px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginBottom: 7 }}>
                     {[['6','Total Weeks'],['3000','Words/Wk Avg'],['18000','Total Words']].map(([v, l]) => (
@@ -271,7 +271,7 @@ export default function TourCarousel({ onClose, startAt = 0, variant = 'standard
                   </div>
                   <div style={{ font: "600 6.5px/1 'JetBrains Mono',monospace", color: '#0066FF', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 5 }}>THE METHODOLOGIST:</div>
                   <div style={{ background: 'rgba(0,102,255,0.1)', borderLeft: '2px solid #0066FF', borderRadius: '0 5px 5px 0', padding: '8px 10px', marginBottom: 8 }}>
-                    <div style={{ font: "700 11px/1.35 'DM Serif Display',serif", color: '#fff' }}>Why did you choose this topic?</div>
+                    <div style={{ font: "700 11px/1.35 'Inter', -apple-system, sans-serif", color: '#fff' }}>Why did you choose this topic?</div>
                   </div>
                   <div style={{ font: "500 6px/1 'JetBrains Mono',monospace", color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>YOUR RESPONSE</div>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 5, padding: 8, height: 54, marginBottom: 4 }}>
@@ -375,7 +375,7 @@ function ExpressSlides({ ready, current }) {
             {/* Main content */}
             <div style={{ position:'absolute', top:0, left:44, right:0, bottom:0, overflow:'hidden' }}>
               <div style={{ padding:'44px 9px 0' }}>
-                <div style={{ font:"700 11px/1.2 'DM Serif Display',serif", color:'#fff', marginBottom:4 }}>Step 1: Project Reviewer</div>
+                <div style={{ font:"700 11px/1.2 'Inter', -apple-system, sans-serif", color:'#fff', marginBottom:4 }}>Step 1: Project Reviewer</div>
                 <div style={{ font:'400 5.5px/1.5 Poppins,sans-serif', color:'rgba(255,255,255,.5)', marginBottom:8 }}>Upload your full project. FYPro will grade it, identify strengths and weaknesses, and generate the most dangerous examiner questions from your work.</div>
                 {/* Upload dropzone */}
                 <div style={{ border:'1.5px dashed rgba(0,102,255,.4)', borderRadius:6, padding:'12px 8px', textAlign:'center', background:'rgba(0,102,255,.035)', marginBottom:6 }}>
@@ -444,7 +444,7 @@ function ExpressSlides({ ready, current }) {
             <div style={{ position:'absolute', top:0, left:44, right:0, bottom:0, overflow:'hidden' }}>
               <div style={{ padding:'44px 9px 0' }}>
                 <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:3, gap:5 }}>
-                  <div style={{ font:"700 10.5px/1.2 'DM Serif Display',serif", color:'#fff' }}>Your Defence Brief</div>
+                  <div style={{ font:"700 10.5px/1.2 'Inter', -apple-system, sans-serif", color:'#fff' }}>Your Defence Brief</div>
                   <div style={{ background:'#16A34A', borderRadius:4, padding:'4px 6px', flexShrink:0 }}>
                     <span style={{ font:'600 5px/1 Poppins,sans-serif', color:'#fff' }}>↓ Download PDF</span>
                   </div>
@@ -541,7 +541,7 @@ function ExpressSlides({ ready, current }) {
                 <span style={{ font:"600 5.5px/1 'JetBrains Mono',monospace", color:'#0066FF', textTransform:'uppercase', letterSpacing:'.1em' }}>THE METHODOLOGIST:</span>
               </div>
               <div style={{ background:'rgba(0,0,0,.35)', borderLeft:'2.5px solid #0066FF', borderRadius:'0 6px 6px 0', padding:'9px 10px', marginBottom:8 }}>
-                <div style={{ font:"400 9.5px/1.55 'DM Serif Display',serif", color:'#fff' }}>Before we proceed — tell this panel: why did you choose this research problem, and what specific gap motivated it?</div>
+                <div style={{ font:"400 9.5px/1.55 'Inter', -apple-system, sans-serif", color:'#fff' }}>Before we proceed — tell this panel: why did you choose this research problem, and what specific gap motivated it?</div>
               </div>
               <div style={{ font:"500 5px/1 'JetBrains Mono',monospace", color:'rgba(255,255,255,.38)', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:4 }}>YOUR RESPONSE</div>
               <div style={{ background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.1)', borderRadius:5, padding:8, height:56, marginBottom:3 }}>

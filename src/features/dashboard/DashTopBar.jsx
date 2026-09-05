@@ -179,7 +179,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
               border: '2px solid rgba(0,102,255,0.35)',
               color: '#fff',
               fontSize: '0.68rem',
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
             }}
           >
             {STUDENT.avatarUrl && !avatarImgError

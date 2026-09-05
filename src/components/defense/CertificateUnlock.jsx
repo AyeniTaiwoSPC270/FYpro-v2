@@ -97,7 +97,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
         <span style={{ fontSize: '1.5rem', lineHeight: 1, flexShrink: 0, marginTop: 2 }} aria-hidden="true">📚</span>
         <div>
           <p style={{
-            fontFamily:   "'DM Serif Display', Georgia, serif",
+            fontFamily:   "'Inter', -apple-system, sans-serif",
             fontSize:     '1rem',
             color:        isLight ? '#0D1B2A' : '#FFFFFF',
             marginBottom: 6,
@@ -137,7 +137,7 @@ export default function CertificateUnlock({ score, defenseSessionId, projectId, 
     }}>
       <span style={{ fontSize: '2rem', lineHeight: 1, marginBottom: 12 }} aria-hidden="true">🎓</span>
       <p style={{
-        fontFamily:   "'DM Serif Display', Georgia, serif",
+        fontFamily:   "'Inter', -apple-system, sans-serif",
         fontSize:     'clamp(1.1rem, 5vw, 1.5rem)',
         color:        isLight ? '#0D1B2A' : '#FFFFFF',
         marginBottom: 8,

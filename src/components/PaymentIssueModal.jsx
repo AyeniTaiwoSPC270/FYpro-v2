@@ -118,7 +118,7 @@ export default function PaymentIssueModal({ isOpen, onClose, initialRef = '' }) 
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 36, marginBottom: 16 }}>✅</div>
             <h2 style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: 22, color: headingClr, marginBottom: 12,
             }}>Report sent</h2>
             <p style={{
@@ -145,7 +145,7 @@ export default function PaymentIssueModal({ isOpen, onClose, initialRef = '' }) 
         ) : (
           <>
             <h2 style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: 22, color: headingClr,
               marginBottom: 8, marginTop: 0,
             }}>Payment Issue</h2>

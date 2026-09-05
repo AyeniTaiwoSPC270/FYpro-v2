@@ -104,7 +104,7 @@ export default function CelebrationModal({ open, onClose, emoji, headline, body,
           >
             <div style={{ fontSize: '3rem', marginBottom: 12 }}>{emoji}</div>
             <h2 style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.5rem', color: isDark ? '#fff' : '#0D1B2A',
               margin: '0 0 8px',
             }}>

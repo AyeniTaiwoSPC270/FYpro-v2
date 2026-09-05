@@ -346,7 +346,7 @@ function StatItem({ renderNumber, target, label, delay, urgent }) {
   const count = useCountUp(target ?? 0, inView)
   return (
     <Reveal delay={delay} className="text-center">
-      <div ref={ref} className={`lp-stat-num-wrap font-serif leading-none mb-2${urgent ? ' lp-stat-urgent' : ''}`} style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
+      <div ref={ref} className={`lp-stat-num-wrap font-serif leading-none mb-2${urgent ? ' lp-stat-urgent' : ''}`} style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '3.2rem', color: urgent ? '#F87171' : '#60A5FA' }}>
         {renderNumber(count)}
       </div>
       <div className="text-[0.82rem] font-medium" style={{ color: urgent ? 'rgba(248,113,113,0.75)' : 'var(--pub-text-muted)' }}>{label}</div>
@@ -741,7 +741,7 @@ function StatsBar() {
     { target: 500, renderNumber: (n) => <>{n}<em className="not-italic text-blue-brand">K+</em></>, label: 'Final year students in Nigeria', delay: 0 },
     { target: 6, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'Structured research steps', delay: 0.1 },
     { target: 3, renderNumber: (n) => <em className="not-italic text-blue-brand">{n}</em>, label: 'AI examiners on your panel', delay: 0.2 },
-    { target: 0, renderNumber: () => <span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '2.4rem', color: '#F87171' }}>1 in 3</span>, label: 'Students asked to repeat their defense due to poor preparation', delay: 0.3, urgent: true },
+    { target: 0, renderNumber: () => <span style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '2.4rem', color: '#F87171' }}>1 in 3</span>, label: 'Students asked to repeat their defense due to poor preparation', delay: 0.3, urgent: true },
   ]
   return (
     <div className="bg-bg-dark border-t border-b border-white/5 py-11">
@@ -1095,7 +1095,7 @@ function LandingFAQSection() {
           }}>
             <div style={{ padding: '24px 24px 0' }}>
               <div className="lp-accent" style={{ fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#60A5FA', marginBottom: '8px' }}>Common Questions</div>
-              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--pub-text)', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
+              <h2 style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: 'clamp(1.5rem,3vw,2rem)', color: 'var(--pub-text)', marginBottom: '6px', fontWeight: 'normal' }}>Frequently asked questions</h2>
               <p style={{ fontSize: '0.875rem', color: 'var(--pub-text-muted)', marginBottom: '20px' }}>Everything you need to know before you start.</p>
             </div>
             <div style={{ height: '1px', background: 'var(--pub-border-dim)' }} />

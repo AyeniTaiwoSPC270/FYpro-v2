@@ -1445,15 +1445,15 @@ export default function DefensePrep() {
 
     const htmlContent = `<div style="width:794px;max-width:794px;box-sizing:border-box;background:#FFFFFF;font-family:'Poppins','Helvetica Neue',sans-serif;">
       <div style="background:#060E18;padding:24px 32px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;font-weight:400;color:#FFFFFF;">FYPro</span>
+        <span style="font-family:'Inter', -apple-system, sans-serif;font-size:22px;font-weight:600;color:#FFFFFF;">FYPro</span>
         <div style="text-align:right;">
-          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:15px;color:#FFFFFF;margin-bottom:4px;">Defence Session Transcript</div>
+          <div style="font-family:'Inter', -apple-system, sans-serif;font-size:15px;color:#FFFFFF;margin-bottom:4px;">Defence Session Transcript</div>
           <div style="font-family:'JetBrains Mono','Courier New',monospace;font-size:11px;color:rgba(0,102,255,0.7);">${dateStr}</div>
         </div>
       </div>
       <div style="height:3px;background:linear-gradient(90deg,#0066FF,#3B82F6,transparent);"></div>
       <div style="padding:40px 32px;background:#FFFFFF;">
-        <h2 style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;font-weight:400;color:#0D1B2A;border-left:4px solid #0066FF;padding-left:16px;margin:0 0 24px 0;">Session Transcript</h2>
+        <h2 style="font-family:'Inter', -apple-system, sans-serif;font-size:22px;font-weight:600;color:#0D1B2A;border-left:4px solid #0066FF;padding-left:16px;margin:0 0 24px 0;">Session Transcript</h2>
         ${rowsHTML || '<p style="font-family:Poppins,sans-serif;font-size:13px;color:#6B7280;">No messages recorded.</p>'}
       </div>
       <div style="background:#060E18;padding:12px 32px;display:flex;justify-content:space-between;align-items:center;">
@@ -1658,7 +1658,7 @@ export default function DefensePrep() {
                   </svg>
                 </div>
 
-                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '1.75rem', color: 'var(--color-text-white)', marginBottom: '12px', lineHeight: 1.2 }}>
+                <h2 style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '1.75rem', color: 'var(--color-text-white)', marginBottom: '12px', lineHeight: 1.2 }}>
                   Defense Simulator
                 </h2>
                 <p style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', color: 'var(--color-text-white-dim)', maxWidth: '420px', lineHeight: 1.7, marginBottom: '32px' }}>

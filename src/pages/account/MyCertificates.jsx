@@ -57,7 +57,7 @@ function CertRow({ cert, onDownload, isDark }) {
           </span>
         </div>
         <p style={{
-          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '0.95rem', color: isDark ? '#FFFFFF' : '#0D1B2A',
           lineHeight: 1.4, marginBottom: 4,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -150,9 +150,9 @@ export default function MyCertificates() {
         {/* Page header */}
         <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <h1 style={{
-            fontFamily:   "'DM Serif Display', Georgia, serif",
+            fontFamily:   "'Inter', -apple-system, sans-serif",
             fontSize:     '2rem',
-            fontWeight:   400,
+            fontWeight:   600,
             color:        textPrimary,
             lineHeight:   1.2,
             marginBottom: 8,
@@ -222,7 +222,7 @@ export default function MyCertificates() {
           }}>
             <p style={{ fontSize: '2.5rem', marginBottom: 16 }}>🎓</p>
             <p style={{
-              fontFamily:   "'DM Serif Display', Georgia, serif",
+              fontFamily:   "'Inter', -apple-system, sans-serif",
               fontSize:     '1.25rem',
               color:        textPrimary,
               marginBottom: 8,

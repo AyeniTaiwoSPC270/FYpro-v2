@@ -110,7 +110,7 @@ export default function DefenseCelebration({ open, score, onDownload, onShare, o
             </p>
 
             <h1 style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '2.2rem', color: '#ffffff', margin: '0 0 10px', lineHeight: 1.15,
             }}>
               You passed.<br />Download your certificate.

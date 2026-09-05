@@ -120,7 +120,7 @@ export default function Achievements() {
         </Link>
 
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: '2rem', color: isDark ? '#fff' : '#0D1B2A', margin: '0 0 8px' }}>
+          <h1 style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: '2rem', color: isDark ? '#fff' : '#0D1B2A', margin: '0 0 8px' }}>
             Achievements
           </h1>
           <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem', color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(13,27,42,0.6)', margin: 0 }}>

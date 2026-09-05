@@ -71,9 +71,9 @@ export default function ChangelogEntry({ entry }) {
           >
             <h2
               style={{
-                fontFamily: "'DM Serif Display', serif",
+                fontFamily: "'Inter', -apple-system, sans-serif",
                 fontSize: '1.05rem',
-                fontWeight: 400,
+                fontWeight: 600,
                 color: 'var(--color-text-primary)',
                 margin: 0,
                 lineHeight: 1.3,

@@ -105,7 +105,7 @@ function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, p
           animation: 'pfg-enter 0.4s ease forwards',
         }}>
           <p style={{
-            fontFamily: "'DM Serif Display', serif",
+            fontFamily: "'Inter', -apple-system, sans-serif",
             fontSize: '1.25rem',
             color: 'var(--text-primary)',
             marginBottom: '12px',
@@ -200,7 +200,7 @@ function UpgradeCard({ requiredPack, isUpgrader, handlePay, paying, verifying, p
         )}
 
         <p style={{
-          fontFamily: "'DM Serif Display', serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '1.5rem',
           color: 'var(--text-primary)',
           marginBottom: '12px',
