@@ -11,6 +11,7 @@ import { sendTelegramAlert, sendTelegramAlertOnce, escapeTgHtml } from './_lib/t
 import { reliably } from './_lib/reliable-async.js'
 import { setCorsHeaders } from './_lib/cors.js'
 import { setMaintenanceMode } from './_lib/maintenance.js'
+import { getDailyReportEnabled, setDailyReportEnabled } from './_lib/daily-report-pref.js'
 import { setExpressBetaFree, getExpressBetaFree } from './_lib/express-beta.js'
 import { verifyCronSecret } from './_lib/cron-auth.js'
 import { verifyAdmin } from './_lib/admin-auth.js'
@@ -621,6 +622,38 @@ async function cmdMaintenance(args) {
   }
 }
 
+async function cmdAlerts(args) {
+  const onOff = args[0]?.toLowerCase()
+  if (onOff === 'on' || onOff === 'off') {
+    try {
+      await setDailyReportEnabled(onOff === 'on')
+    } catch (err) {
+      return `❌ Failed to toggle daily report alerts: ${err.message}`
+    }
+  }
+
+  const enabled = await getDailyReportEnabled()
+  const status = enabled
+    ? '🔔 <b>ON</b> — you will receive the daily 9PM WAT report'
+    : '🔕 <b>OFF</b> — daily report is muted'
+  return `📊 <b>Daily Report Alerts</b>\n\nStatus: ${status}`
+}
+
+function alertsKeyboard(enabled) {
+  return {
+    inline_keyboard: [
+      [
+        enabled
+          ? { text: '🔕 Turn OFF', callback_data: 'alerts_off' }
+          : { text: '🔔 Turn ON',  callback_data: 'alerts_on'  },
+      ],
+      [
+        { text: '⬅️ Menu', callback_data: 'help' },
+      ],
+    ],
+  }
+}
+
 async function cmdBroadcast(body, paidOnly) {
   // 1. Fetch all auth users
   const allUsers = await listAllUsers()
@@ -1020,6 +1053,7 @@ function cmdHelp() {
 <b>🔧 Controls</b>
 /maintenance on|off — toggle maintenance mode (blocks all AI generation)
 /beta on|off — toggle Express Defence beta (makes Express free for all users)
+/alerts on|off — toggle the daily 9PM WAT report
 
 <b>⚙️ Admin</b>
 /resolve &lt;id&gt; — mark error resolved
@@ -1065,6 +1099,9 @@ const KEYBOARD = {
       { text: '🔧 Maintenance', callback_data: 'maintenance' },
       { text: '🎓 Express Beta', callback_data: 'beta'       },
     ],
+    [
+      { text: '📊 Alerts', callback_data: 'alerts' },
+    ],
   ],
 }
 
@@ -1089,6 +1126,7 @@ async function runCommand(key, args = []) {
   else if (key === 'ratings'         ) return cmdRatings()
   else if (key === 'maintenance'     ) return cmdMaintenance(args)
   else if (key === 'beta'            ) return cmdBeta(args)
+  else if (key === 'alerts'          ) return cmdAlerts(args)
   else if (key === 'data'            ) return cmdData(args)
   else if (key === 'help'            ) return cmdHelp()
   return null
@@ -1121,11 +1159,18 @@ async function handleTelegramBot(req, res) {
 
     if (String(chatId) !== admId) return res.status(200).end()
 
+    let cbKey  = cq.data
+    let cbArgs = []
+    if (cbKey === 'alerts_on')  { cbKey = 'alerts'; cbArgs = ['on'] }
+    if (cbKey === 'alerts_off') { cbKey = 'alerts'; cbArgs = ['off'] }
+    const isAlertsFlow = cbKey === 'alerts'
+
     try {
-      const reply = await runCommand(cq.data, [])
+      const reply = await runCommand(cbKey, cbArgs)
       if (reply) {
-        const edited = await editMessage(chatId, msgId, reply, KEYBOARD)
-        if (!edited) await sendReply(chatId, reply, KEYBOARD)
+        const kb     = isAlertsFlow ? alertsKeyboard(await getDailyReportEnabled()) : KEYBOARD
+        const edited = await editMessage(chatId, msgId, reply, kb)
+        if (!edited) await sendReply(chatId, reply, kb)
       }
       await answerCallbackQuery(cq.id)
     } catch (err) {
@@ -1221,7 +1266,8 @@ async function handleTelegramBot(req, res) {
   try {
     const reply = await runCommand(cmdKey, args)
     if (!reply) return res.status(200).end()
-    await sendReply(chatId, reply, KEYBOARD)
+    const kb = cmdKey === 'alerts' ? alertsKeyboard(await getDailyReportEnabled()) : KEYBOARD
+    await sendReply(chatId, reply, kb)
   } catch (err) {
     console.error('[notify/bot] command error:', err.message)
     await sendReply(chatId, `❌ Command failed — check server logs`, KEYBOARD)

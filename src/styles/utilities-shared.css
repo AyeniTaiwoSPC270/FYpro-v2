@@ -8,6 +8,11 @@ Design System — Utility Classes
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fy-banner-enter {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ============================================================
    Back Navigation Button — shared across all step cards
    Ghost / secondary style per design system
