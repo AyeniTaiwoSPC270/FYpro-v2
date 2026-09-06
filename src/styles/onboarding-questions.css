@@ -48,7 +48,7 @@
   margin-bottom: var(--space-sm);
 }
 .oq-question__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-2xl);
   color: var(--onb-pane-text);
   line-height: 1.1;
@@ -311,9 +311,9 @@
   box-shadow: 0 0 6px rgba(0, 102, 255, 0.5);
 }
 .cs-heading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 42px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.16;
   color: #ffffff;
   letter-spacing: -0.5px;
@@ -484,9 +484,9 @@
   position: absolute;
   bottom: 22px;
   right: 28px;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 88px;
-  font-weight: 400;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.038);
   line-height: 1;
   letter-spacing: -2px;
@@ -573,9 +573,9 @@
   opacity: 0.8;
 }
 .wt2-heading {
-  font-family: 'DM Serif Display', Georgia, serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 32px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.15;
   color: var(--color-text-white);
   letter-spacing: -0.5px;
@@ -891,7 +891,7 @@
   margin-bottom: 13px;
 }
 .oq-tour-headline {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: clamp(22px, 3vw, 40px);
   line-height: 1.1;
   color: var(--color-text-white);

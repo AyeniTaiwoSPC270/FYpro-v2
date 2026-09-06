@@ -29,7 +29,7 @@
   position: absolute;
   right: 28px;
   top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 5rem;
   line-height: 1;
   color: rgba(139, 92, 246, 0.055);
@@ -38,9 +38,9 @@
 }
 
 .di-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
@@ -139,9 +139,9 @@
 }
 
 .di-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
 }
 

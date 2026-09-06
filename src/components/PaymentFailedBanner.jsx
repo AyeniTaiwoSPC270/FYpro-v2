@@ -78,13 +78,13 @@ export default function PaymentFailedBanner({ tier, reference, reason, onRetry, 
           <motion.h2
             variants={rowVariant}
             style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '1.5rem',
               color: 'var(--text-primary)',
               textAlign: 'center',
               marginTop: 20,
               marginBottom: 8,
-              fontWeight: 400,
+              fontWeight: 600,
             }}
           >
             Payment Failed

@@ -18,7 +18,7 @@
 }
 .av-trigger:focus-visible { outline: 2px solid var(--color-blue-primary, #0066FF); outline-offset: 2px; }
 .av-trigger img { width: 100%; height: 100%; object-fit: cover; }
-.av-initials { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: #60A5FA; line-height: 1; }
+.av-initials { font-family: 'Inter', -apple-system, sans-serif; font-size: 1.5rem; color: #60A5FA; line-height: 1; }
 
 .av-edit-badge {
   position: absolute;
@@ -89,7 +89,7 @@
   display: flex; flex-direction: column;
 }
 .av-crop__title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.1rem;
   color: var(--text-primary, #0D1B2A);
   padding: 16px 20px 4px;

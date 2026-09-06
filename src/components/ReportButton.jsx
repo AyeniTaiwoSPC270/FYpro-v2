@@ -117,7 +117,7 @@ export default function ReportButton({
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
                 <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
                 <h2 style={{
-                  fontFamily: "'DM Serif Display', serif",
+                  fontFamily: "'Inter', -apple-system, sans-serif",
                   fontSize: 'var(--text-xl)',
                   color: 'var(--color-text-primary)',
                   margin: '0 0 8px',
@@ -139,7 +139,7 @@ export default function ReportButton({
                 <h2
                   id="report-modal-title"
                   style={{
-                    fontFamily: "'DM Serif Display', serif",
+                    fontFamily: "'Inter', -apple-system, sans-serif",
                     fontSize: 'var(--text-xl)',
                     color: 'var(--color-text-primary)',
                     margin: '0 0 6px',

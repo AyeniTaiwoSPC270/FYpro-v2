@@ -59,9 +59,9 @@ export default function RoadmapCard({ item }) {
     >
       <h3
         style={{
-          fontFamily: "'DM Serif Display', serif",
+          fontFamily: "'Inter', -apple-system, sans-serif",
           fontSize: '1rem',
-          fontWeight: 400,
+          fontWeight: 600,
           color: '#FFFFFF',
           margin: '0 0 8px',
           lineHeight: 1.3,

@@ -33,7 +33,7 @@ try {
 
 // Google Fonts — fetch TTF binaries at cold start and cache in module scope.
 // Uses legacy UA header so Google returns TTF (jsPDF requires TTF, not WOFF2).
-let dmSerifBase64  = null;
+let interBase64    = null;
 let poppinsBase64  = null;
 let fontsAttempted = false;
 
@@ -42,9 +42,9 @@ async function ensureFonts() {
   fontsAttempted = true;
   const UA = 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)';
   try {
-    const dmCss  = await fetch('https://fonts.googleapis.com/css?family=DM+Serif+Display', { headers: { 'User-Agent': UA } }).then(r => r.text());
-    const dmUrl  = dmCss.match(/url\((https:\/\/[^)]+\.ttf)\)/)?.[1];
-    if (dmUrl) dmSerifBase64 = Buffer.from(await fetch(dmUrl).then(r => r.arrayBuffer())).toString('base64');
+    const interCss = await fetch('https://fonts.googleapis.com/css?family=Inter:600', { headers: { 'User-Agent': UA } }).then(r => r.text());
+    const interUrl = interCss.match(/url\((https:\/\/[^)]+\.ttf)\)/)?.[1];
+    if (interUrl) interBase64 = Buffer.from(await fetch(interUrl).then(r => r.arrayBuffer())).toString('base64');
   } catch { /* fall back to times */ }
   try {
     const ppCss  = await fetch('https://fonts.googleapis.com/css?family=Poppins:400,600', { headers: { 'User-Agent': UA } }).then(r => r.text());
@@ -66,9 +66,9 @@ async function generateQR(url, darkColor = '#0D1B2A') {
 // ── PDF builder ───────────────────────────────────────────────────────────────
 
 function registerFonts(doc) {
-  if (dmSerifBase64) {
-    doc.addFileToVFS('DMSerifDisplay.ttf', dmSerifBase64);
-    doc.addFont('DMSerifDisplay.ttf', 'DMSerifDisplay', 'normal');
+  if (interBase64) {
+    doc.addFileToVFS('Inter.ttf', interBase64);
+    doc.addFont('Inter.ttf', 'Inter', 'normal');
   }
   if (poppinsBase64) {
     doc.addFileToVFS('Poppins.ttf', poppinsBase64);
@@ -93,7 +93,7 @@ async function buildCertificatePDF({
 
   registerFonts(doc);
 
-  const headingFont = dmSerifBase64  ? 'DMSerifDisplay' : 'times';
+  const headingFont = interBase64    ? 'Inter'          : 'times';
   const bodyFont    = poppinsBase64  ? 'Poppins'        : 'helvetica';
 
   const scoreNum    = Number(score);
@@ -753,7 +753,7 @@ function drawDark(doc, W, H, data) {
   doc.setTextColor(150, 160, 180);
   doc.text('has demonstrated defence readiness for', cx, 99, { align: 'center' });
 
-  // Topic (white/dim, italic via DM Serif Display)
+  // Topic (white/dim, set in the Inter heading font)
   doc.setFont(headingFont, 'normal');
   doc.setFontSize(13);
   doc.setTextColor(220, 225, 235);

@@ -46,8 +46,8 @@ export default memo(function DashSidebar({ STUDENT, STEPS, onNewSession, isOpen,
               aria-disabled={isLocked}
               onClick={!isLocked ? () => { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(i); navigate(navTarget) } : undefined}
               onKeyDown={!isLocked ? (e) => { if (e.key === 'Enter' || e.key === ' ') { sessionStorage.setItem('intentional_app_entry', 'true'); navigateStep(i); navigate(navTarget) } } : undefined}
-              className={`db-sidebar-item flex items-center gap-[11px] pl-3 pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
-                isActive ? 'db-sidebar-active' : ''
+              className={`dash-sidebar-item flex items-center gap-[11px] pl-3 pr-4 py-[10px] mb-0.5 outline-none transition-all duration-200 ${
+                isActive ? 'dash-sidebar-active' : ''
               } ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {/* Step badge */}

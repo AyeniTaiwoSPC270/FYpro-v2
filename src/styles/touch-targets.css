@@ -213,7 +213,7 @@
 .dp-examiner-bubble--external-examiner { border-left-color: #DC2626 !important; }
 
 .dp-examiner-text {
-  font-family: 'DM Serif Display', serif !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
   font-size: 1.05rem !important;
   color: rgba(255, 255, 255, 0.92) !important;
   line-height: 1.6 !important;
@@ -277,7 +277,7 @@
   padding: 24px !important;
 }
 .dp-circuit-complete__heading {
-  font-family: 'DM Serif Display', serif !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
   font-size: 1.3rem !important;
 }
 
@@ -291,7 +291,7 @@
   padding: 24px !important;
 }
 .dp-circuit-terminated__heading {
-  font-family: 'DM Serif Display', serif !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
   font-size: 1.3rem !important;
 }
 
@@ -1020,7 +1020,7 @@ html {
   }
 
   /* Dashboard topbar: tighter greeting text */
-  .db-header-enter .font-serif {
+  .dash-header-enter .font-serif {
     font-size: 0.95rem !important;
   }
 
@@ -1069,7 +1069,7 @@ html {
   }
 
   /* Dashboard sidebar items */
-  .db-sidebar-item {
+  .dash-sidebar-item {
     min-height: 44px;
   }
 
@@ -1655,7 +1655,7 @@ html {
 }
 
 .pwa-sheet__title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.125rem;
   color: var(--color-text-white, #fff);
   margin-bottom: 4px;

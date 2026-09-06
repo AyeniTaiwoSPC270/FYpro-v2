@@ -885,8 +885,8 @@ Key colors:
 - Accent blue: #0066FF
 - Surface (light workspace): #F0F4F8
 
-Key fonts:
-- DM Serif Display — headings, step labels
+Key fonts (updated 2026-09-05 — heading font changed from DM Serif Display to Inter):
+- Inter (weight 600) — headings, step labels
 - Poppins — body text, buttons
 - JetBrains Mono — scores, badges, technical labels
 
@@ -894,7 +894,7 @@ Anti-patterns (NEVER do these):
 - Purple gradients
 - White cards on plain grey (always add dot texture to workspace)
 - Hardcoded hex in component CSS
-- Generic Inter/Roboto as primary font
+- Generic Roboto/Arial as primary font
 
 ---
 

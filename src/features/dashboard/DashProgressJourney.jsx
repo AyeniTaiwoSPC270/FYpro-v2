@@ -6,7 +6,7 @@ import { useReveal, revealStyle, CheckIcon, LockIcon, ArrowRightIcon } from './_
 
 function StepRow({ step, isCompleted, isActive, isLocked, isLast, navTarget, onOpen, extra }) {
   return (
-    <div className={`flex gap-5${isActive ? ' db-step-active-row' : ''}${isCompleted ? ' db-step-completed-row' : ''}`}>
+    <div className={`flex gap-5${isActive ? ' dash-step-active-row' : ''}${isCompleted ? ' dash-step-completed-row' : ''}`}>
       <div className="flex flex-col items-center w-11 flex-shrink-0">
         <div
           className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 relative z-10 font-mono text-[0.75rem] font-bold"

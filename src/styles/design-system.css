@@ -42,7 +42,7 @@
 .tv-card::before {
   content: '1';
   position: absolute; right: 28px; top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 7.5rem; line-height: 1;
   color: rgba(37,99,235,0.04);
   pointer-events: none; user-select: none;
@@ -50,7 +50,7 @@
 .ca-card::before {
   content: '2';
   position: absolute; right: 28px; top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 7.5rem; line-height: 1;
   color: rgba(37,99,235,0.04);
   pointer-events: none; user-select: none;
@@ -58,7 +58,7 @@
 .ma-card::before {
   content: '3';
   position: absolute; right: 28px; top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 7.5rem; line-height: 1;
   color: rgba(37,99,235,0.04);
   pointer-events: none; user-select: none;
@@ -66,7 +66,7 @@
 .wp-card::before {
   content: '4';
   position: absolute; right: 28px; top: 12px;
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 7.5rem; line-height: 1;
   color: rgba(37,99,235,0.04);
   pointer-events: none; user-select: none;
@@ -184,7 +184,7 @@
   --radius-pill:999px;
 
   /* ── Typography — families ────────────────────────────── */
-  --font-display: 'DM Serif Display', 'Georgia', serif;
+  --font-display: 'Inter', -apple-system, sans-serif;
   --font-body:    'Poppins', -apple-system, sans-serif;
   --font-mono:    'JetBrains Mono', 'Menlo', monospace;
 

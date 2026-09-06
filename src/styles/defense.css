@@ -24,9 +24,9 @@
 
 /* ── Step label + scan subtext ───────────────────────────── */
 .dp-step-label {
-  font-family: 'DM Serif Display', 'Georgia', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 600;
   color: #0D1B2A;
   margin-bottom: 6px;
 }
@@ -601,7 +601,7 @@
 }
 .dp-trial-locked__icon { font-size: 2rem; margin-bottom: var(--space-sm); }
 .dp-trial-locked__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-xl);
   color: var(--color-text-primary);
   margin: 0 0 var(--space-sm);
@@ -640,7 +640,7 @@
   margin-bottom: var(--space-sm);
 }
 .dp-trial-sell__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-2xl);
   color: var(--color-text-white);
   margin: 0 0 var(--space-md);
@@ -743,7 +743,7 @@
   top: 2px;
 }
 .dp-trial-paywall__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-xl);
   color: var(--color-text-primary);
   margin: 0 0 var(--space-sm);

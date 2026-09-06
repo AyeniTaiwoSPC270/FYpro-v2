@@ -64,7 +64,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
       </button>
 
       {/* Greeting */}
-      <div className="db-header-enter flex-1 min-w-0 mx-2 sm:mx-0 overflow-hidden">
+      <div className="dash-header-enter flex-1 min-w-0 mx-2 sm:mx-0 overflow-hidden">
         <div className="font-serif text-[1rem] sm:text-[1.18rem] text-white leading-[1.15] truncate">
           {greeting}, {firstName}
         </div>
@@ -179,7 +179,7 @@ export default memo(function DashTopBar({ STUDENT, onNewSession, onToggleSidebar
               border: '2px solid rgba(0,102,255,0.35)',
               color: '#fff',
               fontSize: '0.68rem',
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
             }}
           >
             {STUDENT.avatarUrl && !avatarImgError

@@ -119,7 +119,7 @@ export default function NotFound() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               style={{
-                fontFamily: "'DM Serif Display', serif",
+                fontFamily: "'Inter', -apple-system, sans-serif",
                 fontSize: '8rem',
                 lineHeight: 1,
                 color: headingColor,
@@ -162,7 +162,7 @@ export default function NotFound() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               style={{
-                fontFamily: "'DM Serif Display', serif",
+                fontFamily: "'Inter', -apple-system, sans-serif",
                 fontSize: '8rem',
                 lineHeight: 1,
                 color: headingColor,
@@ -178,7 +178,7 @@ export default function NotFound() {
           <motion.h1
             variants={blurFade}
             style={{
-              fontFamily: "'DM Serif Display', serif",
+              fontFamily: "'Inter', -apple-system, sans-serif",
               fontSize: '2rem',
               color: headingColor,
               marginTop: '32px',

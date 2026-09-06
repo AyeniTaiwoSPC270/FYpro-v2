@@ -115,7 +115,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                     ? () => { if (action.path === '/app' || action.path === navTarget) sessionStorage.setItem('intentional_app_entry', 'true'); navigate(action.path) }
                     : undefined
                 }
-                className={`relative flex flex-col items-start gap-3 md:gap-4 p-4 md:p-6 rounded-2xl text-left transition-all duration-200 w-full db-quick-card ${
+                className={`relative flex flex-col items-start gap-3 md:gap-4 p-4 md:p-6 rounded-2xl text-left transition-all duration-200 w-full dash-quick-card ${
                   isLockedAction ? 'cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 style={{
@@ -132,7 +132,7 @@ export default function DashQuickActions({ STEPS, allComplete, showToastMessage,
                 )}
 
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center db-quick-icon"
+                  className="w-12 h-12 rounded-xl flex items-center justify-center dash-quick-icon"
                   style={{ background: action.iconBg, color: action.iconColor }}
                 >
                   <action.Icon />

@@ -13,7 +13,7 @@
   letter-spacing: 0.16em;
 }
 .eo-form__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-2xl);
   color: var(--onb-pane-text);
   margin: 0;
@@ -120,7 +120,7 @@
   letter-spacing: 0.16em;
 }
 .eo-payment__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-2xl);
   color: var(--onb-pane-text);
   margin: 0;
@@ -247,7 +247,7 @@
   letter-spacing: 0.16em;
 }
 .so-persona__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-3xl);
   color: var(--onb-pane-text);
   margin: 0;
@@ -307,7 +307,7 @@
   margin-bottom: var(--space-sm);
 }
 .onb-form__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-2xl);
   color: var(--onb-pane-text);
   margin: 0 0 var(--space-xs);
@@ -344,7 +344,7 @@
   letter-spacing: 0.14em;
 }
 .lp-express-cta__heading {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: var(--text-3xl);
   color: var(--pub-text);
   margin: 0;

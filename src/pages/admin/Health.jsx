@@ -246,8 +246,8 @@ function SignupsCompareCard({ today, yesterday }) {
 function SectionHeading({ title }) {
   return (
     <h2 style={{
-      fontFamily: "'DM Serif Display', serif",
-      fontSize: 22, fontWeight: 400,
+      fontFamily: "'Inter', -apple-system, sans-serif",
+      fontSize: 22, fontWeight: 600,
       color: WHITE,
       margin: '40px 0 16px',
       paddingBottom: 12,
@@ -2743,7 +2743,7 @@ function AdminHealth() {
         {activeTab === 'reports' && (
           <div style={{ padding: '24px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: WHITE, margin: 0 }}>
+              <h2 style={{ fontFamily: "'Inter', -apple-system, sans-serif", fontSize: 22, color: WHITE, margin: 0 }}>
                 User Reports
               </h2>
               <button
@@ -3351,7 +3351,7 @@ function AdminHealth() {
       {confirmModal && (
         <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.82)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setConfirmModal(null)}>
           <div style={{ background:SURFACE, border:`1px solid ${confirmModal.danger?'rgba(220,38,38,0.4)':BORDER}`, borderRadius:16, padding:28, maxWidth:400, width:'100%' }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, fontWeight:400, color:WHITE, marginBottom:10 }}>{confirmModal.title}</div>
+            <div style={{ fontFamily:"'Inter', -apple-system, sans-serif", fontSize:20, fontWeight:600, color:WHITE, marginBottom:10 }}>{confirmModal.title}</div>
             <div style={{ fontFamily:"'Poppins',sans-serif", fontSize:13, color:DIM, marginBottom:24, lineHeight:1.6 }}>{confirmModal.body}</div>
             <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
               <button className="mc-action-btn" onClick={() => setConfirmModal(null)} style={{ padding:'8px 20px', fontSize:13 }}>Cancel</button>
@@ -3370,7 +3370,7 @@ function AdminHealth() {
       {diagnoseModal && (
         <div style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setDiagnoseModal(null)}>
           <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:16, padding:28, maxWidth:480, width:'100%', maxHeight:'80vh', overflowY:'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontFamily:"'DM Serif Display',serif", fontSize:20, fontWeight:400, color:WHITE, marginBottom:8 }}>User Diagnosis</div>
+            <div style={{ fontFamily:"'Inter', -apple-system, sans-serif", fontSize:20, fontWeight:600, color:WHITE, marginBottom:8 }}>User Diagnosis</div>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:12, color:MUTED, marginBottom:20 }}>{diagnoseModal.email}</div>
             {diagnoseModal.loading ? (
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -3395,7 +3395,7 @@ function AdminHealth() {
         >
           <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:16, padding:28, width:'100%', maxWidth:360 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-              <span style={{ fontFamily:"'DM Serif Display',serif", fontSize:18, color:WHITE }}>Update Founder Photo</span>
+              <span style={{ fontFamily:"'Inter', -apple-system, sans-serif", fontSize:18, color:WHITE }}>Update Founder Photo</span>
               <button onClick={() => setShowPhotoModal(false)} style={{ background:'none', border:'none', color:MUTED, fontSize:20, cursor:'pointer', lineHeight:1 }}>×</button>
             </div>
 

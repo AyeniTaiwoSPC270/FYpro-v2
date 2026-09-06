@@ -245,13 +245,13 @@ export default function PaymentSuccess() {
             <motion.h1
               variants={rowVariant}
               style={{
-                fontFamily: "'DM Serif Display', serif",
+                fontFamily: "'Inter', -apple-system, sans-serif",
                 fontSize: '1.875rem',
                 color: '#FFFFFF',
                 textAlign: 'center',
                 marginTop: 24,
                 marginBottom: 0,
-                fontWeight: 400,
+                fontWeight: 600,
                 lineHeight: 1.2,
               }}
             >
