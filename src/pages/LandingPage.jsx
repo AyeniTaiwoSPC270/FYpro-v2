@@ -629,9 +629,17 @@ const FEATURE_MOCKUPS = [
 ]
 
 function FeatureMockup({ src }) {
+  const imgRef = useRef(null)
+
+  // Same prerender/hydration mismatch as the hero image above — force the
+  // attribute to match the real client theme once mounted.
+  useEffect(() => {
+    if (imgRef.current) imgRef.current.src = src
+  }, [src])
+
   return (
     <div className="lp-fmock-outer">
-      <img className="lp-fmock-img" src={src} alt="" loading="lazy" decoding="async" draggable={false} />
+      <img ref={imgRef} className="lp-fmock-img" src={src} alt="" loading="lazy" decoding="async" draggable={false} />
     </div>
   )
 }
@@ -666,7 +674,20 @@ function HeroSub() {
 
 function Hero() {
   const heroRef = useRef(null)
+  const heroImgRef = useRef(null)
   const { theme } = useTheme()
+  const heroImgSrc = theme === 'light' ? '/FYPro-Product-Showcase-light.png' : '/FYPro-Product-Showcase-v2.png'
+
+  // The static prerendered HTML (scripts/prerender.mjs) is captured in a fresh
+  // headless browser with no localStorage, so it always bakes in the 'dark'
+  // theme's image path. React hydration doesn't re-diff plain attributes like
+  // <img src> against that server markup — it trusts what's already painted —
+  // so a real visitor whose saved theme is 'light' would otherwise be stuck
+  // looking at the dark image forever despite every CSS-driven part of the
+  // page correctly switching to light. Force it to match post-hydration.
+  useEffect(() => {
+    if (heroImgRef.current) heroImgRef.current.src = heroImgSrc
+  }, [heroImgSrc])
 
   return (
     <motion.section
@@ -718,7 +739,8 @@ function Hero() {
       {/* App Mockup */}
       <div className="relative z-[1] w-full max-w-[880px]">
         <motion.img
-          src={theme === 'light' ? '/FYPro-Product-Showcase-light.png' : '/FYPro-Product-Showcase-v2.png'}
+          ref={heroImgRef}
+          src={heroImgSrc}
           alt="FYPro — from topic to defence, powered by AI"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
